@@ -1,0 +1,39 @@
+# Binaries
+**/bin/
+bin-int/
+Intermediates/
+
+# Visual Studio files and folder
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+**.csproj
+
+# cmake
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+## Xcode User settings
+xcuserdata/
+*.pbxproj
+*.xcworkspace/
+*.xcodeproj/
+.DS_Store
+
+## Xcode 8 and earlier
+*.xcscmblueprint
+*.xccheckout
+
+# Directories
+Scripts/**/__pycache__
