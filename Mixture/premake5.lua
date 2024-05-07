@@ -1,5 +1,5 @@
-project "App"
-   kind "ConsoleApp"
+project "Mixture"
+   kind "StaticLib"
    language "C++"
    cppdialect "C++20"
    targetdir "Binaries/%{cfg.buildcfg}"
@@ -7,17 +7,22 @@ project "App"
 
    files { "src/**.h", "src/**.cpp" }
 
-   includedirs
-   {
-      "src",
-
-	  -- Include Core
-	  "../Core/src"
+   defines {
+       "_CRT_SECURE_NO_WARNINGS",
+       "GLFW_INCLUDE_NONE"
    }
 
-   links
-   {
-      "Core"
+   includedirs {
+      "src",
+      "%{IncludeDir.GLFW}",
+      "%{IncludeDir.VulkanSDK}",
+      "%{IncludeDir.VulkanMemoryAllocator}",
+      "%{IncludeDir.spdlog}"
+   }
+
+   links {
+        "GLFW",
+        "%{Library.Vulkan}"
    }
 
    targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -25,29 +30,29 @@ project "App"
 
    filter "system:windows"
        systemversion "latest"
-       defines { "WINDOWS" }
+       defines { "MIXTURE_PLATFORM_WINDOWS" }
 
    filter "system:linux"
        systemversion "latest"
-       defines { "LINUX" }
+       defines { "MIXTURE_PLATFORM_LINUX" }
 
    filter "system:macosx"
        systemversion "latest"
-       defines { "MACOSX" }
+       defines { "MIXTURE_PLATFORM_MACOSX" }
 
    filter "configurations:Debug"
-       defines { "DEBUG" }
+       defines { "MIXTURE_DEBUG" }
        runtime "Debug"
        symbols "On"
 
    filter "configurations:Release"
-       defines { "RELEASE" }
+       defines { "MIXTURE_RELEASE" }
        runtime "Release"
        optimize "On"
        symbols "On"
 
    filter "configurations:Dist"
-       defines { "DIST" }
+       defines { "MIXTURE_DIST" }
        runtime "Release"
        optimize "On"
        symbols "Off"

@@ -8,10 +8,11 @@ PythonRequirements.validate()
 
 # premake setup
 from Setup.SetupPremake import PremakeConfiguration as PremakeRequirements
+from Setup.SetupVulkan import VulkanConfiguration as VulkanRequirements
 os.chdir('../../') # change from scripts/python directory to root
-premakeInstalled = PremakeRequirements.validate()
 
-# other requirements
+premakeInstalled = PremakeRequirements.validate()
+VulkanRequirements.validate()
 
 # submodules and build files
 print("\nUpdating submodules...")

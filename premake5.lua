@@ -2,10 +2,10 @@
 include "./vendor/premake/customizations/solution_items.lua"
 include "Dependencies.lua"
 
-workspace "New Project"
+workspace "Mixture"
    architecture "x64"
    configurations { "Debug", "Release", "Dist" }
-   startproject "App"
+   startproject "Sandbox"
    flags { "MultiProcessorCompile" }
 
    -- Workspace-wide build options for MSVC
@@ -16,10 +16,11 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Dependencies"
    include "vendor/premake"
+   include "vendor/glfw"
 group ""
 
 group "Core"
-	include "Core/premake5.lua"
+	include "Mixture/premake5.lua"
 group ""
 
-include "App/premake5.lua"
+include "Sandbox/premake5.lua"

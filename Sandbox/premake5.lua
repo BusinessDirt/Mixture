@@ -1,5 +1,5 @@
-project "Core"
-   kind "StaticLib"
+project "Sandbox"
+   kind "ConsoleApp"
    language "C++"
    cppdialect "C++20"
    targetdir "Binaries/%{cfg.buildcfg}"
@@ -9,7 +9,16 @@ project "Core"
 
    includedirs
    {
-      "src"
+      "src",
+
+	  -- Include Mixture
+	  "../Mixture/src",
+      "%{IncludeDir.spdlog}"
+   }
+
+   links
+   {
+      "Mixture"
    }
 
    targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -17,29 +26,29 @@ project "Core"
 
    filter "system:windows"
        systemversion "latest"
-       defines { "WINDOWS" }
+       defines { "MIXTURE_PLATFORM_WINDOWS" }
 
    filter "system:linux"
        systemversion "latest"
-       defines { "LINUX" }
+       defines { "MIXTURE_PLATFORM_LINUX" }
 
    filter "system:macosx"
        systemversion "latest"
-       defines { "MACOSX" }
+       defines { "MIXTURE_PLATFORM_MACOSX" }
 
    filter "configurations:Debug"
-       defines { "DEBUG" }
+       defines { "MIXTURE_DEBUG" }
        runtime "Debug"
        symbols "On"
 
    filter "configurations:Release"
-       defines { "RELEASE" }
+       defines { "MIXTURE_RELEASE" }
        runtime "Release"
        optimize "On"
        symbols "On"
 
    filter "configurations:Dist"
-       defines { "DIST" }
+       defines { "MIXTURE_DIST" }
        runtime "Release"
        optimize "On"
        symbols "Off"

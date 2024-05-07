@@ -1,0 +1,52 @@
+#pragma once
+
+#include <spdlog/spdlog.h>
+#include <memory>
+
+namespace Mixture::Logging {
+	class Log {
+	public:
+		static void Init();
+		
+		inline static std::shared_ptr<spdlog::logger>& getCoreLogger() { return s_CoreLogger; }
+		inline static std::shared_ptr<spdlog::logger>& getClientLogger() { return s_ClientLogger; }
+
+	private:
+		static std::shared_ptr<spdlog::logger> s_CoreLogger;
+		static std::shared_ptr<spdlog::logger> s_ClientLogger;
+	};
+}
+
+#ifndef MIXTURE_DIST
+
+// Core log macros
+#define MX_CORE_TRACE(...)     ::Mixture::Logging::Log::getCoreLogger()->trace(__VA_ARGS__)
+#define MX_CORE_INFO(...)      ::Mixture::Logging::Log::getCoreLogger()->info(__VA_ARGS__)
+#define MX_CORE_WARN(...)      ::Mixture::Logging::Log::getCoreLogger()->warn(__VA_ARGS__)
+#define MX_CORE_ERROR(...)     ::Mixture::Logging::Log::getCoreLogger()->error(__VA_ARGS__)
+#define MX_CORE_FATAL(...)     ::Mixture::Logging::Log::getCoreLogger()->fatal(__VA_ARGS__)
+
+// Client log macros
+#define MX_CLIENT_TRACE(...)   ::Mixture::Logging::Log::getClientLogger()->trace(__VA_ARGS__)
+#define MX_CLIENT_INFO(...)    ::Mixture::Logging::Log::getClientLogger()->info(__VA_ARGS__)
+#define MX_CLIENT_WARN(...)    ::Mixture::Logging::Log::getClientLogger()->warn(__VA_ARGS__)
+#define MX_CLIENT_ERROR(...)   ::Mixture::Logging::Log::getClientLogger()->error(__VA_ARGS__)
+#define MX_CLIENT_FATAL(...)   ::Mixture::Logging::Log::getClientLogger()->fatal(__VA_ARGS__)
+
+#else // strip logging in dist build
+
+// Core log macros
+#define MX_CORE_TRACE
+#define MX_CORE_INFO
+#define MX_CORE_WARN
+#define MX_CORE_ERROR
+#define MX_CORE_FATAL
+
+// Client log macros
+#define MX_CLIENT_TRACE
+#define MX_CLIENT_INFO
+#define MX_CLIENT_WARN
+#define MX_CLIENT_ERROR
+#define MX_CLIENT_FATAL
+
+#endif
