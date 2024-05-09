@@ -20,15 +20,30 @@ namespace Mixture {
 		
 	}
 
+	void Application::pushLayer(Layer* layer) {
+		m_LayerStack.pushLayer(layer);
+	}
+
+	void Application::pushOverlay(Layer* layer) {
+		m_LayerStack.pushOverlay(layer);
+	}
+
 	void Application::onEvent(Event& e) {
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch<WindowCloseEvent>(BIND_EVENT_FN(onWindowClose));
 
-		MX_CORE_TRACE("{0}", e.toString());
+		for (std::vector<Layer*>::iterator it = m_LayerStack.end(); it != m_LayerStack.begin(); ) {
+			(*--it)->onEvent(e);
+			if (e.handled) break;
+		}
 	}
 
 	void Application::run() {
 		while (m_Running) {
+
+			for (Layer* layer : m_LayerStack)
+				layer->onUpdate();
+
 			m_Window->onUpdate();
 		}
 	}
