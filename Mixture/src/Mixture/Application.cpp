@@ -3,7 +3,7 @@
 
 #include "Logging/Log.h"
 
-#include <glad/glad.h>
+#include "Mixture/Renderer/Renderer.h"
 
 #include "Input/Input.h"
 
@@ -141,16 +141,18 @@ namespace Mixture {
 
 	void Application::run() {
 		while (m_Running) {
-			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
+			RenderCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
+			RenderCommand::clear();
+
+			Renderer::beginScene();
 
 			m_BlueShader->bind();
-			m_SquareVA->bind();
-			glDrawElements(GL_TRIANGLES, m_SquareVA->getIndexBuffer()->getCount(), GL_UNSIGNED_INT, nullptr);
+			Renderer::submit(m_SquareVA);
 
 			m_Shader->bind();
-			m_VertexArray->bind();
-			glDrawElements(GL_TRIANGLES, m_VertexArray->getIndexBuffer()->getCount(), GL_UNSIGNED_INT, nullptr);
+			Renderer::submit(m_VertexArray);
+
+			Renderer::endScene();
 
 			for (Layer* layer : m_LayerStack)
 				layer->onUpdate();

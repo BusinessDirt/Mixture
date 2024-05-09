@@ -22,19 +22,19 @@ namespace Mixture {
 	}
 
 	void LayerStack::popLayer(Layer* layer) {
-		std::vector<Layer*>::iterator it = std::find(m_Layers.begin(), m_Layers.end(), layer);
+		std::vector<Layer*>::iterator it = std::find(m_Layers.begin(), m_Layers.begin() + m_LayerInsertIndex, layer);
 		if (it != m_Layers.end()) {
+			layer->onDetach();
 			m_Layers.erase(it);
 			m_LayerInsertIndex--;
-			layer->onDetach();
 		}
 	}
 
 	void LayerStack::popOverlay(Layer* overlay) {
-		std::vector<Layer*>::iterator it = std::find(m_Layers.begin(), m_Layers.end(), overlay);
+		std::vector<Layer*>::iterator it = std::find(m_Layers.begin() + m_LayerInsertIndex, m_Layers.end(), overlay);
 		if (it != m_Layers.end()) {
-			m_Layers.erase(it);
 			overlay->onDetach();
+			m_Layers.erase(it);
 		}
 	}
 }
