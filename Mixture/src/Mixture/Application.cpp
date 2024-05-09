@@ -28,12 +28,10 @@ namespace Mixture {
 
 	void Application::pushLayer(Layer* layer) {
 		m_LayerStack.pushLayer(layer);
-		layer->onAttach();
 	}
 
 	void Application::pushOverlay(Layer* layer) {
 		m_LayerStack.pushOverlay(layer);
-		layer->onAttach();
 	}
 
 	void Application::onEvent(Event& e) {

@@ -6,7 +6,7 @@
 #include "Mixture/Events/MouseEvent.h"
 #include "Mixture/Events/KeyEvent.h"
 
-#include <glad/glad.h>
+#include "Mixture/Platform/OpenGL/OpenGLContext.h"
 
 namespace Mixture::Window {
 
@@ -46,9 +46,10 @@ namespace Mixture::Window {
 		}
 
 		m_Window = glfwCreateWindow((int)props.width, (int)props.height, m_Data.title.c_str(), nullptr, nullptr);
-		glfwMakeContextCurrent(m_Window);
-		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-		MX_CORE_ASSERT(status, "Failed to initialize Glad!");
+
+		m_Context = new OpenGLContext(m_Window);
+		m_Context->init();
+
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		setVSync(true);
 
@@ -135,7 +136,7 @@ namespace Mixture::Window {
 
 	void WindowsWindow::onUpdate() {
 		glfwPollEvents();
-		glfwSwapBuffers(m_Window);
+		m_Context->swapBuffers();
 	}
 
 	void WindowsWindow::setVSync(bool enabled) {
