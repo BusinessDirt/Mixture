@@ -16,7 +16,6 @@ namespace Mixture {
 #define IMGUI_GETIO() ImGuiIO& io = ::ImGui::GetIO()
 
 	ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {}
-	ImGuiLayer::~ImGuiLayer() {}
 
 	void ImGuiLayer::onAttach() {
 		// Setup Dear ImGui context

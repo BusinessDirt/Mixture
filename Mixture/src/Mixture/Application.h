@@ -8,12 +8,14 @@
 #include "Mixture/ImGui/ImGuiLayer.h"
 
 #include "Mixture/Renderer/Shader.h"
+#include "Mixture/Renderer/Buffer.h"
+#include "Mixture/Renderer/VertexArray.h"
 
 namespace Mixture {
 	class Application {
 	public:
 		Application();
-		virtual ~Application();
+		virtual ~Application() = default;
 		
 		void run();
 
@@ -32,8 +34,11 @@ namespace Mixture {
 		bool m_Running = true;
 		LayerStack m_LayerStack;
 
-		unsigned int m_VertexArray, m_VertexBuffer, m_IndexBuffer;
 		std::unique_ptr<Shader> m_Shader;
+		std::unique_ptr<VertexArray> m_VertexArray;
+
+		std::unique_ptr<Shader> m_BlueShader;
+		std::unique_ptr<VertexArray> m_SquareVA;
 	private:
 		static Application* s_Instance;
 	};
