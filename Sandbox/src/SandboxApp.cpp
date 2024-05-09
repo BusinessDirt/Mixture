@@ -1,5 +1,7 @@
 #include "Mixture.h"
 
+#include "imgui.h"
+
 using namespace Mixture::Window;
 
 class ExampleLayer : public Mixture::Layer {
@@ -9,6 +11,12 @@ public:
 	void onUpdate() override {
 		if (Mixture::Input::isKeyPressed(MX_KEY_TAB))
 			MX_TRACE("Tab key is pressed (poll)!");
+	}
+
+	virtual void onImGuiRender() override {
+		ImGui::Begin("Test");
+		ImGui::Text("Hello World");
+		ImGui::End();
 	}
 
 	void onEvent(Mixture::Event& event) override {
@@ -25,7 +33,6 @@ class Sandbox : public Mixture::Application {
 public:
 	Sandbox() {
 		pushLayer(new ExampleLayer());
-		pushOverlay(new Mixture::ImGuiLayer());
 	}
 
 	~Sandbox() {

@@ -5,6 +5,8 @@
 #include "Mixture/LayerStack.h"
 #include "Mixture/Events/ApplicationEvent.h"
 
+#include "Mixture/ImGui/ImGuiLayer.h"
+
 namespace Mixture {
 	class Application {
 	public:
@@ -24,6 +26,7 @@ namespace Mixture {
 		bool onWindowClose(WindowCloseEvent& e);
 
 		std::unique_ptr<Window::Window> m_Window;
+		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
 		LayerStack m_LayerStack;
 	private:

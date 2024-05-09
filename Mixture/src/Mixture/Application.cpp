@@ -17,6 +17,9 @@ namespace Mixture {
 
 		m_Window = std::unique_ptr<Window::Window>(Window::Window::create());
 		m_Window->setEventCallback(MX_BIND_EVENT_FN(Application::onEvent));
+
+		m_ImGuiLayer = new ImGuiLayer();
+		pushOverlay(m_ImGuiLayer);
 	}
 
 	Application::~Application() {
@@ -50,6 +53,11 @@ namespace Mixture {
 
 			for (Layer* layer : m_LayerStack)
 				layer->onUpdate();
+
+			m_ImGuiLayer->begin();
+			for (Layer* layer : m_LayerStack)
+				layer->onImGuiRender();
+			m_ImGuiLayer->end();
 
 			m_Window->onUpdate();
 		}

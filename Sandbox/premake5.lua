@@ -13,7 +13,8 @@ project "Sandbox"
 
 	  -- Include Mixture
 	  "../Mixture/src",
-      "%{IncludeDir.spdlog}"
+      "%{IncludeDir.spdlog}",
+      "%{IncludeDir.ImGui}"
    }
 
    links

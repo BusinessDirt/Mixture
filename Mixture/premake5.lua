@@ -11,8 +11,8 @@ project "Mixture"
     files { 
         "src/**.h",
 		"src/**.cpp",
-		"%{wks.location}/vendor/glm/glm/**.hpp",
-		"%{wks.location}/vendor/glm/glm/**.inl"
+		--"%{wks.location}/vendor/glm/glm/**.hpp",
+		--"%{wks.location}/vendor/glm/glm/**.inl"
     }
 
     defines {
