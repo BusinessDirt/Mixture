@@ -11,7 +11,7 @@ namespace Mixture {
 
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application() {
+	Application::Application() : m_Camera(-1.6f, 1.6f, -0.9f, 0.9f) {
 		MX_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
@@ -69,13 +69,17 @@ namespace Mixture {
 			
 			layout(location = 0) in vec3 a_Position;
 			layout(location = 1) in vec4 a_Color;
+
+			uniform mat4 u_ViewProjection;
+
 			out vec3 v_Position;
 			out vec4 v_Color;
+
 			void main()
 			{
 				v_Position = a_Position;
 				v_Color = a_Color;
-				gl_Position = vec4(a_Position, 1.0);	
+				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);	
 			}
 		)";
 
@@ -83,8 +87,10 @@ namespace Mixture {
 			#version 330 core
 			
 			layout(location = 0) out vec4 color;
+
 			in vec3 v_Position;
 			in vec4 v_Color;
+
 			void main()
 			{
 				color = vec4(v_Position * 0.5 + 0.5, 1.0);
@@ -99,11 +105,14 @@ namespace Mixture {
 			#version 330 core
 			
 			layout(location = 0) in vec3 a_Position;
+
+			uniform mat4 u_ViewProjection;
+
 			out vec3 v_Position;
 			void main()
 			{
 				v_Position = a_Position;
-				gl_Position = vec4(a_Position, 1.0);	
+				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);	
 			}
 		)";
 
@@ -144,14 +153,12 @@ namespace Mixture {
 			RenderCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 			RenderCommand::clear();
 
-			Renderer::beginScene();
+			m_Camera.setPosition({ 0.5f, 0.5f, 0.0f });
+			m_Camera.setRotation(45.0f);
 
-			m_BlueShader->bind();
-			Renderer::submit(m_SquareVA);
-
-			m_Shader->bind();
-			Renderer::submit(m_VertexArray);
-
+			Renderer::beginScene(m_Camera);
+			Renderer::submit(m_BlueShader, m_SquareVA);
+			Renderer::submit(m_Shader, m_VertexArray);
 			Renderer::endScene();
 
 			for (Layer* layer : m_LayerStack)
