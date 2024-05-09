@@ -13,7 +13,7 @@ namespace Mixture {
 		
 		void run();
 
-		void onEvent(Events::Event& e);
+		void onEvent(Event& e);
 
 		void pushLayer(Layer* layer);
 		void pushOverlay(Layer* layer);
@@ -21,7 +21,7 @@ namespace Mixture {
 		inline Window::Window& getWindow() { return *m_Window; }
 		inline static Application& get() { return *s_Instance; }
 	private:
-		bool onWindowClose(Events::WindowCloseEvent& e);
+		bool onWindowClose(WindowCloseEvent& e);
 
 		std::unique_ptr<Window::Window> m_Window;
 		bool m_Running = true;

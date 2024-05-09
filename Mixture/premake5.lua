@@ -1,63 +1,69 @@
 project "Mixture"
-   kind "StaticLib"
-   language "C++"
-   cppdialect "C++20"
-   targetdir "Binaries/%{cfg.buildcfg}"
-   staticruntime "off"
+    kind "StaticLib"
+    language "C++"
+    cppdialect "C++20"
+    targetdir "Binaries/%{cfg.buildcfg}"
+    staticruntime "off"
 
-   pchheader "mxpch.h"
-   pchsource "src/mxpch.cpp"
+    pchheader "mxpch.h"
+    pchsource "src/mxpch.cpp"
 
-   files { "src/**.h", "src/**.cpp" }
+    files { 
+        "src/**.h",
+		"src/**.cpp",
+		"%{wks.location}/vendor/glm/glm/**.hpp",
+		"%{wks.location}/vendor/glm/glm/**.inl"
+    }
 
-   defines {
-       "_CRT_SECURE_NO_WARNINGS",
-       "GLFW_INCLUDE_NONE"
-   }
+    defines {
+        "_CRT_SECURE_NO_WARNINGS",
+        "GLFW_INCLUDE_NONE"
+    }
 
-   includedirs {
-      "src",
-      "%{IncludeDir.spdlog}",
-      "%{IncludeDir.GLFW}",
-      "%{IncludeDir.Glad}",
-      "%{IncludeDir.ImGui}"
-   }
+    includedirs {
+        "src",
+        "%{IncludeDir.spdlog}",
+        "%{IncludeDir.GLFW}",
+        "%{IncludeDir.Glad}",
+        "%{IncludeDir.ImGui}",
+        "%{IncludeDir.glm}"
+    }
 
-   links {
-        "GLFW",
-        "Glad",
-        "ImGui",
-        "opengl32.lib"
-   }
+    links {
+            "GLFW",
+            "Glad",
+            "ImGui",
+            "opengl32.lib"
+    }
 
-   targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
-   objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
+    targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
+    objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
-   filter "system:windows"
-       systemversion "latest"
-       defines { "MIXTURE_PLATFORM_WINDOWS" }
+    filter "system:windows"
+        systemversion "latest"
+        defines { "MIXTURE_PLATFORM_WINDOWS" }
 
-   filter "system:linux"
-       systemversion "latest"
-       defines { "MIXTURE_PLATFORM_LINUX" }
+    filter "system:linux"
+        systemversion "latest"
+        defines { "MIXTURE_PLATFORM_LINUX" }
 
-   filter "system:macosx"
-       systemversion "latest"
-       defines { "MIXTURE_PLATFORM_MACOSX" }
+    filter "system:macosx"
+        systemversion "latest"
+        defines { "MIXTURE_PLATFORM_MACOSX" }
 
-   filter "configurations:Debug"
-       defines { "MIXTURE_DEBUG" }
-       runtime "Debug"
-       symbols "On"
+    filter "configurations:Debug"
+        defines { "MIXTURE_DEBUG" }
+        runtime "Debug"
+        symbols "On"
 
-   filter "configurations:Release"
-       defines { "MIXTURE_RELEASE" }
-       runtime "Release"
-       optimize "On"
-       symbols "On"
+    filter "configurations:Release"
+        defines { "MIXTURE_RELEASE" }
+        runtime "Release"
+        optimize "On"
+        symbols "On"
 
-   filter "configurations:Dist"
-       defines { "MIXTURE_DIST" }
-       runtime "Release"
-       optimize "On"
-       symbols "Off"
+    filter "configurations:Dist"
+        defines { "MIXTURE_DIST" }
+        runtime "Release"
+        optimize "On"
+        symbols "Off"

@@ -2,7 +2,7 @@
 
 #include "Event.h"
 
-namespace Mixture::Events {
+namespace Mixture {
 	class KeyEvent : public Event {
 	public:
 		inline int getKeyCode() const { return m_KeyCode; }

@@ -58,13 +58,13 @@ namespace Mixture::Window {
 			data.width = width;
 			data.height = height;
 
-			Events::WindowResizeEvent event(width, height);
+			WindowResizeEvent event(width, height);
 			data.eventCallback(event);
 		});
 
 		glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) {
 			MX_GET_WINDOW_DATA();
-			Events::WindowCloseEvent event;
+			WindowCloseEvent event;
 			data.eventCallback(event);
 		});
 
@@ -73,17 +73,17 @@ namespace Mixture::Window {
 
 			switch (action) {
 				case GLFW_PRESS: {
-					Events::KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(key, 0);
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_RELEASE: {
-					Events::KeyReleasedEvent event(key);
+					KeyReleasedEvent event(key);
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_REPEAT: {
-					Events::KeyPressedEvent event(key, 1);
+					KeyPressedEvent event(key, 1);
 					data.eventCallback(event);
 					break;
 				}
@@ -93,7 +93,7 @@ namespace Mixture::Window {
 		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned int keycode) {
 			MX_GET_WINDOW_DATA();
 
-			Events::KeyTypedEvent event(keycode);
+			KeyTypedEvent event(keycode);
 			data.eventCallback(event);
 		});
 
@@ -102,12 +102,12 @@ namespace Mixture::Window {
 
 			switch (action) {
 				case GLFW_PRESS: {
-					Events::MouseButtonPressedEvent event(button);
+					MouseButtonPressedEvent event(button);
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_RELEASE: {
-					Events::MouseButtonReleasedEvent event(button);
+					MouseButtonReleasedEvent event(button);
 					data.eventCallback(event);
 					break;
 				}
@@ -117,14 +117,14 @@ namespace Mixture::Window {
 		glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset) {
 			MX_GET_WINDOW_DATA();
 
-			Events::MouseScrolledEvent event((float)xOffset, (float)yOffset);
+			MouseScrolledEvent event((float)xOffset, (float)yOffset);
 			data.eventCallback(event);
 		});
 
 		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos) {
 			MX_GET_WINDOW_DATA();
 
-			Events::MouseMovedEvent event((float)xPos, (float)yPos);
+			MouseMovedEvent event((float)xPos, (float)yPos);
 			data.eventCallback(event);
 		});
 	}

@@ -17,7 +17,7 @@ namespace Mixture::Window {
 	// Interface representing a desktop system based Window
 	class Window {
 	public:
-		using EventCallbackFn = std::function<void(Events::Event&)>;
+		using EventCallbackFn = std::function<void(Event&)>;
 
 		virtual ~Window() {}
 

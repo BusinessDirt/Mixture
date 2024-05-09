@@ -10,7 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
-namespace Mixture::ImGui {
+namespace Mixture {
 
 #define IMGUI_GETIO() ImGuiIO& io = ::ImGui::GetIO()
 

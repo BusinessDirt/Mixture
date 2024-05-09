@@ -3,7 +3,7 @@
 #include "mxpch.h"
 #include "Mixture/Core.h"
 
-namespace Mixture::Events {
+namespace Mixture {
 
 	enum class EventType {
 		None = 0,

@@ -6,7 +6,7 @@
 #include "Mixture/Events/KeyEvent.h"
 #include "Mixture/Events/MouseEvent.h"
 
-namespace Mixture::ImGui {
+namespace Mixture {
 	class ImGuiLayer : public Layer {
 	public:
 		ImGuiLayer();
@@ -15,16 +15,16 @@ namespace Mixture::ImGui {
 		void onAttach();
 		void onDetach();
 		void onUpdate();
-		void onEvent(Events::Event& event);
+		void onEvent(Event& event);
 	private:
-		bool onMouseButtonPressedEvent(Events::MouseButtonPressedEvent& e);
-		bool onMouseButtonReleasedEvent(Events::MouseButtonReleasedEvent& e);
-		bool onMouseMovedEvent(Events::MouseMovedEvent& e);
-		bool onMouseScrolledEvent(Events::MouseScrolledEvent& e);
-		bool onKeyPressedEvent(Events::KeyPressedEvent& e);
-		bool onKeyReleasedEvent(Events::KeyReleasedEvent& e);
-		bool onKeyTypedEvent(Events::KeyTypedEvent& e);
-		bool onWindowResizeEvent(Events::WindowResizeEvent& e);
+		bool onMouseButtonPressedEvent(MouseButtonPressedEvent& e);
+		bool onMouseButtonReleasedEvent(MouseButtonReleasedEvent& e);
+		bool onMouseMovedEvent(MouseMovedEvent& e);
+		bool onMouseScrolledEvent(MouseScrolledEvent& e);
+		bool onKeyPressedEvent(KeyPressedEvent& e);
+		bool onKeyReleasedEvent(KeyReleasedEvent& e);
+		bool onKeyTypedEvent(KeyTypedEvent& e);
+		bool onWindowResizeEvent(WindowResizeEvent& e);
 
 	private:
 		float m_Time = 0.0f;
