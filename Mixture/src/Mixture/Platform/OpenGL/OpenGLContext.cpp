@@ -1,4 +1,4 @@
-#include "mxpch.h"
+﻿#include "mxpch.h"
 #include "OpenGLContext.h"
 
 #include <GLFW/glfw3.h>
@@ -16,6 +16,11 @@ namespace Mixture {
 		glfwMakeContextCurrent(m_WindowHandle);
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		MX_CORE_ASSERT(status, "Failed to initialize Glad!");
+
+		MX_CORE_INFO("OpenGL Info:");
+		MX_CORE_INFO("|--[Vendor]    {0}", (const char*)glGetString(GL_VENDOR));
+		MX_CORE_INFO("|--[Renderer]  {0}", (const char*)glGetString(GL_RENDERER));
+		MX_CORE_INFO("+--[Version]   {0}", (const char*)glGetString(GL_VERSION));
 	}
 
 	void OpenGLContext::swapBuffers() {
