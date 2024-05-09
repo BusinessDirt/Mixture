@@ -8,6 +8,6 @@ int main(int argc, char** argv) {
 	MX_INFO("Initialized Client Log!");
 
 	Mixture::Application* app = Mixture::CreateApplication();
-	app->Run();
+	app->run();
 	delete app;
 }

@@ -62,8 +62,4 @@ namespace Mixture::Events {
 	private:
 		Event& m_Event;
 	};
-
-	inline std::ostream& operator<<(std::ostream& os, const Event& e) {
-		return os << e.toString();
-	}
 }
