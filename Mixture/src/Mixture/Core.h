@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mxpch.h"
+
 #ifdef MIXTURE_DEBUG
 	#if defined(MIXTURE_PLATFORM_WINDOWS)
 		#define MX_DEBUGBREAK() __debugbreak()

@@ -7,11 +7,17 @@ public:
 	ExampleLayer() : Layer("Example") {}
 
 	void onUpdate() override {
-		//MX_INFO("ExampleLayer::onUpdate");
+		if (Mixture::Input::isKeyPressed(MX_KEY_TAB))
+			MX_TRACE("Tab key is pressed (poll)!");
 	}
 
 	void onEvent(Mixture::Events::Event& event) override {
-		//MX_TRACE("{0}", event.toString());
+		if (event.getEventType() == Mixture::Events::EventType::KeyPressed) {
+			Mixture::Events::KeyPressedEvent& e = (Mixture::Events::KeyPressedEvent&)event;
+			if (e.getKeyCode() == MX_KEY_TAB)
+				MX_TRACE("Tab key is pressed (event)!");
+			MX_TRACE("{0}", (char)e.getKeyCode());
+		}
 	}
 };
 

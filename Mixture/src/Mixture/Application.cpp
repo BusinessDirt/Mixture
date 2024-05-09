@@ -5,6 +5,8 @@
 
 #include <glad/glad.h>
 
+#include "Input/Input.h"
+
 namespace Mixture {
 
 	using namespace Events;
