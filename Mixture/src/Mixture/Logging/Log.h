@@ -1,7 +1,6 @@
 #pragma once
 
 #include <spdlog/spdlog.h>
-#include <memory>
 
 namespace Mixture::Logging {
 	class Log {
@@ -27,11 +26,11 @@ namespace Mixture::Logging {
 #define MX_CORE_FATAL(...)     ::Mixture::Logging::Log::getCoreLogger()->fatal(__VA_ARGS__)
 
 // Client log macros
-#define MX_CLIENT_TRACE(...)   ::Mixture::Logging::Log::getClientLogger()->trace(__VA_ARGS__)
-#define MX_CLIENT_INFO(...)    ::Mixture::Logging::Log::getClientLogger()->info(__VA_ARGS__)
-#define MX_CLIENT_WARN(...)    ::Mixture::Logging::Log::getClientLogger()->warn(__VA_ARGS__)
-#define MX_CLIENT_ERROR(...)   ::Mixture::Logging::Log::getClientLogger()->error(__VA_ARGS__)
-#define MX_CLIENT_FATAL(...)   ::Mixture::Logging::Log::getClientLogger()->fatal(__VA_ARGS__)
+#define MX_TRACE(...)   ::Mixture::Logging::Log::getClientLogger()->trace(__VA_ARGS__)
+#define MX_INFO(...)    ::Mixture::Logging::Log::getClientLogger()->info(__VA_ARGS__)
+#define MX_WARN(...)    ::Mixture::Logging::Log::getClientLogger()->warn(__VA_ARGS__)
+#define MX_ERROR(...)   ::Mixture::Logging::Log::getClientLogger()->error(__VA_ARGS__)
+#define MX_FATAL(...)   ::Mixture::Logging::Log::getClientLogger()->fatal(__VA_ARGS__)
 
 #else // strip logging in dist build
 
@@ -43,10 +42,10 @@ namespace Mixture::Logging {
 #define MX_CORE_FATAL
 
 // Client log macros
-#define MX_CLIENT_TRACE
-#define MX_CLIENT_INFO
-#define MX_CLIENT_WARN
-#define MX_CLIENT_ERROR
-#define MX_CLIENT_FATAL
+#define MX_TRACE
+#define MX_INFO
+#define MX_WARN
+#define MX_ERROR
+#define MX_FATAL
 
 #endif

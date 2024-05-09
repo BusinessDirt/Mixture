@@ -5,6 +5,9 @@ project "Mixture"
    targetdir "Binaries/%{cfg.buildcfg}"
    staticruntime "off"
 
+   pchheader "mxpch.h"
+   pchsource "src/mxpch.cpp"
+
    files { "src/**.h", "src/**.cpp" }
 
    defines {
