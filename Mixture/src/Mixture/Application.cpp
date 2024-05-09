@@ -9,8 +9,6 @@
 
 namespace Mixture {
 
-	using namespace Events;
-
 	Application* Application::s_Instance = nullptr;
 
 	Application::Application() {

@@ -3,7 +3,7 @@
 extern Mixture::Application* Mixture::CreateApplication();
 
 int main(int argc, char** argv) {
-	Mixture::Logging::Log::Init();
+	Mixture::Log::Init();
 	MX_CORE_INFO("Initialized Core Log!");
 	MX_INFO("Initialized Client Log!");
 
