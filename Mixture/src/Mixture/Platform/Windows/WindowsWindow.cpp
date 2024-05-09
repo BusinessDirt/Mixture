@@ -6,6 +6,8 @@
 #include "Mixture/Events/MouseEvent.h"
 #include "Mixture/Events/KeyEvent.h"
 
+#include <glad/glad.h>
+
 namespace Mixture::Window {
 
 #define MX_GET_WINDOW_DATA() WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window)
@@ -45,6 +47,8 @@ namespace Mixture::Window {
 
 		m_Window = glfwCreateWindow((int)props.width, (int)props.height, m_Data.title.c_str(), nullptr, nullptr);
 		glfwMakeContextCurrent(m_Window);
+		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+		MX_CORE_ASSERT(status, "Failed to initialize Glad!");
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		setVSync(true);
 

@@ -7,11 +7,11 @@ public:
 	ExampleLayer() : Layer("Example") {}
 
 	void onUpdate() override {
-		MX_INFO("ExampleLayer::onUpdate");
+		//MX_INFO("ExampleLayer::onUpdate");
 	}
 
 	void onEvent(Mixture::Events::Event& event) override {
-		MX_TRACE("{0}", event.toString());
+		//MX_TRACE("{0}", event.toString());
 	}
 };
 

@@ -18,6 +18,7 @@ project "Mixture"
    includedirs {
       "src",
       "%{IncludeDir.GLFW}",
+      "%{IncludeDir.Glad}",
       "%{IncludeDir.VulkanSDK}",
       "%{IncludeDir.VulkanMemoryAllocator}",
       "%{IncludeDir.spdlog}"
@@ -25,6 +26,7 @@ project "Mixture"
 
    links {
         "GLFW",
+        "Glad",
         "%{Library.Vulkan}"
    }
 
