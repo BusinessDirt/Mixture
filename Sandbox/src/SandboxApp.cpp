@@ -19,6 +19,7 @@ class Sandbox : public Mixture::Application {
 public:
 	Sandbox() {
 		pushLayer(new ExampleLayer());
+		pushOverlay(new Mixture::ImGui::ImGuiLayer());
 	}
 
 	~Sandbox() {

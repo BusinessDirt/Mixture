@@ -9,11 +9,14 @@ namespace Mixture {
 
 	using namespace Events;
 
-#define BIND_EVENT_FN(x) std::bind(&Application::x, this, std::placeholders::_1)
+	Application* Application::s_Instance = nullptr;
 
 	Application::Application() {
+		MX_CORE_ASSERT(!s_Instance, "Application already exists!");
+		s_Instance = this;
+
 		m_Window = std::unique_ptr<Window::Window>(Window::Window::create());
-		m_Window->setEventCallback(BIND_EVENT_FN(onEvent));
+		m_Window->setEventCallback(MX_BIND_EVENT_FN(Application::onEvent));
 	}
 
 	Application::~Application() {
@@ -22,15 +25,17 @@ namespace Mixture {
 
 	void Application::pushLayer(Layer* layer) {
 		m_LayerStack.pushLayer(layer);
+		layer->onAttach();
 	}
 
 	void Application::pushOverlay(Layer* layer) {
 		m_LayerStack.pushOverlay(layer);
+		layer->onAttach();
 	}
 
 	void Application::onEvent(Event& e) {
 		EventDispatcher dispatcher(e);
-		dispatcher.dispatch<WindowCloseEvent>(BIND_EVENT_FN(onWindowClose));
+		dispatcher.dispatch<WindowCloseEvent>(MX_BIND_EVENT_FN(Application::onWindowClose));
 
 		for (std::vector<Layer*>::iterator it = m_LayerStack.end(); it != m_LayerStack.begin(); ) {
 			(*--it)->onEvent(e);
@@ -40,6 +45,8 @@ namespace Mixture {
 
 	void Application::run() {
 		while (m_Running) {
+			glClearColor(1, 0, 1, 1);
+			glClear(GL_COLOR_BUFFER_BIT);
 
 			for (Layer* layer : m_LayerStack)
 				layer->onUpdate();

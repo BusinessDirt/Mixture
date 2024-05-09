@@ -18,6 +18,7 @@ group "Dependencies"
    include "vendor/premake"
    include "vendor/glfw"
    include "vendor/glad"
+   include "vendor/imgui"
 group ""
 
 group "Core"

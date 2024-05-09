@@ -17,17 +17,17 @@ project "Mixture"
 
    includedirs {
       "src",
+      "%{IncludeDir.spdlog}",
       "%{IncludeDir.GLFW}",
       "%{IncludeDir.Glad}",
-      "%{IncludeDir.VulkanSDK}",
-      "%{IncludeDir.VulkanMemoryAllocator}",
-      "%{IncludeDir.spdlog}"
+      "%{IncludeDir.ImGui}"
    }
 
    links {
         "GLFW",
         "Glad",
-        "%{Library.Vulkan}"
+        "ImGui",
+        "opengl32.lib"
    }
 
    targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")

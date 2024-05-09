@@ -90,6 +90,13 @@ namespace Mixture::Window {
 			}
 		});
 
+		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned int keycode) {
+			MX_GET_WINDOW_DATA();
+
+			Events::KeyTypedEvent event(keycode);
+			data.eventCallback(event);
+		});
+
 		glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods) {
 			MX_GET_WINDOW_DATA();
 

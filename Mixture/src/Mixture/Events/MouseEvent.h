@@ -43,7 +43,7 @@ namespace Mixture::Events {
 
 	class MouseButtonEvent : public Event {
 	public:
-		inline int GetMouseButton() const { return m_Button; }
+		inline int getMouseButton() const { return m_Button; }
 
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 	protected:
