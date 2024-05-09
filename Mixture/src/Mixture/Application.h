@@ -1,16 +1,17 @@
 #pragma once
 
-#include "Framework/Common/Window.h"
+#include "Window.h"
 
 namespace Mixture {
 	class Application {
 	public:
-		Application(const Window::Window::Properties& properties);
+		Application();
 		virtual ~Application();
 		
 		void Run();
 	private:
-		Window::Window* m_Window;
+		std::unique_ptr<Window::Window> m_Window;
+		bool m_Running = true;
 	};
 
 	Application* CreateApplication();

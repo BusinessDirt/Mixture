@@ -12,6 +12,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "Mixture/Logging/Log.h"
+
 #ifdef MIXTURE_PLATFORM_WINDOWS
-#include <Windows.h>
+	#include <Windows.h>
 #endif
