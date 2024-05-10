@@ -10,7 +10,7 @@ Sandbox2D::Sandbox2D()
 	: Layer("Sandbox2D"), m_CameraController(1280.0f / 720.0f){}
 
 void Sandbox2D::onAttach() {
-	
+	m_CheckerboardTexture = Mixture::Texture2D::create("assets/textures/Checkerboard.png");
 }
 
 void Sandbox2D::onDetach() {
@@ -26,6 +26,8 @@ void Sandbox2D::onUpdate(Mixture::Timestep ts) {
 
 	Mixture::Renderer2D::beginScene(m_CameraController.getCamera());
 	Mixture::Renderer2D::drawQuad({ 0.0f, 0.0f }, { 1.0f, 1.0f }, { 0.8f, 0.2f, 0.3f, 1.0f });
+	Mixture::Renderer2D::drawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, m_SquareColor);
+	Mixture::Renderer2D::drawQuad({ 0.0f, 0.0f, -0.1f }, { 10.0f, 10.0f }, m_CheckerboardTexture);
 	Mixture::Renderer2D::endScene();
 }
 
