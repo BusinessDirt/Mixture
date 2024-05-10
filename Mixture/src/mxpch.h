@@ -15,6 +15,8 @@
 
 #include "Mixture/Logging/Log.h"
 
+#include "Mixture/Debug/Instrumentor.h"
+
 #ifdef MIXTURE_PLATFORM_WINDOWS
 	#include <Windows.h>
 #endif

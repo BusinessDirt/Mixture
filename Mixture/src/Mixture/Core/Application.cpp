@@ -12,6 +12,8 @@ namespace Mixture {
 	Application* Application::s_Instance = nullptr;
 
 	Application::Application() {
+		MX_PROFILE_FUNCTION();
+
 		MX_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
@@ -25,18 +27,26 @@ namespace Mixture {
 	}
 
 	Application::~Application() {
+		MX_PROFILE_FUNCTION();
+
 		Renderer::shutdown();
 	}
 
 	void Application::pushLayer(Layer* layer) {
+		MX_PROFILE_FUNCTION();
+
 		m_LayerStack.pushLayer(layer);
 	}
 
 	void Application::pushOverlay(Layer* layer) {
+		MX_PROFILE_FUNCTION();
+
 		m_LayerStack.pushOverlay(layer);
 	}
 
 	void Application::onEvent(Event& e) {
+		MX_PROFILE_FUNCTION();
+
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch<WindowCloseEvent>(MX_BIND_EVENT_FN(Application::onWindowClose));
 		dispatcher.dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(Application::onWindowResize));
@@ -48,18 +58,30 @@ namespace Mixture {
 	}
 
 	void Application::run() {
+		MX_PROFILE_FUNCTION();
+
 		while (m_Running) {
+			MX_PROFILE_SCOPE("RunLoop");
+
 			float time = (float)glfwGetTime();
 			Timestep timestep = time - m_LastFrameTime;
 			m_LastFrameTime = time;
 
-			if (!m_Minimized) 
-				for (Layer* layer : m_LayerStack) layer->onUpdate(timestep);
-
-			m_ImGuiLayer->begin();
-			for (Layer* layer : m_LayerStack)
-				layer->onImGuiRender();
-			m_ImGuiLayer->end();
+			if (!m_Minimized) {
+				{
+					MX_PROFILE_SCOPE("LayerStack onUpdate");
+					for (Layer* layer : m_LayerStack)
+						layer->onUpdate(timestep);
+				}
+				m_ImGuiLayer->begin();
+				{
+					MX_PROFILE_SCOPE("LayerStack onImGuiRender");
+					for (Layer* layer : m_LayerStack)
+						layer->onImGuiRender();
+				}
+				m_ImGuiLayer->end();
+			}
+			
 
 			m_Window->onUpdate();
 		}
@@ -71,6 +93,8 @@ namespace Mixture {
 	}
 
 	bool Application::onWindowResize(WindowResizeEvent& e) {
+		MX_PROFILE_FUNCTION();
+
 		if (e.getWidth() == 0 || e.getHeight() == 0) {
 			m_Minimized = true;
 			return false;

@@ -11,6 +11,8 @@ namespace Mixture {
 	{ }
 
 	void OrthographicCameraController::onUpdate(Timestep ts) {
+		MX_PROFILE_FUNCTION();
+
 		if (Input::isKeyPressed(MX_KEY_A)) {
 			m_CameraPosition.x -= cos(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
 			m_CameraPosition.y -= sin(glm::radians(m_CameraRotation)) * m_CameraTranslationSpeed * ts;
@@ -47,12 +49,16 @@ namespace Mixture {
 	}
 
 	void OrthographicCameraController::onEvent(Event& e) {
+		MX_PROFILE_FUNCTION();
+
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch<MouseScrolledEvent>(MX_BIND_EVENT_FN(OrthographicCameraController::onMouseScrolled));
 		dispatcher.dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(OrthographicCameraController::onWindowResized));
 	}
 
 	bool OrthographicCameraController::onMouseScrolled(MouseScrolledEvent& e) {
+		MX_PROFILE_FUNCTION();
+
 		m_ZoomLevel -= e.getYOffset() * 0.25f;
 		m_ZoomLevel = std::max(m_ZoomLevel, 0.25f);
 		m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
@@ -60,6 +66,8 @@ namespace Mixture {
 	}
 
 	bool OrthographicCameraController::onWindowResized(WindowResizeEvent& e) {
+		MX_PROFILE_FUNCTION();
+
 		m_AspectRatio = (float)e.getWidth() / (float)e.getHeight();
 		m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
 		return false;

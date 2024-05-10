@@ -17,6 +17,8 @@ namespace Mixture {
 	static Scope<Renderer2DStorage> s_Data;
 
 	void Renderer2D::init() {
+		MX_PROFILE_FUNCTION();
+
 		s_Data = createScope<Renderer2DStorage>();
 		s_Data->quadVertexArray = VertexArray::create();
 
@@ -48,15 +50,21 @@ namespace Mixture {
 	}
 
 	void Renderer2D::shutdown() {
+		MX_PROFILE_FUNCTION();
+
 		s_Data.release();
 	}
 
 	void Renderer2D::beginScene(const OrthographicCamera& camera) {
+		MX_PROFILE_FUNCTION();
+
 		s_Data->textureShader->bind();
 		s_Data->textureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
 	}
 
 	void Renderer2D::endScene() {
+		MX_PROFILE_FUNCTION();
+
 	}
 	
 	void Renderer2D::drawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color) {
@@ -64,6 +72,8 @@ namespace Mixture {
 	}
 
 	void Renderer2D::drawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color) {
+		MX_PROFILE_FUNCTION();
+
 		s_Data->textureShader->setFloat4("u_Color", color);
 		s_Data->whiteTexture->bind();
 
@@ -79,6 +89,8 @@ namespace Mixture {
 	}
 
 	void Renderer2D::drawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture>& texture) {
+		MX_PROFILE_FUNCTION();
+
 		s_Data->textureShader->setFloat4("u_Color", glm::vec4(1.0f));
 		texture->bind();
 

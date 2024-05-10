@@ -31,6 +31,8 @@ namespace Mixture {
 	}
 
 	void WindowsWindow::init(const WindowProps& props) {
+		MX_PROFILE_FUNCTION();
+
 		m_Data.title = props.title;
 		m_Data.width = props.width;
 		m_Data.height = props.height;
@@ -38,14 +40,18 @@ namespace Mixture {
 		MX_CORE_INFO("Creating window {0} ({1}, {2})", props.title, props.width, props.height);
 
 		if (s_GLFWWindowCount == 0) {
+			MX_PROFILE_SCOPE("glfwInit");
 			MX_CORE_INFO("Initializing GLFW");
 			int success = glfwInit();
 			MX_CORE_ASSERT(success, "Could not intialize GLFW!");
 			glfwSetErrorCallback(GLFWErrorCallback);
 		}
 
-		m_Window = glfwCreateWindow((int)props.width, (int)props.height, m_Data.title.c_str(), nullptr, nullptr);
-		++s_GLFWWindowCount;
+		{
+			MX_PROFILE_SCOPE("glfwCreateWindow");
+			m_Window = glfwCreateWindow((int)props.width, (int)props.height, m_Data.title.c_str(), nullptr, nullptr);
+			++s_GLFWWindowCount;
+		}
 
 		m_Context = GraphicsContext::create(m_Window);
 		m_Context->init();
@@ -131,6 +137,8 @@ namespace Mixture {
 	}
 
 	void WindowsWindow::shutdown() {
+		MX_PROFILE_FUNCTION();
+
 		glfwDestroyWindow(m_Window);
 		--s_GLFWWindowCount;
 
@@ -141,11 +149,15 @@ namespace Mixture {
 	}
 
 	void WindowsWindow::onUpdate() {
+		MX_PROFILE_FUNCTION();
+
 		glfwPollEvents();
 		m_Context->swapBuffers();
 	}
 
 	void WindowsWindow::setVSync(bool enabled) {
+		MX_PROFILE_FUNCTION();
+
 		glfwSwapInterval(enabled);
 		m_Data.vSync = enabled;
 	}
