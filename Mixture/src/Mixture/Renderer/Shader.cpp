@@ -9,7 +9,7 @@ namespace Mixture {
 	Ref<Shader> Shader::create(const std::string& filepath) {
 		switch (Renderer::getAPI()) {
 			case RendererAPI::API::None: MX_CORE_ASSERT(false, "RendererAPI:None is currently not supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return std::make_shared<OpenGLShader>(filepath);
+			case RendererAPI::API::OpenGL: return createRef<OpenGLShader>(filepath);
 		}
 
 		MX_CORE_ASSERT(false, "Unknown RendererAPI!");
@@ -19,7 +19,7 @@ namespace Mixture {
 	Ref<Shader> Shader::create(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc) {
 		switch (Renderer::getAPI()) {
 			case RendererAPI::API::None: MX_CORE_ASSERT(false, "RendererAPI:None is currently not supported!"); return nullptr;
-			case RendererAPI::API::OpenGL: return std::make_shared<OpenGLShader>(name, vertexSrc, fragmentSrc);
+			case RendererAPI::API::OpenGL: return createRef<OpenGLShader>(name, vertexSrc, fragmentSrc);
 		}
 
 		MX_CORE_ASSERT(false, "Unknown RendererAPI!");

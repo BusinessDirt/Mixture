@@ -5,7 +5,7 @@
 
 #include <GLFW/glfw3.h>
 
-namespace Mixture::Window {
+namespace Mixture {
 	class WindowsWindow : public Window {
 	public:
 		WindowsWindow(const WindowProps& props);

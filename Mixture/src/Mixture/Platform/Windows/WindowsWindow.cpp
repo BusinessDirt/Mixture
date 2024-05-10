@@ -8,18 +8,18 @@
 
 #include "Mixture/Platform/OpenGL/OpenGLContext.h"
 
-namespace Mixture::Window {
+namespace Mixture {
 
 #define MX_GET_WINDOW_DATA() WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window)
 
-	static bool s_GLFWInitialized = false;
+	static uint8_t s_GLFWWindowCount = 0;
 
 	static void GLFWErrorCallback(int error, const char* description) {
 		MX_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
-	Window* Window::create(const WindowProps& props) {
-		return new WindowsWindow(props);
+	Scope<Window> Window::create(const WindowProps& props) {
+		return createScope<WindowsWindow>(props);
 	}
 
 	WindowsWindow::WindowsWindow(const WindowProps& props) {
@@ -37,15 +37,15 @@ namespace Mixture::Window {
 
 		MX_CORE_INFO("Creating window {0} ({1}, {2})", props.title, props.width, props.height);
 
-		if (!s_GLFWInitialized) {
-			// TODO: glfwTerminate on system shutdown
+		if (s_GLFWWindowCount == 0) {
+			MX_CORE_INFO("Initializing GLFW");
 			int success = glfwInit();
 			MX_CORE_ASSERT(success, "Could not intialize GLFW!");
 			glfwSetErrorCallback(GLFWErrorCallback);
-			s_GLFWInitialized = true;
 		}
 
 		m_Window = glfwCreateWindow((int)props.width, (int)props.height, m_Data.title.c_str(), nullptr, nullptr);
+		++s_GLFWWindowCount;
 
 		m_Context = createScope<OpenGLContext>(m_Window);
 		m_Context->init();
@@ -132,6 +132,11 @@ namespace Mixture::Window {
 
 	void WindowsWindow::shutdown() {
 		glfwDestroyWindow(m_Window);
+
+		if (--s_GLFWWindowCount == 0) {
+			MX_CORE_INFO("Terminating GLFW");
+			glfwTerminate();
+		}
 	}
 
 	void WindowsWindow::onUpdate() {

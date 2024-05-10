@@ -31,7 +31,7 @@ namespace Mixture {
 		std::string name;
 		ShaderDataType type;
 		uint32_t size;
-		uint32_t offset;
+		size_t offset;
 		bool normalized;
 
 		BufferElement() = default;
@@ -74,7 +74,7 @@ namespace Mixture {
 		std::vector<BufferElement>::const_iterator end() const { return m_Elements.end(); }
 	private:
 		void calculateOffsetsAndStride() {
-			uint32_t offset = 0;
+			size_t offset = 0;
 			m_Stride = 0;
 			for (BufferElement& element : m_Elements) {
 				element.offset = offset;
@@ -98,7 +98,7 @@ namespace Mixture {
 		virtual const BufferLayout& getLayout() const = 0;
 		virtual void setLayout(const BufferLayout& layout) = 0;
 
-		static VertexBuffer* create(float* vertices, uint32_t size);
+		static Ref<VertexBuffer> create(float* vertices, uint32_t size);
 	};
 
 	class IndexBuffer {
@@ -110,6 +110,6 @@ namespace Mixture {
 
 		virtual uint32_t getCount() const = 0;
 
-		static IndexBuffer* create(uint32_t* indices, uint32_t size);
+		static Ref<IndexBuffer> create(uint32_t* indices, uint32_t size);
 	};
 }

@@ -4,7 +4,7 @@
 #include "Mixture/Core/Core.h"
 #include "Mixture/Events/Event.h"
 
-namespace Mixture::Window {
+namespace Mixture {
 	struct WindowProps {
 		std::string title;
 		unsigned int width;
@@ -33,6 +33,6 @@ namespace Mixture::Window {
 
 		virtual void* getNativeWindow() const = 0;
 
-		static Window* create(const WindowProps& props = WindowProps());
+		static Scope<Window> create(const WindowProps& props = WindowProps());
 	};
 }

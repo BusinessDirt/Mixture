@@ -16,6 +16,7 @@
 
 // Renderer
 #include "Mixture/Renderer/Renderer.h"
+#include "Mixture/Renderer/Renderer2D.h"
 #include "Mixture/Renderer/RenderCommand.h"
 
 #include "Mixture/Renderer/Buffer.h"
@@ -25,7 +26,3 @@
 
 #include "Mixture/Renderer/OrthographicCamera.h"
 // --------
-
-// Entry Point
-#include "Mixture/Core/EntryPoint.h"
-// ----------

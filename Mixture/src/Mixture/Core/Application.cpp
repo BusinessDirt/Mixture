@@ -15,7 +15,7 @@ namespace Mixture {
 		MX_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
-		m_Window = std::unique_ptr<Window::Window>(Window::Window::create());
+		m_Window = Window::create();
 		m_Window->setEventCallback(MX_BIND_EVENT_FN(Application::onEvent));
 
 		Renderer::init();
