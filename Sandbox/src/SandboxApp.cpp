@@ -92,8 +92,7 @@ public:
 			}
 		)";
 
-		m_Shader.reset(Mixture::Shader::create(vertexSrc, fragmentSrc));
-
+		m_Shader = Mixture::Shader::create("VertexPosColor", vertexSrc, fragmentSrc);
 
 		std::string flatColorShaderVertexSrc = R"(
 			#version 330 core
@@ -123,43 +122,14 @@ public:
 			}
 		)";
 
-		m_FlatColorShader.reset(Mixture::Shader::create(flatColorShaderVertexSrc, flatColorShaderFragmentSrc));
-
-		std::string textureShaderVertexSrc = R"(
-			#version 330 core
-			
-			layout(location = 0) in vec3 a_Position;
-			layout(location = 1) in vec2 a_TexCoord;
-			uniform mat4 u_ViewProjection;
-			uniform mat4 u_Transform;
-			out vec2 v_TexCoord;
-			void main()
-			{
-				v_TexCoord = a_TexCoord;
-				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);	
-			}
-		)";
-
-		std::string textureShaderFragmentSrc = R"(
-			#version 330 core
-			
-			layout(location = 0) out vec4 color;
-			in vec2 v_TexCoord;
-			
-			uniform sampler2D u_Texture;
-			void main()
-			{
-				color = texture(u_Texture, v_TexCoord);
-			}
-		)";
-
-		m_TextureShader.reset(Mixture::Shader::create(textureShaderVertexSrc, textureShaderFragmentSrc));
+		m_FlatColorShader = Mixture::Shader::create("FlatColor", flatColorShaderVertexSrc, flatColorShaderFragmentSrc);
+		Mixture::Ref<Mixture::Shader> textureShader = m_ShaderLibrary.load("assets/shaders/Texture.glsl");
 
 		m_Texture = Mixture::Texture2D::create("assets/textures/Checkerboard.png");
 		m_LogoTexture = Mixture::Texture2D::create("assets/textures/Logo.png");
 
-		std::dynamic_pointer_cast<Mixture::OpenGLShader>(m_TextureShader)->bind();
-		std::dynamic_pointer_cast<Mixture::OpenGLShader>(m_TextureShader)->uploadUniformInt("u_Texture", 0);
+		std::dynamic_pointer_cast<Mixture::OpenGLShader>(textureShader)->bind();
+		std::dynamic_pointer_cast<Mixture::OpenGLShader>(textureShader)->uploadUniformInt("u_Texture", 0);
 	}
 
 	void onUpdate(Mixture::Timestep ts) override {
@@ -199,11 +169,13 @@ public:
 			}
 		}
 
+		Mixture::Ref<Mixture::Shader> textureShader = m_ShaderLibrary.get("Texture");
+
 		m_Texture->bind();
-		Mixture::Renderer::submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		Mixture::Renderer::submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 		m_LogoTexture->bind();
-		Mixture::Renderer::submit(m_TextureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
+		Mixture::Renderer::submit(textureShader, m_SquareVA, glm::scale(glm::mat4(1.0f), glm::vec3(1.5f)));
 
 		Mixture::Renderer::endScene();
 	}
@@ -218,10 +190,11 @@ public:
 		
 	}
 private:
+	Mixture::ShaderLibrary m_ShaderLibrary;
 	Mixture::Ref<Mixture::Shader> m_Shader;
 	Mixture::Ref<Mixture::VertexArray> m_VertexArray;
 
-	Mixture::Ref<Mixture::Shader> m_FlatColorShader, m_TextureShader;
+	Mixture::Ref<Mixture::Shader> m_FlatColorShader;
 	Mixture::Ref<Mixture::VertexArray> m_SquareVA;
 
 	Mixture::Ref<Mixture::Texture> m_Texture, m_LogoTexture;

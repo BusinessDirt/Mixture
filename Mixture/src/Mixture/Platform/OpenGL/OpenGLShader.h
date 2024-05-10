@@ -3,14 +3,19 @@
 #include "Mixture/Renderer/Shader.h"
 #include <glm/glm.hpp>
 
+using GLenum = unsigned int;
+
 namespace Mixture {
 	class OpenGLShader : public Shader {
 	public:
-		OpenGLShader(const std::string& vertexSrc, const std::string& fragmentSrc);
+		OpenGLShader(const std::string& filepath);
+		OpenGLShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
 		~OpenGLShader();
 
 		void bind() const override;
 		void unbind() const override;
+
+		virtual const std::string& getName() const override { return m_Name; }
 
 		void uploadUniformInt(const std::string& name, int value);
 
@@ -22,6 +27,11 @@ namespace Mixture {
 		void uploadUniformMat3(const std::string& name, const glm::mat3& matrix);
 		void uploadUniformMat4(const std::string& name, const glm::mat4& matrix);
 	private:
+		std::string readFile(const std::string& filepath);
+		std::unordered_map<GLenum, std::string> preProcess(const std::string& source);
+		void compile(const std::unordered_map<GLenum, std::string>& shaderSource);
+	private:
 		uint32_t m_RendererID;
+		std::string m_Name;
 	};
 }
