@@ -37,6 +37,7 @@ namespace Mixture {
 	void Application::onEvent(Event& e) {
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch<WindowCloseEvent>(MX_BIND_EVENT_FN(Application::onWindowClose));
+		dispatcher.dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(Application::onWindowResize));
 
 		for (std::vector<Layer*>::iterator it = m_LayerStack.end(); it != m_LayerStack.begin(); ) {
 			(*--it)->onEvent(e);
@@ -50,8 +51,8 @@ namespace Mixture {
 			Timestep timestep = time - m_LastFrameTime;
 			m_LastFrameTime = time;
 
-			for (Layer* layer : m_LayerStack)
-				layer->onUpdate(timestep);
+			if (!m_Minimized) 
+				for (Layer* layer : m_LayerStack) layer->onUpdate(timestep);
 
 			m_ImGuiLayer->begin();
 			for (Layer* layer : m_LayerStack)
@@ -65,5 +66,17 @@ namespace Mixture {
 	bool Application::onWindowClose(WindowCloseEvent& e) {
 		m_Running = false;
 		return true;
+	}
+
+	bool Application::onWindowResize(WindowResizeEvent& e) {
+		if (e.getWidth() == 0 || e.getHeight() == 0) {
+			m_Minimized = true;
+			return false;
+		}
+
+		m_Minimized = false;
+		Renderer::onWindowResize(e.getWidth(), e.getHeight());
+
+		return false;
 	}
 }

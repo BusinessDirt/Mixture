@@ -10,6 +10,7 @@
 #include "Mixture/Input/Input.h"
 #include "Mixture/Input/KeyCodes.h"
 #include "Mixture/Input/MouseButtonCodes.h"
+#include "Mixture/Input/OrthographicCameraController.h"
 
 #include "Mixture/ImGui/ImGuiLayer.h"
 
