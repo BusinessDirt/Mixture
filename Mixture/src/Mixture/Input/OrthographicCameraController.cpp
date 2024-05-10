@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "OrthographicCameraController.h"
+#include "Mixture/Input/OrthographicCameraController.h"
 
 #include "Mixture/Input/Input.h"
 #include "Mixture/Input/KeyCodes.h"

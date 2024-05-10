@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mxpch.h"
+
 #include "Mixture/Core/Core.h"
 
 namespace Mixture {

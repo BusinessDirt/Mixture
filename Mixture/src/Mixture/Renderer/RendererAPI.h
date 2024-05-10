@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include "VertexArray.h"
+#include "Mixture/Renderer/VertexArray.h"
 
 namespace Mixture {
 	
@@ -19,9 +19,10 @@ namespace Mixture {
 		virtual void setClearColor(const glm::vec4& color) = 0;
 		virtual void clear() = 0;
 
-		virtual void drawIndexed(const std::shared_ptr<VertexArray>& vertexArray) = 0;
+		virtual void drawIndexed(const Ref<VertexArray>& vertexArray) = 0;
 
 		inline static API getAPI() { return s_API; }
+		static Scope<RendererAPI> create();
 	private:
 		static API s_API;
 	};

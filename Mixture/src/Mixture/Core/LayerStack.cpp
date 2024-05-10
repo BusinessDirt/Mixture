@@ -1,11 +1,7 @@
 #include "mxpch.h"
-#include "LayerStack.h"
+#include "Mixture/Core/LayerStack.h"
 
 namespace Mixture {
-	LayerStack::LayerStack() {
-		
-	}
-
 	LayerStack::~LayerStack() {
 		for (Layer* layer : m_Layers) {
 			layer->onDetach();

@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "OpenGLVertexArray.h"
+#include "Mixture/Platform/OpenGL/OpenGLVertexArray.h"
 
 #include <glad/glad.h>
 
@@ -8,17 +8,17 @@ namespace Mixture {
 	static GLenum shaderDataTypeToOpenGLBaseType(ShaderDataType type) {
 		switch (type)
 		{
-			case Mixture::ShaderDataType::Float:    return GL_FLOAT;
-			case Mixture::ShaderDataType::Float2:   return GL_FLOAT;
-			case Mixture::ShaderDataType::Float3:   return GL_FLOAT;
-			case Mixture::ShaderDataType::Float4:   return GL_FLOAT;
-			case Mixture::ShaderDataType::Mat3:     return GL_FLOAT;
-			case Mixture::ShaderDataType::Mat4:     return GL_FLOAT;
-			case Mixture::ShaderDataType::Int:      return GL_INT;
-			case Mixture::ShaderDataType::Int2:     return GL_INT;
-			case Mixture::ShaderDataType::Int3:     return GL_INT;
-			case Mixture::ShaderDataType::Int4:     return GL_INT;
-			case Mixture::ShaderDataType::Bool:     return GL_BOOL;
+			case ShaderDataType::Float:    return GL_FLOAT;
+			case ShaderDataType::Float2:   return GL_FLOAT;
+			case ShaderDataType::Float3:   return GL_FLOAT;
+			case ShaderDataType::Float4:   return GL_FLOAT;
+			case ShaderDataType::Mat3:     return GL_FLOAT;
+			case ShaderDataType::Mat4:     return GL_FLOAT;
+			case ShaderDataType::Int:      return GL_INT;
+			case ShaderDataType::Int2:     return GL_INT;
+			case ShaderDataType::Int3:     return GL_INT;
+			case ShaderDataType::Int4:     return GL_INT;
+			case ShaderDataType::Bool:     return GL_BOOL;
 		}
 
 		MX_CORE_ASSERT(false, "Unknown ShaderDataType!");
@@ -41,7 +41,7 @@ namespace Mixture {
 		glBindVertexArray(0);
 	}
 
-	void OpenGLVertexArray::addVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) {
+	void OpenGLVertexArray::addVertexBuffer(const Ref<VertexBuffer>& vertexBuffer) {
 		MX_CORE_ASSERT(vertexBuffer->getLayout().getElements().size(), "Vertex Buffer has no layout!");
 
 		glBindVertexArray(m_RendererID);
@@ -57,7 +57,7 @@ namespace Mixture {
 		m_VertexBuffers.push_back(vertexBuffer);
 	}
 
-	void OpenGLVertexArray::setIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) {
+	void OpenGLVertexArray::setIndexBuffer(const Ref<IndexBuffer>& indexBuffer) {
 		glBindVertexArray(m_RendererID);
 		indexBuffer->bind();
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Mixture/Core/Core.h"
+
 #include "Mixture/Core/Application.h"
 #include "Mixture/Core/Layer.h"
 #include "Mixture/Logging/Log.h"

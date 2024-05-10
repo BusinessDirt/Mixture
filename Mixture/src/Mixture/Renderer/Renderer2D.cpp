@@ -1,9 +1,9 @@
 #include "mxpch.h"
-#include "Renderer2D.h"
+#include "Mixture/Renderer/Renderer2D.h"
 
-#include "VertexArray.h"
-#include "Shader.h"
-#include "RenderCommand.h"
+#include "Mixture/Renderer/VertexArray.h"
+#include "Mixture/Renderer/Shader.h"
+#include "Mixture/Renderer/RenderCommand.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -27,8 +27,7 @@ namespace Mixture {
 			-0.5f,  0.5f, 0.0f, 0.0f, 1.0f
 		};
 
-		Ref<VertexBuffer> squareVB;
-		squareVB = VertexBuffer::create(squareVertices, sizeof(squareVertices));
+		Ref<VertexBuffer> squareVB = VertexBuffer::create(squareVertices, sizeof(squareVertices));
 		squareVB->setLayout({
 			{ ShaderDataType::Float3, "a_Position" },
 			{ ShaderDataType::Float2, "a_TexCoord" }
@@ -36,8 +35,7 @@ namespace Mixture {
 		s_Data->quadVertexArray->addVertexBuffer(squareVB);
 
 		uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
-		Ref<IndexBuffer> squareIB;
-		squareIB = IndexBuffer::create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
+		Ref<IndexBuffer> squareIB = IndexBuffer::create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t));
 		s_Data->quadVertexArray->setIndexBuffer(squareIB);
 
 		s_Data->whiteTexture = Texture2D::create(1, 1);

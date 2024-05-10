@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "OpenGLRendererAPI.h"
+#include "Mixture/Platform/OpenGL/OpenGLRendererAPI.h"
 
 #include <glad/glad.h>
 

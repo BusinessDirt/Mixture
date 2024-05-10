@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "WindowsInput.h"
+#include "Mixture/Platform/Windows/WindowsInput.h"
 
 #include "Mixture/Core/Application.h"
 

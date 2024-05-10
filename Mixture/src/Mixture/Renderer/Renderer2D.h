@@ -1,8 +1,8 @@
 #pragma once
 
-#include "OrthographicCamera.h"
+#include "Mixture/Renderer/OrthographicCamera.h"
 
-#include "Texture.h"
+#include "Mixture/Renderer/Texture.h"
 
 namespace Mixture {
 	class Renderer2D {

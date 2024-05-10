@@ -1,7 +1,7 @@
 #include "mxpch.h"
-#include "VertexArray.h"
+#include "Mixture/Renderer/VertexArray.h"
 
-#include "Renderer.h"
+#include "Mixture/Renderer/Renderer.h"
 #include "Mixture/Platform/OpenGL/OpenGLVertexArray.h"
 
 namespace Mixture {

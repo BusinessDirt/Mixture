@@ -3,7 +3,11 @@
 
 #include "Window.h"
 
+#include "Mixture/Core/Core.h"
+
+#include "Mixture/Core/Window.h"
 #include "Mixture/Core/LayerStack.h"
+#include "Mixture/Events/Event.h"
 #include "Mixture/Events/ApplicationEvent.h"
 #include "Mixture/Core/Timestep.h"
 
@@ -13,7 +17,7 @@ namespace Mixture {
 	class Application {
 	public:
 		Application();
-		virtual ~Application() = default;
+		virtual ~Application();
 		
 		void run();
 

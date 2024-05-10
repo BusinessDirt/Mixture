@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "WindowsWindow.h"
+#include "Mixture/Platform/Windows/WindowsWindow.h"
 
 #include "Mixture/Core/Core.h"
 #include "Mixture/Events/ApplicationEvent.h"
@@ -47,7 +47,7 @@ namespace Mixture {
 		m_Window = glfwCreateWindow((int)props.width, (int)props.height, m_Data.title.c_str(), nullptr, nullptr);
 		++s_GLFWWindowCount;
 
-		m_Context = createScope<OpenGLContext>(m_Window);
+		m_Context = GraphicsContext::create(m_Window);
 		m_Context->init();
 
 		glfwSetWindowUserPointer(m_Window, &m_Data);
@@ -132,8 +132,9 @@ namespace Mixture {
 
 	void WindowsWindow::shutdown() {
 		glfwDestroyWindow(m_Window);
+		--s_GLFWWindowCount;
 
-		if (--s_GLFWWindowCount == 0) {
+		if (s_GLFWWindowCount == 0) {
 			MX_CORE_INFO("Terminating GLFW");
 			glfwTerminate();
 		}

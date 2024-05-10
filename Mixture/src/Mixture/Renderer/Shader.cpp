@@ -1,7 +1,7 @@
 #include "mxpch.h"
-#include "Shader.h"
+#include "Mixture/Renderer/Shader.h"
 
-#include "Renderer.h"
+#include "Mixture/Renderer/Renderer.h"
 #include "Mixture/Platform/OpenGL/OpenGLShader.h"
 
 namespace Mixture {

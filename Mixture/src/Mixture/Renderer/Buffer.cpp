@@ -1,9 +1,7 @@
 #include "mxpch.h"
-#include "Buffer.h"
+#include "Mixture/Renderer/Buffer.h"
 
-#include "Mixture/Core/Core.h"
-
-#include "Renderer.h"
+#include "Mixture/Renderer/Renderer.h"
 
 #include "Mixture/Platform/OpenGL/OpenGLBuffer.h"
 

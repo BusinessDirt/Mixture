@@ -1,5 +1,6 @@
 #include "mxpch.h"
-#include "Renderer.h"
+#include "Mixture/Renderer/Renderer.h"
+#include "Mixture/Renderer/Renderer2D.h"
 
 #include "Mixture/Platform/OpenGL/OpenGLShader.h"
 #include "Renderer2D.h"
@@ -11,6 +12,10 @@ namespace Mixture {
 	void Renderer::init() {
 		RenderCommand::init();
 		Renderer2D::init();
+	}
+
+	void Renderer::shutdown() {
+		Renderer2D::shutdown();
 	}
 
 	void Renderer::onWindowResize(uint32_t width, uint32_t height) {
@@ -27,8 +32,8 @@ namespace Mixture {
 	void Renderer::submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray,
 		const glm::mat4& transform) {
 		shader->bind();
-		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_ViewProjection", s_SceneData->viewProjectionMatrix);
-		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_Transform", transform);
+		shader->setMat4("u_ViewProjection", s_SceneData->viewProjectionMatrix);
+		shader->setMat4("u_Transform", transform);
 
 		vertexArray->bind();
 		RenderCommand::drawIndexed(vertexArray);

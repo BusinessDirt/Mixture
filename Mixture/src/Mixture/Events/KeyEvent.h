@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Event.h"
+#include "Mixture/Events/Event.h"
 
 namespace Mixture {
 	class KeyEvent : public Event {

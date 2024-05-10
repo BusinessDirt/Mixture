@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "Application.h"
+#include "Mixture/Core/Application.h"
 
 #include "Mixture/Logging/Log.h"
 #include "Mixture/Renderer/Renderer.h"
@@ -22,6 +22,10 @@ namespace Mixture {
 
 		m_ImGuiLayer = new ImGuiLayer();
 		pushOverlay(m_ImGuiLayer);
+	}
+
+	Application::~Application() {
+		Renderer::shutdown();
 	}
 
 	void Application::pushLayer(Layer* layer) {

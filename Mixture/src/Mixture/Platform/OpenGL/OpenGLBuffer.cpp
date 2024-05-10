@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "OpenGLBuffer.h"
+#include "Mixture/Platform/OpenGL/OpenGLBuffer.h"
 
 #include <glad/glad.h>
 

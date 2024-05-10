@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Mixture/Core/Core.h"
-#include "Layer.h"
+#include "Mixture/Core/Layer.h"
 
 #include <vector>
 
 namespace Mixture {
 	class LayerStack {
 	public:
-		LayerStack();
+		LayerStack() = default;
 		~LayerStack();
 
 		void pushLayer(Layer* layer);

@@ -1,10 +1,8 @@
 #include "mxpch.h"
-#include "RenderCommand.h"
-
-#include "Mixture/Platform/OpenGL/OpenGLRendererAPI.h"
+#include "Mixture/Renderer/RenderCommand.h"
 
 namespace Mixture {
 
-	Scope<RendererAPI> RenderCommand::s_RendererAPI = createScope<OpenGLRendererAPI>();
+	Scope<RendererAPI> RenderCommand::s_RendererAPI = RendererAPI::create();
 
 }

@@ -1,7 +1,7 @@
 #include "mxpch.h"
-#include "Texture.h"
+#include "Mixture/Renderer/Texture.h"
 
-#include "Renderer.h"
+#include "Mixture/Renderer/Renderer.h"
 #include "Mixture/Platform/OpenGL/OpenGLTexture.h"
 
 namespace Mixture {
