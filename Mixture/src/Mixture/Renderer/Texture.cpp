@@ -1,0 +1,18 @@
+#include "mxpch.h"
+#include "Texture.h"
+
+#include "Renderer.h"
+#include "Mixture/Platform/OpenGL/OpenGLTexture.h"
+
+namespace Mixture {
+
+	Ref<Texture2D> Texture2D::create(const std::string& path) {
+		switch (Renderer::getAPI()) {
+			case RendererAPI::API::None:    MX_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
+			case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLTexture2D>(path);
+		}
+
+		MX_CORE_ASSERT(false, "Unknown RendererAPI!");
+		return nullptr;
+	}
+}

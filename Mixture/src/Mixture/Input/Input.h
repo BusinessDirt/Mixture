@@ -4,7 +4,12 @@
 
 namespace Mixture {
 	class Input {
+	protected:
+		Input() = default;
 	public:
+		Input(const Input&) = delete;
+		Input& operator=(const Input&) = delete;
+
 		inline static bool isKeyPressed(int keycode) { return s_Instance->isKeyPressedImpl(keycode); }
 		inline static bool isMouseButtonPressed(int button) { return s_Instance->isMouseButtonPressedImpl(button); }
 		inline static std::pair<float, float> getMousePosition() { return s_Instance->getMousePositionImpl(); }

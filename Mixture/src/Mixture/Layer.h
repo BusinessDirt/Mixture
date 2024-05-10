@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mixture/Core.h"
+#include "Mixture/Core/Timestep.h"
 #include "Mixture/Events/Event.h"
 
 namespace Mixture {
@@ -12,7 +13,7 @@ namespace Mixture {
 
 		virtual void onAttach() {}
 		virtual void onDetach() {}
-		virtual void onUpdate() {}
+		virtual void onUpdate(Timestep ts) {}
 		virtual void onImGuiRender() {}
 		virtual void onEvent(Event& event) {}
 

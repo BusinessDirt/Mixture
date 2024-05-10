@@ -47,13 +47,12 @@ namespace Mixture {
 		glBindVertexArray(m_RendererID);
 		vertexBuffer->bind();
 
-		uint32_t index = 0;
 		const BufferLayout& layout = vertexBuffer->getLayout();
 		for (const auto& element : layout) {
-			glEnableVertexAttribArray(index);
-			glVertexAttribPointer(index, element.getComponentCount(), shaderDataTypeToOpenGLBaseType(element.type),
+			glEnableVertexAttribArray(m_VertexBufferIndex);
+			glVertexAttribPointer(m_VertexBufferIndex, element.getComponentCount(), shaderDataTypeToOpenGLBaseType(element.type),
 				element.normalized ? GL_TRUE : GL_FALSE, layout.getStride(), (const void*)element.offset);
-			index++;
+			m_VertexBufferIndex++;
 		}
 		m_VertexBuffers.push_back(vertexBuffer);
 	}

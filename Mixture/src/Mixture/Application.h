@@ -5,13 +5,9 @@
 #include "Mixture/LayerStack.h"
 #include "Mixture/Events/ApplicationEvent.h"
 
+#include "Mixture/Core/Timestep.h"
+
 #include "Mixture/ImGui/ImGuiLayer.h"
-
-#include "Mixture/Renderer/Shader.h"
-#include "Mixture/Renderer/Buffer.h"
-#include "Mixture/Renderer/VertexArray.h"
-
-#include "Mixture/Renderer/OrthographicCamera.h"
 
 namespace Mixture {
 	class Application {
@@ -31,18 +27,13 @@ namespace Mixture {
 	private:
 		bool onWindowClose(WindowCloseEvent& e);
 
+	private:
 		std::unique_ptr<Window::Window> m_Window;
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
 		LayerStack m_LayerStack;
+		float m_LastFrameTime = 0.0f;
 
-		std::shared_ptr<Shader> m_Shader;
-		std::shared_ptr<VertexArray> m_VertexArray;
-
-		std::shared_ptr<Shader> m_BlueShader;
-		std::shared_ptr<VertexArray> m_SquareVA;
-
-		OrthographicCamera m_Camera;
 	private:
 		static Application* s_Instance;
 	};

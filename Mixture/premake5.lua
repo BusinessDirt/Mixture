@@ -11,8 +11,8 @@ project "Mixture"
     files { 
         "src/**.h",
 		"src/**.cpp",
-		--"%{wks.location}/vendor/glm/glm/**.hpp",
-		--"%{wks.location}/vendor/glm/glm/**.inl"
+		"%{wks.location}/vendor/stb_image/**.h",
+		"%{wks.location}/vendor/stb_image/**.cpp"
     }
 
     defines {
@@ -26,7 +26,8 @@ project "Mixture"
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.Glad}",
         "%{IncludeDir.ImGui}",
-        "%{IncludeDir.glm}"
+        "%{IncludeDir.glm}",
+        "%{IncludeDir.stb_image}"
     }
 
     links {

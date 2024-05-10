@@ -1,9 +1,15 @@
 #include "mxpch.h"
 #include "Renderer.h"
 
+#include "Mixture/Platform/OpenGL/OpenGLShader.h"
+
 namespace Mixture {
 
 	Renderer::SceneData* Renderer::s_SceneData = new Renderer::SceneData;
+
+	void Renderer::init() {
+		RenderCommand::init();
+	}
 
 	void Renderer::beginScene(OrthographicCamera& camera) {
 		s_SceneData->viewProjectionMatrix = camera.getViewProjectionMatrix();
@@ -12,9 +18,11 @@ namespace Mixture {
 	void Renderer::endScene() {
 	}
 
-	void Renderer::submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray) {
+	void Renderer::submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray,
+		const glm::mat4& transform) {
 		shader->bind();
-		shader->uploadUniformMat4("u_ViewProjection", s_SceneData->viewProjectionMatrix);
+		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_ViewProjection", s_SceneData->viewProjectionMatrix);
+		std::dynamic_pointer_cast<OpenGLShader>(shader)->uploadUniformMat4("u_Transform", transform);
 
 		vertexArray->bind();
 		RenderCommand::drawIndexed(vertexArray);
