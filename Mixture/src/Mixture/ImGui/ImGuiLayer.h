@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Layer.h"
+#include "Mixture/Core/Layer.h"
 
 #include "Mixture/Events/ApplicationEvent.h"
 #include "Mixture/Events/KeyEvent.h"

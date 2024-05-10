@@ -26,7 +26,7 @@ namespace Mixture {
 			s_RendererAPI->drawIndexed(vertexArray);
 		}
 	private:
-		static RendererAPI* s_RendererAPI;
+		static Scope<RendererAPI> s_RendererAPI;
 	};
 
 }

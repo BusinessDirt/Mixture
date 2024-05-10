@@ -1,7 +1,7 @@
 #include "mxpch.h"
 #include "WindowsWindow.h"
 
-#include "Mixture/Core.h"
+#include "Mixture/Core/Core.h"
 #include "Mixture/Events/ApplicationEvent.h"
 #include "Mixture/Events/MouseEvent.h"
 #include "Mixture/Events/KeyEvent.h"
@@ -47,7 +47,7 @@ namespace Mixture::Window {
 
 		m_Window = glfwCreateWindow((int)props.width, (int)props.height, m_Data.title.c_str(), nullptr, nullptr);
 
-		m_Context = new OpenGLContext(m_Window);
+		m_Context = createScope<OpenGLContext>(m_Window);
 		m_Context->init();
 
 		glfwSetWindowUserPointer(m_Window, &m_Data);

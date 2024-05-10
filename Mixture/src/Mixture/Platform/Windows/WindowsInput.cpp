@@ -1,11 +1,12 @@
 #include "mxpch.h"
 #include "WindowsInput.h"
 
-#include "Mixture/Application.h"
+#include "Mixture/Core/Application.h"
+
 #include <GLFW/glfw3.h>
 
 namespace Mixture {
-	Input* Input::s_Instance = new WindowsInput();
+	Scope<Input> Input::s_Instance = createScope<WindowsInput>();
 
 	bool WindowsInput::isKeyPressedImpl(int keycode) {
 		GLFWwindow* window = static_cast<GLFWwindow*>(Application::get().getWindow().getNativeWindow());

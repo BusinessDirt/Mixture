@@ -2,9 +2,9 @@
 
 
 #include "Window.h"
-#include "Mixture/LayerStack.h"
-#include "Mixture/Events/ApplicationEvent.h"
 
+#include "Mixture/Core/LayerStack.h"
+#include "Mixture/Events/ApplicationEvent.h"
 #include "Mixture/Core/Timestep.h"
 
 #include "Mixture/ImGui/ImGuiLayer.h"

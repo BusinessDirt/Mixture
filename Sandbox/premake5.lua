@@ -28,29 +28,26 @@ project "Sandbox"
 
    filter "system:windows"
        systemversion "latest"
-       defines { "MIXTURE_PLATFORM_WINDOWS" }
 
    filter "system:linux"
        systemversion "latest"
-       defines { "MIXTURE_PLATFORM_LINUX" }
 
    filter "system:macosx"
        systemversion "latest"
-       defines { "MIXTURE_PLATFORM_MACOSX" }
 
    filter "configurations:Debug"
-       defines { "MIXTURE_DEBUG" }
+       defines { "MX_DEBUG" }
        runtime "Debug"
        symbols "On"
 
    filter "configurations:Release"
-       defines { "MIXTURE_RELEASE" }
+       defines { "MX_RELEASE" }
        runtime "Release"
        optimize "On"
        symbols "On"
 
    filter "configurations:Dist"
-       defines { "MIXTURE_DIST" }
+       defines { "MX_DIST" }
        runtime "Release"
        optimize "On"
        symbols "Off"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Core.h"
+#include "Mixture/Core/Core.h"
 
 namespace Mixture {
 	class Input {
@@ -22,6 +22,6 @@ namespace Mixture {
 		virtual float getMouseXImpl() = 0;
 		virtual float getMouseYImpl() = 0;
 	private:
-		static Input* s_Instance;
+		static Scope<Input> s_Instance;
 	};
 }

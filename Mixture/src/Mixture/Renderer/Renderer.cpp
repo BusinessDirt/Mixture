@@ -5,7 +5,7 @@
 
 namespace Mixture {
 
-	Renderer::SceneData* Renderer::s_SceneData = new Renderer::SceneData;
+	Scope<Renderer::SceneData> Renderer::s_SceneData = createScope<Renderer::SceneData>();
 
 	void Renderer::init() {
 		RenderCommand::init();

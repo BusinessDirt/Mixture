@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Core.h"
+#include "Mixture/Core/Core.h"
 #include "Mixture/Core/Timestep.h"
 #include "Mixture/Events/Event.h"
 

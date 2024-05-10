@@ -1,7 +1,7 @@
 #include "mxpch.h"
 #include "OpenGLShader.h"
 
-#include "Mixture/Core.h"
+#include "Mixture/Core/Core.h"
 
 #include <fstream>
 #include <glad/glad.h>
@@ -73,8 +73,11 @@ namespace Mixture {
 			MX_CORE_ASSERT(shaderTypeFromString(type), "Invalid shader type specified");
 
 			size_t nextLinePos = source.find_first_not_of("\r\n", eol);
+
+			MX_CORE_ASSERT(nextLinePos != std::string::npos, "Syntax error");
 			pos = source.find(typeToken, nextLinePos);
-			shaderSources[shaderTypeFromString(type)] = source.substr(nextLinePos, pos - (nextLinePos == std::string::npos ? source.size() - 1 : nextLinePos));
+
+			shaderSources[shaderTypeFromString(type)] = (pos == std::string::npos) ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
 		}
 
 		return shaderSources;
@@ -143,8 +146,10 @@ namespace Mixture {
 			return;
 		}
 
-		for (auto id : glShaderIDs)
+		for (auto id : glShaderIDs) {
 			glDetachShader(program, id);
+			glDeleteShader(id);
+		}
 	}
 
 	void OpenGLShader::bind() const {

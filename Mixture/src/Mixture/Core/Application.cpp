@@ -1,11 +1,9 @@
 #include "mxpch.h"
 #include "Application.h"
 
-#include "Logging/Log.h"
-
+#include "Mixture/Logging/Log.h"
 #include "Mixture/Renderer/Renderer.h"
-
-#include "Input/Input.h"
+#include "Mixture/Input/Input.h"
 
 #include <GLFW/glfw3.h>
 

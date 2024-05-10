@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mxpch.h"
-#include "Mixture/Core.h"
+#include "Mixture/Core/Core.h"
 #include "Mixture/Events/Event.h"
 
 namespace Mixture::Window {

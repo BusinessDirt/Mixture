@@ -5,6 +5,6 @@
 
 namespace Mixture {
 
-	RendererAPI* RenderCommand::s_RendererAPI = new OpenGLRendererAPI;
+	Scope<RendererAPI> RenderCommand::s_RendererAPI = createScope<OpenGLRendererAPI>();
 
 }

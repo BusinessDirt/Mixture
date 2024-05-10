@@ -1,7 +1,7 @@
 #include "mxpch.h"
 #include "Buffer.h"
 
-#include "Mixture/Core.h"
+#include "Mixture/Core/Core.h"
 
 #include "Renderer.h"
 

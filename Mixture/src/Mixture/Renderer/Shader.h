@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Core.h"
+#include "Mixture/Core/Core.h"
 #include <string>
 
 namespace Mixture {

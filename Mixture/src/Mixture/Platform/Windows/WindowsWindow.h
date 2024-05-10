@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Window.h"
+#include "Mixture/Core/Window.h"
 #include "Mixture/Renderer/GraphicsContext.h"
 
 #include <GLFW/glfw3.h>
@@ -27,7 +27,7 @@ namespace Mixture::Window {
 		virtual void shutdown();
 	private:
 		GLFWwindow* m_Window;
-		GraphicsContext* m_Context;
+		Scope<GraphicsContext> m_Context;
 
 		struct WindowData {
 			std::string title;

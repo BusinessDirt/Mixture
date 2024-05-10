@@ -24,6 +24,6 @@ namespace Mixture {
 			glm::mat4 viewProjectionMatrix;
 		};
 
-		static SceneData* s_SceneData;
+		static Scope<SceneData> s_SceneData;
 	};
 }

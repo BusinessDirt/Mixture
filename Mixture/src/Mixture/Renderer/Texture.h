@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Mixture/Core.h"
+#include "Mixture/Core/Core.h"
 
 namespace Mixture {
 

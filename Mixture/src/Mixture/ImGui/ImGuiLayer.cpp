@@ -5,7 +5,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include "Mixture/Application.h"
+#include "Mixture/Core/Application.h"
 
 // TEMPORARY
 #include <GLFW/glfw3.h>

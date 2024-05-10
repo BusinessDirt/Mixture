@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Mixture/Application.h"
-#include "Mixture/Layer.h"
+#include "Mixture/Core/Application.h"
+#include "Mixture/Core/Layer.h"
 #include "Mixture/Logging/Log.h"
 
 #include "Mixture/Core/Timestep.h"
@@ -27,5 +27,5 @@
 // --------
 
 // Entry Point
-#include "Mixture/EntryPoint.h"
+#include "Mixture/Core/EntryPoint.h"
 // ----------
