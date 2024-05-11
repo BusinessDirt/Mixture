@@ -2,9 +2,12 @@
 #include "Mixture/Platform/Windows/WindowsWindow.h"
 
 #include "Mixture/Core/Core.h"
+#include "Mixture/Input/Input.h"
 #include "Mixture/Events/ApplicationEvent.h"
 #include "Mixture/Events/MouseEvent.h"
 #include "Mixture/Events/KeyEvent.h"
+
+#include "Mixture/Renderer/Renderer.h"
 
 #include "Mixture/Platform/OpenGL/OpenGLContext.h"
 
@@ -16,10 +19,6 @@ namespace Mixture {
 
 	static void GLFWErrorCallback(int error, const char* description) {
 		MX_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
-	}
-
-	Scope<Window> Window::create(const WindowProps& props) {
-		return createScope<WindowsWindow>(props);
 	}
 
 	WindowsWindow::WindowsWindow(const WindowProps& props) {
@@ -50,6 +49,10 @@ namespace Mixture {
 		{
 			MX_PROFILE_SCOPE("glfwCreateWindow");
 			m_Window = glfwCreateWindow((int)props.width, (int)props.height, m_Data.title.c_str(), nullptr, nullptr);
+#if defined(MX_DEBUG)
+			if (Renderer::getAPI() == RendererAPI::API::OpenGL)
+				glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
 			++s_GLFWWindowCount;
 		}
 
@@ -80,17 +83,17 @@ namespace Mixture {
 
 			switch (action) {
 				case GLFW_PRESS: {
-					KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(static_cast<KeyCode>(key), 0);
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_RELEASE: {
-					KeyReleasedEvent event(key);
+					KeyReleasedEvent event(static_cast<KeyCode>(key));
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_REPEAT: {
-					KeyPressedEvent event(key, 1);
+					KeyPressedEvent event(static_cast<KeyCode>(key), 1);
 					data.eventCallback(event);
 					break;
 				}
@@ -100,7 +103,7 @@ namespace Mixture {
 		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned int keycode) {
 			MX_GET_WINDOW_DATA();
 
-			KeyTypedEvent event(keycode);
+			KeyTypedEvent event(static_cast<KeyCode>(keycode));
 			data.eventCallback(event);
 		});
 
@@ -109,12 +112,12 @@ namespace Mixture {
 
 			switch (action) {
 				case GLFW_PRESS: {
-					MouseButtonPressedEvent event(button);
+					MouseButtonPressedEvent event(static_cast<MouseCode>(button));
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_RELEASE: {
-					MouseButtonReleasedEvent event(button);
+					MouseButtonReleasedEvent event(static_cast<MouseCode>(button));
 					data.eventCallback(event);
 					break;
 				}

@@ -5,8 +5,27 @@
 
 namespace Mixture {
 
+	void openGLMessageCallback(unsigned source, unsigned type, unsigned id, unsigned severity, int length, const char* message, const void* userParam) {
+		switch (severity) {
+			case GL_DEBUG_SEVERITY_HIGH: MX_CORE_CRITICAL(message); return;
+			case GL_DEBUG_SEVERITY_MEDIUM: MX_CORE_ERROR(message); return;
+			case GL_DEBUG_SEVERITY_LOW: MX_CORE_WARN(message); return;
+			case GL_DEBUG_SEVERITY_NOTIFICATION: MX_CORE_INFO(message); return;
+		}
+
+		MX_CORE_ASSERT(false, "Unknown severity level!");
+	}
+
 	void OpenGLRendererAPI::init() {
 		MX_PROFILE_FUNCTION();
+
+#ifdef MX_DEBUG
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(openGLMessageCallback, nullptr);
+
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
+#endif
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

@@ -51,8 +51,8 @@ namespace Mixture {
 		dispatcher.dispatch<WindowCloseEvent>(MX_BIND_EVENT_FN(Application::onWindowClose));
 		dispatcher.dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(Application::onWindowResize));
 
-		for (std::vector<Layer*>::iterator it = m_LayerStack.end(); it != m_LayerStack.begin(); ) {
-			(*--it)->onEvent(e);
+		for (std::vector<Layer*>::reverse_iterator it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it) {
+			(*it)->onEvent(e);
 			if (e.handled) break;
 		}
 	}

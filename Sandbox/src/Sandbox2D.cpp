@@ -34,9 +34,9 @@ void Sandbox2D::onUpdate(Mixture::Timestep ts) {
 	{
 		MX_PROFILE_SCOPE("Renderer Draw");
 		Mixture::Renderer2D::beginScene(m_CameraController.getCamera());
-		Mixture::Renderer2D::drawQuad({ 0.0f, 0.0f }, { 1.0f, 1.0f }, { 0.8f, 0.2f, 0.3f, 1.0f });
+		Mixture::Renderer2D::drawRotatedQuad({ 0.0f, 0.0f }, { 1.0f, 1.0f }, glm::radians(-45.0f), { 0.8f, 0.2f, 0.3f, 1.0f });
 		Mixture::Renderer2D::drawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, m_SquareColor);
-		Mixture::Renderer2D::drawQuad({ 0.0f, 0.0f, -0.1f }, { 10.0f, 10.0f }, m_CheckerboardTexture);
+		Mixture::Renderer2D::drawQuad({ 0.0f, 0.0f, -0.1f }, { 10.0f, 10.0f }, m_CheckerboardTexture, 10.0f);
 		Mixture::Renderer2D::endScene();
 	}
 }

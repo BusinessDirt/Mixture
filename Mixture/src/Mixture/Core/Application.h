@@ -13,13 +13,14 @@
 
 #include "Mixture/ImGui/ImGuiLayer.h"
 
+int main(int argc, char** argv);
+
 namespace Mixture {
 	class Application {
 	public:
 		Application();
 		virtual ~Application();
 		
-		void run();
 
 		void onEvent(Event& e);
 
@@ -29,6 +30,7 @@ namespace Mixture {
 		inline Window& getWindow() { return *m_Window; }
 		inline static Application& get() { return *s_Instance; }
 	private:
+		void run();
 		bool onWindowClose(WindowCloseEvent& e);
 		bool onWindowResize(WindowResizeEvent& e);
 	private:
@@ -41,6 +43,7 @@ namespace Mixture {
 
 	private:
 		static Application* s_Instance;
+		friend int ::main(int argc, char** argv);
 	};
 
 	Application* CreateApplication();

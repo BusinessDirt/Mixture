@@ -3,7 +3,7 @@ include "./vendor/premake/customizations/solution_items.lua"
 include "Dependencies.lua"
 
 workspace "Mixture"
-   architecture "x64"
+   architecture "x86_64"
    configurations { "Debug", "Release", "Dist" }
    startproject "Sandbox"
    flags { "MultiProcessorCompile" }

@@ -6,17 +6,15 @@
 #include <GLFW/glfw3.h>
 
 namespace Mixture {
-	Scope<Input> Input::s_Instance = createScope<WindowsInput>();
-
-	bool WindowsInput::isKeyPressedImpl(int keycode) {
+	bool WindowsInput::isKeyPressedImpl(KeyCode keycode) {
 		GLFWwindow* window = static_cast<GLFWwindow*>(Application::get().getWindow().getNativeWindow());
-		int state = glfwGetKey(window, keycode);
+		int state = glfwGetKey(window, static_cast<int32_t>(keycode));
 		return state == GLFW_PRESS || state == GLFW_REPEAT;
 	}
 
-	bool WindowsInput::isMouseButtonPressedImpl(int button) {
+	bool WindowsInput::isMouseButtonPressedImpl(MouseCode button) {
 		GLFWwindow* window = static_cast<GLFWwindow*>(Application::get().getWindow().getNativeWindow());
-		int state = glfwGetMouseButton(window, button);
+		int state = glfwGetMouseButton(window, static_cast<int32_t>(button));
 		return state == GLFW_PRESS;
 	}
 

@@ -68,35 +68,52 @@ namespace Mixture {
 	}
 	
 	void Renderer2D::drawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color) {
-		drawQuad({ position.x, position.y, 0.0f }, size, color);
+		drawQuad({ position.x, position.y, 0.0f }, size, 0.0f, s_Data->whiteTexture, 1.0f, color);
 	}
 
 	void Renderer2D::drawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color) {
-		MX_PROFILE_FUNCTION();
+		drawQuad(position, size, 0.0f, s_Data->whiteTexture, 1.0f, color);
+	}
 
+	void Renderer2D::drawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<Texture>& texture, 
+		float tilingFactor, const glm::vec4& tintColor) {
+		drawQuad({ position.x, position.y, 0.0f }, size, 0.0f, texture, tilingFactor, tintColor);
+	}
+
+	void Renderer2D::drawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture>& texture,
+		float tilingFactor, const glm::vec4& tintColor) {
+		drawQuad(position, size, 0.0f, texture, tilingFactor, tintColor);
+	}
+	
+	void Renderer2D::drawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color) {
+		drawQuad({ position.x, position.y, 0.0f }, size, rotation, s_Data->whiteTexture, 1.0f, color);
+	}
+	
+	void Renderer2D::drawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color) {
+		drawQuad(position, size, rotation, s_Data->whiteTexture, 1.0f, color);
+	}
+	
+	void Renderer2D::drawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture>& texture, 
+		float tilingFactor, const glm::vec4& tintColor) {
+		drawQuad({ position.x, position.y, 0.0f }, size, rotation, texture, tilingFactor, tintColor);
+	}
+	void Renderer2D::drawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture>& texture, 
+		float tilingFactor, const glm::vec4& tintColor) {
+		drawQuad(position, size, rotation, texture, tilingFactor, tintColor);
+	}
+
+	inline void Renderer2D::drawQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture>& texture, 
+		float tilingFactor, const glm::vec4& color) {
+		MX_PROFILE_FUNCTION();
 		s_Data->textureShader->setFloat4("u_Color", color);
-		s_Data->whiteTexture->bind();
-
-		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
-		s_Data->textureShader->setMat4("u_Transform", transform);
-
-		s_Data->quadVertexArray->bind();
-		RenderCommand::drawIndexed(s_Data->quadVertexArray);
-	}
-
-	void Renderer2D::drawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<Texture>& texture) {
-		drawQuad({ position.x, position.y, 0.0f }, size, texture);
-	}
-
-	void Renderer2D::drawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture>& texture) {
-		MX_PROFILE_FUNCTION();
-
-		s_Data->textureShader->setFloat4("u_Color", glm::vec4(1.0f));
+		s_Data->textureShader->setFloat("u_TilingFactor", tilingFactor);
 		texture->bind();
 
-		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
-		s_Data->textureShader->setMat4("u_Transform", transform);
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position);
+		if (rotation) transform *= glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f });
+		transform *= glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
+		s_Data->textureShader->setMat4("u_Transform", transform);
 		s_Data->quadVertexArray->bind();
 		RenderCommand::drawIndexed(s_Data->quadVertexArray);
 	}

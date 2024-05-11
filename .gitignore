@@ -38,5 +38,6 @@ xcuserdata/
 # Directories
 Scripts/**/__pycache__
 
-#imgui
+#files
 imgui.ini
+*.log
