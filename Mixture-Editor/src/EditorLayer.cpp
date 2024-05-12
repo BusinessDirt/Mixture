@@ -11,12 +11,26 @@ namespace Mixture {
 	void EditorLayer::onAttach() {
 		MX_PROFILE_FUNCTION();
 
-		m_CheckerboardTexture = Mixture::Texture2D::create("assets/textures/Checkerboard.png");
+		m_CheckerboardTexture = Texture2D::create("assets/textures/Checkerboard.png");
 
-		Mixture::FramebufferSpecification fbSpec;
+		FramebufferSpecification fbSpec;
 		fbSpec.width = 1280;
 		fbSpec.height = 720;
-		m_Framebuffer = Mixture::Framebuffer::create(fbSpec);
+		m_Framebuffer = Framebuffer::create(fbSpec);
+
+		m_ActiveScene = createRef<Scene>();
+
+		Entity square = m_ActiveScene->createEntity("Green square");
+		square.addComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+
+		m_SquareEntity = square;
+
+		m_CameraEntity = m_ActiveScene->createEntity("Camera Entity");
+		m_CameraEntity.addComponent<CameraComponent>();
+
+		m_SecondCamera = m_ActiveScene->createEntity("Clip-Space Entity");
+		auto& cc = m_SecondCamera.addComponent<CameraComponent>();
+		cc.primary = false;
 	}
 
 	void EditorLayer::onDetach() {
@@ -30,8 +44,11 @@ namespace Mixture {
 		if (Mixture::FramebufferSpecification spec = m_Framebuffer->getSpecification();
 			m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f &&
 			(spec.width != m_ViewportSize.x || spec.height != m_ViewportSize.y)) {
+			
 			m_Framebuffer->resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			m_CameraController.onResize(m_ViewportSize.x, m_ViewportSize.y);
+
+			m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
 
 		// Update
@@ -39,37 +56,15 @@ namespace Mixture {
 			m_CameraController.onUpdate(ts);
 
 		// Render
-		Mixture::Renderer2D::resetStats();
-		{
-			MX_PROFILE_SCOPE("Renderer Prep");
-			m_Framebuffer->bind();
-			Mixture::RenderCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1 });
-			Mixture::RenderCommand::clear();
-		}
-
-		{
-			static float rotation = 0.0f;
-			rotation += ts * 50.0f;
-
-			MX_PROFILE_SCOPE("Renderer Draw");
-			Mixture::Renderer2D::beginScene(m_CameraController.getCamera());
-			Mixture::Renderer2D::drawRotatedQuad({ 1.0f, 0.0f }, { 0.8f, 0.8f }, -45.0f, { 0.8f, 0.2f, 0.3f, 1.0f });
-			Mixture::Renderer2D::drawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
-			Mixture::Renderer2D::drawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, m_SquareColor);
-			Mixture::Renderer2D::drawQuad({ 0.0f, 0.0f, -0.1f }, { 20.0f, 20.0f }, m_CheckerboardTexture, 10.0f);
-			Mixture::Renderer2D::drawRotatedQuad({ -2.0f, 0.0f, 0.0f }, { 1.0f, 1.0f }, rotation, m_CheckerboardTexture, 20.0f);
-			Mixture::Renderer2D::endScene();
-
-			Mixture::Renderer2D::beginScene(m_CameraController.getCamera());
-			for (float y = -5.0f; y < 5.0f; y += 0.5f) {
-				for (float x = -5.0f; x < 5.0f; x += 0.5f) {
-					glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
-					Mixture::Renderer2D::drawQuad({ x, y }, { 0.45f, 0.45f }, color);
-				}
-			}
-			Mixture::Renderer2D::endScene();
-			m_Framebuffer->unbind();
-		}
+		Renderer2D::resetStats();
+		m_Framebuffer->bind();
+		RenderCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1 });
+		RenderCommand::clear();
+		
+		Renderer2D::beginScene(m_CameraController.getCamera());
+		m_ActiveScene->onUpdate(ts);
+		Renderer2D::endScene();
+		m_Framebuffer->unbind();
 	}
 
 	void EditorLayer::onImGuiRender() {
@@ -143,7 +138,31 @@ namespace Mixture {
 		ImGui::Text("Vertices: %d", stats.getTotalVertexCount());
 		ImGui::Text("Indices: %d", stats.getTotalIndexCount());
 
-		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
+		if (m_SquareEntity) {
+			ImGui::Separator();
+			auto& tag = m_SquareEntity.getComponent<TagComponent>().tag;
+			ImGui::Text("%s", tag.c_str());
+
+			glm::vec4& squareColor = m_SquareEntity.getComponent<SpriteRendererComponent>().color;
+
+			ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
+			ImGui::Separator();
+		}
+
+		ImGui::DragFloat3("Camera Transform", glm::value_ptr(m_CameraEntity.getComponent<TransformComponent>().transform[3]));
+
+		if (ImGui::Checkbox("Camera A", &m_PrimaryCamera)) {
+			m_CameraEntity.getComponent<CameraComponent>().primary = m_PrimaryCamera;
+			m_SecondCamera.getComponent<CameraComponent>().primary = !m_PrimaryCamera;
+		}
+
+		{
+			auto& camera = m_SecondCamera.getComponent<CameraComponent>().camera;
+			float orthoSize = camera.getOrthographicSize();
+			if (ImGui::DragFloat("Second Camera Ortho Size", &orthoSize))
+				camera.setOrthographicSize(orthoSize);
+		}
+
 		ImGui::End();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });

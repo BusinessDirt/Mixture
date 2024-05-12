@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "Mixture/Platform/Windows/WindowsWindow.h"
+#include "Platform/Windows/WindowsWindow.h"
 
 #include "Mixture/Core/Base.h"
 #include "Mixture/Input/Input.h"
@@ -9,7 +9,7 @@
 
 #include "Mixture/Renderer/Renderer.h"
 
-#include "Mixture/Platform/OpenGL/OpenGLContext.h"
+#include "Platform/OpenGL/OpenGLContext.h"
 
 namespace Mixture {
 

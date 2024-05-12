@@ -2,7 +2,7 @@
 #include "Mixture/Renderer/Texture.h"
 
 #include "Mixture/Renderer/Renderer.h"
-#include "Mixture/Platform/OpenGL/OpenGLTexture.h"
+#include "Platform/OpenGL/OpenGLTexture.h"
 
 namespace Mixture {
 	

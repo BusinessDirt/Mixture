@@ -2,7 +2,7 @@
 #include "Mixture/Renderer/GraphicsContext.h"
 
 #include "Mixture/Renderer/Renderer.h"
-#include "Mixture/Platform/OpenGL/OpenGLContext.h"
+#include "Platform/OpenGL/OpenGLContext.h"
 
 namespace Mixture {
 	Scope<GraphicsContext> GraphicsContext::create(void* window) {

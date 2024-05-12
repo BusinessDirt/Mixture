@@ -2,7 +2,7 @@
 #include "Mixture/Renderer/VertexArray.h"
 
 #include "Mixture/Renderer/Renderer.h"
-#include "Mixture/Platform/OpenGL/OpenGLVertexArray.h"
+#include "Platform/OpenGL/OpenGLVertexArray.h"
 
 namespace Mixture {
 

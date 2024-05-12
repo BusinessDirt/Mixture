@@ -1,5 +1,5 @@
 #include "mxpch.h"
-#include "Mixture/Platform/OpenGL/OpenGLShader.h"
+#include "Platform/OpenGL/OpenGLShader.h"
 
 #include "Mixture/Core/Base.h"
 

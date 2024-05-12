@@ -16,6 +16,10 @@
 
 #include "Mixture/ImGui/ImGuiLayer.h"
 
+#include "Mixture/Scene/Scene.h"
+#include "Mixture/Scene/Entity.h"
+#include "Mixture/Scene/Components.h"
+
 // Renderer
 #include "Mixture/Renderer/Renderer.h"
 #include "Mixture/Renderer/Renderer2D.h"

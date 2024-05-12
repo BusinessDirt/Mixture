@@ -24,7 +24,8 @@ namespace Mixture {
 
 	class Instrumentor {
 	public:
-		Instrumentor() : m_CurrentSession(nullptr) {}
+		Instrumentor(const Instrumentor&) = delete;
+		Instrumentor(Instrumentor&&) = delete;
 
 		void beginSession(const std::string& name, const std::string& filepath = "results.json") {
 			std::lock_guard lock(m_Mutex);
@@ -79,6 +80,9 @@ namespace Mixture {
 			return instance;
 		}
 	private:
+		Instrumentor() : m_CurrentSession(nullptr) {}
+		~Instrumentor() { endSession(); }
+
 		void writeHeader() {
 			m_OutputStream << "{\"otherData\": {}, \"traceEvents\":[{}";
 			m_OutputStream.flush();
@@ -103,7 +107,6 @@ namespace Mixture {
 		std::mutex m_Mutex;
 		InstrumentationSession* m_CurrentSession;
 		std::ofstream m_OutputStream;
-		int m_ProfileCount;
 	};
 
 	class InstrumentationTimer {
@@ -183,8 +186,9 @@ namespace Mixture {
 
 	#define MX_PROFILE_BEGIN_SESSION(name, filepath) ::Mixture::Instrumentor::get().beginSession(name, filepath)
 	#define MX_PROFILE_END_SESSION() ::Mixture::Instrumentor::get().endSession()
-	#define MX_PROFILE_SCOPE(name) constexpr auto fixedName = ::Mixture::InstrumentorUtils::cleanupOutputString(name, "__cdecl");\
-											::Mixture::InstrumentationTimer timer##__LINE__(fixedName.Data)
+	#define MX_PROFILE_SCOPE_LINE(name, line) constexpr auto fixedName##line = ::Mixture::InstrumentorUtils::cleanupOutputString(name, "__cdecl");\
+											::Mixture::InstrumentationTimer timer##line(fixedName##line.Data)
+	#define MX_PROFILE_SCOPE(name) MX_PROFILE_SCOPE_LINE(name, __LINE__)
 	#define MX_PROFILE_FUNCTION() MX_PROFILE_SCOPE(MX_FUNC_SIG)
 #else
 	#define MX_PROFILE_BEGIN_SESSION(name, filepath)

@@ -2,7 +2,7 @@
 #include "Mixture/Core/Window.h"
 
 #ifdef MX_PLATFORM_WINDOWS
-	#include "Mixture/Platform/Windows/WindowsWindow.h"
+	#include "Platform/Windows/WindowsWindow.h"
 #endif
 
 namespace Mixture {

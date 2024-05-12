@@ -7,6 +7,7 @@ IncludeDir["Glad"] = "%{wks.location}/vendor/glad/include"
 IncludeDir["ImGui"] = "%{wks.location}/vendor/imgui"
 IncludeDir["glm"] = "%{wks.location}/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/vendor/stb_image"
+IncludeDir["entt"] = "%{wks.location}/vendor/entt/include"
 
 LibraryDir = {}
 

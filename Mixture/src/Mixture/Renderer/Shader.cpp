@@ -2,7 +2,7 @@
 #include "Mixture/Renderer/Shader.h"
 
 #include "Mixture/Renderer/Renderer.h"
-#include "Mixture/Platform/OpenGL/OpenGLShader.h"
+#include "Platform/OpenGL/OpenGLShader.h"
 
 namespace Mixture {
 

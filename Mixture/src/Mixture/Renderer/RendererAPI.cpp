@@ -1,7 +1,7 @@
 #include "mxpch.h"
 #include "Mixture/Renderer/RendererAPI.h"
 
-#include "Mixture/Platform/OpenGL/OpenGLRendererAPI.h"
+#include "Platform/OpenGL/OpenGLRendererAPI.h"
 
 namespace Mixture {
 

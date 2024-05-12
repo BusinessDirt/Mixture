@@ -3,7 +3,7 @@
 
 #include "Mixture/Renderer/Renderer.h"
 
-#include "Mixture/Platform/OpenGL/OpenGLFramebuffer.h"
+#include "Platform/OpenGL/OpenGLFramebuffer.h"
 
 namespace Mixture {
     Ref<Framebuffer> Framebuffer::create(const FramebufferSpecification& spec) {

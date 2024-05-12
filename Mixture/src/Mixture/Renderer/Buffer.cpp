@@ -3,7 +3,7 @@
 
 #include "Mixture/Renderer/Renderer.h"
 
-#include "Mixture/Platform/OpenGL/OpenGLBuffer.h"
+#include "Platform/OpenGL/OpenGLBuffer.h"
 
 namespace Mixture {
 
