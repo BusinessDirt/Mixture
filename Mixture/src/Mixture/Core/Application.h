@@ -29,6 +29,8 @@ namespace Mixture {
 
 		void close();
 
+		ImGuiLayer* getImGuiLayer() { return m_ImGuiLayer; }
+
 		Window& getWindow() { return *m_Window; }
 		static Application& get() { return *s_Instance; }
 	private:

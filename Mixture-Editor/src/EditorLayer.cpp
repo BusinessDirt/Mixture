@@ -26,8 +26,17 @@ namespace Mixture {
 	void EditorLayer::onUpdate(Timestep ts) {
 		MX_PROFILE_FUNCTION();
 
+		// Resize
+		if (Mixture::FramebufferSpecification spec = m_Framebuffer->getSpecification();
+			m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f &&
+			(spec.width != m_ViewportSize.x || spec.height != m_ViewportSize.y)) {
+			m_Framebuffer->resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_CameraController.onResize(m_ViewportSize.x, m_ViewportSize.y);
+		}
+
 		// Update
-		m_CameraController.onUpdate(ts);
+		if (m_ViewportFocused)
+			m_CameraController.onUpdate(ts);
 
 		// Render
 		Mixture::Renderer2D::resetStats();
@@ -139,14 +148,17 @@ namespace Mixture {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		ImGui::Begin("Viewport");
+
+		m_ViewportFocused = ImGui::IsWindowFocused();
+		m_ViewportHovered = ImGui::IsWindowHovered();
+		Application::get().getImGuiLayer()->blockEvents(!m_ViewportFocused || !m_ViewportHovered);
+
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-		if (m_ViewportSize != *((glm::vec2*)&viewportPanelSize)) {
-			m_Framebuffer->resize((uint32_t)viewportPanelSize.x, (uint32_t)viewportPanelSize.y);
-			m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
-			m_CameraController.onResize(viewportPanelSize.x, viewportPanelSize.y);
-		}
+		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+
 		uint32_t textureID = m_Framebuffer->getColorAttachmentRendererID();
 		ImGui::Image((void*)textureID, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
 		ImGui::End();
 		ImGui::PopStyleVar();
 
