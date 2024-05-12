@@ -3,7 +3,7 @@
 
 #include "Window.h"
 
-#include "Mixture/Core/Core.h"
+#include "Mixture/Core/Base.h"
 
 #include "Mixture/Core/Window.h"
 #include "Mixture/Core/LayerStack.h"
@@ -27,8 +27,10 @@ namespace Mixture {
 		void pushLayer(Layer* layer);
 		void pushOverlay(Layer* layer);
 
-		inline Window& getWindow() { return *m_Window; }
-		inline static Application& get() { return *s_Instance; }
+		void close();
+
+		Window& getWindow() { return *m_Window; }
+		static Application& get() { return *s_Instance; }
 	private:
 		void run();
 		bool onWindowClose(WindowCloseEvent& e);

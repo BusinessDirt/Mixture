@@ -1,7 +1,7 @@
 #include "mxpch.h"
 #include "Mixture/Platform/Windows/WindowsWindow.h"
 
-#include "Mixture/Core/Core.h"
+#include "Mixture/Core/Base.h"
 #include "Mixture/Input/Input.h"
 #include "Mixture/Events/ApplicationEvent.h"
 #include "Mixture/Events/MouseEvent.h"
@@ -42,7 +42,7 @@ namespace Mixture {
 			MX_PROFILE_SCOPE("glfwInit");
 			MX_CORE_INFO("Initializing GLFW");
 			int success = glfwInit();
-			MX_CORE_ASSERT(success, "Could not intialize GLFW!");
+			MX_CORE_ASSERT(success, "Could not initialize GLFW!");
 			glfwSetErrorCallback(GLFWErrorCallback);
 		}
 

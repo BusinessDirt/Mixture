@@ -5,7 +5,7 @@
 #include <glad/glad.h>
 #include <gl/GL.h>
 
-#include "Mixture/Core/Core.h"
+#include "Mixture/Core/Base.h"
 
 namespace Mixture {
 	OpenGLContext::OpenGLContext(GLFWwindow* windowHandle) : m_WindowHandle(windowHandle) {

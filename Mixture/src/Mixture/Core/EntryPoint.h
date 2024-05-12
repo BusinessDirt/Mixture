@@ -1,5 +1,5 @@
 #pragma once
-#include "Mixture/Core/Core.h"
+#include "Mixture/Core/Base.h"
 
 extern Mixture::Application* Mixture::CreateApplication();
 

@@ -44,6 +44,10 @@ namespace Mixture {
 		m_LayerStack.pushOverlay(layer);
 	}
 
+	void Application::close() {
+		m_Running = false;
+	}
+
 	void Application::onEvent(Event& e) {
 		MX_PROFILE_FUNCTION();
 
@@ -52,8 +56,8 @@ namespace Mixture {
 		dispatcher.dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(Application::onWindowResize));
 
 		for (std::vector<Layer*>::reverse_iterator it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it) {
-			(*it)->onEvent(e);
 			if (e.handled) break;
+			(*it)->onEvent(e);
 		}
 	}
 

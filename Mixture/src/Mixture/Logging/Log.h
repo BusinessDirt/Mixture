@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Core/Core.h"
+#include "Mixture/Core/Base.h"
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
@@ -10,8 +10,8 @@ namespace Mixture {
 	public:
 		static void Init();
 		
-		inline static Ref<spdlog::logger>& getCoreLogger() { return s_CoreLogger; }
-		inline static Ref<spdlog::logger>& getClientLogger() { return s_ClientLogger; }
+		static Ref<spdlog::logger>& getCoreLogger() { return s_CoreLogger; }
+		static Ref<spdlog::logger>& getClientLogger() { return s_ClientLogger; }
 
 	private:
 		static Ref<spdlog::logger> s_CoreLogger;

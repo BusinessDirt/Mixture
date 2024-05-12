@@ -6,24 +6,24 @@ namespace Mixture {
 
 	class RenderCommand {
 	public:
-		inline static void init() {
+		static void init() {
 			s_RendererAPI->init();
 		}
 
-		inline static void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+		static void setViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
 			s_RendererAPI->setViewport(x, y, width, height);
 		}
 
-		inline static void setClearColor(const glm::vec4& color) {
+		static void setClearColor(const glm::vec4& color) {
 			s_RendererAPI->setClearColor(color);
 		}
 
-		inline static void clear() {
+		static void clear() {
 			s_RendererAPI->clear();
 		}
 
-		inline static void drawIndexed(const Ref<VertexArray>& vertexArray) {
-			s_RendererAPI->drawIndexed(vertexArray);
+		static void drawIndexed(const Ref<VertexArray>& vertexArray, uint32_t count = 0) {
+			s_RendererAPI->drawIndexed(vertexArray, count);
 		}
 	private:
 		static Scope<RendererAPI> s_RendererAPI;

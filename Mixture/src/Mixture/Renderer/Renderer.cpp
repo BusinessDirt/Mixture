@@ -31,7 +31,7 @@ namespace Mixture {
 	void Renderer::endScene() {
 	}
 
-	void Renderer::submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray,
+	void Renderer::submit(const Ref<Shader>& shader, const Ref<VertexArray>& vertexArray,
 		const glm::mat4& transform) {
 		shader->bind();
 		shader->setMat4("u_ViewProjection", s_SceneData->viewProjectionMatrix);

@@ -59,10 +59,39 @@ namespace Mixture {
 
 		const BufferLayout& layout = vertexBuffer->getLayout();
 		for (const auto& element : layout) {
-			glEnableVertexAttribArray(m_VertexBufferIndex);
-			glVertexAttribPointer(m_VertexBufferIndex, element.getComponentCount(), shaderDataTypeToOpenGLBaseType(element.type),
-				element.normalized ? GL_TRUE : GL_FALSE, layout.getStride(), (const void*)element.offset);
-			m_VertexBufferIndex++;
+
+			switch (element.type) {
+				case ShaderDataType::Float:
+				case ShaderDataType::Float2:
+				case ShaderDataType::Float3:
+				case ShaderDataType::Float4:
+				case ShaderDataType::Int:
+				case ShaderDataType::Int2:
+				case ShaderDataType::Int3:
+				case ShaderDataType::Int4:
+				case ShaderDataType::Bool: 
+				{
+					glEnableVertexAttribArray(m_VertexBufferIndex);
+					glVertexAttribPointer(m_VertexBufferIndex, element.getComponentCount(), shaderDataTypeToOpenGLBaseType(element.type),
+						element.normalized ? GL_TRUE : GL_FALSE, layout.getStride(), (const void*)element.offset);
+					m_VertexBufferIndex++;
+					break;
+				}
+				case ShaderDataType::Mat3:
+				case ShaderDataType::Mat4:
+				{
+					uint8_t count = element.getComponentCount();
+					for (uint8_t i = 0; i < count; i++) {
+						glEnableVertexAttribArray(m_VertexBufferIndex);
+						glVertexAttribPointer(m_VertexBufferIndex, count, shaderDataTypeToOpenGLBaseType(element.type),
+							element.normalized ? GL_TRUE : GL_FALSE, layout.getStride(), (const void*)(sizeof(float) * count * i));
+						glVertexAttribDivisor(m_VertexBufferIndex, 1);
+						m_VertexBufferIndex++;
+					}
+				}
+				default:
+					MX_CORE_ASSERT(false, "Unknown ShaderDataType!");
+			}
 		}
 		m_VertexBuffers.push_back(vertexBuffer);
 	}

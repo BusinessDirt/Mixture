@@ -2,7 +2,7 @@
 
 #include "mxpch.h"
 
-#include "Mixture/Core/Core.h"
+#include "Mixture/Core/Base.h"
 
 namespace Mixture {
 
@@ -38,7 +38,7 @@ namespace Mixture {
 		virtual int getCategoryFlags() const = 0;
 		virtual std::string toString() const { return getName(); }
 
-		inline bool isInCategory(EventCategory category) {
+		bool isInCategory(EventCategory category) {
 			return getCategoryFlags() & category;
 		}
 	};

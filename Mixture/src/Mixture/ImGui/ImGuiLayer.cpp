@@ -58,6 +58,12 @@ namespace Mixture {
 		ImGui::DestroyContext();
 	}
 
+	void ImGuiLayer::onEvent(Event& e) {
+		ImGuiIO& io = ImGui::GetIO();
+		e.handled |= e.isInCategory(EventCategoryMouse) & io.WantCaptureMouse;
+		e.handled |= e.isInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+	}
+
 	void ImGuiLayer::begin() {
 		MX_PROFILE_FUNCTION();
 

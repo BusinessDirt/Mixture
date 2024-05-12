@@ -19,7 +19,7 @@ namespace Mixture {
 
 		static void submit(const Ref<Shader>& shader, const Ref<VertexArray>& vertexArray, const glm::mat4& transform);
 
-		inline static RendererAPI::API getAPI() { return RendererAPI::getAPI(); }
+		static RendererAPI::API getAPI() { return RendererAPI::getAPI(); }
 	private:
 		struct SceneData {
 			glm::mat4 viewProjectionMatrix;
