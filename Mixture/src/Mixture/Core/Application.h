@@ -18,7 +18,7 @@ int main(int argc, char** argv);
 namespace Mixture {
 	class Application {
 	public:
-		Application();
+		Application(const std::string& name = "Mixture App");
 		virtual ~Application();
 		
 

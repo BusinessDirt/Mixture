@@ -26,3 +26,4 @@ group "Core"
 group ""
 
 include "Sandbox/premake5.lua"
+include "Mixture-Editor/premake5.lua"

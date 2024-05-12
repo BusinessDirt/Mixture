@@ -11,13 +11,13 @@ namespace Mixture {
 
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application() {
+	Application::Application(const std::string& name) {
 		MX_PROFILE_FUNCTION();
 
 		MX_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
-		m_Window = Window::create();
+		m_Window = Window::create(WindowProps(name));
 		m_Window->setEventCallback(MX_BIND_EVENT_FN(Application::onEvent));
 
 		Renderer::init();

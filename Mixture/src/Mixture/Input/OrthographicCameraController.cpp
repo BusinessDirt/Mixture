@@ -56,6 +56,11 @@ namespace Mixture {
 		dispatcher.dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(OrthographicCameraController::onWindowResized));
 	}
 
+	void OrthographicCameraController::onResize(float width, float height) {
+		m_AspectRatio = width / height;
+		m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+	}
+
 	bool OrthographicCameraController::onMouseScrolled(MouseScrolledEvent& e) {
 		MX_PROFILE_FUNCTION();
 
@@ -68,8 +73,7 @@ namespace Mixture {
 	bool OrthographicCameraController::onWindowResized(WindowResizeEvent& e) {
 		MX_PROFILE_FUNCTION();
 
-		m_AspectRatio = (float)e.getWidth() / (float)e.getHeight();
-		m_Camera.setProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+		onResize((float)e.getWidth(), (float)e.getHeight());
 		return false;
 	}
 }

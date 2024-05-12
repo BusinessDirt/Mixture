@@ -23,6 +23,7 @@
 
 #include "Mixture/Renderer/Buffer.h"
 #include "Mixture/Renderer/Shader.h"
+#include "Mixture/Renderer/Framebuffer.h"
 #include "Mixture/Renderer/Texture.h"
 #include "Mixture/Renderer/VertexArray.h"
 
