@@ -84,7 +84,7 @@ namespace Mixture {
 					for (uint8_t i = 0; i < count; i++) {
 						glEnableVertexAttribArray(m_VertexBufferIndex);
 						glVertexAttribPointer(m_VertexBufferIndex, count, shaderDataTypeToOpenGLBaseType(element.type),
-							element.normalized ? GL_TRUE : GL_FALSE, layout.getStride(), (const void*)(sizeof(float) * count * i));
+							element.normalized ? GL_TRUE : GL_FALSE, layout.getStride(), (const void*)(element.offset + sizeof(float) * count * i));
 						glVertexAttribDivisor(m_VertexBufferIndex, 1);
 						m_VertexBufferIndex++;
 					}

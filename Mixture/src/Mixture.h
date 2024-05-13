@@ -5,7 +5,7 @@
 #include "Mixture/Core/Application.h"
 #include "Mixture/Core/Layer.h"
 #include "Mixture/Logging/Log.h"
-
+#include "Mixture/Debug/Instrumentor.h"
 #include "Mixture/Core/Timestep.h"
 
 // Input
@@ -18,6 +18,7 @@
 
 #include "Mixture/Scene/Scene.h"
 #include "Mixture/Scene/Entity.h"
+#include "Mixture/Scene/ScriptableEntity.h"
 #include "Mixture/Scene/Components.h"
 
 // Renderer

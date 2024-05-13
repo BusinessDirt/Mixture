@@ -10,14 +10,6 @@
 
 namespace Mixture {
 
-	static void doMath(const glm::mat4& transform) {
-
-	}
-
-	static void onTransformConstruct(entt::registry& registry, entt::entity entity) {
-
-	}
-
 	Scene::Scene() {
 		
 	}
@@ -35,13 +27,26 @@ namespace Mixture {
 	}
 
 	void Scene::onUpdate(Timestep ts) {
+
+		{
+			m_Registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc) {
+				if (!nsc.instance) {
+					nsc.instance = nsc.instantiateScript();
+					nsc.instance->m_Entity = Entity{ entity, this };
+					nsc.instance->onCreate();
+				}
+
+				nsc.instance->onUpdate(ts);
+			});
+		}
+
 		Camera* mainCamera = nullptr;
 		glm::mat4* cameraTransform = nullptr;
 		{
 			auto view = m_Registry.view<TransformComponent, CameraComponent>();
 
 			for (auto entity : view) {
-				const auto& [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
+				auto [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
 
 				if (camera.primary) {
 					mainCamera = &camera.camera;
@@ -56,7 +61,7 @@ namespace Mixture {
 
 			auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
 			for (auto entity : group) {
-				const auto& [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
 
 				Renderer2D::drawQuad(transform, sprite.color);
 			}

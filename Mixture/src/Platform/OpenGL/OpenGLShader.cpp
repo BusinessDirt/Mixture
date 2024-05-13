@@ -53,7 +53,7 @@ namespace Mixture {
 		MX_PROFILE_FUNCTION();
 
 		std::string result;
-		std::ifstream in(filepath, std::ios::in | std::ios::binary);
+		std::ifstream in(filepath, std::ios::in | std::ios::binary); // ifstream closes itself due to RAII
 		if (in) {
 			in.seekg(0, std::ios::end);
 			size_t size = in.tellg();
@@ -61,7 +61,6 @@ namespace Mixture {
 				result.resize(size);
 				in.seekg(0, std::ios::beg);
 				in.read(&result[0], size);
-				in.close();
 			} else MX_CORE_ERROR("Could not read from file '{0}'", filepath);
 			
 		} else MX_CORE_ERROR("Could not open file '{0}'", filepath);

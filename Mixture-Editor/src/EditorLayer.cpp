@@ -31,6 +31,33 @@ namespace Mixture {
 		m_SecondCamera = m_ActiveScene->createEntity("Clip-Space Entity");
 		auto& cc = m_SecondCamera.addComponent<CameraComponent>();
 		cc.primary = false;
+
+		class CameraController : public ScriptableEntity {
+		public:
+			void onCreate() {
+				auto& transform = getComponent<TransformComponent>().transform;
+				transform[3][0] = rand() % 10 - 5.0f;
+			}
+
+			void onDestroy() {}
+
+			void onUpdate(Timestep ts) {
+				auto& transform = getComponent<TransformComponent>().transform;
+				float speed = 5.0f;
+
+				if (Input::isKeyPressed(Key::A))
+					transform[3][0] -= speed * ts;
+				if (Input::isKeyPressed(Key::D))
+					transform[3][0] += speed * ts;
+				if (Input::isKeyPressed(Key::W))
+					transform[3][1] += speed * ts;
+				if (Input::isKeyPressed(Key::S))
+					transform[3][1] -= speed * ts;
+			}
+		};
+
+		m_CameraEntity.addComponent<NativeScriptComponent>().bind<CameraController>();
+		m_SecondCamera.addComponent<NativeScriptComponent>().bind<CameraController>();
 	}
 
 	void EditorLayer::onDetach() {
@@ -175,8 +202,8 @@ namespace Mixture {
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
-		uint32_t textureID = m_Framebuffer->getColorAttachmentRendererID();
-		ImGui::Image((void*)textureID, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		uint64_t textureID = m_Framebuffer->getColorAttachmentRendererID();
+		ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 
 		ImGui::End();
 		ImGui::PopStyleVar();

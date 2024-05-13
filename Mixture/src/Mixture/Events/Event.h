@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mxpch.h"
+#include <functional>
 
 #include "Mixture/Core/Base.h"
 

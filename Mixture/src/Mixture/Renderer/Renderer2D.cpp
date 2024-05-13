@@ -173,7 +173,7 @@ namespace Mixture {
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		drawQuad(transform, texture, tilingFactor);
+		drawQuad(transform, texture, tilingFactor, tintColor);
 	}
 
 	void Renderer2D::drawQuad(const glm::mat4& transform, const glm::vec4& color) {
@@ -212,7 +212,7 @@ namespace Mixture {
 
 		float textureIndex = 0.0f;
 		for (uint32_t i = 1; i < s_Data.textureSlotIndex; i++) {
-			if (*s_Data.textureSlots[i].get() == *texture.get()) {
+			if (*s_Data.textureSlots[i] == *texture) {
 				textureIndex = (float)i;
 				break;
 			}

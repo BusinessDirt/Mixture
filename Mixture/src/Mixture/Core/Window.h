@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mxpch.h"
+#include <sstream>
 #include "Mixture/Core/Base.h"
 #include "Mixture/Events/Event.h"
 

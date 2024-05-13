@@ -83,17 +83,17 @@ namespace Mixture {
 
 			switch (action) {
 				case GLFW_PRESS: {
-					KeyPressedEvent event(static_cast<KeyCode>(key), 0);
+					KeyPressedEvent event(key, 0);
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_RELEASE: {
-					KeyReleasedEvent event(static_cast<KeyCode>(key));
+					KeyReleasedEvent event(key);
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_REPEAT: {
-					KeyPressedEvent event(static_cast<KeyCode>(key), 1);
+					KeyPressedEvent event(key, 1);
 					data.eventCallback(event);
 					break;
 				}
@@ -103,7 +103,7 @@ namespace Mixture {
 		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned int keycode) {
 			MX_GET_WINDOW_DATA();
 
-			KeyTypedEvent event(static_cast<KeyCode>(keycode));
+			KeyTypedEvent event(keycode);
 			data.eventCallback(event);
 		});
 
@@ -112,12 +112,12 @@ namespace Mixture {
 
 			switch (action) {
 				case GLFW_PRESS: {
-					MouseButtonPressedEvent event(static_cast<MouseCode>(button));
+					MouseButtonPressedEvent event(button);
 					data.eventCallback(event);
 					break;
 				}
 				case GLFW_RELEASE: {
-					MouseButtonReleasedEvent event(static_cast<MouseCode>(button));
+					MouseButtonReleasedEvent event(button);
 					data.eventCallback(event);
 					break;
 				}

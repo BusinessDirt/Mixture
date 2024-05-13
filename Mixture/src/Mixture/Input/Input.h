@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include "Mixture/Core/Base.h"
 #include "Mixture/Input/KeyCodes.h"
 #include "Mixture/Input/MouseCodes.h"
@@ -10,7 +12,7 @@ namespace Mixture {
 		static bool isKeyPressed(KeyCode key);
 
 		static bool isMouseButtonPressed(MouseCode button);
-		static std::pair<float, float> getMousePosition();
+		static glm::vec2 getMousePosition();
 		static float getMouseX();
 		static float getMouseY();
 	};
