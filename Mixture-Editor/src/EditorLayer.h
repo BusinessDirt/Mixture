@@ -16,6 +16,12 @@ namespace Mixture {
 		virtual void onImGuiRender() override;
 		void onEvent(Event& e) override;
 	private:
+		bool onKeyPressed(KeyPressedEvent& e);
+
+		void newScene();
+		void openScene();
+		void saveSceneAs();
+	private:
 		Mixture::OrthographicCameraController m_CameraController;
 
 		//Temp

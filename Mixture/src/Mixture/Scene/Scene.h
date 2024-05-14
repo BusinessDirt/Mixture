@@ -2,6 +2,7 @@
 
 #include "entt.hpp"
 
+#include "Mixture/Core/Base.h"
 #include "Mixture/Core/Timestep.h"
 
 namespace Mixture {
@@ -29,6 +30,7 @@ namespace Mixture {
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
 
 		friend class Entity;
+		friend class SceneSerializer;
 		friend class SceneHierarchyPanel;
 	};
 }

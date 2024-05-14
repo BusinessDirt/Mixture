@@ -4,6 +4,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Mixture/Scene/SceneSerializer.h"
+#include "Mixture/Utils/PlatformUtils.h"
+
 namespace Mixture {
 	EditorLayer::EditorLayer() 
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f }) {}
@@ -19,7 +22,7 @@ namespace Mixture {
 		m_Framebuffer = Framebuffer::create(fbSpec);
 
 		m_ActiveScene = createRef<Scene>();
-
+#if 0
 		Entity square = m_ActiveScene->createEntity("Green square");
 		square.addComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
 
@@ -61,7 +64,7 @@ namespace Mixture {
 
 		m_CameraEntity.addComponent<NativeScriptComponent>().bind<CameraController>();
 		m_SecondCamera.addComponent<NativeScriptComponent>().bind<CameraController>();
-
+#endif
 		m_SceneHierarchyPanel.setContext(m_ActiveScene);
 	}
 
@@ -152,6 +155,10 @@ namespace Mixture {
 				// which we can't undo at the moment without finer window depth/z control.
 				//ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
 
+				if (ImGui::MenuItem("New", "Ctrl+N")) newScene();
+				if (ImGui::MenuItem("Open...", "Ctrl+O")) openScene();
+				if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S")) saveSceneAs();
+
 				if (ImGui::MenuItem("Exit")) Mixture::Application::get().close();
 				ImGui::EndMenu();
 			}
@@ -194,5 +201,57 @@ namespace Mixture {
 
 	void EditorLayer::onEvent(Event& e) {
 		m_CameraController.onEvent(e);
+
+		EventDispatcher dispatcher(e);
+		dispatcher.dispatch<KeyPressedEvent>(MX_BIND_EVENT_FN(EditorLayer::onKeyPressed));
+	}
+
+	bool EditorLayer::onKeyPressed(KeyPressedEvent& e) {
+		// Shortcuts
+		if (e.getRepeatCount() > 0) return false;
+
+		bool control = Input::isKeyPressed(Key::LeftControl) || Input::isKeyPressed(Key::RightControl);
+		bool shift = Input::isKeyPressed(Key::LeftShift) || Input::isKeyPressed(Key::RightShift);
+		
+		switch (e.getKeyCode()) {
+			case Key::N: {
+				if (control) newScene();
+				break;
+			}
+			case Key::O: {
+				if (control) openScene();
+				break;
+			}
+			case Key::S: {
+				if (control && shift) saveSceneAs();
+				break;
+			}
+		}
+	}
+
+	void EditorLayer::newScene() {
+		m_ActiveScene = createRef<Scene>();
+		m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_SceneHierarchyPanel.setContext(m_ActiveScene);
+	}
+
+	void EditorLayer::openScene() {
+		std::string filepath = FileDialogs::openFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
+		if (filepath.empty()) return;
+
+		m_ActiveScene = createRef<Scene>();
+		m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+		m_SceneHierarchyPanel.setContext(m_ActiveScene);
+
+		SceneSerializer serializer(m_ActiveScene);
+		serializer.deserialize(filepath);
+	}
+
+	void EditorLayer::saveSceneAs() {
+		std::string filepath = FileDialogs::saveFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
+		if (filepath.empty()) return;
+
+		SceneSerializer serializer(m_ActiveScene);
+		serializer.serialize(filepath);
 	}
 }
