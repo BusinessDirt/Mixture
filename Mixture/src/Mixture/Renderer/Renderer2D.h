@@ -42,13 +42,14 @@ namespace Mixture {
 			uint32_t drawCalls = 0;
 			uint32_t quadCount = 0;
 
-			uint32_t getTotalVertexCount() { return quadCount * 4; }
-			uint32_t getTotalIndexCount() { return quadCount * 6; }
+			uint32_t getTotalVertexCount() const { return quadCount * 4; }
+			uint32_t getTotalIndexCount() const { return quadCount * 6; }
 		};
 
 		static void resetStats();
 		static Statistics getStats();
 	private:
-		static void flushAndReset();
+		static void startBatch();
+		static void nextBatch();
 	};
 }

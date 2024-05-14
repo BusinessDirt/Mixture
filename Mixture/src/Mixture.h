@@ -5,8 +5,10 @@
 #include "Mixture/Core/Application.h"
 #include "Mixture/Core/Layer.h"
 #include "Mixture/Logging/Log.h"
-#include "Mixture/Debug/Instrumentor.h"
+#include "Mixture/Core/Assert.h"
 #include "Mixture/Core/Timestep.h"
+
+#include "Mixture/Debug/Instrumentor.h"
 
 // Input
 #include "Mixture/Input/Input.h"

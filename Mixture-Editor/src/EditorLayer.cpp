@@ -23,41 +23,46 @@ namespace Mixture {
 		Entity square = m_ActiveScene->createEntity("Green square");
 		square.addComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
 
+		Entity redSquare = m_ActiveScene->createEntity("Red Square");
+		redSquare.addComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+
 		m_SquareEntity = square;
 
-		m_CameraEntity = m_ActiveScene->createEntity("Camera Entity");
+		m_CameraEntity = m_ActiveScene->createEntity("Camera A");
 		m_CameraEntity.addComponent<CameraComponent>();
 
-		m_SecondCamera = m_ActiveScene->createEntity("Clip-Space Entity");
+		m_SecondCamera = m_ActiveScene->createEntity("Camera B");
 		auto& cc = m_SecondCamera.addComponent<CameraComponent>();
 		cc.primary = false;
 
 		class CameraController : public ScriptableEntity {
 		public:
-			void onCreate() {
-				auto& transform = getComponent<TransformComponent>().transform;
-				transform[3][0] = rand() % 10 - 5.0f;
+			virtual void onCreate() override {
+				auto& translation = getComponent<TransformComponent>().translation;
+				translation.x = rand() % 10 - 5.0f;
 			}
 
-			void onDestroy() {}
+			virtual void onDestroy() override {}
 
-			void onUpdate(Timestep ts) {
-				auto& transform = getComponent<TransformComponent>().transform;
+			virtual void onUpdate(Timestep ts) override {
+				auto& translation = getComponent<TransformComponent>().translation;
 				float speed = 5.0f;
 
 				if (Input::isKeyPressed(Key::A))
-					transform[3][0] -= speed * ts;
+					translation.x -= speed * ts;
 				if (Input::isKeyPressed(Key::D))
-					transform[3][0] += speed * ts;
+					translation.x += speed * ts;
 				if (Input::isKeyPressed(Key::W))
-					transform[3][1] += speed * ts;
+					translation.y += speed * ts;
 				if (Input::isKeyPressed(Key::S))
-					transform[3][1] -= speed * ts;
+					translation.y -= speed * ts;
 			}
 		};
 
 		m_CameraEntity.addComponent<NativeScriptComponent>().bind<CameraController>();
 		m_SecondCamera.addComponent<NativeScriptComponent>().bind<CameraController>();
+
+		m_SceneHierarchyPanel.setContext(m_ActiveScene);
 	}
 
 	void EditorLayer::onDetach() {
@@ -88,9 +93,7 @@ namespace Mixture {
 		RenderCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::clear();
 		
-		Renderer2D::beginScene(m_CameraController.getCamera());
 		m_ActiveScene->onUpdate(ts);
-		Renderer2D::endScene();
 		m_Framebuffer->unbind();
 	}
 
@@ -156,7 +159,9 @@ namespace Mixture {
 			ImGui::EndMenuBar();
 		}
 
-		ImGui::Begin("Settings");
+		m_SceneHierarchyPanel.onImGuiRender();
+
+		ImGui::Begin("Stats");
 
 		auto stats = Mixture::Renderer2D::getStats();
 		ImGui::Text("Renderer2D Stats:");
@@ -164,31 +169,6 @@ namespace Mixture {
 		ImGui::Text("Quads: %d", stats.quadCount);
 		ImGui::Text("Vertices: %d", stats.getTotalVertexCount());
 		ImGui::Text("Indices: %d", stats.getTotalIndexCount());
-
-		if (m_SquareEntity) {
-			ImGui::Separator();
-			auto& tag = m_SquareEntity.getComponent<TagComponent>().tag;
-			ImGui::Text("%s", tag.c_str());
-
-			glm::vec4& squareColor = m_SquareEntity.getComponent<SpriteRendererComponent>().color;
-
-			ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
-			ImGui::Separator();
-		}
-
-		ImGui::DragFloat3("Camera Transform", glm::value_ptr(m_CameraEntity.getComponent<TransformComponent>().transform[3]));
-
-		if (ImGui::Checkbox("Camera A", &m_PrimaryCamera)) {
-			m_CameraEntity.getComponent<CameraComponent>().primary = m_PrimaryCamera;
-			m_SecondCamera.getComponent<CameraComponent>().primary = !m_PrimaryCamera;
-		}
-
-		{
-			auto& camera = m_SecondCamera.getComponent<CameraComponent>().camera;
-			float orthoSize = camera.getOrthographicSize();
-			if (ImGui::DragFloat("Second Camera Ortho Size", &orthoSize))
-				camera.setOrthographicSize(orthoSize);
-		}
 
 		ImGui::End();
 

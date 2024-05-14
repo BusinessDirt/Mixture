@@ -111,10 +111,7 @@ namespace Mixture {
 		s_Data.textureShader->bind();
 		s_Data.textureShader->setMat4("u_ViewProjection", viewProj);
 
-		s_Data.quadIndexCount = 0;
-		s_Data.quadVertexBufferPtr = s_Data.quadVertexBufferBase;
-
-		s_Data.textureSlotIndex = 1;
+		startBatch();
 	}
 
 	void Renderer2D::beginScene(const OrthographicCamera& camera) {
@@ -123,10 +120,7 @@ namespace Mixture {
 		s_Data.textureShader->bind();
 		s_Data.textureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
 
-		s_Data.quadIndexCount = 0;
-		s_Data.quadVertexBufferPtr = s_Data.quadVertexBufferBase;
-
-		s_Data.textureSlotIndex = 1;
+		startBatch();
 	}
 
 	void Renderer2D::endScene() {
@@ -141,6 +135,8 @@ namespace Mixture {
 	void Renderer2D::flush() {
 		if (s_Data.quadIndexCount == 0) return;
 
+		uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.quadVertexBufferPtr - (uint8_t*)s_Data.quadVertexBufferBase);
+		s_Data.quadVertexBuffer->setData(s_Data.quadVertexBufferBase, dataSize);
 		for (uint32_t i = 0; i < s_Data.textureSlotIndex; i++)
 			s_Data.textureSlots[i]->bind(i);
 
@@ -185,7 +181,7 @@ namespace Mixture {
 		const float tilingFactor = 1.0f;
 
 		if (s_Data.quadIndexCount >= Renderer2DData::maxIndices)
-			flushAndReset();
+			nextBatch();
 
 		for (size_t i = 0; i < quadVertexCount; i++) {
 			s_Data.quadVertexBufferPtr->position = transform * s_Data.quadVertexPositions[i];
@@ -208,7 +204,7 @@ namespace Mixture {
 		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
 
 		if (s_Data.quadIndexCount >= Renderer2DData::maxIndices)
-			flushAndReset();
+			nextBatch();
 
 		float textureIndex = 0.0f;
 		for (uint32_t i = 1; i < s_Data.textureSlotIndex; i++) {
@@ -220,7 +216,7 @@ namespace Mixture {
 
 		if (textureIndex == 0.0f) {
 			if (s_Data.quadIndexCount >= Renderer2DData::maxIndices)
-				flushAndReset();
+				nextBatch();
 
 			textureIndex = (float)s_Data.textureSlotIndex;
 			s_Data.textureSlots[s_Data.textureSlotIndex] = texture;
@@ -277,12 +273,16 @@ namespace Mixture {
 		return s_Data.stats;
 	}
 
-	void Renderer2D::flushAndReset() {
-		endScene();
-		
+	void Renderer2D::startBatch() {
 		s_Data.quadIndexCount = 0;
 		s_Data.quadVertexBufferPtr = s_Data.quadVertexBufferBase;
 
 		s_Data.textureSlotIndex = 1;
 	}
+
+	void Renderer2D::nextBatch() {
+		flush();
+		startBatch();
+	}
+
 }

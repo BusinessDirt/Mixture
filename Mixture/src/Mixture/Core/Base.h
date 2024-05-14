@@ -17,13 +17,8 @@
 	#define MX_DEBUGBREAK()
 #endif
 
-#ifdef MX_ENABLE_ASSERTS
-	#define MX_ASSERT(x, ...) { if(!(x)) { MX_ERROR("Assertion Failed: {0}", __VA_ARGS__); MX_DEBUGBREAK(); } }
-	#define MX_CORE_ASSERT(x, ...) { if(!(x)) { MX_CORE_ERROR("Assertion Failed: {0}", __VA_ARGS__); MX_DEBUGBREAK(); } }
-#else
-	#define MX_ASSERT(x, ...)
-	#define MX_CORE_ASSERT(x, ...)
-#endif
+#define MX_EXPAND_MACRO(x) x
+#define MX_STRINGIFY_MACRO(x) #x
 
 #define BIT(x) (1 << x)
 #define MX_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
@@ -44,3 +39,6 @@ namespace Mixture {
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
 }
+
+#include "Mixture/Logging/Log.h"
+#include "Mixture/Core/Assert.h"
