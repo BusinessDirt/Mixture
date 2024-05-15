@@ -9,7 +9,7 @@
 #include "Mixture/Core/Application.h"
 
 namespace Mixture {
-	std::optional<std::string> FileDialogs::openFile(const char* filter) {
+	std::string FileDialogs::openFile(const char* filter) {
 		OPENFILENAMEA ofn;
 		CHAR szFile[260] = { 0 };
 		CHAR currentDir[256] = { 0 };
@@ -24,10 +24,10 @@ namespace Mixture {
 		ofn.nFilterIndex = 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 		if (GetOpenFileNameA(&ofn) == TRUE) return ofn.lpstrFile;
-		return std::nullopt;
+		return std::string();
 	}
 
-	std::optional<std::string> FileDialogs::saveFile(const char* filter) {
+	std::string FileDialogs::saveFile(const char* filter) {
 		OPENFILENAMEA ofn;
 		CHAR szFile[260] = { 0 };
 		CHAR currentDir[256] = { 0 };
@@ -44,7 +44,7 @@ namespace Mixture {
 		ofn.lpstrDefExt = std::strchr(filter, '\0') + 1;
 		ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR;
 		if (GetSaveFileNameA(&ofn) == TRUE) return ofn.lpstrFile;
-		return std::nullopt;
+		return std::string();
 	}
 }
 

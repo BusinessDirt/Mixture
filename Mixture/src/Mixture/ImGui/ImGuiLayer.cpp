@@ -66,7 +66,7 @@ namespace Mixture {
 	}
 
 	void ImGuiLayer::onEvent(Event& e) {
-		if (!m_BlockEvents) {
+		if (m_BlockEvents) {
 			ImGuiIO& io = ImGui::GetIO();
 			e.handled |= e.isInCategory(EventCategoryMouse) & io.WantCaptureMouse;
 			e.handled |= e.isInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;

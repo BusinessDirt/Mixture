@@ -16,9 +16,20 @@
 int main(int argc, char** argv);
 
 namespace Mixture {
+
+	struct ApplicationCommandLineArgs {
+		int count = 0;
+		char** args = nullptr;
+
+		const char* operator[](int index) const {
+			MX_CORE_ASSERT(index < count);
+			return args[index];
+		}
+	};
+
 	class Application {
 	public:
-		Application(const std::string& name = "Mixture App");
+		Application(const std::string& name = "Mixture App", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
 		virtual ~Application();
 		
 
@@ -33,11 +44,14 @@ namespace Mixture {
 
 		Window& getWindow() { return *m_Window; }
 		static Application& get() { return *s_Instance; }
+
+		ApplicationCommandLineArgs getCommandLineArgs() const { return m_CommandLineArgs; }
 	private:
 		void run();
 		bool onWindowClose(WindowCloseEvent& e);
 		bool onWindowResize(WindowResizeEvent& e);
 	private:
+		ApplicationCommandLineArgs m_CommandLineArgs;
 		Scope<Window> m_Window;
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
@@ -50,5 +64,5 @@ namespace Mixture {
 		friend int ::main(int argc, char** argv);
 	};
 
-	Application* CreateApplication();
+	Application* CreateApplication(ApplicationCommandLineArgs args);
 }

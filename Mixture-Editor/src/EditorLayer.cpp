@@ -24,6 +24,13 @@ namespace Mixture {
 		m_Framebuffer = Framebuffer::create(fbSpec);
 
 		m_ActiveScene = createRef<Scene>();
+		ApplicationCommandLineArgs commandLineArgs = Application::get().getCommandLineArgs();
+		if (commandLineArgs.count > 1) {
+			const char* sceneFilePath = commandLineArgs[1];
+			SceneSerializer serializer(m_ActiveScene);
+			serializer.deserialize(sceneFilePath);
+		}
+
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 		m_SceneHierarchyPanel.setContext(m_ActiveScene);
 	}
@@ -300,22 +307,22 @@ namespace Mixture {
 	}
 
 	void EditorLayer::openScene() {
-		std::optional<std::string> filepath = FileDialogs::openFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
-		if (!filepath) return;
+		std::string filepath = FileDialogs::openFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
+		if (filepath.empty()) return;
 
 		m_ActiveScene = createRef<Scene>();
 		m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		m_SceneHierarchyPanel.setContext(m_ActiveScene);
 
 		SceneSerializer serializer(m_ActiveScene);
-		serializer.deserialize(*filepath);
+		serializer.deserialize(filepath);
 	}
 
 	void EditorLayer::saveSceneAs() {
-		std::optional<std::string> filepath = FileDialogs::saveFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
-		if (!filepath) return;
+		std::string filepath = FileDialogs::saveFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
+		if (filepath.empty()) return;
 
 		SceneSerializer serializer(m_ActiveScene);
-		serializer.serialize(*filepath);
+		serializer.serialize(filepath);
 	}
 }

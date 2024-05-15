@@ -11,7 +11,7 @@ namespace Mixture {
 
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application(const std::string& name) {
+	Application::Application(const std::string& name, ApplicationCommandLineArgs args) : m_CommandLineArgs(args) {
 		MX_PROFILE_FUNCTION();
 
 		MX_CORE_ASSERT(!s_Instance, "Application already exists!");

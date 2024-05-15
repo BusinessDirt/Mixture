@@ -3,9 +3,11 @@
 
 #include "Mixture/Renderer/VertexArray.h"
 #include "Mixture/Renderer/Shader.h"
+#include "Mixture/Renderer/UniformBuffer.h"
 #include "Mixture/Renderer/RenderCommand.h"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Mixture {
 	struct QuadVertex {
@@ -40,6 +42,12 @@ namespace Mixture {
 		glm::vec4 quadVertexPositions[4];
 
 		Renderer2D::Statistics stats;
+
+		struct CameraData {
+			glm::mat4 viewProjection;
+		};
+		CameraData cameraBuffer;
+		Ref<UniformBuffer> cameraUniformBuffer;
 	};
 
 	static Renderer2DData s_Data;
@@ -99,6 +107,8 @@ namespace Mixture {
 		s_Data.quadVertexPositions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
 		s_Data.quadVertexPositions[2] = {  0.5f,  0.5f, 0.0f, 1.0f };
 		s_Data.quadVertexPositions[3] = { -0.5f,  0.5f, 0.0f, 1.0f };
+
+		s_Data.cameraUniformBuffer = UniformBuffer::create(sizeof(Renderer2DData::CameraData), 0);
 	}
 
 	void Renderer2D::shutdown() {
@@ -110,10 +120,8 @@ namespace Mixture {
 	void Renderer2D::beginScene(const Camera& camera, const glm::mat4& transform) {
 		MX_PROFILE_FUNCTION();
 
-		glm::mat4 viewProj = camera.getProjection() * glm::inverse(transform);
-
-		s_Data.textureShader->bind();
-		s_Data.textureShader->setMat4("u_ViewProjection", viewProj);
+		s_Data.cameraBuffer.viewProjection = camera.getProjection() * glm::inverse(transform);
+		s_Data.cameraUniformBuffer->setData(&s_Data.cameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		startBatch();
 	}
@@ -123,8 +131,8 @@ namespace Mixture {
 
 		glm::mat4 viewProj = camera.getViewProjection();
 
-		s_Data.textureShader->bind();
-		s_Data.textureShader->setMat4("u_ViewProjection", viewProj);
+		s_Data.cameraBuffer.viewProjection = camera.getViewProjection();
+		s_Data.cameraUniformBuffer->setData(&s_Data.cameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		startBatch();
 	}
@@ -155,6 +163,7 @@ namespace Mixture {
 		for (uint32_t i = 0; i < s_Data.textureSlotIndex; i++)
 			s_Data.textureSlots[i]->bind(i);
 
+		s_Data.textureShader->bind();
 		RenderCommand::drawIndexed(s_Data.quadVertexArray, s_Data.quadIndexCount);
 		s_Data.stats.drawCalls++;
 	}

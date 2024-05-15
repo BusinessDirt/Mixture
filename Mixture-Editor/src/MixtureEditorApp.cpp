@@ -6,14 +6,14 @@
 namespace Mixture {
 	class MixtureEditor : public Application {
 	public:
-		MixtureEditor() : Application("Mixture Editor") {
+		MixtureEditor(ApplicationCommandLineArgs args) : Application("Mixture Editor", args) {
 			pushLayer(new EditorLayer());
 		}
 
 		~MixtureEditor() {}
 	};
 
-	Application* CreateApplication() {
-		return new MixtureEditor();
+	Application* CreateApplication(ApplicationCommandLineArgs args) {
+		return new MixtureEditor(args);
 	}
 }
