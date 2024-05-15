@@ -14,6 +14,9 @@ namespace Mixture {
 		glm::vec2 texCoord;
 		float texIndex;
 		float tilingFactor;
+
+		// editor-only
+		int entityID;
 	};
 
 	struct Renderer2DData {
@@ -48,11 +51,12 @@ namespace Mixture {
 		s_Data.quadVertexBuffer = VertexBuffer::create(s_Data.maxVertices * sizeof(QuadVertex));
 
 		s_Data.quadVertexBuffer->setLayout({
-			{ ShaderDataType::Float3, "a_Position" },
-			{ ShaderDataType::Float4, "a_Color" },
-			{ ShaderDataType::Float2, "a_TexCoord" },
-			{ ShaderDataType::Float, "a_TexIndex" },
-			{ ShaderDataType::Float, "a_TilingFactor" }
+			{ ShaderDataType::Float3, "a_Position"     },
+			{ ShaderDataType::Float4, "a_Color"        },
+			{ ShaderDataType::Float2, "a_TexCoord"     },
+			{ ShaderDataType::Float,  "a_TexIndex"     },
+			{ ShaderDataType::Float,  "a_TilingFactor" },
+			{ ShaderDataType::Int,    "a_EntityID"     }
 		});
 		
 		s_Data.quadVertexArray->addVertexBuffer(s_Data.quadVertexBuffer);
@@ -183,7 +187,7 @@ namespace Mixture {
 		drawQuad(transform, texture, tilingFactor, tintColor);
 	}
 
-	void Renderer2D::drawQuad(const glm::mat4& transform, const glm::vec4& color) {
+	void Renderer2D::drawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID) {
 		MX_PROFILE_FUNCTION();
 
 		constexpr size_t quadVertexCount = 4;
@@ -200,6 +204,7 @@ namespace Mixture {
 			s_Data.quadVertexBufferPtr->texCoord = textureCoords[i];
 			s_Data.quadVertexBufferPtr->texIndex = textureIndex;
 			s_Data.quadVertexBufferPtr->tilingFactor = tilingFactor;
+			s_Data.quadVertexBufferPtr->entityID = entityID;
 			s_Data.quadVertexBufferPtr++;
 		}
 
@@ -208,7 +213,7 @@ namespace Mixture {
 	}
 
 	void Renderer2D::drawQuad(const glm::mat4& transform, const Ref<Texture2D>& texture, 
-		float tilingFactor, const glm::vec4& tintColor) {
+		float tilingFactor, const glm::vec4& tintColor, int entityID) {
 		MX_PROFILE_FUNCTION();
 
 		constexpr size_t quadVertexCount = 4;
@@ -240,6 +245,7 @@ namespace Mixture {
 			s_Data.quadVertexBufferPtr->texCoord = textureCoords[i];
 			s_Data.quadVertexBufferPtr->texIndex = textureIndex;
 			s_Data.quadVertexBufferPtr->tilingFactor = tilingFactor;
+			s_Data.quadVertexBufferPtr->entityID = entityID;
 			s_Data.quadVertexBufferPtr++;
 		}
 
@@ -274,6 +280,10 @@ namespace Mixture {
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
 		drawQuad(transform, texture, tilingFactor, tintColor);
+	}
+
+	void Renderer2D::drawSprite(const glm::mat4& transform, SpriteRendererComponent& spriteRenderComponent, int entityID) {
+		drawQuad(transform, spriteRenderComponent.color, entityID);
 	}
 
 	void Renderer2D::resetStats() {

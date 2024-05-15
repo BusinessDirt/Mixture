@@ -18,6 +18,7 @@ namespace Mixture {
 		MX_PROFILE_FUNCTION();
 
 		FramebufferSpecification fbSpec;
+		fbSpec.attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
 		fbSpec.width = 1280;
 		fbSpec.height = 720;
 		m_Framebuffer = Framebuffer::create(fbSpec);
@@ -56,8 +57,26 @@ namespace Mixture {
 		m_Framebuffer->bind();
 		RenderCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::clear();
+
+		// Clear out entity ID attachment to -1
+		m_Framebuffer->clearAttachment(1, -1);
 		
+		// Update scene
 		m_ActiveScene->onUpdateEditor(ts, m_EditorCamera);
+
+		auto [mx, my] = ImGui::GetMousePos();
+		mx -= m_ViewportBounds[0].x;
+		my -= m_ViewportBounds[0].y;
+		glm::vec2 viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+		my = viewportSize.y - my;
+		int mouseX = (int)mx;
+		int mouseY = (int)my;
+
+		if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y) {
+			int pixelData = m_Framebuffer->readPixel(1, mouseX, mouseY);
+			m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
+		}
+
 		m_Framebuffer->unbind();
 	}
 
@@ -131,6 +150,11 @@ namespace Mixture {
 
 		ImGui::Begin("Stats");
 
+		std::string name = "None";
+		if (m_HoveredEntity)
+			name = m_HoveredEntity.getComponent<TagComponent>().tag;
+		ImGui::Text("Hovered Entity: %s", name.c_str());
+
 		auto stats = Mixture::Renderer2D::getStats();
 		ImGui::Text("Renderer2D Stats:");
 		ImGui::Text("Draw Calls: %d", stats.drawCalls);
@@ -142,6 +166,11 @@ namespace Mixture {
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
 		ImGui::Begin("Viewport");
+		ImVec2 viewportMinRegion = ImGui::GetWindowContentRegionMin();
+		ImVec2 viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+		ImVec2 viewportOffset = ImGui::GetWindowPos();
+		m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+		m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
 
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
@@ -159,9 +188,9 @@ namespace Mixture {
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
 
-			float windowWidth = (float)ImGui::GetWindowWidth();
-			float windowHeight = (float)ImGui::GetWindowHeight();
-			ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+			ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y, 
+				m_ViewportBounds[1].x - m_ViewportBounds[0].x, 
+				m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
 			// Camera
 
@@ -216,6 +245,7 @@ namespace Mixture {
 
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch<KeyPressedEvent>(MX_BIND_EVENT_FN(EditorLayer::onKeyPressed));
+		dispatcher.dispatch<MouseButtonPressedEvent>(MX_BIND_EVENT_FN(EditorLayer::onMouseButtonPressed));
 	}
 
 	bool EditorLayer::onKeyPressed(KeyPressedEvent& e) {
@@ -241,18 +271,26 @@ namespace Mixture {
 
 			// Gizmos
 			case Key::Q:
-				m_GizmoType = -1;
+				if (!ImGuizmo::IsUsing()) m_GizmoType = -1;
 				break;
 			case Key::W:
-				m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+				if (!ImGuizmo::IsUsing()) m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
 				break;
 			case Key::E:
-				m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+				if (!ImGuizmo::IsUsing()) m_GizmoType = ImGuizmo::OPERATION::ROTATE;
 				break;
 			case Key::R:
-				m_GizmoType = ImGuizmo::OPERATION::SCALE;
+				if (!ImGuizmo::IsUsing()) m_GizmoType = ImGuizmo::OPERATION::SCALE;
 				break;
 		}
+	}
+
+	bool EditorLayer::onMouseButtonPressed(MouseButtonPressedEvent& e) {
+		if (e.getMouseButton() == Mouse::ButtonLeft) {
+			if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::isKeyPressed(Key::LeftAlt))
+				m_SceneHierarchyPanel.setSelectedEntity(m_HoveredEntity);
+		}
+		return false;
 	}
 
 	void EditorLayer::newScene() {
