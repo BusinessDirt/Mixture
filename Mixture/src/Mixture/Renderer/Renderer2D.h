@@ -5,6 +5,7 @@
 #include "Mixture/Renderer/Texture.h"
 
 #include "Mixture/Renderer/Camera.h"
+#include "Mixture/Renderer/EditorCamera.h"
 
 namespace Mixture {
 	class Renderer2D {
@@ -13,6 +14,7 @@ namespace Mixture {
 		static void shutdown();
 
 		static void beginScene(const Camera& camera, const glm::mat4& transform);
+		static void beginScene(const EditorCamera& camera);
 		static void beginScene(const OrthographicCamera& camera); // TODO: Remove
 		static void endScene();
 		static void flush();

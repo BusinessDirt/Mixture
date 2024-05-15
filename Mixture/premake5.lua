@@ -12,7 +12,10 @@ project "Mixture"
         "src/**.h",
 		"src/**.cpp",
 		"%{wks.location}/vendor/stb_image/**.h",
-		"%{wks.location}/vendor/stb_image/**.cpp"
+		"%{wks.location}/vendor/stb_image/**.cpp",
+
+        "%{wks.location}/vendor/imguizmo/ImGuizmo.h",
+        "%{wks.location}/vendor/imguizmo/ImGuizmo.cpp"
     }
 
     defines {
@@ -29,7 +32,8 @@ project "Mixture"
         "%{IncludeDir.glm}",
         "%{IncludeDir.stb_image}",
         "%{IncludeDir.entt}",
-        "%{IncludeDir.yaml_cpp}"
+        "%{IncludeDir.yaml_cpp}",
+        "%{IncludeDir.ImGuizmo}"
     }
 
     links {
@@ -42,6 +46,9 @@ project "Mixture"
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
     objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
+
+    filter "files:%{wks.location}/vendor/imguizmo/**.cpp"
+        flags { "NoPCH" }
 
     filter "system:windows"
         systemversion "latest"

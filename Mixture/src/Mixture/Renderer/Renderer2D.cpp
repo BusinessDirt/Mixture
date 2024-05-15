@@ -114,6 +114,17 @@ namespace Mixture {
 		startBatch();
 	}
 
+	void Renderer2D::beginScene(const EditorCamera& camera) {
+		MX_PROFILE_FUNCTION();
+
+		glm::mat4 viewProj = camera.getViewProjection();
+
+		s_Data.textureShader->bind();
+		s_Data.textureShader->setMat4("u_ViewProjection", viewProj);
+
+		startBatch();
+	}
+
 	void Renderer2D::beginScene(const OrthographicCamera& camera) {
 		MX_PROFILE_FUNCTION();
 

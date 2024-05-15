@@ -7,14 +7,15 @@
 #include "Mixture/Scene/SceneSerializer.h"
 #include "Mixture/Utils/PlatformUtils.h"
 
+#include "ImGuizmo.h"
+#include "Mixture/Math/Math.h"
+
 namespace Mixture {
 	EditorLayer::EditorLayer() 
-		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f }) {}
+		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f) {}
 	
 	void EditorLayer::onAttach() {
 		MX_PROFILE_FUNCTION();
-
-		m_CheckerboardTexture = Texture2D::create("assets/textures/Checkerboard.png");
 
 		FramebufferSpecification fbSpec;
 		fbSpec.width = 1280;
@@ -22,49 +23,7 @@ namespace Mixture {
 		m_Framebuffer = Framebuffer::create(fbSpec);
 
 		m_ActiveScene = createRef<Scene>();
-#if 0
-		Entity square = m_ActiveScene->createEntity("Green square");
-		square.addComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-
-		Entity redSquare = m_ActiveScene->createEntity("Red Square");
-		redSquare.addComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-
-		m_SquareEntity = square;
-
-		m_CameraEntity = m_ActiveScene->createEntity("Camera A");
-		m_CameraEntity.addComponent<CameraComponent>();
-
-		m_SecondCamera = m_ActiveScene->createEntity("Camera B");
-		auto& cc = m_SecondCamera.addComponent<CameraComponent>();
-		cc.primary = false;
-
-		class CameraController : public ScriptableEntity {
-		public:
-			virtual void onCreate() override {
-				auto& translation = getComponent<TransformComponent>().translation;
-				translation.x = rand() % 10 - 5.0f;
-			}
-
-			virtual void onDestroy() override {}
-
-			virtual void onUpdate(Timestep ts) override {
-				auto& translation = getComponent<TransformComponent>().translation;
-				float speed = 5.0f;
-
-				if (Input::isKeyPressed(Key::A))
-					translation.x -= speed * ts;
-				if (Input::isKeyPressed(Key::D))
-					translation.x += speed * ts;
-				if (Input::isKeyPressed(Key::W))
-					translation.y += speed * ts;
-				if (Input::isKeyPressed(Key::S))
-					translation.y -= speed * ts;
-			}
-		};
-
-		m_CameraEntity.addComponent<NativeScriptComponent>().bind<CameraController>();
-		m_SecondCamera.addComponent<NativeScriptComponent>().bind<CameraController>();
-#endif
+		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 		m_SceneHierarchyPanel.setContext(m_ActiveScene);
 	}
 
@@ -82,7 +41,7 @@ namespace Mixture {
 			
 			m_Framebuffer->resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			m_CameraController.onResize(m_ViewportSize.x, m_ViewportSize.y);
-
+			m_EditorCamera.setViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 			m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
 
@@ -90,13 +49,15 @@ namespace Mixture {
 		if (m_ViewportFocused)
 			m_CameraController.onUpdate(ts);
 
+		m_EditorCamera.onUpdate(ts);
+
 		// Render
 		Renderer2D::resetStats();
 		m_Framebuffer->bind();
 		RenderCommand::setClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::clear();
 		
-		m_ActiveScene->onUpdate(ts);
+		m_ActiveScene->onUpdateEditor(ts, m_EditorCamera);
 		m_Framebuffer->unbind();
 	}
 
@@ -184,13 +145,63 @@ namespace Mixture {
 
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
-		Application::get().getImGuiLayer()->blockEvents(!m_ViewportFocused || !m_ViewportHovered);
+		Application::get().getImGuiLayer()->blockEvents(!m_ViewportFocused && !m_ViewportHovered);
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
 		uint64_t textureID = m_Framebuffer->getColorAttachmentRendererID();
 		ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+		// Gizmos
+		Entity selectedEntity = m_SceneHierarchyPanel.getSelectedEntity();
+		if (selectedEntity && m_GizmoType != -1) {
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+
+			float windowWidth = (float)ImGui::GetWindowWidth();
+			float windowHeight = (float)ImGui::GetWindowHeight();
+			ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+
+			// Camera
+
+			// Runtime camera from entity
+			//Entity cameraEntity = m_ActiveScene->getPrimaryCameraEntity();
+			//const SceneCamera& camera = cameraEntity.getComponent<CameraComponent>().camera;
+			//const glm::mat4& cameraProjection = camera.getProjection();
+			//glm::mat4 cameraView = glm::inverse(cameraEntity.getComponent<TransformComponent>().getTransform());
+
+			// Editor camera
+			const glm::mat4& cameraProjection = m_EditorCamera.getProjection();
+			glm::mat4 cameraView = m_EditorCamera.getViewMatrix();
+
+			// Entity transform
+			TransformComponent& tc = selectedEntity.getComponent<TransformComponent>();
+			glm::mat4 transform = tc.getTransform();
+
+			// Snapping
+			bool snap = Input::isKeyPressed(Key::LeftControl);
+			float snapValue = 0.5f; // Snap to 0.5m for translation/scale
+			// Snap to 45 degrees for rotation
+			if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+				snapValue = 45.0f;
+
+			float snapValues[3] = { snapValue, snapValue, snapValue };
+
+			ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
+				(ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL, glm::value_ptr(transform),
+				nullptr, snap ? snapValues : nullptr);
+
+			if (ImGuizmo::IsUsing()) {
+				glm::vec3 translation, rotation, scale;
+				Math::decomposeTransform(transform, translation, rotation, scale);
+
+				glm::vec3 deltaRotation = rotation - tc.rotation;
+				tc.translation = translation;
+				tc.rotation += deltaRotation;
+				tc.scale = scale;
+			}
+		}
 
 		ImGui::End();
 		ImGui::PopStyleVar();
@@ -201,6 +212,7 @@ namespace Mixture {
 
 	void EditorLayer::onEvent(Event& e) {
 		m_CameraController.onEvent(e);
+		m_EditorCamera.onEvent(e);
 
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch<KeyPressedEvent>(MX_BIND_EVENT_FN(EditorLayer::onKeyPressed));
@@ -226,6 +238,20 @@ namespace Mixture {
 				if (control && shift) saveSceneAs();
 				break;
 			}
+
+			// Gizmos
+			case Key::Q:
+				m_GizmoType = -1;
+				break;
+			case Key::W:
+				m_GizmoType = ImGuizmo::OPERATION::TRANSLATE;
+				break;
+			case Key::E:
+				m_GizmoType = ImGuizmo::OPERATION::ROTATE;
+				break;
+			case Key::R:
+				m_GizmoType = ImGuizmo::OPERATION::SCALE;
+				break;
 		}
 	}
 
@@ -236,22 +262,22 @@ namespace Mixture {
 	}
 
 	void EditorLayer::openScene() {
-		std::string filepath = FileDialogs::openFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
-		if (filepath.empty()) return;
+		std::optional<std::string> filepath = FileDialogs::openFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
+		if (!filepath) return;
 
 		m_ActiveScene = createRef<Scene>();
 		m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		m_SceneHierarchyPanel.setContext(m_ActiveScene);
 
 		SceneSerializer serializer(m_ActiveScene);
-		serializer.deserialize(filepath);
+		serializer.deserialize(*filepath);
 	}
 
 	void EditorLayer::saveSceneAs() {
-		std::string filepath = FileDialogs::saveFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
-		if (filepath.empty()) return;
+		std::optional<std::string> filepath = FileDialogs::saveFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
+		if (!filepath) return;
 
 		SceneSerializer serializer(m_ActiveScene);
-		serializer.serialize(filepath);
+		serializer.serialize(*filepath);
 	}
 }

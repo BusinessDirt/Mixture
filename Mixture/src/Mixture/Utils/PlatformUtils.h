@@ -1,12 +1,12 @@
 #pragma once
 
 #include <string>
+#include <optional>
 
 namespace Mixture {
 	class FileDialogs {
 	public:
-		// these return empty strings if cancelled
-		static std::string openFile(const char* filter);
-		static std::string saveFile(const char* filter);
+		static std::optional<std::string> openFile(const char* filter);
+		static std::optional<std::string> saveFile(const char* filter);
 	};
 }
