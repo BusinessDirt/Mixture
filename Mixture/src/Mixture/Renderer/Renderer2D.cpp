@@ -140,8 +140,8 @@ namespace Mixture {
 	void Renderer2D::beginScene(const OrthographicCamera& camera) {
 		MX_PROFILE_FUNCTION();
 
-		s_Data.textureShader->bind();
-		s_Data.textureShader->setMat4("u_ViewProjection", camera.getViewProjectionMatrix());
+		s_Data.cameraBuffer.viewProjection = camera.getViewProjectionMatrix();
+		s_Data.cameraUniformBuffer->setData(&s_Data.cameraBuffer, sizeof(Renderer2DData::CameraData));
 
 		startBatch();
 	}
@@ -292,7 +292,10 @@ namespace Mixture {
 	}
 
 	void Renderer2D::drawSprite(const glm::mat4& transform, SpriteRendererComponent& spriteRenderComponent, int entityID) {
-		drawQuad(transform, spriteRenderComponent.color, entityID);
+		if (spriteRenderComponent.texture)
+			drawQuad(transform, spriteRenderComponent.texture, spriteRenderComponent.tilingFactor, spriteRenderComponent.color, entityID);
+		else 
+			drawQuad(transform, spriteRenderComponent.color, entityID);
 	}
 
 	void Renderer2D::resetStats() {

@@ -2,6 +2,7 @@
 
 #include "Mixture.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ContentBrowserPanel.h"
 
 namespace Mixture {
 	class EditorLayer : public Layer {
@@ -21,7 +22,13 @@ namespace Mixture {
 
 		void newScene();
 		void openScene();
+		void openScene(const std::filesystem::path& path);
 		void saveSceneAs();
+
+		void onScenePlay();
+		void onSceneStop();
+
+		void uiToolbar();
 	private:
 		OrthographicCameraController m_CameraController;
 
@@ -40,7 +47,16 @@ namespace Mixture {
 
 		int m_GizmoType = -1;
 
+		enum class SceneState {
+			Edit = 0, Play = 1
+		};
+		SceneState m_SceneState = SceneState::Edit;
+
 		// Panels
 		SceneHierarchyPanel m_SceneHierarchyPanel;
+		ContentBrowserPanel m_ContentBrowserPanel;
+
+		// Editor resources
+		Ref<Texture2D> m_IconPlay, m_IconStop;
 	};
 }

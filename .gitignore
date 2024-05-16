@@ -39,6 +39,7 @@ xcuserdata/
 Scripts/**/__pycache__
 vendor/VulkanSDK
 Mixture-Editor/assets/cache
+Sandbox/assets/cache
 
 #files
 imgui.ini

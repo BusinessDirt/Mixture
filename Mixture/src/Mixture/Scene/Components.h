@@ -6,8 +6,9 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
-#include "SceneCamera.h"
-#include "ScriptableEntity.h"
+#include "Mixture/Scene/SceneCamera.h"
+#include "Mixture/Scene/ScriptableEntity.h"
+#include "Mixture/Renderer/Texture.h"
 
 namespace Mixture {
 	struct TagComponent {
@@ -60,6 +61,8 @@ namespace Mixture {
 
 	struct SpriteRendererComponent {
 		glm::vec4 color{ 1.0f, 1.0f, 1.0f, 1.0f };
+		Ref<Texture2D> texture;
+		float tilingFactor = 1.0f;
 
 		SpriteRendererComponent() = default;
 		SpriteRendererComponent(const SpriteRendererComponent&) = default;

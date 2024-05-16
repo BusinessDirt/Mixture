@@ -15,7 +15,8 @@ project "Sandbox"
 	  "../Mixture/src",
       "%{IncludeDir.spdlog}",
       "%{IncludeDir.ImGui}",
-      "%{IncludeDir.glm}"
+      "%{IncludeDir.glm}",
+      "%{IncludeDir.entt}"
    }
 
    links
@@ -39,6 +40,10 @@ project "Sandbox"
        defines { "MX_DEBUG" }
        runtime "Debug"
        symbols "On"
+
+       postbuildcommands {
+            "{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\""
+       }
 
    filter "configurations:Release"
        defines { "MX_RELEASE" }

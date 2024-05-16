@@ -4,7 +4,7 @@
 
 class Sandbox : public Mixture::Application {
 public:
-	Sandbox() {
+	Sandbox(Mixture::ApplicationCommandLineArgs args) : Application("Sandbox", args) {
 		pushLayer(new Sandbox2D());
 	}
 
@@ -13,6 +13,6 @@ public:
 	}
 };
 
-Mixture::Application* Mixture::CreateApplication() {
-	return new Sandbox();
+Mixture::Application* Mixture::CreateApplication(Mixture::ApplicationCommandLineArgs args) {
+	return new Sandbox(args);
 }

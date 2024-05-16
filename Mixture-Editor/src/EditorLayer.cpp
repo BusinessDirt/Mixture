@@ -11,6 +11,9 @@
 #include "Mixture/Math/Math.h"
 
 namespace Mixture {
+
+	extern const std::filesystem::path g_AssetPath;
+
 	EditorLayer::EditorLayer() 
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f) {}
 	
@@ -22,6 +25,9 @@ namespace Mixture {
 		fbSpec.width = 1280;
 		fbSpec.height = 720;
 		m_Framebuffer = Framebuffer::create(fbSpec);
+
+		m_IconPlay = Texture2D::create("resources/Icons/PlayButton.png");
+		m_IconStop = Texture2D::create("resources/Icons/StopButton.png");
 
 		m_ActiveScene = createRef<Scene>();
 		ApplicationCommandLineArgs commandLineArgs = Application::get().getCommandLineArgs();
@@ -53,12 +59,6 @@ namespace Mixture {
 			m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
 
-		// Update
-		if (m_ViewportFocused)
-			m_CameraController.onUpdate(ts);
-
-		m_EditorCamera.onUpdate(ts);
-
 		// Render
 		Renderer2D::resetStats();
 		m_Framebuffer->bind();
@@ -67,9 +67,19 @@ namespace Mixture {
 
 		// Clear out entity ID attachment to -1
 		m_Framebuffer->clearAttachment(1, -1);
-		
-		// Update scene
-		m_ActiveScene->onUpdateEditor(ts, m_EditorCamera);
+
+		switch (m_SceneState) {
+		case SceneState::Edit:
+			if (m_ViewportFocused)
+				m_CameraController.onUpdate(ts);
+
+			m_EditorCamera.onUpdate(ts);
+			m_ActiveScene->onUpdateEditor(ts, m_EditorCamera);
+			break;
+		case SceneState::Play:
+			m_ActiveScene->onUpdateRuntime(ts);
+			break;
+		}
 
 		auto [mx, my] = ImGui::GetMousePos();
 		mx -= m_ViewportBounds[0].x;
@@ -154,6 +164,7 @@ namespace Mixture {
 		}
 
 		m_SceneHierarchyPanel.onImGuiRender();
+		m_ContentBrowserPanel.onImGuiRender();
 
 		ImGui::Begin("Stats");
 
@@ -188,6 +199,14 @@ namespace Mixture {
 
 		uint64_t textureID = m_Framebuffer->getColorAttachmentRendererID();
 		ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+		if (ImGui::BeginDragDropTarget()) {
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+				const wchar_t* path = (const wchar_t*)payload->Data;
+				openScene(std::filesystem::path(g_AssetPath) / path);
+			}
+			ImGui::EndDragDropTarget();
+		}
 
 		// Gizmos
 		Entity selectedEntity = m_SceneHierarchyPanel.getSelectedEntity();
@@ -242,8 +261,37 @@ namespace Mixture {
 		ImGui::End();
 		ImGui::PopStyleVar();
 
+		uiToolbar();
+
 		ImGui::End();
 		
+	}
+
+	void EditorLayer::uiToolbar() {
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		auto& colors = ImGui::GetStyle().Colors;
+		const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+		const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
+
+		ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+		float size = ImGui::GetWindowHeight() - 4.0f;
+		Ref<Texture2D> icon = m_SceneState == SceneState::Edit ? m_IconPlay : m_IconStop;
+		ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+		if (ImGui::ImageButton((ImTextureID)icon->getRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
+		{
+			if (m_SceneState == SceneState::Edit)
+				onScenePlay();
+			else if (m_SceneState == SceneState::Play)
+				onSceneStop();
+		}
+		ImGui::PopStyleVar(2);
+		ImGui::PopStyleColor(3);
+		ImGui::End();
 	}
 
 	void EditorLayer::onEvent(Event& e) {
@@ -310,12 +358,22 @@ namespace Mixture {
 		std::string filepath = FileDialogs::openFile("Mixture Scene (*.mxscene)\0*.mxscene\0");
 		if (filepath.empty()) return;
 
-		m_ActiveScene = createRef<Scene>();
-		m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-		m_SceneHierarchyPanel.setContext(m_ActiveScene);
+		openScene(filepath);
+	}
 
-		SceneSerializer serializer(m_ActiveScene);
-		serializer.deserialize(filepath);
+	void EditorLayer::openScene(const std::filesystem::path& path) {
+		if (path.extension().string() != ".mxscene") {
+			MX_WARN("Could not load {0} - not a scene file", path.filename().string());
+			return;
+		}
+
+		Ref<Scene> newScene = createRef<Scene>();
+		SceneSerializer serializer(newScene);
+		if (serializer.deserialize(path.string())) {
+			m_ActiveScene = newScene;
+			m_ActiveScene->onViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_SceneHierarchyPanel.setContext(m_ActiveScene);
+		}
 	}
 
 	void EditorLayer::saveSceneAs() {
@@ -324,5 +382,14 @@ namespace Mixture {
 
 		SceneSerializer serializer(m_ActiveScene);
 		serializer.serialize(filepath);
+	}
+
+	void EditorLayer::onScenePlay() {
+		m_SceneState = SceneState::Play;
+	}
+
+	void EditorLayer::onSceneStop() {
+		m_SceneState = SceneState::Edit;
+
 	}
 }
