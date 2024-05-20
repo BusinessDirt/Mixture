@@ -26,6 +26,7 @@ project "Mixture"
     includedirs {
         "src",
         "%{IncludeDir.spdlog}",
+        "%{IncludeDir.Box2D}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.Glad}",
         "%{IncludeDir.ImGui}",
@@ -38,11 +39,12 @@ project "Mixture"
     }
 
     links {
-            "GLFW",
-            "Glad",
-            "ImGui",
-            "yaml-cpp",
-            "opengl32.lib"
+        "Box2D",
+        "GLFW",
+        "Glad",
+        "ImGui",
+        "yaml-cpp",
+        "opengl32.lib"
     }
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")

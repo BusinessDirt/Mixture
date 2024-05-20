@@ -1,7 +1,8 @@
 #pragma once
 
-#include "Scene.h"
-#include "Mixture/Core/Base.h"
+#include "Mixture/Core/UUID.h"
+#include "Mixture/Scene/Scene.h"
+#include "Mixture/Scene/Components.h"
 
 #include "entt.hpp"
 
@@ -16,6 +17,13 @@ namespace Mixture {
 		T& addComponent(Args&&... args) {
 			MX_CORE_ASSERT(!hasComponent<T>(), "Entity already has component!");
 			T& component = m_Scene->m_Registry.emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+			m_Scene->onComponentAdded<T>(*this, component);
+			return component;
+		}
+
+		template<typename T, typename... Args>
+		T& addOrReplaceComponent(Args&&... args) {
+			T& component = m_Scene->m_Registry.emplace_or_replace<T>(m_EntityHandle, std::forward<Args>(args)...);
 			m_Scene->onComponentAdded<T>(*this, component);
 			return component;
 		}
@@ -40,6 +48,9 @@ namespace Mixture {
 		operator bool() const { return m_EntityHandle != entt::null; }
 		operator entt::entity() const { return m_EntityHandle; }
 		operator uint32_t() const { return (uint32_t)m_EntityHandle; }
+
+		UUID getUUID() { return getComponent<IDComponent>().id; }
+		const std::string& getName() { return getComponent<TagComponent>().tag; }
 
 		bool operator==(const Entity& other) const {
 			return m_EntityHandle == other.m_EntityHandle && m_Scene == other.m_Scene;

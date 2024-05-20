@@ -20,13 +20,20 @@ namespace Mixture {
 		bool onKeyPressed(KeyPressedEvent& e);
 		bool onMouseButtonPressed(MouseButtonPressedEvent& e);
 
+		void onOverlayRender();
+
 		void newScene();
 		void openScene();
 		void openScene(const std::filesystem::path& path);
 		void saveSceneAs();
+		void saveScene();
+
+		void serializeScene(Ref<Scene> scene, const std::filesystem::path& path);
 
 		void onScenePlay();
 		void onSceneStop();
+
+		void onDuplicateEntity();
 
 		void uiToolbar();
 	private:
@@ -34,7 +41,10 @@ namespace Mixture {
 
 		//Temp
 		Ref<Framebuffer> m_Framebuffer;
+
 		Ref<Scene> m_ActiveScene;
+		Ref<Scene> m_EditorScene;
+		std::filesystem::path m_EditorScenePath;
 
 		Entity m_HoveredEntity;
 
@@ -46,6 +56,7 @@ namespace Mixture {
 		glm::vec2 m_ViewportBounds[2];
 
 		int m_GizmoType = -1;
+		bool m_ShowPhysicsColliders = false;
 
 		enum class SceneState {
 			Edit = 0, Play = 1

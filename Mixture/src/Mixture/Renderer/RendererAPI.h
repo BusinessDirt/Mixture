@@ -22,6 +22,8 @@ namespace Mixture {
 		virtual void clear() = 0;
 
 		virtual void drawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
+		virtual void drawLines(const Ref<VertexArray>& vertexArray, uint32_t vertexCount) = 0;
+		virtual void setLineWidth(float width) = 0;
 
 		static API getAPI() { return s_API; }
 		static Scope<RendererAPI> create();

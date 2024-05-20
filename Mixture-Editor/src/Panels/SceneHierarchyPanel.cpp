@@ -31,20 +31,22 @@ namespace Mixture {
 	void SceneHierarchyPanel::onImGuiRender() {
 		ImGui::Begin("Scene Hierarchy");
 		
-		m_Context->m_Registry.each([&](auto entityID){
-			Entity entity{ entityID, m_Context.get() };
-			drawEntityNode(entity);
-		});
+		if (m_Context) {
+			m_Context->m_Registry.each([&](auto entityID) {
+				Entity entity{ entityID, m_Context.get() };
+				drawEntityNode(entity);
+				});
 
-		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
-			m_SelectionContext = {};
+			if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+				m_SelectionContext = {};
 
-		// right click on blank space
-		if (ImGui::BeginPopupContextWindow(0)) {
-			if (ImGui::MenuItem("Create Empty Entity"))
-				m_Context->createEntity("Empty Entity");
+			// right click on blank space
+			if (ImGui::BeginPopupContextWindow(0)) {
+				if (ImGui::MenuItem("Create Empty Entity"))
+					m_Context->createEntity("Empty Entity");
 
-			ImGui::EndPopup();
+				ImGui::EndPopup();
+			}
 		}
 
 		ImGui::End();
@@ -191,6 +193,16 @@ namespace Mixture {
 			entity.removeComponent<T>();
 	}
 
+	template<typename T>
+	static void drawAddComponent(const std::string& name, Entity& entity) {
+		if (!entity.hasComponent<T>()) {
+			if (ImGui::MenuItem(name.c_str())) {
+				entity.addComponent<T>();
+				ImGui::CloseCurrentPopup();
+			}
+		}
+	}
+
 	void SceneHierarchyPanel::drawComponents(Entity entity) {
 		if (entity.hasComponent<TagComponent>()) {
 			std::string& tag = entity.getComponent<TagComponent>().tag;
@@ -208,21 +220,12 @@ namespace Mixture {
 		if (ImGui::Button("Add Component")) ImGui::OpenPopup("AddComponent");
 
 		if (ImGui::BeginPopup("AddComponent")) {
-			if (ImGui::MenuItem("Camera")) {
-				if (!m_SelectionContext.hasComponent<CameraComponent>())
-					m_SelectionContext.addComponent<CameraComponent>();
-				else
-					MX_CORE_WARN("This entity already has the Camera Component!");
-				ImGui::CloseCurrentPopup();
-			}
-
-			if (ImGui::MenuItem("Sprite Renderer")) {
-				if (!m_SelectionContext.hasComponent<SpriteRendererComponent>())
-					m_SelectionContext.addComponent<SpriteRendererComponent>();
-				else
-					MX_CORE_WARN("This entity already has the Sprite Renderer Component!");
-				ImGui::CloseCurrentPopup();
-			}
+			drawAddComponent<CameraComponent>("Camera", m_SelectionContext);
+			drawAddComponent<SpriteRendererComponent>("Sprite Renderer", m_SelectionContext);
+			drawAddComponent<CircleRendererComponent>("Circle Renderer", m_SelectionContext);
+			drawAddComponent<Rigidbody2DComponent>("Rigidbody 2D", m_SelectionContext);
+			drawAddComponent<BoxCollider2DComponent>("Box Collider 2D", m_SelectionContext);
+			drawAddComponent<CircleCollider2DComponent>("Circle Collider 2D", m_SelectionContext);
 
 			ImGui::EndPopup();
 		}
@@ -303,6 +306,52 @@ namespace Mixture {
 			}
 
 			ImGui::DragFloat("Tiling Factor", &component.tilingFactor, 0.1f, 0.0f, 100.0f);
+		});
+
+		drawComponent<CircleRendererComponent>("Circle Renderer", entity, [](auto& component) {
+			ImGui::ColorEdit4("Color", glm::value_ptr(component.color));
+			ImGui::DragFloat("Thickness", &component.thickness, 0.025f, 0.0f, 1.0f);
+			ImGui::DragFloat("Fade", &component.fade, 0.00025f, 0.0f, 1.0f);
+		});
+
+		drawComponent<Rigidbody2DComponent>("Rigidbody 2D", entity, [](Rigidbody2DComponent& component){
+			const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
+			const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
+			if (ImGui::BeginCombo("Body Type", currentBodyTypeString)) {
+				for (int i = 0; i < 2; i++)
+				{
+					bool isSelected = currentBodyTypeString == bodyTypeStrings[i];
+					if (ImGui::Selectable(bodyTypeStrings[i], isSelected)) {
+						currentBodyTypeString = bodyTypeStrings[i];
+						component.type = (Rigidbody2DComponent::BodyType)i;
+					}
+
+					if (isSelected)
+						ImGui::SetItemDefaultFocus();
+				}
+
+				ImGui::EndCombo();
+			}
+
+			ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
+		});
+
+		drawComponent<BoxCollider2DComponent>("Box Collider 2D", entity, [](BoxCollider2DComponent& component) {
+			ImGui::DragFloat2("Offset", glm::value_ptr(component.offset));
+			ImGui::DragFloat2("Size", glm::value_ptr(component.size));
+			ImGui::DragFloat("Density", &component.density, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Friction", &component.friction, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Restitution", &component.restitution, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Restitution Threshold", &component.restitutionThreshold, 0.01f, 0.0f);
+		});
+
+		drawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [](CircleCollider2DComponent& component) {
+			ImGui::DragFloat2("Offset", glm::value_ptr(component.offset));
+			ImGui::DragFloat("Radius", &component.radius);
+			ImGui::DragFloat("Density", &component.density, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Friction", &component.friction, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Restitution", &component.restitution, 0.01f, 0.0f, 1.0f);
+			ImGui::DragFloat("Restitution Threshold", &component.restitutionThreshold, 0.01f, 0.0f);
 		});
 	}
 }
