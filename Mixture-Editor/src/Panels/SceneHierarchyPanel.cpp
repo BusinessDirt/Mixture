@@ -194,10 +194,10 @@ namespace Mixture {
 	}
 
 	template<typename T>
-	static void drawAddComponent(const std::string& name, Entity& entity) {
-		if (!entity.hasComponent<T>()) {
-			if (ImGui::MenuItem(name.c_str())) {
-				entity.addComponent<T>();
+	void SceneHierarchyPanel::displayAddComponentEntry(const std::string& entryName) {
+		if (!m_SelectionContext.hasComponent<T>()) {
+			if (ImGui::MenuItem(entryName.c_str())) {
+				m_SelectionContext.addComponent<T>();
 				ImGui::CloseCurrentPopup();
 			}
 		}
@@ -220,12 +220,12 @@ namespace Mixture {
 		if (ImGui::Button("Add Component")) ImGui::OpenPopup("AddComponent");
 
 		if (ImGui::BeginPopup("AddComponent")) {
-			drawAddComponent<CameraComponent>("Camera", m_SelectionContext);
-			drawAddComponent<SpriteRendererComponent>("Sprite Renderer", m_SelectionContext);
-			drawAddComponent<CircleRendererComponent>("Circle Renderer", m_SelectionContext);
-			drawAddComponent<Rigidbody2DComponent>("Rigidbody 2D", m_SelectionContext);
-			drawAddComponent<BoxCollider2DComponent>("Box Collider 2D", m_SelectionContext);
-			drawAddComponent<CircleCollider2DComponent>("Circle Collider 2D", m_SelectionContext);
+			displayAddComponentEntry<CameraComponent>("Camera");
+			displayAddComponentEntry<SpriteRendererComponent>("Sprite Renderer");
+			displayAddComponentEntry<CircleRendererComponent>("Circle Renderer");
+			displayAddComponentEntry<Rigidbody2DComponent>("Rigidbody 2D");
+			displayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
+			displayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
 
 			ImGui::EndPopup();
 		}

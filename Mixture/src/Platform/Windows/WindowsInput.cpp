@@ -9,7 +9,7 @@ namespace Mixture {
 	bool Input::isKeyPressed(const KeyCode keycode) {
 		GLFWwindow* window = static_cast<GLFWwindow*>(Application::get().getWindow().getNativeWindow());
 		int state = glfwGetKey(window, static_cast<int32_t>(keycode));
-		return state == GLFW_PRESS || state == GLFW_REPEAT;
+		return state == GLFW_PRESS;
 	}
 
 	bool Input::isMouseButtonPressed(const MouseCode button) {

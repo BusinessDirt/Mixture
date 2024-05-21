@@ -4,6 +4,7 @@
 #include "Mixture/Logging/Log.h"
 #include "Mixture/Renderer/Renderer.h"
 #include "Mixture/Input/Input.h"
+#include "Mixture/Utils/PlatformUtils.h"
 
 #include <GLFW/glfw3.h>
 
@@ -67,7 +68,7 @@ namespace Mixture {
 		while (m_Running) {
 			MX_PROFILE_SCOPE("RunLoop");
 
-			float time = (float)glfwGetTime();
+			float time = Time::getTime();
 			Timestep timestep = time - m_LastFrameTime;
 			m_LastFrameTime = time;
 

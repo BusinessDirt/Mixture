@@ -263,6 +263,7 @@ namespace Mixture {
 		try {
 			data = YAML::LoadFile(filepath);
 		} catch(YAML::ParserException e) {
+			MX_CORE_ERROR("Failed to load .mxscene file '{0}'\n    {1}", filepath, e.what());
 			return false;
 		}
 

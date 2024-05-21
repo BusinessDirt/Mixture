@@ -33,8 +33,7 @@ namespace Mixture {
 
 		for (std::filesystem::directory_entry directoryEntry : std::filesystem::directory_iterator(m_CurrentDirectory)) {
 			const std::filesystem::path& path = directoryEntry.path();
-			std::filesystem::path relativePath = std::filesystem::relative(path, g_AssetPath);
-			std::string filenameString = relativePath.filename().string();
+			std::string filenameString = path.filename().string();
 
 			ImGui::PushID(filenameString.c_str());
 			Ref<Texture2D> icon = directoryEntry.is_directory() ? m_DirectoryIcon : m_FileIcon;
@@ -43,6 +42,7 @@ namespace Mixture {
 			ImGui::ImageButton((ImTextureID)icon->getRendererID(), { thumbnailSize, thumbnailSize }, { 0,1 }, { 1,0 });
 
 			if (ImGui::BeginDragDropSource()) {
+				std::filesystem::path relativePath = std::filesystem::relative(path, g_AssetPath);
 				const wchar_t* itemPath = relativePath.c_str();
 				ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
 				ImGui::EndDragDropSource();

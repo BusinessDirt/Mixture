@@ -27,9 +27,13 @@ namespace Mixture {
 		m_Framebuffer = Framebuffer::create(fbSpec);
 
 		m_IconPlay = Texture2D::create("resources/Icons/PlayButton.png");
+		m_IconSimulate = Texture2D::create("resources/Icons/SimulateButton.png");
 		m_IconStop = Texture2D::create("resources/Icons/StopButton.png");
 
-		m_ActiveScene = createRef<Scene>();
+		m_EditorScene = createRef<Scene>();
+		m_ActiveScene = m_EditorScene;
+
+
 		ApplicationCommandLineArgs commandLineArgs = Application::get().getCommandLineArgs();
 		if (commandLineArgs.count > 1) {
 			const char* sceneFilePath = commandLineArgs[1];
@@ -76,9 +80,14 @@ namespace Mixture {
 			m_EditorCamera.onUpdate(ts);
 			m_ActiveScene->onUpdateEditor(ts, m_EditorCamera);
 			break;
+		case SceneState::Simulate:
+			m_EditorCamera.onUpdate(ts);
+			m_ActiveScene->onUpdateSimulation(ts, m_EditorCamera);
+			break;
 		case SceneState::Play:
 			m_ActiveScene->onUpdateRuntime(ts);
 			break;
+		
 		}
 
 		auto [mx, my] = ImGui::GetMousePos();
@@ -285,16 +294,40 @@ namespace Mixture {
 
 		ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
+		bool toolbarEnabled = (bool)m_ActiveScene;
+		ImVec4 tintColor = ImVec4(1, 1, 1, 1);
+		if (!toolbarEnabled) tintColor.w = 0.5f;
+
 		float size = ImGui::GetWindowHeight() - 4.0f;
-		Ref<Texture2D> icon = m_SceneState == SceneState::Edit ? m_IconPlay : m_IconStop;
-		ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
-		if (ImGui::ImageButton((ImTextureID)icon->getRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0))
+
 		{
-			if (m_SceneState == SceneState::Edit)
-				onScenePlay();
-			else if (m_SceneState == SceneState::Play)
-				onSceneStop();
+			Ref<Texture2D> icon = m_SceneState == SceneState::Edit ? m_IconPlay : m_IconStop;
+			ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+			if (ImGui::ImageButton((ImTextureID)icon->getRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0, 
+				ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled) {
+				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate)
+					onScenePlay();
+				else if (m_SceneState == SceneState::Play)
+					onSceneStop();
+			}
 		}
+		ImGui::SameLine();
+		{
+			Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_IconSimulate : m_IconStop;
+			//ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+			if (ImGui::ImageButton((ImTextureID)icon->getRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0,
+				ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toolbarEnabled) {
+				if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) {
+					MX_CORE_INFO("test");
+					onSceneSimulate();
+				}
+				else if (m_SceneState == SceneState::Simulate) {
+					MX_CORE_INFO("test");
+					onSceneStop();
+				}
+			}
+		}
+
 		ImGui::PopStyleVar(2);
 		ImGui::PopStyleColor(3);
 		ImGui::End();
@@ -302,7 +335,7 @@ namespace Mixture {
 
 	void EditorLayer::onEvent(Event& e) {
 		m_CameraController.onEvent(e);
-		m_EditorCamera.onEvent(e);
+		if (m_SceneState == SceneState::Edit) m_EditorCamera.onEvent(e);
 
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch<KeyPressedEvent>(MX_BIND_EVENT_FN(EditorLayer::onKeyPressed));
@@ -311,7 +344,7 @@ namespace Mixture {
 
 	bool EditorLayer::onKeyPressed(KeyPressedEvent& e) {
 		// Shortcuts
-		if (e.getRepeatCount() > 0) return false;
+		if (e.isRepeat() > 0) return false;
 
 		bool control = Input::isKeyPressed(Key::LeftControl) || Input::isKeyPressed(Key::RightControl);
 		bool shift = Input::isKeyPressed(Key::LeftShift) || Input::isKeyPressed(Key::RightShift);
@@ -363,6 +396,7 @@ namespace Mixture {
 	void EditorLayer::onOverlayRender() {
 		if (m_SceneState == SceneState::Play) {
 			Entity camera = m_ActiveScene->getPrimaryCameraEntity();
+			if (!camera) return;
 			Renderer2D::beginScene(camera.getComponent<CameraComponent>().camera, camera.getComponent<TransformComponent>().getTransform());
 		} else Renderer2D::beginScene(m_EditorCamera);
 		
@@ -399,6 +433,13 @@ namespace Mixture {
 					Renderer2D::drawCircle(transform, glm::vec4(0, 1, 0, 1), 0.01f);
 				}
 			}
+		}
+
+		// draw selected entity outline
+		if (Entity selectedEntity = m_SceneHierarchyPanel.getSelectedEntity()) {
+			TransformComponent transform = selectedEntity.getComponent<TransformComponent>();
+
+			Renderer2D::drawRect(transform.getTransform(), glm::vec4(1, 0, 0, 1));
 		}
 
 		Renderer2D::endScene();
@@ -461,6 +502,8 @@ namespace Mixture {
 	}
 
 	void EditorLayer::onScenePlay() {
+		if (m_SceneState == SceneState::Simulate) onSceneStop();
+
 		m_SceneState = SceneState::Play;
 
 		m_ActiveScene = Scene::copy(m_EditorScene);
@@ -469,10 +512,28 @@ namespace Mixture {
 		m_SceneHierarchyPanel.setContext(m_ActiveScene);
 	}
 
+	void EditorLayer::onSceneSimulate() {
+		if (m_SceneState == SceneState::Play)
+			onSceneStop();
+
+		m_SceneState = SceneState::Simulate;
+
+		m_ActiveScene = Scene::copy(m_EditorScene);
+		m_ActiveScene->onSimulationStart();
+
+		m_SceneHierarchyPanel.setContext(m_ActiveScene);
+	}
+
 	void EditorLayer::onSceneStop() {
+		//MX_CORE_ASSERT(m_SceneState == SceneState::Play || m_SceneState == SceneState::Simulate);
+
+		if (m_SceneState == SceneState::Play)
+			m_ActiveScene->onRuntimeStop();
+		else if (m_SceneState == SceneState::Simulate)
+			m_ActiveScene->onSimulationStop();
+
 		m_SceneState = SceneState::Edit;
 
-		m_ActiveScene->onRuntimeStop();
 		m_ActiveScene = m_EditorScene;
 
 		m_SceneHierarchyPanel.setContext(m_ActiveScene);

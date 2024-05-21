@@ -83,7 +83,7 @@ namespace Mixture {
 
 			switch (action) {
 				case GLFW_PRESS: {
-					KeyPressedEvent event(key, 0);
+					KeyPressedEvent event(key);
 					data.eventCallback(event);
 					break;
 				}
@@ -93,7 +93,7 @@ namespace Mixture {
 					break;
 				}
 				case GLFW_REPEAT: {
-					KeyPressedEvent event(key, 1);
+					KeyPressedEvent event(key, true);
 					data.eventCallback(event);
 					break;
 				}

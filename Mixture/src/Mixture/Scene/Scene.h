@@ -27,10 +27,14 @@ namespace Mixture {
 		void onRuntimeStart();
 		void onRuntimeStop();
 
+		void onSimulationStart();
+		void onSimulationStop();
+
 		// TEMP
 		entt::registry& reg() { return m_Registry; }
 
 		void onUpdateRuntime(Timestep ts);
+		void onUpdateSimulation(Timestep ts, EditorCamera& camera);
 		void onUpdateEditor(Timestep ts, EditorCamera& camera);
 		void onViewportResize(uint32_t width, uint32_t height);
 
@@ -45,6 +49,11 @@ namespace Mixture {
 	private:
 		template<typename T>
 		void onComponentAdded(Entity entity, T& component);
+
+		void onPhysics2DStart();
+		void onPhysics2DStop();
+
+		void renderScene(EditorCamera& camera);
 	private:
 		entt::registry m_Registry;
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;

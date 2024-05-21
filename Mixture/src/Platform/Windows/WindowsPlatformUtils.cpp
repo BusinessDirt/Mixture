@@ -46,6 +46,10 @@ namespace Mixture {
 		if (GetSaveFileNameA(&ofn) == TRUE) return ofn.lpstrFile;
 		return std::string();
 	}
+
+	float Time::getTime() {
+		return glfwGetTime();
+	}
 }
 
 

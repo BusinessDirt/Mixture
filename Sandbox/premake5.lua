@@ -41,10 +41,6 @@ project "Sandbox"
        runtime "Debug"
        symbols "On"
 
-       postbuildcommands {
-            "{COPYDIR} \"%{LibraryDir.VulkanSDK_DebugDLL}\" \"%{cfg.targetdir}\""
-       }
-
    filter "configurations:Release"
        defines { "MX_RELEASE" }
        runtime "Release"

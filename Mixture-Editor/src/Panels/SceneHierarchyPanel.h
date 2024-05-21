@@ -17,6 +17,9 @@ namespace Mixture {
 		Entity getSelectedEntity() const { return m_SelectionContext; }
 		void setSelectedEntity(Entity entity);
 	private:
+		template<typename T>
+		void displayAddComponentEntry(const std::string& entryName);
+
 		void drawEntityNode(Entity entity);
 		void drawComponents(Entity entity);
 	private:

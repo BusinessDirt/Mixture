@@ -34,26 +34,32 @@ namespace Mixture {
 	}
 
 	Scene::~Scene() {
-
+		delete m_PhysicsWorld;
 	}
 
-	template<typename Component>
+	template<typename... Component>
 	static void copyComponent(entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap) {
-		auto view = src.view<Component>();
-		for (entt::entity e : view) {
-			UUID uuid = src.get<IDComponent>(e).id;
-			MX_CORE_ASSERT(enttMap.find(uuid) != enttMap.end());
-			entt::entity dstEnttID = enttMap.at(uuid);
-
-			Component& component = src.get<Component>(e);
-			dst.emplace_or_replace<Component>(dstEnttID, component);
-		}
+		([&]() {
+			auto view = src.view<Component>();
+			for (entt::entity srcEntity : view) {
+				entt::entity dstEntity = enttMap.at(src.get<IDComponent>(srcEntity).id);
+				auto& srcComponent = src.get<Component>(srcEntity);
+				dst.emplace_or_replace<Component>(dstEntity, srcComponent);
+			}
+		}(), ...);
 	}
 
-	template<typename Component>
+	template<typename... Component>
+	static void copyComponent(ComponentGroup<Component...>, entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap) {
+		copyComponent<Component...>(dst, src, enttMap);
+	}
+
+	template<typename... Component>
 	static void copyComponentIfExists(Entity dst, Entity src) {
-		if (src.hasComponent<Component>())
-			dst.addOrReplaceComponent<Component>(src.getComponent<Component>());
+		([&](){
+			if (src.hasComponent<Component>())
+				dst.addOrReplaceComponent<Component>(src.getComponent<Component>());
+		}(), ...);
 	}
 
 	Ref<Scene> Scene::copy(Ref<Scene> other) {
@@ -106,63 +112,22 @@ namespace Mixture {
 	}
 
 	void Scene::onRuntimeStart() {
-		m_PhysicsWorld = new b2World({ 0.0f, -9.8f });
-
-		auto view = m_Registry.view<Rigidbody2DComponent>();
-		for (auto e : view) {
-			Entity entity = { e, this };
-			TransformComponent& transform = entity.getComponent<TransformComponent>();
-			Rigidbody2DComponent& rb2d = entity.getComponent<Rigidbody2DComponent>();
-
-			b2BodyDef bodyDef;
-			bodyDef.type = rigidbody2DTypeToBox2DBody(rb2d.type);
-			bodyDef.position.Set(transform.translation.x, transform.translation.y);
-			bodyDef.angle = transform.rotation.z;
-
-			b2Body* body = m_PhysicsWorld->CreateBody(&bodyDef);
-			body->SetFixedRotation(rb2d.fixedRotation);
-			rb2d.runtimeBody = body;
-
-			if (entity.hasComponent<BoxCollider2DComponent>()) {
-				BoxCollider2DComponent& bc2d = entity.getComponent<BoxCollider2DComponent>();
-
-				b2PolygonShape boxShape;
-				boxShape.SetAsBox(bc2d.size.x * transform.scale.x, bc2d.size.y * transform.scale.y);
-
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &boxShape;
-				fixtureDef.density = bc2d.density;
-				fixtureDef.friction = bc2d.friction;
-				fixtureDef.restitution = bc2d.restitution;
-				fixtureDef.restitutionThreshold = bc2d.restitutionThreshold;
-				body->CreateFixture(&fixtureDef);
-			}
-
-			if (entity.hasComponent<CircleCollider2DComponent>()) {
-				CircleCollider2DComponent& cc2d = entity.getComponent<CircleCollider2DComponent>();
-
-				b2CircleShape circleShape;
-				circleShape.m_p.Set(cc2d.offset.x, cc2d.offset.y);
-				circleShape.m_radius = transform.scale.x * cc2d.radius;
-
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &circleShape;
-				fixtureDef.density = cc2d.density;
-				fixtureDef.friction = cc2d.friction;
-				fixtureDef.restitution = cc2d.restitution;
-				fixtureDef.restitutionThreshold = cc2d.restitutionThreshold;
-				body->CreateFixture(&fixtureDef);
-			}
-		}
+		onPhysics2DStart();
 	}
 
 	void Scene::onRuntimeStop() {
-		delete m_PhysicsWorld;
-		m_PhysicsWorld = nullptr;
+		onPhysics2DStop();
+	}
+
+	void Scene::onSimulationStart() {
+		onPhysics2DStart();
+	}
+
+	void Scene::onSimulationStop() {
+		onPhysics2DStop();
 	}
 
 	void Scene::onUpdateRuntime(Timestep ts) {
-
 		{
 			m_Registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc) {
 				if (!nsc.instance) {
@@ -238,28 +203,35 @@ namespace Mixture {
 		}
 	}
 
-	void Scene::onUpdateEditor(Timestep ts, EditorCamera& camera) {
-		Renderer2D::beginScene(camera);
-		
-		// draw sprites
+	void Scene::onUpdateSimulation(Timestep ts, EditorCamera& camera) {
+		// Physics
 		{
-			auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
-			for (entt::entity entity : group) {
-				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
-				Renderer2D::drawSprite(transform.getTransform(), sprite, (int)entity);
+			const int32_t velocityIterations = 6;
+			const int32_t positionIterations = 2;
+			m_PhysicsWorld->Step(ts, velocityIterations, positionIterations);
+
+			// Retrieve transform from Box2D
+			auto view = m_Registry.view<Rigidbody2DComponent>();
+			for (auto e : view)
+			{
+				Entity entity = { e, this };
+				auto& transform = entity.getComponent<TransformComponent>();
+				auto& rb2d = entity.getComponent<Rigidbody2DComponent>();
+
+				b2Body* body = (b2Body*)rb2d.runtimeBody;
+				const auto& position = body->GetPosition();
+				transform.translation.x = position.x;
+				transform.translation.y = position.y;
+				transform.rotation.z = body->GetAngle();
 			}
 		}
 
-		// draw circles
-		{
-			auto view = m_Registry.view<TransformComponent, CircleRendererComponent>();
-			for (entt::entity entity : view) {
-				auto [transform, circle] = view.get<TransformComponent, CircleRendererComponent>(entity);
-				Renderer2D::drawCircle(transform.getTransform(), circle.color, circle.thickness, circle.fade, (int)entity);
-			}
-		}
-		
-		Renderer2D::endScene();
+		// Render
+		renderScene(camera);
+	}
+
+	void Scene::onUpdateEditor(Timestep ts, EditorCamera& camera) {
+		renderScene(camera);
 	}
 
 	void Scene::onViewportResize(uint32_t width, uint32_t height) {
@@ -299,9 +271,89 @@ namespace Mixture {
 		return {};
 	}
 
+	void Scene::onPhysics2DStart() {
+		m_PhysicsWorld = new b2World({ 0.0f, -9.8f });
+
+		auto view = m_Registry.view<Rigidbody2DComponent>();
+		for (auto e : view) {
+			Entity entity = { e, this };
+			TransformComponent& transform = entity.getComponent<TransformComponent>();
+			Rigidbody2DComponent& rb2d = entity.getComponent<Rigidbody2DComponent>();
+
+			b2BodyDef bodyDef;
+			bodyDef.type = rigidbody2DTypeToBox2DBody(rb2d.type);
+			bodyDef.position.Set(transform.translation.x, transform.translation.y);
+			bodyDef.angle = transform.rotation.z;
+
+			b2Body* body = m_PhysicsWorld->CreateBody(&bodyDef);
+			body->SetFixedRotation(rb2d.fixedRotation);
+			rb2d.runtimeBody = body;
+
+			if (entity.hasComponent<BoxCollider2DComponent>()) {
+				BoxCollider2DComponent& bc2d = entity.getComponent<BoxCollider2DComponent>();
+
+				b2PolygonShape boxShape;
+				boxShape.SetAsBox(bc2d.size.x * transform.scale.x, bc2d.size.y * transform.scale.y);
+
+				b2FixtureDef fixtureDef;
+				fixtureDef.shape = &boxShape;
+				fixtureDef.density = bc2d.density;
+				fixtureDef.friction = bc2d.friction;
+				fixtureDef.restitution = bc2d.restitution;
+				fixtureDef.restitutionThreshold = bc2d.restitutionThreshold;
+				body->CreateFixture(&fixtureDef);
+			}
+
+			if (entity.hasComponent<CircleCollider2DComponent>()) {
+				CircleCollider2DComponent& cc2d = entity.getComponent<CircleCollider2DComponent>();
+
+				b2CircleShape circleShape;
+				circleShape.m_p.Set(cc2d.offset.x, cc2d.offset.y);
+				circleShape.m_radius = transform.scale.x * cc2d.radius;
+
+				b2FixtureDef fixtureDef;
+				fixtureDef.shape = &circleShape;
+				fixtureDef.density = cc2d.density;
+				fixtureDef.friction = cc2d.friction;
+				fixtureDef.restitution = cc2d.restitution;
+				fixtureDef.restitutionThreshold = cc2d.restitutionThreshold;
+				body->CreateFixture(&fixtureDef);
+			}
+		}
+	}
+
+	void Scene::onPhysics2DStop() {
+		delete m_PhysicsWorld;
+		m_PhysicsWorld = nullptr;
+	}
+
+	void Scene::renderScene(EditorCamera& camera) {
+		Renderer2D::beginScene(camera);
+
+		// draw sprites
+		{
+			auto group = m_Registry.group<TransformComponent>(entt::get<SpriteRendererComponent>);
+			for (entt::entity entity : group) {
+				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
+				Renderer2D::drawSprite(transform.getTransform(), sprite, (int)entity);
+			}
+		}
+
+		// draw circles
+		{
+			auto view = m_Registry.view<TransformComponent, CircleRendererComponent>();
+			for (entt::entity entity : view) {
+				auto [transform, circle] = view.get<TransformComponent, CircleRendererComponent>(entity);
+				Renderer2D::drawCircle(transform.getTransform(), circle.color, circle.thickness, circle.fade, (int)entity);
+			}
+		}
+
+		Renderer2D::endScene();
+	}
+
 	template<typename T>
 	void Scene::onComponentAdded(Entity entity, T& component) {
-		//static_assert(false);
+		static_assert(sizeof(T) == 0);
 	}
 
 	template<>
