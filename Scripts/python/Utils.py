@@ -71,7 +71,6 @@ def unzip_file(filepath: str, delete_zip_file=True):
         print("Unsupported file format.")
         return
 
-
     if delete_zip_file:
         os.remove(path)
 
