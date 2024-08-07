@@ -13,10 +13,14 @@ namespace Mixture
 
         m_Window = Window::Create(WindowProps(name));
         m_Window->SetEventCallback(MX_BIND_EVENT_FN(Application::OnEvent));
+
+        Renderer::Init(name);
 	}
 
 	Application::~Application()
 	{
+        Renderer::Shutdown();
+
 		m_Window = nullptr;
 	}
 
@@ -30,9 +34,6 @@ namespace Mixture
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch<WindowCloseEvent>(MX_BIND_EVENT_FN(Application::OnWindowClose));
 		dispatcher.dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(Application::OnWindowResize));
-
-		// Handle other events
-		
 	}
 
 	void Application::Run()
@@ -40,6 +41,7 @@ namespace Mixture
 		while (m_Running)
 		{
 			m_Window->OnUpdate();
+            Renderer::DrawFrame();
 		}
 	}
 
@@ -51,6 +53,7 @@ namespace Mixture
 
 	bool Application::OnWindowResize(WindowResizeEvent& e)
 	{
+        Renderer::OnWindowResize(e.GetWidth(), e.GetHeight());
 		return false;
 	}
 }

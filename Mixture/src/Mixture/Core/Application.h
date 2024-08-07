@@ -9,6 +9,8 @@
 #include "Mixture/Events/KeyEvent.h"
 #include "Mixture/Events/MouseEvent.h"
 
+#include "Mixture/Renderer/Renderer.h"
+
 int Entrypoint(int argc, char** argv);
 
 namespace Mixture

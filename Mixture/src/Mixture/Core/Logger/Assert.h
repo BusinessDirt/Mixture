@@ -21,12 +21,12 @@
 	#define MX_CORE_ASSERT(...) MX_EXPAND_MACRO( MX_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_CORE_, __VA_ARGS__) )
 
 	// Vulkan creation asserts
-	//#define MX_VK_ASSERT(result, message) MX_CORE_ASSERT(result == VK_SUCCESS, message)
+	#define MX_VK_ASSERT(result, message) MX_CORE_ASSERT(result == VK_SUCCESS, message)
 
 #else
 
 	#define MX_ASSERT(...)
 	#define MX_CORE_ASSERT(...)
-	//#define MX_VK_ASSERT(result, message) result
+	#define MX_VK_ASSERT(result, message) result
 
 #endif

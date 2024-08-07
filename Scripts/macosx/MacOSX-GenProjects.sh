@@ -1,2 +1,2 @@
 echo "$PWD"
-./vendor/premake/bin/premake5 --cc=clang gmake2  --file=Build.lua
+./vendor/premake/bin/premake5 --cc=clang xcode4 --file=Build.lua

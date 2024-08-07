@@ -11,9 +11,13 @@ project "App"
         "src",
 
         -- Include Core
-        "%{wks.location}/Mixture/src",
+        "%{wks.location}/Mixture/src"
+    }
+
+    externalincludedirs {
         "%{IncludeDir.spdlog}",
-        "%{IncludeDir.glfw}"
+        "%{IncludeDir.glfw}",
+        "%{IncludeDir.glm}"
     }
 
     links {
@@ -23,12 +27,45 @@ project "App"
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
     objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
-    filter "system:macosx"
+    -- mac specific settings
+    filter "action:xcode4"
+        local vulkanFramework = VULKAN_SDK .. "/Frameworks"
+
         links {
             "GLFW",
+            "vulkan.framework",
             "Cocoa.framework",
             "IOKit.framework",
-            "QuartzCore.framework"
+            "QuartzCore.framework",
+            "AppKit.framework"
+        }
+
+        externalincludedirs {
+            -- need to explicitly add path to framework headers
+            "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/Cocoa.framework/Headers",
+            "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/IOKit.framework/Headers",
+            "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/AppKit.framework/Headers",
+            "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/QuartzCore.framework/Headers",
+            "%{IncludeDir.VulkanSDK}"
+        }
+
+        frameworkdirs {
+            -- path to search for third party frameworks
+            vulkanFramework,
+            "/System/Library/Frameworks",
+            "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/"
+        }
+
+        xcodebuildsettings {
+        --    ["MACOSX_DEPLOYMENT_TARGET"] = "14.4",
+        --    ["PRODUCT_BUNDLE_IDENTIFIER"] = 'com.yourdomain.yourapp',
+        --    ["CODE_SIGN_STYLE"] = "Automatic",
+        --    ["DEVELOPMENT_TEAM"] = '1234ABCD56',                                    -- your dev team id
+        --    ["INFOPLIST_FILE"] = "../../source/mac/Info.plist",                     -- path is relative to the generated project file
+        --    ["CODE_SIGN_ENTITLEMENTS"] = ("../../source/mac/app.entitlements"),     -- ^
+        --    ["ENABLE_HARDENED_RUNTIME"] = "YES",                                    -- hardened runtime is required for notarization
+        --    ["CODE_SIGN_IDENTITY"] = "Apple Development",                           -- sets 'Signing Certificate' to 'Development'. Defaults to 'Sign to Run Locally'. not doing this will crash your app if you upgrade the project when prompted by Xcode
+            ["LD_RUNPATH_SEARCH_PATHS"] = "@executable_path/../Frameworks @loader_path/../Frameworks " .. vulkanFramework, -- tell the executable where to find the frameworks. Path is relative to executable location inside .app bundle
         }
 
     filter "configurations:Debug"

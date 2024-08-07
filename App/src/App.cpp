@@ -1,4 +1,4 @@
-#include "Mixture/Core/Entrypoint.h"
+#include "Mixture.h"
 
 namespace Mixture
 {

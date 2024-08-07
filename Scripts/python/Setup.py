@@ -3,15 +3,17 @@ import subprocess
 import platform
 
 # python setup
-from Setup.SetupPython import PythonConfiguration as PythonRequirements
+from Setup.Python import PythonConfiguration as PythonRequirements
 PythonRequirements.validate()
 
 # premake setup
-from Setup.SetupPremake import PremakeConfiguration as PremakeRequirements
+from Setup.Premake import PremakeConfiguration as PremakeRequirements
 os.chdir('../../') # change from scripts/python directory to root
 premakeInstalled = PremakeRequirements.validate()
 
 # other requirements
+from Setup.Vulkan import VulkanConfiguration as VulkanRequirements
+VulkanRequirements.validate()
 
 # submodules and build files
 print("\nUpdating submodules...")

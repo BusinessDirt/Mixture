@@ -11,12 +11,14 @@ project "Mixture"
     files { "src/**.h", "src/**.cpp" }
 
     includedirs {
-        "src",
-        "%{IncludeDir.glfw}",
-        "%{IncludeDir.spdlog}"
+        "src"
     }
 
-    links {
+    externalincludedirs {
+        "%{IncludeDir.glfw}",
+        "%{IncludeDir.spdlog}",
+        "%{IncludeDir.glm}",
+        "%{IncludeDir.VulkanSDK}",
     }
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -24,7 +26,8 @@ project "Mixture"
 
     filter "system:windows"
         links {
-            "GLFW"
+            "GLFW",
+            "%{Library.Vulkan}"
         }
 
     filter "configurations:Debug"
