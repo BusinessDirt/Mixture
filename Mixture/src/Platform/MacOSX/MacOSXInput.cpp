@@ -1,8 +1,8 @@
-#include "mxpch.h"
+#include "mxpch.hpp"
 
 #ifdef MIXTURE_PLATFORM_MACOSX
-#include "Mixture/Input/Input.h"
-#include "Mixture/Core/Application.h"
+#include "Mixture/Input/Input.hpp"
+#include "Mixture/Core/Application.hpp"
 
 #include <GLFW/glfw3.h>
 

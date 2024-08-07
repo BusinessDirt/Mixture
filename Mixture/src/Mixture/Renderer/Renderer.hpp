@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Mixture/Core/Base.h"
+#include "Mixture/Core/Base.hpp"
 
-#include "Mixture/Renderer/RendererAPI.h"
+#include "Mixture/Renderer/RendererAPI.hpp"
 
 namespace Mixture
 {

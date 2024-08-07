@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Mixture/Core/Base.h"
+#include "Mixture/Core/Base.hpp"
 
-#include "Mixture/Core/Application.h"
+#include "Mixture/Core/Application.hpp"
 
 extern Mixture::Application* Mixture::CreateApplication(Mixture::ApplicationCommandLineArgs args);
 

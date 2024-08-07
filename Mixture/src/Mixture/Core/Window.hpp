@@ -2,8 +2,8 @@
 
 #include <sstream>
 
-#include "Mixture/Core/Base.h"
-#include "Mixture/Events/Event.h"
+#include "Mixture/Core/Base.hpp"
+#include "Mixture/Events/Event.hpp"
 
 namespace Mixture
 {

@@ -1,5 +1,5 @@
-#include "mxpch.h"
-#include "Renderer.h"
+#include "mxpch.hpp"
+#include "Renderer.hpp"
 
 namespace Mixture
 {

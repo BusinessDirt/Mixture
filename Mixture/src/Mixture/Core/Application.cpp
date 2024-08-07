@@ -1,5 +1,5 @@
-#include "mxpch.h"
-#include "Application.h"
+#include "mxpch.hpp"
+#include "Application.hpp"
 
 namespace Mixture
 {

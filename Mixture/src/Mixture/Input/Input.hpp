@@ -2,10 +2,10 @@
 
 //#include <glm/glm.hpp>
 
-#include "Mixture/Core/Base.h"
+#include "Mixture/Core/Base.hpp"
 
-#include "Mixture/Input/KeyCodes.h"
-#include "Mixture/Input/MouseCodes.h"
+#include "Mixture/Input/KeyCodes.hpp"
+#include "Mixture/Input/MouseCodes.hpp"
 
 namespace Mixture 
 {

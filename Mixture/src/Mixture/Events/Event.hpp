@@ -2,7 +2,7 @@
 
 #include <functional>
 
-#include "Mixture/Core/Base.h"
+#include "Mixture/Core/Base.hpp"
 
 namespace Mixture 
 {

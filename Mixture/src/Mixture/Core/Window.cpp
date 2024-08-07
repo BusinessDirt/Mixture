@@ -1,8 +1,8 @@
-#include "mxpch.h"
-#include "Window.h"
+#include "mxpch.hpp"
+#include "Window.hpp"
 
 #ifdef MX_PLATFORM_MACOSX
-    #include "Platform/MacOSX/MacOSXWindow.h"
+    #include "Platform/MacOSX/MacOSXWindow.hpp"
 #endif
 
 namespace Mixture

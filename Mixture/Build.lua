@@ -5,13 +5,14 @@ project "Mixture"
     targetdir "Binaries/%{cfg.buildcfg}"
     staticruntime "off"
 
-    pchheader "src/mxpch.h"
+    pchheader "src/mxpch.hpp"
     pchsource "src/mxpch.cpp"
 
-    files { "src/**.h", "src/**.cpp" }
+    files { "src/**.hpp", "src/**.cpp" }
 
     includedirs {
-        "src"
+        "src",
+        "%{wks.location}/Citrine/src",
     }
 
     externalincludedirs {

@@ -1,11 +1,13 @@
 #pragma once
 
-#include "Mixture/Renderer/RendererAPI.h"
+#include "Mixture/Renderer/RendererAPI.hpp"
 
-#include "Platform/Vulkan/VulkanContext.h"
+#include "Platform/Vulkan/VulkanInstance.hpp"
+#include "Platform/Vulkan/VulkanDebugMessenger.hpp"
 
 namespace Mixture
 {
+
     class VulkanRendererAPI : public RendererAPI
     {
     public:
@@ -19,6 +21,7 @@ namespace Mixture
         bool EndFrame() override;
 
     private:
-        VulkanContext m_Context{};
+        Scope<VulkanInstance> m_Instance;
+        Scope<VulkanDebugMessenger> m_DebugMessenger;
     };
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Mixture/Core/Base.h"
-#include "Mixture/Core/Logger/Log.h"
+#include "Mixture/Core/Base.hpp"
+#include "Mixture/Core/Logger/Log.hpp"
 
 #include <filesystem>
 

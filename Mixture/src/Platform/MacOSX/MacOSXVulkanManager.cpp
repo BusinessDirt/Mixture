@@ -1,14 +1,14 @@
 #ifdef MX_PLATFORM_MACOSX
-#include "Platform/Vulkan/VulkanManager.h"
+#include "Platform/Vulkan/VulkanManager.hpp"
+
+#include <GLFW/glfw3.h>
 
 namespace Mixture
 {
     VulkanManager::VulkanManager()
     {
-        m_Layers.push_back("VK_LAYER_KHRONOS_validation");
-        
-        // MoltenVK support
-        m_Extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        GetRequiredLayers();
+        GetRequiredExtensions();
     }
 
     void VulkanManager::Init()
@@ -32,7 +32,11 @@ namespace Mixture
                 }
             }
 
-            if (!layerFound) return false;
+            if (!layerFound)
+            {
+                MX_CORE_ERROR("Layer not available: {0}", layerName);
+                return false;
+            }
         }
 
         return true;
@@ -53,7 +57,11 @@ namespace Mixture
                 }
             }
 
-            if (!extensionFound) return false;
+            if (!extensionFound)
+            {
+                MX_CORE_ERROR("Extension not available: {0}", extensionName);
+                return false;
+            }
         }
 
         return true;
@@ -67,11 +75,11 @@ namespace Mixture
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
         
-        MX_CORE_INFO("Available Layers: ");
+        /*MX_CORE_INFO("Available Layers: ");
         for (const auto& layer : availableLayers)
         {
             MX_CORE_INFO("    {0}", layer.layerName);
-        }
+        }*/
             
         
         return availableLayers;
@@ -85,13 +93,35 @@ namespace Mixture
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
         
-        MX_CORE_INFO("Available Extensions: ");
+        /*MX_CORE_INFO("Available Extensions: ");
         for (const auto& extension : availableExtensions)
         {
             MX_CORE_INFO("    {0}", extension.extensionName);
-        }
+        }*/
         
         return availableExtensions;
+    }
+
+    void VulkanManager::GetRequiredLayers()
+    {
+#ifdef MX_DEBUG
+        m_Layers.push_back("VK_LAYER_KHRONOS_validation");
+#endif
+    }
+
+    void VulkanManager::GetRequiredExtensions()
+    {
+        // Required for MoltenVK
+        m_Extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        
+        // glfw extensions
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        for (uint32_t i = 0; i < glfwExtensionCount; ++i) m_Extensions.push_back(glfwExtensions[i]);
+        
+#ifdef MX_DEBUG
+        m_Extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
     }
 }
 

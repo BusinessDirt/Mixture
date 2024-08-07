@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Core/Window.h"
+#include "Mixture/Core/Window.hpp"
 
 #include <GLFW/glfw3.h>
 

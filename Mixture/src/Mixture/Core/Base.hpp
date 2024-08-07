@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Mixture/Core/PlatformDetection.h"
+#include "Mixture/Core/PlatformDetection.hpp"
 
 #include <memory>
 
-// DEBUG 
+// DEBUG
 #ifdef MX_DEBUG
 	#if defined(MX_PLATFORM_WINDOWS)
 		#define MX_DEBUGBREAK() __debugbreak()
@@ -26,6 +26,16 @@
 
 #define BIT(x) (1 << x)
 #define MX_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
+
+#define MX_NON_COPIABLE(name) name(const name&) = delete; \
+    name& operator=(const name&) = delete; \
+    name(name&&) = delete; \
+    name& operator=(name&&) = delete
+
+#define VULKAN_HANDLE(VulkanHandleType, name) \
+    public: VulkanHandleType GetHandle() const { return name; } \
+    private: VulkanHandleType name = VK_NULL_HANDLE
+
 
 namespace Mixture 
 {
@@ -49,5 +59,5 @@ namespace Mixture
 	}
 }
 
-#include "Mixture/Core/Logger/Log.h"
-#include "Mixture/Core/Logger/Assert.h"
+#include "Mixture/Core/Logger/Log.hpp"
+#include "Mixture/Core/Logger/Assert.hpp"

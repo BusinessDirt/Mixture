@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Core/Base.h"
+#include "Mixture/Core/Base.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -23,6 +23,9 @@ namespace Mixture
     private:
         std::vector<VkLayerProperties> GetAvailableLayers() const;
         std::vector<VkExtensionProperties> GetAvailableExtensions() const;
+        
+        void GetRequiredLayers();
+        void GetRequiredExtensions();
         
     private:
         std::vector<const char*> m_Layers{};

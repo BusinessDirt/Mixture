@@ -1,7 +1,7 @@
-#include "mxpch.h"
-#include "RendererAPI.h"
+#include "mxpch.hpp"
+#include "RendererAPI.hpp"
 
-#include "Platform/Vulkan/VulkanRendererAPI.h"
+#include "Platform/Vulkan/VulkanRendererAPI.hpp"
 
 namespace Mixture
 {

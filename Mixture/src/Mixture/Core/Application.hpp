@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Mixture/Core/Base.h"
+#include "Mixture/Core/Base.hpp"
 
-#include "Mixture/Core/Window.h"
+#include "Mixture/Core/Window.hpp"
 
-#include "Mixture/Events/Event.h"
-#include "Mixture/Events/ApplicationEvent.h"
-#include "Mixture/Events/KeyEvent.h"
-#include "Mixture/Events/MouseEvent.h"
+#include "Mixture/Events/Event.hpp"
+#include "Mixture/Events/ApplicationEvent.hpp"
+#include "Mixture/Events/KeyEvent.hpp"
+#include "Mixture/Events/MouseEvent.hpp"
 
-#include "Mixture/Renderer/Renderer.h"
+#include "Mixture/Renderer/Renderer.hpp"
 
 int Entrypoint(int argc, char** argv);
 

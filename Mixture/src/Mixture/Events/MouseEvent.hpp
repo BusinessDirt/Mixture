@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Mixture/Events/Event.h"
-#include "Mixture/Input/MouseCodes.h"
+#include "Mixture/Events/Event.hpp"
+#include "Mixture/Input/MouseCodes.hpp"
 
 namespace Mixture 
 {

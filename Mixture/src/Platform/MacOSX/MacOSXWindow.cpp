@@ -1,11 +1,11 @@
-#include "mxpch.h"
-#include "MacOSXWindow.h"
+#include "mxpch.hpp"
+#include "MacOSXWindow.hpp"
 
-#include "Mixture/Core/Base.h"
+#include "Mixture/Core/Base.hpp"
 
-#include "Mixture/Events/ApplicationEvent.h"
-#include "Mixture/Events/MouseEvent.h"
-#include "Mixture/Events/KeyEvent.h"
+#include "Mixture/Events/ApplicationEvent.hpp"
+#include "Mixture/Events/MouseEvent.hpp"
+#include "Mixture/Events/KeyEvent.hpp"
 
 namespace Mixture
 {

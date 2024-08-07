@@ -1,4 +1,4 @@
-#include "Mixture.h"
+#include "Mixture.hpp"
 
 namespace Mixture
 {
