@@ -15,6 +15,7 @@ namespace Mixture
         
         const std::vector<const char*>& GetLayers() const { return m_Layers; }
         const std::vector<const char*>& GetExtensions() const { return m_Extensions; }
+        const std::vector<const char*>& GetDeviceExtensions() const { return m_DeviceExtensions; }
         const std::vector<VkLayerSettingEXT>& GetLayerSettings() const { return m_LayerSettings; }
         
         bool CheckLayerSupport();
@@ -26,10 +27,12 @@ namespace Mixture
         
         void GetRequiredLayers();
         void GetRequiredExtensions();
+        void GetRequiredDeviceExtensions();
         
     private:
         std::vector<const char*> m_Layers{};
         std::vector<const char*> m_Extensions{};
+        std::vector<const char*> m_DeviceExtensions{};
         std::vector<VkLayerSettingEXT> m_LayerSettings{};
     };
 }

@@ -11,10 +11,10 @@ namespace Mixture
         VulkanManager manager{};
         manager.Init();
         
-        m_Instance = CreateScope<VulkanInstance>(applicationName);
+        m_Instance = CreateScope<VulkanInstance>(applicationName, manager);
         m_DebugMessenger = CreateScope<VulkanDebugMessenger>(*m_Instance);
         m_PhysicalDevice = CreateScope<VulkanPhysicalDevice>(*m_Instance);
-        m_Device = CreateScope<VulkanDevice>(m_PhysicalDevice->GetHandle());
+        m_Device = CreateScope<VulkanDevice>(m_PhysicalDevice->GetHandle(), manager);
     }
 
     VulkanRendererAPI::~VulkanRendererAPI()

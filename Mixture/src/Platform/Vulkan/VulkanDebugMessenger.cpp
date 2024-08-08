@@ -36,7 +36,7 @@ namespace Mixture
         VulkanDebugMessenger::PopulateCreateInfo(createInfo);
 
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_Instance.GetHandle(), "vkCreateDebugUtilsMessengerEXT");
-        if (func != nullptr)
+        if (func)
         {
             func(m_Instance.GetHandle(), &createInfo, nullptr, &m_DebugMessenger);
         }
@@ -49,7 +49,7 @@ namespace Mixture
     VulkanDebugMessenger::~VulkanDebugMessenger()
     {
         auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_Instance.GetHandle(), "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr)
+        if (func)
         {
             func(m_Instance.GetHandle(), m_DebugMessenger, nullptr);
         }

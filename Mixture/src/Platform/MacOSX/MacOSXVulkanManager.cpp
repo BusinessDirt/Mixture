@@ -9,6 +9,7 @@ namespace Mixture
     {
         GetRequiredLayers();
         GetRequiredExtensions();
+        GetRequiredDeviceExtensions();
     }
 
     void VulkanManager::Init()
@@ -122,6 +123,12 @@ namespace Mixture
 #ifdef MX_DEBUG
         m_Extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
+    }
+
+    void VulkanManager::GetRequiredDeviceExtensions()
+    {
+        // Required for MoltenVK
+        m_DeviceExtensions.push_back("VK_KHR_portability_subset");
     }
 }
 

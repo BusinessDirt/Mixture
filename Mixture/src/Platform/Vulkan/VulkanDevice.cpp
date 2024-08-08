@@ -24,8 +24,8 @@ namespace Mixture
         createInfo.pQueueCreateInfos = &queueCreateInfo;
         createInfo.queueCreateInfoCount = 1;
         createInfo.pEnabledFeatures = &deviceFeatures;
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(manager.GetExtensions().size());
-        createInfo.ppEnabledExtensionNames = manager.GetExtensions().data();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(manager.GetDeviceExtensions().size());
+        createInfo.ppEnabledExtensionNames = manager.GetDeviceExtensions().data();
         createInfo.enabledLayerCount = static_cast<uint32_t>(manager.GetLayers().size());
         createInfo.ppEnabledLayerNames = manager.GetLayers().data();
         
