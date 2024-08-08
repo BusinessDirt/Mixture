@@ -1,6 +1,9 @@
 #include "mxpch.hpp"
 #include "MacOSXWindow.hpp"
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Events/ApplicationEvent.hpp"
@@ -21,7 +24,9 @@ namespace Mixture
         m_Data.Width = props.Width;
         m_Data.Height = props.Height;
 
-        MX_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
+        MX_CORE_INFO("Creating window '{0}' ({1}, {2})", props.Title, props.Width, props.Height);
+        
+        glfwInitVulkanLoader(vkGetInstanceProcAddr);
 
         {
             MX_CORE_INFO("Initializing GLFW");
@@ -143,5 +148,11 @@ namespace Mixture
     void MacOSXWindow::OnUpdate()
     {
         glfwPollEvents();
+    }
+
+    void MacOSXWindow::CreateSurface(VkInstance instance, VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const
+    {
+        MX_VK_ASSERT(glfwCreateWindowSurface(instance, m_Window, allocator, surface),
+                     "Failed to create VkSurfaceKHR");
     }
 }

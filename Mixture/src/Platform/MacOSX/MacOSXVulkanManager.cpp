@@ -1,6 +1,7 @@
 #ifdef MX_PLATFORM_MACOSX
 #include "Platform/Vulkan/VulkanManager.hpp"
 
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 namespace Mixture

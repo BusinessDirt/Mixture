@@ -2,7 +2,7 @@
 
 #include "Mixture/Core/Window.hpp"
 
-#include <GLFW/glfw3.h>
+struct GLFWwindow;
 
 namespace Mixture
 {
@@ -19,6 +19,8 @@ namespace Mixture
 		void* GetNativeWindow() const override { return m_Window; }
 
         void SetEventCallback(const EventCallbackFn& callback) override { m_Data.EventCallback = callback; }
+        
+        void CreateSurface(VkInstance instance, VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const override;
 
 	private:
 		struct WindowData 

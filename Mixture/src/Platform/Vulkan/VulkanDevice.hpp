@@ -2,27 +2,28 @@
 
 #include "Mixture/Core/Base.hpp"
 
-#include "Platform/Vulkan/VulkanQueueFamilies.hpp"
-
 #include <vulkan/vulkan.h>
 
 namespace Mixture
 {
-    class VulkanQueueFamilies;
     class VulkanManager;
+    class VulkanPhysicalDevice;
 
     class VulkanDevice
     {
     public:
         MX_NON_COPIABLE(VulkanDevice);
         
-        VulkanDevice(VkPhysicalDevice physicalDevice, const VulkanManager& manager);
+        VulkanDevice(const VulkanPhysicalDevice& physicalDevice, const VulkanManager& manager);
         ~VulkanDevice();
         
     private:
         VULKAN_HANDLE(VkDevice, m_Device);
         
-        QueueFamilyIndices m_QueueFamilies{};
+        uint32_t m_GraphicsQueueIndex;
         VkQueue m_GraphicsQueue{VK_NULL_HANDLE};
+        
+        uint32_t m_PresentQueueIndex;
+        VkQueue m_PresentQueue{VK_NULL_HANDLE};
     };
 }

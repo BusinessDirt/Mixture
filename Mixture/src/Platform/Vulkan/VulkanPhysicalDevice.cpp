@@ -2,12 +2,12 @@
 #include "VulkanPhysicalDevice.hpp"
 
 #include "Platform/Vulkan/VulkanInstance.hpp"
-#include "Platform/Vulkan/VulkanQueueFamilies.hpp"
+#include "Platform/Vulkan/VulkanSurface.hpp"
 
 namespace Mixture
 {
-    VulkanPhysicalDevice::VulkanPhysicalDevice(const VulkanInstance& instance)
-        : m_Instance(instance)
+    VulkanPhysicalDevice::VulkanPhysicalDevice(const VulkanInstance& instance, const VulkanSurface& surface)
+        : m_Instance(instance), m_Surface(surface)
     {
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(m_Instance.GetHandle(), &deviceCount, nullptr);
@@ -28,9 +28,14 @@ namespace Mixture
         MX_CORE_ASSERT(m_PhysicalDevice, "Failed to find a suitable GPU!");
     }
 
+    VulkanQueueFamilyIndices VulkanPhysicalDevice::FindQueueFamilyIndices() const
+    {
+        return m_Surface.FindQueueFamilyIndices(m_PhysicalDevice);
+    }
+
     bool VulkanPhysicalDevice::IsDeviceSuitable(VkPhysicalDevice device)
     {
-        QueueFamilyIndices indices = VulkanQueueFamilies::Find(device);
+        VulkanQueueFamilyIndices indices = m_Surface.FindQueueFamilyIndices(device);
         
         return indices.IsComplete();
     }

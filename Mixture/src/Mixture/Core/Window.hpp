@@ -5,6 +5,8 @@
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Events/Event.hpp"
 
+#include <vulkan/vulkan.h>
+
 namespace Mixture
 {
     struct WindowProps
@@ -36,6 +38,8 @@ namespace Mixture
 		virtual void* GetNativeWindow() const = 0;
 
         virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
+        
+        virtual void CreateSurface(VkInstance instance, VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const = 0;
 
         static Scope<Window> Create(const WindowProps& props = WindowProps());
 	};

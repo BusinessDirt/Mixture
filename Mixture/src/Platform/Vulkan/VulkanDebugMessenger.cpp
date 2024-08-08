@@ -42,7 +42,7 @@ namespace Mixture
         }
         else
         {
-            MX_CORE_ERROR("Failed to set up debug messenger!");
+            MX_CORE_ERROR("Failed to set up VkDebugUtilsMessengerEXT");
         }
     }
 
