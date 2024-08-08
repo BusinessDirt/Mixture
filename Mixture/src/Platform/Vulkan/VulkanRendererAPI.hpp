@@ -4,6 +4,8 @@
 
 #include "Platform/Vulkan/VulkanInstance.hpp"
 #include "Platform/Vulkan/VulkanDebugMessenger.hpp"
+#include "Platform/Vulkan/VulkanPhysicalDevice.hpp"
+#include "Platform/Vulkan/VulkanDevice.hpp"
 
 namespace Mixture
 {
@@ -23,5 +25,7 @@ namespace Mixture
     private:
         Scope<VulkanInstance> m_Instance;
         Scope<VulkanDebugMessenger> m_DebugMessenger;
+        Scope<VulkanPhysicalDevice> m_PhysicalDevice;
+        Scope<VulkanDevice> m_Device;
     };
 }

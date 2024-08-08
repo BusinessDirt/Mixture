@@ -6,7 +6,7 @@
 
 namespace Mixture
 {
-    VulkanInstance::VulkanInstance(const std::string& applicationName)
+    VulkanInstance::VulkanInstance(const std::string& applicationName, const VulkanManager& manager)
     {
         // Setup Vulkan instance.
         VkApplicationInfo appInfo = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
@@ -15,10 +15,6 @@ namespace Mixture
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "Mixture";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        
-        // configure layers
-        VulkanManager manager{};
-        manager.Init();
         
         VkLayerSettingsCreateInfoEXT layerSettingsCreateInfo{};
         layerSettingsCreateInfo.sType = VK_STRUCTURE_TYPE_LAYER_SETTINGS_CREATE_INFO_EXT;

@@ -6,12 +6,14 @@
 
 namespace Mixture
 {
+    class VulkanManager;
+
     class VulkanInstance
     {
     public:
         MX_NON_COPIABLE(VulkanInstance);
         
-        VulkanInstance(const std::string& applicationName);
+        VulkanInstance(const std::string& applicationName, const VulkanManager& manager);
         ~VulkanInstance();
         
     private:
