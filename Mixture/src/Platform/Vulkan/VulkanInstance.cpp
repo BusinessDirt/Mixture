@@ -28,8 +28,8 @@ namespace Mixture
 
         VkInstanceCreateInfo createInfo = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
         createInfo.pApplicationInfo = &appInfo;
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(manager.GetExtensions().size());
-        createInfo.ppEnabledExtensionNames = manager.GetExtensions().data();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(manager.GetInstanceExtensions().size());
+        createInfo.ppEnabledExtensionNames = manager.GetInstanceExtensions().data();
         createInfo.enabledLayerCount = static_cast<uint32_t>(manager.GetLayers().size());
         createInfo.ppEnabledLayerNames = manager.GetLayers().data();
         createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR; // required for MoltenVK to work

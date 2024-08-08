@@ -33,10 +33,18 @@ namespace Mixture
         return m_Surface.FindQueueFamilyIndices(m_PhysicalDevice);
     }
 
+    VulkanSwapChainSupportDetails VulkanPhysicalDevice::QuerySwapChainSupport() const
+    {
+        return m_Surface.QuerySwapChainSupport(m_PhysicalDevice);
+    }
+
     bool VulkanPhysicalDevice::IsDeviceSuitable(VkPhysicalDevice device)
     {
         VulkanQueueFamilyIndices indices = m_Surface.FindQueueFamilyIndices(device);
         
-        return indices.IsComplete();
+        VulkanSwapChainSupportDetails swapChainSupport = m_Surface.QuerySwapChainSupport(device);
+        bool swapChainAdequate = !(swapChainSupport.Formats.empty() && swapChainSupport.PresentModes.empty());
+        
+        return indices.IsComplete() && swapChainAdequate;
     }
 }

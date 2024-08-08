@@ -53,4 +53,34 @@ namespace Mixture
         
         return indices;
     }
+
+    VulkanSwapChainSupportDetails VulkanSurface::QuerySwapChainSupport(VkPhysicalDevice device) const
+    {
+        VulkanSwapChainSupportDetails details{};
+        
+        // Capabilities
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface, &details.Capabilities);
+        
+        // Formats
+        uint32_t formatCount;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formatCount, nullptr);
+
+        if (formatCount)
+        {
+            details.Formats.resize(formatCount);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formatCount, details.Formats.data());
+        }
+        
+        // Present Modes
+        uint32_t presentModeCount;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, nullptr);
+
+        if (presentModeCount)
+        {
+            details.PresentModes.resize(presentModeCount);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, details.PresentModes.data());
+        }
+        
+        return details;
+    }
 }

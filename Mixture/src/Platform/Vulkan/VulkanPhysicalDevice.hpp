@@ -8,7 +8,9 @@ namespace Mixture
 {
     class VulkanInstance;
     class VulkanSurface;
+
     struct VulkanQueueFamilyIndices;
+    struct VulkanSwapChainSupportDetails;
 
     class VulkanPhysicalDevice
     {
@@ -19,6 +21,7 @@ namespace Mixture
         ~VulkanPhysicalDevice() = default;
         
         VulkanQueueFamilyIndices FindQueueFamilyIndices() const;
+        VulkanSwapChainSupportDetails QuerySwapChainSupport() const;
     
     private:
         bool IsDeviceSuitable(VkPhysicalDevice device);

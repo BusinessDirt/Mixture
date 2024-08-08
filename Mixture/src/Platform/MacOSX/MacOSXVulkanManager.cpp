@@ -9,14 +9,14 @@ namespace Mixture
     VulkanManager::VulkanManager()
     {
         GetRequiredLayers();
-        GetRequiredExtensions();
+        GetRequiredInstanceExtensions();
         GetRequiredDeviceExtensions();
     }
 
     void VulkanManager::Init()
     {
         MX_CORE_ASSERT(CheckLayerSupport(), "Layers requested, but not available!");
-        MX_CORE_ASSERT(CheckExtensionSupport(), "Extensions requested, but not available!");
+        MX_CORE_ASSERT(CheckInstanceExtensionSupport(), "Instance Extensions requested, but not available!");
     }
 
     bool VulkanManager::CheckLayerSupport()
@@ -44,13 +44,13 @@ namespace Mixture
         return true;
     }
 
-    bool VulkanManager::CheckExtensionSupport()
+    bool VulkanManager::CheckInstanceExtensionSupport()
     {
-        for (const char* extensionName : m_Extensions)
+        for (const char* extensionName : m_InstanceExtensions)
         {
             bool extensionFound = false;
 
-            for (const auto& extensionProperties : GetAvailableExtensions())
+            for (const auto& extensionProperties : GetAvailableInstanceExtensions())
             {
                 if (strcmp(extensionName, extensionProperties.extensionName) == 0) 
                 {
@@ -61,7 +61,32 @@ namespace Mixture
 
             if (!extensionFound)
             {
-                MX_CORE_ERROR("Extension not available: {0}", extensionName);
+                MX_CORE_ERROR("Instance Extension not available: {0}", extensionName);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool VulkanManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
+    {
+        for (const char* extensionName : m_DeviceExtensions)
+        {
+            bool extensionFound = false;
+
+            for (const auto& extensionProperties : GetAvailableDeviceExtensions(device))
+            {
+                if (strcmp(extensionName, extensionProperties.extensionName) == 0)
+                {
+                    extensionFound = true;
+                    break;
+                }
+            }
+
+            if (!extensionFound)
+            {
+                MX_CORE_ERROR("Device Extension not available: {0}", extensionName);
                 return false;
             }
         }
@@ -87,13 +112,30 @@ namespace Mixture
         return availableLayers;
     }
 
-    std::vector<VkExtensionProperties> VulkanManager::GetAvailableExtensions() const
+    std::vector<VkExtensionProperties> VulkanManager::GetAvailableInstanceExtensions() const
     {
         uint32_t extensionCount;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
+        
+        /*MX_CORE_INFO("Available Extensions: ");
+        for (const auto& extension : availableExtensions)
+        {
+            MX_CORE_INFO("    {0}", extension.extensionName);
+        }*/
+        
+        return availableExtensions;
+    }
+
+    std::vector<VkExtensionProperties> VulkanManager::GetAvailableDeviceExtensions(VkPhysicalDevice device) const
+    {
+        uint32_t extensionCount;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
         
         /*MX_CORE_INFO("Available Extensions: ");
         for (const auto& extension : availableExtensions)
@@ -111,18 +153,18 @@ namespace Mixture
 #endif
     }
 
-    void VulkanManager::GetRequiredExtensions()
+    void VulkanManager::GetRequiredInstanceExtensions()
     {
         // Required for MoltenVK
-        m_Extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        m_InstanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
         
         // glfw extensions
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-        for (uint32_t i = 0; i < glfwExtensionCount; ++i) m_Extensions.push_back(glfwExtensions[i]);
+        for (uint32_t i = 0; i < glfwExtensionCount; ++i) m_InstanceExtensions.push_back(glfwExtensions[i]);
         
 #ifdef MX_DEBUG
-        m_Extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        m_InstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
     }
 
@@ -130,6 +172,9 @@ namespace Mixture
     {
         // Required for MoltenVK
         m_DeviceExtensions.push_back("VK_KHR_portability_subset");
+        
+        // swapchain
+        m_DeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     }
 }
 

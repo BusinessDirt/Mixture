@@ -18,6 +18,13 @@ namespace Mixture
         bool IsComplete();
     };
 
+    struct VulkanSwapChainSupportDetails
+    {
+        VkSurfaceCapabilitiesKHR Capabilities;
+        std::vector<VkSurfaceFormatKHR> Formats;
+        std::vector<VkPresentModeKHR> PresentModes;
+    };
+
     class VulkanSurface
     {
     public:
@@ -27,6 +34,7 @@ namespace Mixture
         ~VulkanSurface();
         
         VulkanQueueFamilyIndices FindQueueFamilyIndices(VkPhysicalDevice device) const;
+        VulkanSwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
         
     private:
         VULKAN_HANDLE(VkSurfaceKHR, m_Surface);

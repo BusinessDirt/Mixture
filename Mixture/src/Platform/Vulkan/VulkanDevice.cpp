@@ -12,6 +12,8 @@ namespace Mixture
 {
     VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& physicalDevice, const VulkanManager& manager)
     {
+        manager.CheckDeviceExtensionSupport(physicalDevice.GetHandle());
+        
         VulkanQueueFamilyIndices indices = physicalDevice.FindQueueFamilyIndices();
         m_GraphicsQueueIndex = indices.Graphics.value();
         m_PresentQueueIndex = indices.Present.value();

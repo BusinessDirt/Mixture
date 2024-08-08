@@ -14,24 +14,26 @@ namespace Mixture
         void Init();
         
         const std::vector<const char*>& GetLayers() const { return m_Layers; }
-        const std::vector<const char*>& GetExtensions() const { return m_Extensions; }
+        const std::vector<const char*>& GetInstanceExtensions() const { return m_InstanceExtensions; }
         const std::vector<const char*>& GetDeviceExtensions() const { return m_DeviceExtensions; }
         const std::vector<VkLayerSettingEXT>& GetLayerSettings() const { return m_LayerSettings; }
         
         bool CheckLayerSupport();
-        bool CheckExtensionSupport();
+        bool CheckInstanceExtensionSupport();
+        bool CheckDeviceExtensionSupport(VkPhysicalDevice device) const;
         
     private:
         std::vector<VkLayerProperties> GetAvailableLayers() const;
-        std::vector<VkExtensionProperties> GetAvailableExtensions() const;
+        std::vector<VkExtensionProperties> GetAvailableInstanceExtensions() const;
+        std::vector<VkExtensionProperties> GetAvailableDeviceExtensions(VkPhysicalDevice device) const;
         
         void GetRequiredLayers();
-        void GetRequiredExtensions();
+        void GetRequiredInstanceExtensions();
         void GetRequiredDeviceExtensions();
         
     private:
         std::vector<const char*> m_Layers{};
-        std::vector<const char*> m_Extensions{};
+        std::vector<const char*> m_InstanceExtensions{};
         std::vector<const char*> m_DeviceExtensions{};
         std::vector<VkLayerSettingEXT> m_LayerSettings{};
     };

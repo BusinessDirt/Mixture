@@ -7,6 +7,7 @@
 #include "Platform/Vulkan/VulkanDebugMessenger.hpp"
 #include "Platform/Vulkan/VulkanPhysicalDevice.hpp"
 #include "Platform/Vulkan/VulkanDevice.hpp"
+#include "Platform/Vulkan/VulkanSwapChain.hpp"
 
 namespace Mixture
 {
@@ -29,5 +30,6 @@ namespace Mixture
         Scope<VulkanDebugMessenger> m_DebugMessenger;
         Scope<VulkanPhysicalDevice> m_PhysicalDevice;
         Scope<VulkanDevice> m_Device;
+        Scope<VulkanSwapChain> m_SwapChain;
     };
 }
