@@ -3,7 +3,7 @@
 
 #include "Mixture/Core/Window.hpp"
 
-#include "Platform/Vulkan/VulkanInstance.hpp"
+#include "Platform/Vulkan/VulkanContext.hpp"
 
 namespace Mixture
 {
@@ -12,17 +12,16 @@ namespace Mixture
         return Graphics.has_value() && Present.has_value();
     }
 
-    VulkanSurface::VulkanSurface(const Window& window, const VulkanInstance& instance)
-        : m_Instance(instance)
+    VulkanSurface::VulkanSurface(const Window& window)
     {
-        window.CreateSurface(instance.GetHandle(), nullptr, &m_Surface);
+        window.CreateSurface(VulkanContext::Get().Instance->GetHandle(), nullptr, &m_Surface);
     }
 
     VulkanSurface::~VulkanSurface()
     {
         if (m_Surface)
         {
-            vkDestroySurfaceKHR(m_Instance.GetHandle(), m_Surface, nullptr);
+            vkDestroySurfaceKHR(VulkanContext::Get().Instance->GetHandle(), m_Surface, nullptr);
             m_Surface = nullptr;
         }
     }

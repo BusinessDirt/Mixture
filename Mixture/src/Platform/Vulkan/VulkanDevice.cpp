@@ -3,18 +3,17 @@
 
 #include <set>
 
-#include "Platform/Vulkan/VulkanPhysicalDevice.hpp"
-#include "Platform/Vulkan/VulkanSurface.hpp"
+#include "Platform/Vulkan/VulkanContext.hpp"
 
 #include "Platform/Vulkan/VulkanManager.hpp"
 
 namespace Mixture
 {
-    VulkanDevice::VulkanDevice(const VulkanPhysicalDevice& physicalDevice, const VulkanManager& manager)
+    VulkanDevice::VulkanDevice(const VulkanManager& manager)
     {
-        manager.CheckDeviceExtensionSupport(physicalDevice.GetHandle());
+        manager.CheckDeviceExtensionSupport(VulkanContext::Get().PhysicalDevice->GetHandle());
         
-        VulkanQueueFamilyIndices indices = physicalDevice.FindQueueFamilyIndices();
+        VulkanQueueFamilyIndices indices = VulkanContext::Get().PhysicalDevice->FindQueueFamilyIndices();
         m_GraphicsQueueIndex = indices.Graphics.value();
         m_PresentQueueIndex = indices.Present.value();
         
@@ -44,7 +43,7 @@ namespace Mixture
         createInfo.enabledLayerCount = static_cast<uint32_t>(manager.GetLayers().size());
         createInfo.ppEnabledLayerNames = manager.GetLayers().data();
         
-        MX_VK_ASSERT(vkCreateDevice(physicalDevice.GetHandle(), &createInfo, nullptr, &m_Device),
+        MX_VK_ASSERT(vkCreateDevice(VulkanContext::Get().PhysicalDevice->GetHandle(), &createInfo, nullptr, &m_Device),
                      "Failed to create VkDevice");
         
         vkGetDeviceQueue(m_Device, m_GraphicsQueueIndex, 0, &m_GraphicsQueue);

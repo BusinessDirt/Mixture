@@ -17,7 +17,7 @@ namespace Mixture
     public:
         MX_NON_COPIABLE(VulkanPhysicalDevice);
         
-        VulkanPhysicalDevice(const VulkanInstance& instance, const VulkanSurface& surface);
+        VulkanPhysicalDevice();
         ~VulkanPhysicalDevice() = default;
         
         VulkanQueueFamilyIndices FindQueueFamilyIndices() const;
@@ -28,8 +28,5 @@ namespace Mixture
         
     private:
         VULKAN_HANDLE(VkPhysicalDevice, m_PhysicalDevice);
-        
-        const VulkanInstance& m_Instance;
-        const VulkanSurface& m_Surface;
     };
 }

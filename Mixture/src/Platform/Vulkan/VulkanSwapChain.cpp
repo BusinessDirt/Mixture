@@ -3,16 +3,13 @@
 
 #include "Mixture/Core/Application.hpp"
 
-#include "Platform/Vulkan/VulkanPhysicalDevice.hpp"
-#include "Platform/Vulkan/VulkanDevice.hpp"
-#include "Platform/Vulkan/VulkanSurface.hpp"
+#include "Platform/Vulkan/VulkanContext.hpp"
 
 namespace Mixture
 {
-    VulkanSwapChain::VulkanSwapChain(const VulkanPhysicalDevice& physicalDevice, const VulkanDevice& device, const VulkanSurface& surface)
-        : m_Device(device)
+    VulkanSwapChain::VulkanSwapChain()
     {
-        VulkanSwapChainSupportDetails details = physicalDevice.QuerySwapChainSupport();
+        VulkanSwapChainSupportDetails details = VulkanContext::Get().PhysicalDevice->QuerySwapChainSupport();
         
         VkSurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(details.Formats);
         VkPresentModeKHR presentMode = ChoosePresentMode(details.PresentModes);
@@ -24,7 +21,7 @@ namespace Mixture
         
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        createInfo.surface = surface.GetHandle();
+        createInfo.surface = VulkanContext::Get().Surface->GetHandle();
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -32,7 +29,7 @@ namespace Mixture
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         
-        VulkanQueueFamilyIndices indices = physicalDevice.FindQueueFamilyIndices();
+        VulkanQueueFamilyIndices indices = VulkanContext::Get().PhysicalDevice->FindQueueFamilyIndices();
         uint32_t queueFamilyIndices[] = { indices.Present.value(), indices.Present.value() };
 
         if (indices.Graphics != indices.Present)
@@ -54,22 +51,53 @@ namespace Mixture
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
         
-        MX_VK_ASSERT(vkCreateSwapchainKHR(m_Device.GetHandle(), &createInfo, nullptr, &m_SwapChain),
+        MX_VK_ASSERT(vkCreateSwapchainKHR(VulkanContext::Get().Device->GetHandle(), &createInfo, nullptr, &m_SwapChain),
                      "Failed to create VkSwapchainKHR");
         
-        vkGetSwapchainImagesKHR(m_Device.GetHandle(), m_SwapChain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(VulkanContext::Get().Device->GetHandle(), m_SwapChain, &imageCount, nullptr);
         m_Images.resize(imageCount);
-        vkGetSwapchainImagesKHR(m_Device.GetHandle(), m_SwapChain, &imageCount, m_Images.data());
+        vkGetSwapchainImagesKHR(VulkanContext::Get().Device->GetHandle(), m_SwapChain, &imageCount, m_Images.data());
         
         m_Format = surfaceFormat.format;
         m_Extent = extent;
+        
+        m_ImageViews.resize(imageCount);
+        for (size_t i = 0; i < m_ImageViews.size(); i++)
+        {
+            VkImageViewCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            createInfo.image = m_Images[i];
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            createInfo.format = m_Format;
+            createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = 1;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = 1;
+            
+            MX_VK_ASSERT(vkCreateImageView(VulkanContext::Get().Device->GetHandle(), &createInfo, nullptr, &m_ImageViews[i]),
+                         "Failed to create VkImageView");
+        }
     }
 
     VulkanSwapChain::~VulkanSwapChain()
     {
+        for (VkImageView& imageView : m_ImageViews)
+        {
+            if (imageView)
+            {
+                vkDestroyImageView(VulkanContext::Get().Device->GetHandle(), imageView, nullptr);
+                imageView = nullptr;
+            }
+        }
+        
         if (m_SwapChain)
         {
-            vkDestroySwapchainKHR(m_Device.GetHandle(), m_SwapChain, nullptr);
+            vkDestroySwapchainKHR(VulkanContext::Get().Device->GetHandle(), m_SwapChain, nullptr);
             m_SwapChain = nullptr;
         }
     }

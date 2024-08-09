@@ -13,9 +13,9 @@ namespace Mixture
     class VulkanSwapChain
     {
     public:
-        MX_NON_COPIABLE( VulkanSwapChain );
+        MX_NON_COPIABLE(VulkanSwapChain);
         
-        VulkanSwapChain(const VulkanPhysicalDevice& physicalDevice, const VulkanDevice& device, const VulkanSurface& surface);
+        VulkanSwapChain();
         ~VulkanSwapChain();
         
     private:
@@ -27,9 +27,8 @@ namespace Mixture
         VULKAN_HANDLE(VkSwapchainKHR, m_SwapChain);
         
         std::vector<VkImage> m_Images;
+        std::vector<VkImageView> m_ImageViews;
         VkFormat m_Format;
         VkExtent2D m_Extent;
-        
-        const VulkanDevice& m_Device;
     };
 }

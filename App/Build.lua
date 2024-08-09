@@ -30,6 +30,11 @@ project "App"
     -- mac specific settings
     filter "action:xcode4"
         local vulkanFramework = VULKAN_SDK .. "/Frameworks"
+        local vulkanLibs = VULKAN_SDK .. "/lib"
+
+        libdirs {
+            vulkanLibs
+        }
 
         links {
             "GLFW",
@@ -37,7 +42,10 @@ project "App"
             "Cocoa.framework",
             "IOKit.framework",
             "QuartzCore.framework",
-            "AppKit.framework"
+            "AppKit.framework",
+            "shaderc_shared",
+            "spirv-cross-core",
+            "spirv-cross-glsl"
         }
 
         externalincludedirs {
@@ -65,7 +73,7 @@ project "App"
         --    ["CODE_SIGN_ENTITLEMENTS"] = ("../../source/mac/app.entitlements"),     -- ^
         --    ["ENABLE_HARDENED_RUNTIME"] = "YES",                                    -- hardened runtime is required for notarization
         --    ["CODE_SIGN_IDENTITY"] = "Apple Development",                           -- sets 'Signing Certificate' to 'Development'. Defaults to 'Sign to Run Locally'. not doing this will crash your app if you upgrade the project when prompted by Xcode
-            ["LD_RUNPATH_SEARCH_PATHS"] = "@executable_path/../Frameworks @loader_path/../Frameworks " .. vulkanFramework, -- tell the executable where to find the frameworks. Path is relative to executable location inside .app bundle
+            ["LD_RUNPATH_SEARCH_PATHS"] = "@executable_path/../Frameworks @loader_path/../Frameworks " .. vulkanFramework .. " " .. vulkanLibs, -- tell the executable where to find the frameworks. Path is relative to executable location inside .app bundle
         }
 
     filter "configurations:Debug"

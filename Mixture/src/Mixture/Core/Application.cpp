@@ -13,6 +13,8 @@ namespace Mixture
 
         m_Window = Window::Create(WindowProps(name));
         m_Window->SetEventCallback(MX_BIND_EVENT_FN(Application::OnEvent));
+        
+        m_AssetManager = CreateScope<AssetManager>();
 
         Renderer::Init(name);
 	}
@@ -20,6 +22,8 @@ namespace Mixture
 	Application::~Application()
 	{
         Renderer::Shutdown();
+        
+        m_AssetManager = nullptr;
 
 		m_Window = nullptr;
 	}

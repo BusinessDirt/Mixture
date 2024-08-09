@@ -10,6 +10,7 @@
 #include "Mixture/Events/MouseEvent.hpp"
 
 #include "Mixture/Renderer/Renderer.hpp"
+#include "Mixture/Assets/AssetManager.hpp"
 
 int Entrypoint(int argc, char** argv);
 
@@ -41,7 +42,8 @@ namespace Mixture
 		void OnEvent(Event& e);
 
 		static Application& Get() { return *s_Instance; }
-		const Window& GetWindow() const { return *m_Window; }
+        const Window& GetWindow() const { return *m_Window; }
+		const AssetManager& GetAssetManager() const { return *m_AssetManager; }
 
 	private:
 		void Run();
@@ -50,6 +52,7 @@ namespace Mixture
 
 	private:
 		Scope<Window> m_Window;
+        Scope<AssetManager> m_AssetManager;
 		bool m_Running = true;
 
 	private:

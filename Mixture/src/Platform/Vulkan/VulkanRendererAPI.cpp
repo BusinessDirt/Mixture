@@ -9,26 +9,30 @@ namespace Mixture
 {
     void VulkanRendererAPI::Init(const std::string& applicationName)
     {
+        m_Context = &VulkanContext::Get();
+        
         // TODO: custom allocator
         VulkanManager manager{};
         manager.Init();
         
-        m_Instance = CreateScope<VulkanInstance>(applicationName, manager);
-        m_Surface = CreateScope<VulkanSurface>(Application::Get().GetWindow(), *m_Instance);
-        m_DebugMessenger = CreateScope<VulkanDebugMessenger>(*m_Instance);
-        m_PhysicalDevice = CreateScope<VulkanPhysicalDevice>(*m_Instance, *m_Surface);
-        m_Device = CreateScope<VulkanDevice>(*m_PhysicalDevice, manager);
-        m_SwapChain = CreateScope<VulkanSwapChain>(*m_PhysicalDevice, *m_Device, *m_Surface);
+        m_Context->Instance = CreateScope<VulkanInstance>(applicationName, manager);
+        m_Context->Surface = CreateScope<VulkanSurface>(Application::Get().GetWindow());
+        m_Context->DebugMessenger = CreateScope<VulkanDebugMessenger>();
+        m_Context->PhysicalDevice = CreateScope<VulkanPhysicalDevice>();
+        m_Context->Device = CreateScope<VulkanDevice>(manager);
+        m_Context->SwapChain = CreateScope<VulkanSwapChain>();
+        m_Context->GraphicsPipeline = CreateScope<VulkanGraphicsPipeline>();
     }
 
     VulkanRendererAPI::~VulkanRendererAPI()
     {
-        m_SwapChain = nullptr;
-        m_Device = nullptr;
-        m_PhysicalDevice = nullptr;
-        m_DebugMessenger = nullptr;
-        m_Surface = nullptr;
-        m_Instance = nullptr;
+        m_Context->GraphicsPipeline = nullptr;
+        m_Context->SwapChain = nullptr;
+        m_Context->Device = nullptr;
+        m_Context->PhysicalDevice = nullptr;
+        m_Context->DebugMessenger = nullptr;
+        m_Context->Surface = nullptr;
+        m_Context->Instance = nullptr;
     }
 
     void VulkanRendererAPI::OnWindowResize(uint32_t width, uint32_t height)

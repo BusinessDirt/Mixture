@@ -14,7 +14,7 @@ namespace Mixture
     public:
         MX_NON_COPIABLE(VulkanDevice);
         
-        VulkanDevice(const VulkanPhysicalDevice& physicalDevice, const VulkanManager& manager);
+        VulkanDevice(const VulkanManager& manager);
         ~VulkanDevice();
         
     private:

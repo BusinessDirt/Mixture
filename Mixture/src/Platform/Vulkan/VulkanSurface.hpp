@@ -30,7 +30,7 @@ namespace Mixture
     public:
         MX_NON_COPIABLE(VulkanSurface);
         
-        VulkanSurface(const Window& window, const VulkanInstance& instance);
+        VulkanSurface(const Window& window);
         ~VulkanSurface();
         
         VulkanQueueFamilyIndices FindQueueFamilyIndices(VkPhysicalDevice device) const;
@@ -38,6 +38,5 @@ namespace Mixture
         
     private:
         VULKAN_HANDLE(VkSurfaceKHR, m_Surface);
-        const VulkanInstance& m_Instance;
     };
 }

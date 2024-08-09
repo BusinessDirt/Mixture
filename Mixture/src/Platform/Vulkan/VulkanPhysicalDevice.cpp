@@ -1,20 +1,18 @@
 #include "mxpch.hpp"
 #include "VulkanPhysicalDevice.hpp"
 
-#include "Platform/Vulkan/VulkanInstance.hpp"
-#include "Platform/Vulkan/VulkanSurface.hpp"
+#include "Platform/Vulkan/VulkanContext.hpp"
 
 namespace Mixture
 {
-    VulkanPhysicalDevice::VulkanPhysicalDevice(const VulkanInstance& instance, const VulkanSurface& surface)
-        : m_Instance(instance), m_Surface(surface)
+    VulkanPhysicalDevice::VulkanPhysicalDevice()
     {
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(m_Instance.GetHandle(), &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(VulkanContext::Get().Instance->GetHandle(), &deviceCount, nullptr);
         MX_CORE_ASSERT(deviceCount, "Failed to find GPU with Vulkan support!");
         
         std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(m_Instance.GetHandle(), &deviceCount, devices.data());
+        vkEnumeratePhysicalDevices(VulkanContext::Get().Instance->GetHandle(), &deviceCount, devices.data());
         
         for (const auto& device : devices)
         {
@@ -30,19 +28,19 @@ namespace Mixture
 
     VulkanQueueFamilyIndices VulkanPhysicalDevice::FindQueueFamilyIndices() const
     {
-        return m_Surface.FindQueueFamilyIndices(m_PhysicalDevice);
+        return VulkanContext::Get().Surface->FindQueueFamilyIndices(m_PhysicalDevice);
     }
 
     VulkanSwapChainSupportDetails VulkanPhysicalDevice::QuerySwapChainSupport() const
     {
-        return m_Surface.QuerySwapChainSupport(m_PhysicalDevice);
+        return VulkanContext::Get().Surface->QuerySwapChainSupport(m_PhysicalDevice);
     }
 
     bool VulkanPhysicalDevice::IsDeviceSuitable(VkPhysicalDevice device)
     {
-        VulkanQueueFamilyIndices indices = m_Surface.FindQueueFamilyIndices(device);
+        VulkanQueueFamilyIndices indices = VulkanContext::Get().Surface->FindQueueFamilyIndices(device);
         
-        VulkanSwapChainSupportDetails swapChainSupport = m_Surface.QuerySwapChainSupport(device);
+        VulkanSwapChainSupportDetails swapChainSupport = VulkanContext::Get().Surface->QuerySwapChainSupport(device);
         bool swapChainAdequate = !(swapChainSupport.Formats.empty() && swapChainSupport.PresentModes.empty());
         
         return indices.IsComplete() && swapChainAdequate;
