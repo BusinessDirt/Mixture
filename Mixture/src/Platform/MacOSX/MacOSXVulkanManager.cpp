@@ -1,25 +1,25 @@
 #ifdef MX_PLATFORM_MACOSX
-#include "Platform/Vulkan/VulkanManager.hpp"
+#include "Platform/Vulkan/Manager.hpp"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    VulkanManager::VulkanManager()
+    Manager::Manager()
     {
         GetRequiredLayers();
         GetRequiredInstanceExtensions();
         GetRequiredDeviceExtensions();
     }
 
-    void VulkanManager::Init()
+    void Manager::Init()
     {
         MX_CORE_ASSERT(CheckLayerSupport(), "Layers requested, but not available!");
         MX_CORE_ASSERT(CheckInstanceExtensionSupport(), "Instance Extensions requested, but not available!");
     }
 
-    bool VulkanManager::CheckLayerSupport()
+    bool Manager::CheckLayerSupport()
     {
         for (const char* layerName : m_Layers)
         {
@@ -44,7 +44,7 @@ namespace Mixture
         return true;
     }
 
-    bool VulkanManager::CheckInstanceExtensionSupport()
+    bool Manager::CheckInstanceExtensionSupport()
     {
         for (const char* extensionName : m_InstanceExtensions)
         {
@@ -69,7 +69,7 @@ namespace Mixture
         return true;
     }
 
-    bool VulkanManager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
+    bool Manager::CheckDeviceExtensionSupport(VkPhysicalDevice device) const
     {
         for (const char* extensionName : m_DeviceExtensions)
         {
@@ -94,7 +94,7 @@ namespace Mixture
         return true;
     }
 
-    std::vector<VkLayerProperties> VulkanManager::GetAvailableLayers() const
+    std::vector<VkLayerProperties> Manager::GetAvailableLayers() const
     {
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -112,7 +112,7 @@ namespace Mixture
         return availableLayers;
     }
 
-    std::vector<VkExtensionProperties> VulkanManager::GetAvailableInstanceExtensions() const
+    std::vector<VkExtensionProperties> Manager::GetAvailableInstanceExtensions() const
     {
         uint32_t extensionCount;
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -129,7 +129,7 @@ namespace Mixture
         return availableExtensions;
     }
 
-    std::vector<VkExtensionProperties> VulkanManager::GetAvailableDeviceExtensions(VkPhysicalDevice device) const
+    std::vector<VkExtensionProperties> Manager::GetAvailableDeviceExtensions(VkPhysicalDevice device) const
     {
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -146,14 +146,14 @@ namespace Mixture
         return availableExtensions;
     }
 
-    void VulkanManager::GetRequiredLayers()
+    void Manager::GetRequiredLayers()
     {
 #ifdef MX_DEBUG
         m_Layers.push_back("VK_LAYER_KHRONOS_validation");
 #endif
     }
 
-    void VulkanManager::GetRequiredInstanceExtensions()
+    void Manager::GetRequiredInstanceExtensions()
     {
         // Required for MoltenVK
         m_InstanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
@@ -168,7 +168,7 @@ namespace Mixture
 #endif
     }
 
-    void VulkanManager::GetRequiredDeviceExtensions()
+    void Manager::GetRequiredDeviceExtensions()
     {
         // Required for MoltenVK
         m_DeviceExtensions.push_back("VK_KHR_portability_subset");

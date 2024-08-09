@@ -4,18 +4,18 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    class VulkanManager;
-    class VulkanPhysicalDevice;
+    class Manager;
+    class PhysicalDevice;
 
-    class VulkanDevice
+    class Device
     {
     public:
-        MX_NON_COPIABLE(VulkanDevice);
+        MX_NON_COPIABLE(Device);
         
-        VulkanDevice(const VulkanManager& manager);
-        ~VulkanDevice();
+        Device(const Manager& manager);
+        ~Device();
         
     private:
         VULKAN_HANDLE(VkDevice, m_Device);

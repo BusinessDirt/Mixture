@@ -4,15 +4,15 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    class VulkanGraphicsPipeline
+    class GraphicsPipeline
     {
     public:
-        MX_NON_COPIABLE(VulkanGraphicsPipeline);
+        MX_NON_COPIABLE(GraphicsPipeline);
         
-        VulkanGraphicsPipeline();
-        ~VulkanGraphicsPipeline();
+        GraphicsPipeline();
+        ~GraphicsPipeline();
         
     private:
         VULKAN_HANDLE(VkPipeline, m_Pipeline);

@@ -1,9 +1,9 @@
 #include "mxpch.hpp"
-#include "VulkanDebugMessenger.hpp"
+#include "DebugMessenger.hpp"
 
-#include "Platform/Vulkan/VulkanContext.hpp"
+#include "Platform/Vulkan/Context.hpp"
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
 
     // local callback functions
@@ -29,15 +29,15 @@ namespace Mixture
         return VK_FALSE;
     }
 
-    VulkanDebugMessenger::VulkanDebugMessenger()
+    DebugMessenger::DebugMessenger()
     {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
-        VulkanDebugMessenger::PopulateCreateInfo(createInfo);
+        DebugMessenger::PopulateCreateInfo(createInfo);
 
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(VulkanContext::Get().Instance->GetHandle(), "vkCreateDebugUtilsMessengerEXT");
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(Context::Get().Instance->GetHandle(), "vkCreateDebugUtilsMessengerEXT");
         if (func)
         {
-            func(VulkanContext::Get().Instance->GetHandle(), &createInfo, nullptr, &m_DebugMessenger);
+            func(Context::Get().Instance->GetHandle(), &createInfo, nullptr, &m_DebugMessenger);
         }
         else
         {
@@ -45,16 +45,16 @@ namespace Mixture
         }
     }
 
-    VulkanDebugMessenger::~VulkanDebugMessenger()
+    DebugMessenger::~DebugMessenger()
     {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(VulkanContext::Get().Instance->GetHandle(), "vkDestroyDebugUtilsMessengerEXT");
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(Context::Get().Instance->GetHandle(), "vkDestroyDebugUtilsMessengerEXT");
         if (func)
         {
-            func(VulkanContext::Get().Instance->GetHandle(), m_DebugMessenger, nullptr);
+            func(Context::Get().Instance->GetHandle(), m_DebugMessenger, nullptr);
         }
     }
 
-    void VulkanDebugMessenger::PopulateCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    void DebugMessenger::PopulateCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
     {
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;

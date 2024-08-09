@@ -2,15 +2,15 @@
 
 #include "Mixture/Renderer/RendererAPI.hpp"
 
-#include "Platform/Vulkan/VulkanContext.hpp"
+#include "Platform/Vulkan/Context.hpp"
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
 
-    class VulkanRendererAPI : public RendererAPI
+    class RendererAPI : public ::Mixture::RendererAPI
     {
     public:
-        ~VulkanRendererAPI() override;
+        ~RendererAPI() override;
 
         void Init(const std::string& applicationName) override;
 
@@ -20,6 +20,6 @@ namespace Mixture
         bool EndFrame() override;
 
     private:
-        VulkanContext* m_Context;
+        Context* m_Context;
     };
 }

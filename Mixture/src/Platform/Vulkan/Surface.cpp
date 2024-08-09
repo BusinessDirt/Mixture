@@ -1,34 +1,34 @@
 #include "mxpch.hpp"
-#include "VulkanSurface.hpp"
+#include "Surface.hpp"
 
 #include "Mixture/Core/Window.hpp"
 
-#include "Platform/Vulkan/VulkanContext.hpp"
+#include "Platform/Vulkan/Context.hpp"
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    bool VulkanQueueFamilyIndices::IsComplete()
+    bool QueueFamilyIndices::IsComplete()
     {
         return Graphics.has_value() && Present.has_value();
     }
 
-    VulkanSurface::VulkanSurface(const Window& window)
+    Surface::Surface(const Window& window)
     {
-        window.CreateSurface(VulkanContext::Get().Instance->GetHandle(), nullptr, &m_Surface);
+        window.CreateSurface(Context::Get().Instance->GetHandle(), nullptr, &m_Surface);
     }
 
-    VulkanSurface::~VulkanSurface()
+    Surface::~Surface()
     {
         if (m_Surface)
         {
-            vkDestroySurfaceKHR(VulkanContext::Get().Instance->GetHandle(), m_Surface, nullptr);
+            vkDestroySurfaceKHR(Context::Get().Instance->GetHandle(), m_Surface, nullptr);
             m_Surface = nullptr;
         }
     }
 
-    VulkanQueueFamilyIndices VulkanSurface::FindQueueFamilyIndices(VkPhysicalDevice device) const
+    QueueFamilyIndices Surface::FindQueueFamilyIndices(VkPhysicalDevice device) const
     {
-        VulkanQueueFamilyIndices indices{};
+        QueueFamilyIndices indices{};
         
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -53,9 +53,9 @@ namespace Mixture
         return indices;
     }
 
-    VulkanSwapChainSupportDetails VulkanSurface::QuerySwapChainSupport(VkPhysicalDevice device) const
+    SwapChainSupportDetails Surface::QuerySwapChainSupport(VkPhysicalDevice device) const
     {
-        VulkanSwapChainSupportDetails details{};
+        SwapChainSupportDetails details{};
         
         // Capabilities
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface, &details.Capabilities);

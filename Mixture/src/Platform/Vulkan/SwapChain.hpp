@@ -4,19 +4,15 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    class VulkanPhysicalDevice;
-    class VulkanDevice;
-    class VulkanSurface;
-
-    class VulkanSwapChain
+    class SwapChain
     {
     public:
-        MX_NON_COPIABLE(VulkanSwapChain);
+        MX_NON_COPIABLE(SwapChain);
         
-        VulkanSwapChain();
-        ~VulkanSwapChain();
+        SwapChain();
+        ~SwapChain();
         
     private:
         VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);

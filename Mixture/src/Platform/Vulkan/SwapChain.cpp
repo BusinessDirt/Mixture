@@ -1,15 +1,15 @@
 #include "mxpch.hpp"
-#include "VulkanSwapChain.hpp"
+#include "SwapChain.hpp"
 
 #include "Mixture/Core/Application.hpp"
 
-#include "Platform/Vulkan/VulkanContext.hpp"
+#include "Platform/Vulkan/Context.hpp"
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    VulkanSwapChain::VulkanSwapChain()
+    SwapChain::SwapChain()
     {
-        VulkanSwapChainSupportDetails details = VulkanContext::Get().PhysicalDevice->QuerySwapChainSupport();
+        SwapChainSupportDetails details = Context::Get().PhysicalDevice->QuerySwapChainSupport();
         
         VkSurfaceFormatKHR surfaceFormat = ChooseSurfaceFormat(details.Formats);
         VkPresentModeKHR presentMode = ChoosePresentMode(details.PresentModes);
@@ -21,7 +21,7 @@ namespace Mixture
         
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        createInfo.surface = VulkanContext::Get().Surface->GetHandle();
+        createInfo.surface = Context::Get().Surface->GetHandle();
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -29,7 +29,7 @@ namespace Mixture
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         
-        VulkanQueueFamilyIndices indices = VulkanContext::Get().PhysicalDevice->FindQueueFamilyIndices();
+        QueueFamilyIndices indices = Context::Get().PhysicalDevice->FindQueueFamilyIndices();
         uint32_t queueFamilyIndices[] = { indices.Present.value(), indices.Present.value() };
 
         if (indices.Graphics != indices.Present)
@@ -51,12 +51,12 @@ namespace Mixture
         createInfo.clipped = VK_TRUE;
         createInfo.oldSwapchain = VK_NULL_HANDLE;
         
-        MX_VK_ASSERT(vkCreateSwapchainKHR(VulkanContext::Get().Device->GetHandle(), &createInfo, nullptr, &m_SwapChain),
+        MX_VK_ASSERT(vkCreateSwapchainKHR(Context::Get().Device->GetHandle(), &createInfo, nullptr, &m_SwapChain),
                      "Failed to create VkSwapchainKHR");
         
-        vkGetSwapchainImagesKHR(VulkanContext::Get().Device->GetHandle(), m_SwapChain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(Context::Get().Device->GetHandle(), m_SwapChain, &imageCount, nullptr);
         m_Images.resize(imageCount);
-        vkGetSwapchainImagesKHR(VulkanContext::Get().Device->GetHandle(), m_SwapChain, &imageCount, m_Images.data());
+        vkGetSwapchainImagesKHR(Context::Get().Device->GetHandle(), m_SwapChain, &imageCount, m_Images.data());
         
         m_Format = surfaceFormat.format;
         m_Extent = extent;
@@ -79,30 +79,30 @@ namespace Mixture
             createInfo.subresourceRange.baseArrayLayer = 0;
             createInfo.subresourceRange.layerCount = 1;
             
-            MX_VK_ASSERT(vkCreateImageView(VulkanContext::Get().Device->GetHandle(), &createInfo, nullptr, &m_ImageViews[i]),
+            MX_VK_ASSERT(vkCreateImageView(Context::Get().Device->GetHandle(), &createInfo, nullptr, &m_ImageViews[i]),
                          "Failed to create VkImageView");
         }
     }
 
-    VulkanSwapChain::~VulkanSwapChain()
+    SwapChain::~SwapChain()
     {
         for (VkImageView& imageView : m_ImageViews)
         {
             if (imageView)
             {
-                vkDestroyImageView(VulkanContext::Get().Device->GetHandle(), imageView, nullptr);
+                vkDestroyImageView(Context::Get().Device->GetHandle(), imageView, nullptr);
                 imageView = nullptr;
             }
         }
         
         if (m_SwapChain)
         {
-            vkDestroySwapchainKHR(VulkanContext::Get().Device->GetHandle(), m_SwapChain, nullptr);
+            vkDestroySwapchainKHR(Context::Get().Device->GetHandle(), m_SwapChain, nullptr);
             m_SwapChain = nullptr;
         }
     }
 
-    VkSurfaceFormatKHR VulkanSwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+    VkSurfaceFormatKHR SwapChain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
     {
         for (const auto& availableFormat : availableFormats) 
         {
@@ -115,7 +115,7 @@ namespace Mixture
         return availableFormats[0];
     }
 
-    VkPresentModeKHR VulkanSwapChain::ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+    VkPresentModeKHR SwapChain::ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
     {
         for (const auto& availablePresentMode : availablePresentModes) 
         {
@@ -125,7 +125,7 @@ namespace Mixture
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D VulkanSwapChain::ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+    VkExtent2D SwapChain::ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities)
     {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) 
         {

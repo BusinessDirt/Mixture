@@ -7,9 +7,11 @@
 namespace Mixture
 {
     class Window;
-    class VulkanInstance;
+}
 
-    struct VulkanQueueFamilyIndices
+namespace Mixture::Vulkan
+{
+    struct QueueFamilyIndices
     {
         std::optional<uint32_t> Graphics;
         std::optional<uint32_t> Present;
@@ -18,23 +20,23 @@ namespace Mixture
         bool IsComplete();
     };
 
-    struct VulkanSwapChainSupportDetails
+    struct SwapChainSupportDetails
     {
         VkSurfaceCapabilitiesKHR Capabilities;
         std::vector<VkSurfaceFormatKHR> Formats;
         std::vector<VkPresentModeKHR> PresentModes;
     };
 
-    class VulkanSurface
+    class Surface
     {
     public:
-        MX_NON_COPIABLE(VulkanSurface);
+        MX_NON_COPIABLE(Surface);
         
-        VulkanSurface(const Window& window);
-        ~VulkanSurface();
+        Surface(const Window& window);
+        ~Surface();
         
-        VulkanQueueFamilyIndices FindQueueFamilyIndices(VkPhysicalDevice device) const;
-        VulkanSwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
+        QueueFamilyIndices FindQueueFamilyIndices(VkPhysicalDevice device) const;
+        SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device) const;
         
     private:
         VULKAN_HANDLE(VkSurfaceKHR, m_Surface);

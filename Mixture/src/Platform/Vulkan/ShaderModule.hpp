@@ -4,17 +4,21 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Mixture
+namespace Mixture 
 {
     class ShaderCode;
+}
 
-    class VulkanShaderModule
+namespace Mixture::Vulkan
+{
+
+    class ShaderModule
     {
     public:
-        MX_NON_COPIABLE(VulkanShaderModule);
+        MX_NON_COPIABLE(ShaderModule);
 
-        VulkanShaderModule(const ShaderCode& code);
-        ~VulkanShaderModule();
+        ShaderModule(const ShaderCode& code);
+        ~ShaderModule();
 
     private:
         VULKAN_HANDLE(VkShaderModule, m_ShaderModule);

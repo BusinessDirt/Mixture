@@ -4,12 +4,12 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    class VulkanManager
+    class Manager
     {
     public:
-        VulkanManager();
+        Manager();
         
         void Init();
         

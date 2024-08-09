@@ -1,12 +1,12 @@
 #include "mxpch.hpp"
-#include "VulkanInstance.hpp"
+#include "Instance.hpp"
 
-#include "Platform/Vulkan/VulkanManager.hpp"
-#include "Platform/Vulkan/VulkanDebugMessenger.hpp"
+#include "Platform/Vulkan/Manager.hpp"
+#include "Platform/Vulkan/DebugMessenger.hpp"
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    VulkanInstance::VulkanInstance(const std::string& applicationName, const VulkanManager& manager)
+    Instance::Instance(const std::string& applicationName, const Manager& manager)
     {
         // Setup Vulkan instance.
         VkApplicationInfo appInfo = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
@@ -23,7 +23,7 @@ namespace Mixture
         layerSettingsCreateInfo.pNext = nullptr;
         
         VkDebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{};
-        VulkanDebugMessenger::PopulateCreateInfo(debugMessengerCreateInfo);
+        DebugMessenger::PopulateCreateInfo(debugMessengerCreateInfo);
         debugMessengerCreateInfo.pNext = &layerSettingsCreateInfo;
 
         VkInstanceCreateInfo createInfo = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
@@ -39,7 +39,7 @@ namespace Mixture
                      "Failed to create VkInstance");
     }
 
-    VulkanInstance::~VulkanInstance()
+    Instance::~Instance()
     {
         if (m_Instance != VK_NULL_HANDLE)
         {

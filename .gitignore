@@ -40,3 +40,4 @@ Scripts/**/__pycache__
 
 # misc
 *.log
+*.spv

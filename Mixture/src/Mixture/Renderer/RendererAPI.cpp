@@ -1,7 +1,7 @@
 #include "mxpch.hpp"
 #include "RendererAPI.hpp"
 
-#include "Platform/Vulkan/VulkanRendererAPI.hpp"
+#include "Platform/Vulkan/RendererAPI.hpp"
 
 namespace Mixture
 {
@@ -12,7 +12,7 @@ namespace Mixture
 		switch (s_API)
 		{
 			case RendererAPI::API::None:    MX_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-			case RendererAPI::API::Vulkan:  return CreateScope<VulkanRendererAPI>();
+            case RendererAPI::API::Vulkan:  return CreateScope<Vulkan::RendererAPI>();
 			case RendererAPI::API::OpenGL:  MX_CORE_ASSERT(false, "RendererAPI::OpenGL is currently not supported!"); return nullptr;
 			case RendererAPI::API::DirectX12:  MX_CORE_ASSERT(false, "RendererAPI::DirectX12 is currently not supported!"); return nullptr;
 		}

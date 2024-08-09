@@ -4,15 +4,13 @@
 
 #include <vulkan/vulkan.h>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
-    class VulkanInstance;
-
-    class VulkanDebugMessenger
+    class DebugMessenger
     {
     public:
-        VulkanDebugMessenger();
-        ~VulkanDebugMessenger();
+        DebugMessenger();
+        ~DebugMessenger();
 
         static void PopulateCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 

@@ -1,18 +1,18 @@
 #include "mxpch.hpp"
-#include "VulkanGraphicsPipeline.hpp"
+#include "GraphicsPipeline.hpp"
 
 #include "Mixture/Core/Application.hpp"
 
-#include "Platform/Vulkan/VulkanContext.hpp"
-#include "Platform/Vulkan/VulkanShaderModule.hpp"
+#include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/ShaderModule.hpp"
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
 
-    VulkanGraphicsPipeline::VulkanGraphicsPipeline()
+    GraphicsPipeline::GraphicsPipeline()
     {
-        VulkanShaderModule vertModule(Application::Get().GetAssetManager().GetShader("shader.vert"));
-        VulkanShaderModule fragModule(Application::Get().GetAssetManager().GetShader("shader.frag"));
+        ShaderModule vertModule(Application::Get().GetAssetManager().GetShader("shader.vert"));
+        ShaderModule fragModule(Application::Get().GetAssetManager().GetShader("shader.frag"));
         
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -29,7 +29,7 @@ namespace Mixture
         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
     }
 
-    VulkanGraphicsPipeline::~VulkanGraphicsPipeline()
+    GraphicsPipeline::~GraphicsPipeline()
     {
         
     }
