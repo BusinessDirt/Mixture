@@ -10,6 +10,7 @@
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/SwapChain.hpp"
+#include "Platform/Vulkan/RenderPass.hpp"
 #include "Platform/Vulkan/Pipeline/GraphicsPipeline.hpp"
 
 namespace Mixture::Vulkan
@@ -28,6 +29,7 @@ namespace Mixture::Vulkan
         Scope<PhysicalDevice> PhysicalDevice;
         Scope<Device> Device;
         Scope<SwapChain> SwapChain;
+        Scope<RenderPass> RenderPass;
         Scope<GraphicsPipeline> GraphicsPipeline;
 
     private:

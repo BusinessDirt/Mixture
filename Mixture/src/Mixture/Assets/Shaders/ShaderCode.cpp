@@ -63,6 +63,22 @@ namespace Mixture
             MX_CORE_ERROR("Unsupported shader type");
             return "";
         }
+    
+        static VkShaderStageFlagBits ShaderStageToFlagBits(const std::filesystem::path& path)
+        {
+            std::string filename = path.filename().string();
+            if (Contains(filename, "vert"))
+            {
+                return VK_SHADER_STAGE_VERTEX_BIT;
+            }
+            else if (Contains(filename, "frag"))
+            {
+                return VK_SHADER_STAGE_FRAGMENT_BIT;
+            }
+            
+            MX_CORE_ERROR("Unsupported shader type");
+            return VK_SHADER_STAGE_ALL;
+        }
 
         static VkFormat GetVkFormat(const spirv_cross::SPIRType& type)
         {
@@ -114,7 +130,8 @@ namespace Mixture
                 in.read((char*)data.data(), size);
             }
         }
-
+        
+        m_ShaderStageFlagBits = Util::ShaderStageToFlagBits(path);
         Reflect(path, uboInfos);
     }
 
@@ -161,7 +178,7 @@ namespace Mixture
 
     void ShaderCode::Reflect(const std::filesystem::path& path, std::unordered_set<UniformBufferInformation>& uboInfos)
     {
-        //ONYX_CORE_INFO("Reflecting on shader: {0}", path.filename().string().c_str());
+        //MX_CORE_INFO("Reflecting on shader: {0}", path.filename().string().c_str());
 
         spirv_cross::Compiler compiler(m_Data);
         spirv_cross::ShaderResources resources = compiler.get_shader_resources();

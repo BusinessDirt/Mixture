@@ -19,8 +19,11 @@ namespace Mixture::Vulkan
 
         ShaderModule(const ShaderCode& code);
         ~ShaderModule();
+        
+        VkPipelineShaderStageCreateInfo CreateInfo();
 
     private:
         VULKAN_HANDLE(VkShaderModule, m_ShaderModule);
+        VkShaderStageFlagBits m_ShaderStageFlagBits;
     };
 }

@@ -14,6 +14,10 @@ namespace Mixture::Vulkan
         SwapChain();
         ~SwapChain();
         
+    public:
+        const VkFormat& GetFormat() const { return m_Format; }
+        const VkExtent2D& GetExtent() const { return m_Extent; }
+        
     private:
         VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
         VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

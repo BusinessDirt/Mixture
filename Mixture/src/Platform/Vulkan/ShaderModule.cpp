@@ -8,6 +8,7 @@
 namespace Mixture::Vulkan
 {
     ShaderModule::ShaderModule(const ShaderCode& code)
+        : m_ShaderStageFlagBits(code.GetStageFlagBits())
     {
         VkShaderModuleCreateInfo createInfo = code.CreateInfo();
 
@@ -22,5 +23,15 @@ namespace Mixture::Vulkan
             vkDestroyShaderModule(Context::Get().Device->GetHandle(), m_ShaderModule, nullptr);
             m_ShaderModule = nullptr;
         }
+    }
+
+    VkPipelineShaderStageCreateInfo ShaderModule::CreateInfo()
+    {
+        VkPipelineShaderStageCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        createInfo.stage = m_ShaderStageFlagBits;
+        createInfo.module = m_ShaderModule;
+        createInfo.pName = "main";
+        return createInfo;
     }
 }
