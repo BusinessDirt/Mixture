@@ -21,14 +21,12 @@ namespace Mixture::Vulkan
         m_Context->PhysicalDevice = CreateScope<PhysicalDevice>();
         m_Context->Device = CreateScope<Device>(manager);
         m_Context->SwapChain = CreateScope<SwapChain>();
-        m_Context->RenderPass = CreateScope<RenderPass>();
         m_Context->GraphicsPipeline = CreateScope<GraphicsPipeline>();
     }
 
     RendererAPI::~RendererAPI()
     {
         m_Context->GraphicsPipeline = nullptr;
-        m_Context->RenderPass = nullptr;
         m_Context->SwapChain = nullptr;
         m_Context->Device = nullptr;
         m_Context->PhysicalDevice = nullptr;

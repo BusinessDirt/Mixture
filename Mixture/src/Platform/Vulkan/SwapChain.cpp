@@ -4,6 +4,8 @@
 #include "Mixture/Core/Application.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/RenderPass.hpp"
+#include "Platform/Vulkan/Buffer/FrameBuffer.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -62,30 +64,22 @@ namespace Mixture::Vulkan
         m_Extent = extent;
         
         m_ImageViews.resize(imageCount);
-        for (size_t i = 0; i < m_ImageViews.size(); i++)
-        {
-            VkImageViewCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            createInfo.image = m_Images[i];
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            createInfo.format = m_Format;
-            createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            createInfo.subresourceRange.baseMipLevel = 0;
-            createInfo.subresourceRange.levelCount = 1;
-            createInfo.subresourceRange.baseArrayLayer = 0;
-            createInfo.subresourceRange.layerCount = 1;
-            
-            MX_VK_ASSERT(vkCreateImageView(Context::Get().Device->GetHandle(), &createInfo, nullptr, &m_ImageViews[i]),
-                         "Failed to create VkImageView");
-        }
+        CreateImageViews();
+        
+        m_RenderPass = CreateScope<RenderPass>(m_Format);
+        
+        CreateFramebuffers();
     }
 
     SwapChain::~SwapChain()
     {
+        for (FrameBuffer& frameBuffer : m_FrameBuffers)
+        {
+            frameBuffer.~FrameBuffer();
+        }
+        
+        m_RenderPass = nullptr;
+        
         for (VkImageView& imageView : m_ImageViews)
         {
             if (imageView)
@@ -143,6 +137,39 @@ namespace Mixture::Vulkan
             actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
             return actualExtent;
+        }
+    }
+
+    void SwapChain::CreateImageViews()
+    {
+        for (size_t i = 0; i < m_ImageViews.size(); i++)
+        {
+            VkImageViewCreateInfo createInfo{};
+            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            createInfo.image = m_Images[i];
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            createInfo.format = m_Format;
+            createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = 1;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = 1;
+            
+            MX_VK_ASSERT(vkCreateImageView(Context::Get().Device->GetHandle(), &createInfo, nullptr, &m_ImageViews[i]),
+                         "Failed to create VkImageView");
+        }
+    }
+
+    void SwapChain::CreateFramebuffers()
+    {
+        for (size_t i = 0; i < m_ImageViews.size(); i++)
+        {
+            FrameBuffer frameBuffer(m_ImageViews[i], m_Extent, m_RenderPass->GetHandle());
+            m_FrameBuffers.emplace_back(std::move(frameBuffer));
         }
     }
 }

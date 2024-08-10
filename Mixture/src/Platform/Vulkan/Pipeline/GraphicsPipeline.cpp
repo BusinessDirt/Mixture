@@ -178,7 +178,7 @@ namespace Mixture::Vulkan
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.pDynamicState = &dynamicState;
             pipelineInfo.layout = m_PipelineLayout->GetHandle();
-            pipelineInfo.renderPass = Context::Get().RenderPass->GetHandle();
+            pipelineInfo.renderPass = Context::Get().SwapChain->GetRenderPass().GetHandle();
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
             pipelineInfo.basePipelineIndex = -1; // Optional

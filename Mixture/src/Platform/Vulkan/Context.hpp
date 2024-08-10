@@ -29,7 +29,6 @@ namespace Mixture::Vulkan
         Scope<PhysicalDevice> PhysicalDevice;
         Scope<Device> Device;
         Scope<SwapChain> SwapChain;
-        Scope<RenderPass> RenderPass;
         Scope<GraphicsPipeline> GraphicsPipeline;
 
     private:

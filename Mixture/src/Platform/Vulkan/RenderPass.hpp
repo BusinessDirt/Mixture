@@ -11,7 +11,7 @@ namespace Mixture::Vulkan
     public:
         MX_NON_COPIABLE(RenderPass);
         
-        RenderPass();
+        RenderPass(VkFormat format);
         ~RenderPass();
         
     private:
