@@ -10,4 +10,10 @@ namespace Mixture::Vulkan
     {
         vkCmdDraw(commandBuffer.GetAsVulkanHandle(), vertexCount, instanceCount, firstVertex, firstInstance);
     }
+
+    void DrawCommand::DrawIndexedCmd(CommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount,
+        uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
+    {
+        vkCmdDrawIndexed(commandBuffer.GetAsVulkanHandle(), indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+    }
 }

@@ -28,4 +28,10 @@ namespace Mixture
     {
         s_DrawCommand->DrawCmd(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
     }
+
+    void DrawCommand::DrawIndexed(CommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex,
+        int32_t vertexOffset, uint32_t firstInstance)
+    {
+        s_DrawCommand->DrawIndexedCmd(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+    }
 }
