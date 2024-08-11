@@ -3,6 +3,7 @@
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Renderer/RendererAPI.hpp"
+#include "Mixture/Renderer/RendererSystem.hpp"
 
 namespace Mixture
 {
@@ -17,9 +18,12 @@ namespace Mixture
         static void DrawFrame();
 
         static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
+        
+        static void PushRendererSystem(RendererSystem* system);
 
     private:
         static Scope<RendererAPI> s_RendererAPI;
+        static std::vector<RendererSystem*> s_RendererSystems;
     };
 }
     

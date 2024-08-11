@@ -23,11 +23,10 @@ namespace Mixture::Util
 namespace Mixture::Vulkan
 {
 
-    GraphicsPipeline::GraphicsPipeline()
+    GraphicsPipeline::GraphicsPipeline(const std::string& shaderName)
     {
-        // TODO: parameters
-        std::string vertexFile("shader.vert");
-        std::string fragmentFile("shader.frag");
+        std::string vertexFile(shaderName + ".vert");
+        std::string fragmentFile(shaderName + ".frag");
         
         const ShaderCode& vertexShaderCode = Application::Get().GetAssetManager().GetShader(vertexFile);
         const ShaderCode& fragmentShaderCode = Application::Get().GetAssetManager().GetShader(fragmentFile);
@@ -196,5 +195,10 @@ namespace Mixture::Vulkan
             m_Pipeline = nullptr;
         }
         m_PipelineLayout = nullptr;
+    }
+
+    void GraphicsPipeline::Bind(CommandBuffer commandBuffer)
+    {
+        vkCmdBindPipeline(commandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
     }
 }

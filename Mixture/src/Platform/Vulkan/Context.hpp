@@ -31,8 +31,6 @@ namespace Mixture::Vulkan
         Scope<Device> Device;
         Scope<SwapChain> SwapChain;
         Scope<CommandPool> CommandPool;
-        
-        Scope<GraphicsPipeline> GraphicsPipeline;
 
     private:
         Context() = default;

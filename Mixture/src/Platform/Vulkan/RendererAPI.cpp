@@ -24,16 +24,12 @@ namespace Mixture::Vulkan
         m_Context->SwapChain = CreateScope<SwapChain>();
         m_Context->CommandPool = CreateScope<CommandPool>();
         
-        m_Context->GraphicsPipeline = CreateScope<GraphicsPipeline>();
-        
         m_CommandBuffers = CreateScope<CommandBuffers>(SwapChain::MAX_FRAMES_IN_FLIGHT);
     }
 
     RendererAPI::~RendererAPI()
     {
         m_CommandBuffers = nullptr;
-        
-        m_Context->GraphicsPipeline = nullptr;
         
         m_Context->CommandPool = nullptr;
         m_Context->SwapChain = nullptr;
@@ -65,7 +61,7 @@ namespace Mixture::Vulkan
         vkDeviceWaitIdle(Context::Get().Device->GetHandle());
     }
 
-    bool RendererAPI::BeginFrame()
+    CommandBuffer RendererAPI::BeginFrame()
     {
         MX_CORE_ASSERT(!m_IsFrameStarted, "Can't call BeginFrame() while already in progress");
         
@@ -73,38 +69,34 @@ namespace Mixture::Vulkan
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             RebuildSwapChain();
-            return false;
+            return VK_NULL_HANDLE;
         }
 
         MX_CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire swap chain image");
         
         m_IsFrameStarted = true;
         
-        VkCommandBuffer commandBuffer = GetCurrentCommandBuffer();
+        CommandBuffer commandBuffer = GetCurrentCommandBuffer();
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        MX_VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo),
+        MX_VK_ASSERT(vkBeginCommandBuffer(commandBuffer.GetAsVulkanHandle(), &beginInfo),
             "Failed to begin recording command buffer");
         
         BeginSwapChainRenderPass(commandBuffer);
         
-        // TODO: move to RendererSystem or similiar
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Context::Get().GraphicsPipeline->GetHandle());
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-        
-        return true;
+        return commandBuffer;
     }
 
-    bool RendererAPI::EndFrame()
+    void RendererAPI::EndFrame(CommandBuffer commandBuffer)
     {
-        VkCommandBuffer commandBuffer = GetCurrentCommandBuffer();
         EndSwapChainRenderPass(commandBuffer);
         
         MX_CORE_ASSERT(m_IsFrameStarted, "Can't call EndFrame() while frame is not in progress");
-        MX_VK_ASSERT(vkEndCommandBuffer(commandBuffer), "Failed to record command buffer");
+        MX_VK_ASSERT(vkEndCommandBuffer(commandBuffer.GetAsVulkanHandle()), "Failed to record command buffer");
         
-        VkResult result = Context::Get().SwapChain->SubmitCommandBuffers(&commandBuffer, &m_CurrentImageIndex);
+        VkCommandBuffer bufferHandle = commandBuffer.GetAsVulkanHandle();
+        VkResult result = Context::Get().SwapChain->SubmitCommandBuffers(&bufferHandle, &m_CurrentImageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_RebuildSwapChain)
         {
             m_RebuildSwapChain = false;
@@ -117,11 +109,9 @@ namespace Mixture::Vulkan
 
         m_IsFrameStarted = false;
         m_CurrentFrameIndex = (m_CurrentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;
-        
-        return true;
     }
 
-    void RendererAPI::BeginSwapChainRenderPass(VkCommandBuffer commandBuffer)
+    void RendererAPI::BeginSwapChainRenderPass(CommandBuffer commandBuffer)
     {
         MX_CORE_ASSERT(m_IsFrameStarted, "Can't call BeginSwapChainRenderPass() if frame is not in progress");
 
@@ -140,7 +130,7 @@ namespace Mixture::Vulkan
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(commandBuffer.GetAsVulkanHandle(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -152,15 +142,15 @@ namespace Mixture::Vulkan
 
         VkRect2D scissor{ {0, 0}, swapChainExtent };
 
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        vkCmdSetViewport(commandBuffer.GetAsVulkanHandle(), 0, 1, &viewport);
+        vkCmdSetScissor(commandBuffer.GetAsVulkanHandle(), 0, 1, &scissor);
     }
 
-    void RendererAPI::EndSwapChainRenderPass(VkCommandBuffer commandBuffer)
+    void RendererAPI::EndSwapChainRenderPass(CommandBuffer commandBuffer)
     {
         MX_CORE_ASSERT(m_IsFrameStarted, "Can't call EndSwapChainRenderPass() if frame is not in progress");
         MX_CORE_ASSERT(commandBuffer == GetCurrentCommandBuffer(), "Can't end render pass on command buffer from a different frame");
 
-        vkCmdEndRenderPass(commandBuffer);
+        vkCmdEndRenderPass(commandBuffer.GetAsVulkanHandle());
     }
 }

@@ -66,7 +66,7 @@ namespace Mixture::Vulkan
         
         m_ImageViews.clear();
 
-        if (m_SwapChain) 
+        if (m_SwapChain)
         {
             vkDestroySwapchainKHR(Context::Get().Device->GetHandle(), m_SwapChain, nullptr);
             m_SwapChain = nullptr;

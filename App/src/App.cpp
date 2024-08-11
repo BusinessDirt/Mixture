@@ -2,9 +2,23 @@
 
 namespace Mixture
 {
+    class ExampleApp : public Application
+    {
+    public:
+        ExampleApp(ApplicationCommandLineArgs args) : Application("Example App", args)
+        {
+            Renderer::PushRendererSystem(new RendererSystem());
+        }
+        
+        ~ExampleApp()
+        {
+            
+        }
+    };
+
     Application* CreateApplication(ApplicationCommandLineArgs args)
 	{
-		Application* app = new Application("Mixture App", args);
+		ExampleApp* app = new ExampleApp(args);
 		return app;
 	}
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mixture/Renderer/RendererAPI.hpp"
+#include "Mixture/Renderer/Buffer/CommandBuffer.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Command/CommandBuffers.hpp"
@@ -17,21 +18,18 @@ namespace Mixture::Vulkan
 
         void OnWindowResize(uint32_t width, uint32_t height) override;
 
-        bool BeginFrame() override;
-        bool EndFrame() override;
+        CommandBuffer BeginFrame() override;
+        void EndFrame(CommandBuffer commandBuffer) override;
         void WaitForDevice() override;
         
-        
     private:
-        VkCommandBuffer Begin();
-        void End();
-        void BeginSwapChainRenderPass(VkCommandBuffer commandBuffer);
-        void EndSwapChainRenderPass(VkCommandBuffer commandBuffer);
+        void BeginSwapChainRenderPass(CommandBuffer commandBuffer);
+        void EndSwapChainRenderPass(CommandBuffer commandBuffer);
         
-        VkCommandBuffer GetCurrentCommandBuffer() const
+        CommandBuffer GetCurrentCommandBuffer() const
         {
             MX_CORE_ASSERT(m_IsFrameStarted, "Cannot get command buffer when frame not in progress");
-            return m_CommandBuffers->operator[](m_CurrentFrameIndex);
+            return CommandBuffer(m_CommandBuffers->operator[](m_CurrentFrameIndex));
         }
         
         void RebuildSwapChain();

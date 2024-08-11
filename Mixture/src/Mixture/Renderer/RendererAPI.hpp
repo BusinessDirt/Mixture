@@ -2,6 +2,10 @@
 
 #include "Mixture/Core/Base.hpp"
 
+#include <vulkan/vulkan.h>
+
+#include "Mixture/Renderer/Buffer/CommandBuffer.hpp"
+
 namespace Mixture
 {
     class RendererAPI
@@ -18,8 +22,9 @@ namespace Mixture
 
         virtual void OnWindowResize(uint32_t width, uint32_t height) = 0;
 
-        virtual bool BeginFrame() = 0;
-        virtual bool EndFrame() = 0;
+        // TODO: abstract command buffer
+        virtual CommandBuffer BeginFrame() = 0;
+        virtual void EndFrame(CommandBuffer commandBuffer) = 0;
         virtual void WaitForDevice() = 0;
 
         static API GetAPI() { return s_API; }
