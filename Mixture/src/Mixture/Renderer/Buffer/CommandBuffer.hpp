@@ -12,10 +12,11 @@ namespace Mixture
     class CommandBuffer
     {
     public:
+        CommandBuffer();
         CommandBuffer(void* handle);
         ~CommandBuffer() = default;
         
-        VkCommandBuffer GetAsVulkanHandle();
+        VkCommandBuffer GetAsVulkanHandle() const;
         //GetOpenGLHandle();
         //GetDirectX12Handle();
         

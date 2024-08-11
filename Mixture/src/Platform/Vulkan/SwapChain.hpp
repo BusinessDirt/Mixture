@@ -35,6 +35,7 @@ namespace Mixture::Vulkan
 		VkExtent2D GetExtent() { return m_Extent; }
 		uint32_t GetWidth() { return m_Extent.width; }
 		uint32_t GetHeight() { return m_Extent.height; }
+        size_t GetCurrentFrameIndex() { return m_CurrentFrame; }
 
 		float ExtentAspectRatio() 
 		{

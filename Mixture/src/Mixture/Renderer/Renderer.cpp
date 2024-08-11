@@ -1,7 +1,8 @@
 #include "mxpch.hpp"
 #include "Renderer.hpp"
 
-#include <vulkan/vulkan.h>
+#include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Descriptor/DescriptorSets.hpp"
 
 namespace Mixture
 {
@@ -29,13 +30,21 @@ namespace Mixture
 
     void Renderer::DrawFrame()
     {
-        for (auto system : s_RendererSystems)
-            system->Update();
+        static auto startTime = std::chrono::high_resolution_clock::now();
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         
         if (CommandBuffer buffer = s_RendererAPI->BeginFrame())
         {
+            uint32_t frameIndex = static_cast<uint32_t>(Vulkan::Context::Get().SwapChain->GetCurrentFrameIndex());
+            FrameInfo frameInfo { frameIndex, frameTime, buffer, Vulkan::Context::Get().DescriptorSetManager->GetSets().GetHandle(frameIndex) };
+            
             for (auto system : s_RendererSystems)
-                system->Draw(buffer);
+                system->Update(frameInfo);
+            
+            for (auto system : s_RendererSystems)
+                system->Draw(frameInfo);
             
             s_RendererAPI->EndFrame(buffer);
         }

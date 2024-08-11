@@ -18,6 +18,18 @@ namespace Mixture::Util
         // If both sizes are the same, return true
         return vertPush.Size == fragPush.Size;
     }
+
+    static VkDescriptorSetLayoutBinding CreateLayoutBinding(const UniformBufferInformation& ubo, VkShaderStageFlags stageFlags)
+    {
+        VkDescriptorSetLayoutBinding layoutBinding{};
+        layoutBinding.binding = ubo.Binding;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = stageFlags;
+        layoutBinding.pImmutableSamplers = nullptr; // Only relevant for image sampling
+
+        return layoutBinding;
+    }
 }
 
 namespace Mixture::Vulkan
@@ -126,7 +138,7 @@ namespace Mixture::Vulkan
             rasterizer.polygonMode = VK_POLYGON_MODE_FILL; // TODO: setting for wireframe
             rasterizer.lineWidth = 1.0f;
             rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-            rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+            rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
             rasterizer.depthBiasEnable = VK_FALSE;
             rasterizer.depthBiasConstantFactor = 0.0f; // Optional
             rasterizer.depthBiasClamp = 0.0f; // Optional
@@ -194,11 +206,19 @@ namespace Mixture::Vulkan
             vkDestroyPipeline(Context::Get().Device->GetHandle(), m_Pipeline, nullptr);
             m_Pipeline = nullptr;
         }
+        
         m_PipelineLayout = nullptr;
     }
 
-    void GraphicsPipeline::Bind(CommandBuffer commandBuffer)
+    void GraphicsPipeline::Bind(const FrameInfo& frameInfo)
     {
-        vkCmdBindPipeline(commandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+        vkCmdBindPipeline(frameInfo.CommandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+        vkCmdBindDescriptorSets(frameInfo.CommandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout->GetHandle(), 0, 1, &frameInfo.DescriptorSet, 0, nullptr);
+    }
+
+    void GraphicsPipeline::PushConstants(const FrameInfo& frameInfo, const void* pValues)
+    {
+        vkCmdPushConstants(frameInfo.CommandBuffer.GetAsVulkanHandle(), m_PipelineLayout->GetHandle(), m_PushConstantInformation.Flags,
+            m_PushConstantInformation.Offset, m_PushConstantInformation.Size, pValues);
     }
 }

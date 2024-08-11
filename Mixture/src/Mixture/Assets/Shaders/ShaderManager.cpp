@@ -36,7 +36,6 @@ namespace Mixture
                 m_UniformBufferInfos, !std::filesystem::exists(cachedFilePath)) });
         }
 
-
         // TODO: recompile if file has been changed
     }
 

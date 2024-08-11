@@ -18,7 +18,8 @@ namespace Mixture::Vulkan
         GraphicsPipeline(const std::string& shaderName);
         ~GraphicsPipeline() override;
         
-        void Bind(CommandBuffer commandBuffer) override;
+        void Bind(const FrameInfo& frameInfo) override;
+        void PushConstants(const FrameInfo& info, const void* pValues) override;
         
     private:
         struct PushConstantInformation

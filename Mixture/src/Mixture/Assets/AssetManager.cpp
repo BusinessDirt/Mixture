@@ -35,4 +35,22 @@ namespace Mixture
     {
         return m_ShaderManager->m_Shaders.at(filename);
     }
+
+    std::vector<Vulkan::DescriptorBinding> AssetManager::GetDescriptorBindings() const
+    {
+        std::vector<Vulkan::DescriptorBinding> bindings = std::vector<Vulkan::DescriptorBinding>();
+        
+        // ubos
+        for (const auto& ubo : m_ShaderManager->m_UniformBufferInfos)
+        {
+            Vulkan::DescriptorBinding binding{};
+            binding.Binding = ubo.Binding;
+            binding.DescriptorCount = 1;
+            binding.Stage = ubo.Flags;
+            binding.Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            bindings.emplace_back(binding);
+        }
+        
+        return bindings;
+    }
 }

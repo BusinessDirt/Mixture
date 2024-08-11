@@ -13,6 +13,7 @@
 #include "Platform/Vulkan/RenderPass.hpp"
 #include "Platform/Vulkan/Command/CommandPool.hpp"
 #include "Platform/Vulkan/Pipeline/GraphicsPipeline.hpp"
+#include "Platform/Vulkan/Descriptor/DescriptorSetManager.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -31,6 +32,7 @@ namespace Mixture::Vulkan
         Scope<Device> Device;
         Scope<SwapChain> SwapChain;
         Scope<CommandPool> CommandPool;
+        Scope<DescriptorSetManager> DescriptorSetManager;
 
     private:
         Context() = default;

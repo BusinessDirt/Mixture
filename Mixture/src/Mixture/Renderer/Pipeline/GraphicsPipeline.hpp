@@ -2,7 +2,7 @@
 
 #include "Mixture/Core/Base.hpp"
 
-#include "Mixture/Renderer/Buffer/CommandBuffer.hpp"
+#include "Mixture/Renderer/FrameInfo.hpp"
 
 namespace Mixture
 {
@@ -11,7 +11,8 @@ namespace Mixture
     public:
         virtual ~GraphicsPipeline() = default;
         
-        virtual void Bind(CommandBuffer commandBuffer) = 0;
+        virtual void Bind(const FrameInfo& frameInfo) = 0;
+        virtual void PushConstants(const FrameInfo& info, const void* pValues) = 0;
         
         static Scope<GraphicsPipeline> Create(const std::string& shaderFileName);
     };

@@ -191,10 +191,18 @@ namespace Mixture
             UniformBufferInformation bufferInfo{};
             bufferInfo.Size = static_cast<uint32_t>(compiler.get_declared_struct_size(bufferType));
             bufferInfo.Binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
-            compiler.get_binary_offset_for_decoration(resource.id, spv::DecorationBinding, bufferInfo.Offset);
+            bufferInfo.Flags = m_ShaderStageFlagBits;
             
             // Insert the bufferInfo into the set and get the pointer to the actual stored element
             auto [it, inserted] = uboInfos.insert(bufferInfo);
+            if (!inserted)
+            {
+                UniformBufferInformation info = *it;
+                uboInfos.erase(it);
+                info.Flags |= m_ShaderStageFlagBits;
+                uboInfos.insert(info);
+            }
+            
             m_ShaderInformation.UniformBuffers.push_back(&(*it));
         }
 
