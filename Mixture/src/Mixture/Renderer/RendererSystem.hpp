@@ -4,6 +4,7 @@
 
 #include "Mixture/Renderer/Pipeline/GraphicsPipeline.hpp"
 #include "Mixture/Renderer/Buffer/CommandBuffer.hpp"
+#include "Mixture/Renderer/Buffer/VertexBuffer.hpp"
 
 namespace Mixture
 {
@@ -20,5 +21,6 @@ namespace Mixture
         
     private:
         Scope<GraphicsPipeline> m_Pipeline;
+        Scope<VertexBuffer> m_VertexBuffer;
     };
 }
