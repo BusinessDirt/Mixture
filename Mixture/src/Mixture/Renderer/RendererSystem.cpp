@@ -1,7 +1,7 @@
 #include "mxpch.hpp"
 #include "RendererSystem.hpp"
 
-#include <vulkan/vulkan.h>
+#include "Mixture/Renderer/DrawCommand.hpp"
 
 namespace Mixture
 {
@@ -23,9 +23,6 @@ namespace Mixture
     void RendererSystem::Draw(CommandBuffer commandBuffer)
     {
         m_Pipeline->Bind(commandBuffer);
-        
-        // TODO: abstract into DrawCommand or smth
-        // Draw(), DrawIndexed(), DrawIndirect(), DrawIndirectIndexed()
-        vkCmdDraw(commandBuffer.GetAsVulkanHandle(), 3, 1, 0, 0);
+        DrawCommand::Draw(commandBuffer, 3);
     }
 }

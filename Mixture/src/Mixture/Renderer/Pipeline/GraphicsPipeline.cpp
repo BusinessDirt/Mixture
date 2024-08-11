@@ -16,5 +16,8 @@ namespace Mixture
             case RendererAPI::API::OpenGL:  MX_CORE_ASSERT(false, "RendererAPI::OpenGL is currently not supported!"); return nullptr;
             case RendererAPI::API::DirectX12:  MX_CORE_ASSERT(false, "RendererAPI::DirectX12 is currently not supported!"); return nullptr;
         }
+        
+        MX_CORE_ASSERT("Unknown RendererAPI!");
+        return nullptr;
     }
 }
