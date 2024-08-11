@@ -20,6 +20,7 @@ namespace Mixture
 
         virtual bool BeginFrame() = 0;
         virtual bool EndFrame() = 0;
+        virtual void WaitForDevice() = 0;
 
         static API GetAPI() { return s_API; }
         static Scope<RendererAPI> Create();

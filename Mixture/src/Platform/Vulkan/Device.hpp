@@ -17,6 +17,13 @@ namespace Mixture::Vulkan
         Device(const Manager& manager);
         ~Device();
         
+        VkFormat FindSupportedFormat( const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+        
+        VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
+        VkQueue GetPresentQueue() const { return m_PresentQueue; }
+        
     private:
         VULKAN_HANDLE(VkDevice, m_Device);
         

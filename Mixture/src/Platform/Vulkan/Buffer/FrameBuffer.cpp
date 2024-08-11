@@ -5,15 +5,13 @@
 
 namespace Mixture::Vulkan
 {
-    FrameBuffer::FrameBuffer(VkImageView attachment, VkExtent2D extent, VkRenderPass renderPass)
+    FrameBuffer::FrameBuffer(const std::vector<VkImageView>& attachments, VkExtent2D extent, VkRenderPass renderPass)
     {
-        VkImageView attachments[] = { attachment };
-
         VkFramebufferCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        createInfo.renderPass = renderPass ? renderPass : Context::Get().SwapChain->GetRenderPass().GetHandle();
-        createInfo.attachmentCount = 1;
-        createInfo.pAttachments = attachments;
+        createInfo.renderPass = renderPass ? renderPass : Context::Get().SwapChain->GetRenderPass();
+        createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        createInfo.pAttachments = attachments.data();
         createInfo.width = extent.width;
         createInfo.height = extent.height;
         createInfo.layers = 1;

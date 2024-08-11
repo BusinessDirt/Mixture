@@ -15,7 +15,7 @@ namespace Mixture::Vulkan
         FrameBuffer(FrameBuffer&& other);
         FrameBuffer& operator=(FrameBuffer&& other);
         
-        FrameBuffer(VkImageView attachment, VkExtent2D extent, VkRenderPass renderPass = nullptr);
+        FrameBuffer(const std::vector<VkImageView>& attachments, VkExtent2D extent, VkRenderPass renderPass = nullptr);
         ~FrameBuffer();
         
     private:

@@ -95,15 +95,15 @@ namespace Mixture::Vulkan
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.y = 0.0f;
-            viewport.width = (float) Context::Get().SwapChain->GetExtent().width;
-            viewport.height = (float) Context::Get().SwapChain->GetExtent().height;
+            viewport.width = (float) Context::Get().SwapChain->GetSwapChainExtent().width;
+            viewport.height = (float) Context::Get().SwapChain->GetSwapChainExtent().height;
             viewport.minDepth = 0.0f;
             viewport.maxDepth = 1.0f;
             
             // Scissor
             VkRect2D scissor{};
             scissor.offset = {0, 0};
-            scissor.extent = Context::Get().SwapChain->GetExtent();
+            scissor.extent = Context::Get().SwapChain->GetSwapChainExtent();
             
             // Dynamic States for viewport and scissor
             std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
@@ -167,7 +167,7 @@ namespace Mixture::Vulkan
             
             VkGraphicsPipelineCreateInfo pipelineInfo{};
             pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-            pipelineInfo.stageCount = 2;
+            pipelineInfo.stageCount = shaderStageCount;
             pipelineInfo.pStages = shaderStages;
             pipelineInfo.pVertexInputState = &vertexInputInfo;
             pipelineInfo.pInputAssemblyState = &inputAssembly;
@@ -178,7 +178,7 @@ namespace Mixture::Vulkan
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.pDynamicState = &dynamicState;
             pipelineInfo.layout = m_PipelineLayout->GetHandle();
-            pipelineInfo.renderPass = Context::Get().SwapChain->GetRenderPass().GetHandle();
+            pipelineInfo.renderPass = Context::Get().SwapChain->GetRenderPass();
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
             pipelineInfo.basePipelineIndex = -1; // Optional

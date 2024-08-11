@@ -27,5 +27,7 @@ namespace Mixture
         {
             s_RendererAPI->EndFrame();
         }
+        
+        s_RendererAPI->WaitForDevice();
     }
 }

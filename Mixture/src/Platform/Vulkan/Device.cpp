@@ -58,4 +58,57 @@ namespace Mixture::Vulkan
             m_Device = nullptr;
         }
     }
+
+    VkFormat Device::FindSupportedFormat( const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+    {
+        for (VkFormat format : candidates)
+        {
+            VkFormatProperties props;
+            vkGetPhysicalDeviceFormatProperties(Context::Get().PhysicalDevice->GetHandle(), format, &props);
+
+            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
+            {
+                return format;
+            }
+            else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
+            {
+                return format;
+            }
+        }
+        MX_CORE_ERROR("Failed to find supported format");
+        return VK_FORMAT_UNDEFINED;
+    }
+
+    uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+    {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(Context::Get().PhysicalDevice->GetHandle(), &memProperties);
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+        {
+            if ((typeFilter & (1 << i)) &&(memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+            {
+                return i;
+            }
+        }
+
+        MX_CORE_ERROR("Failed to find suitable memory type");
+        return 0;
+    }
+
+    void Device::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties,
+        VkImage& image, VkDeviceMemory& imageMemory)
+    {
+        MX_VK_ASSERT(vkCreateImage(m_Device, &imageInfo, nullptr, &image), "Failed to create VkImage");
+
+        VkMemoryRequirements memRequirements;
+        vkGetImageMemoryRequirements(m_Device, image, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
+
+        MX_VK_ASSERT(vkAllocateMemory(m_Device, &allocInfo, nullptr, &imageMemory), "Failed to allocate VkImageMemory");
+        MX_VK_ASSERT(vkBindImageMemory(m_Device, image, imageMemory, 0), "Failed to bind VkImageMemory");
+    }
 }

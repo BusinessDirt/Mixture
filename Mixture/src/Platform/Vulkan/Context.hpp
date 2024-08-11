@@ -11,6 +11,7 @@
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/SwapChain.hpp"
 #include "Platform/Vulkan/RenderPass.hpp"
+#include "Platform/Vulkan/Command/CommandPool.hpp"
 #include "Platform/Vulkan/Pipeline/GraphicsPipeline.hpp"
 
 namespace Mixture::Vulkan
@@ -29,6 +30,8 @@ namespace Mixture::Vulkan
         Scope<PhysicalDevice> PhysicalDevice;
         Scope<Device> Device;
         Scope<SwapChain> SwapChain;
+        Scope<CommandPool> CommandPool;
+        
         Scope<GraphicsPipeline> GraphicsPipeline;
 
     private:
