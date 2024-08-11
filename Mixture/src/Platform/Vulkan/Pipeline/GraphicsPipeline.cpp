@@ -95,15 +95,15 @@ namespace Mixture::Vulkan
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.y = 0.0f;
-            viewport.width = (float) Context::Get().SwapChain->GetSwapChainExtent().width;
-            viewport.height = (float) Context::Get().SwapChain->GetSwapChainExtent().height;
+            viewport.width = (float) Context::Get().SwapChain->GetExtent().width;
+            viewport.height = (float) Context::Get().SwapChain->GetExtent().height;
             viewport.minDepth = 0.0f;
             viewport.maxDepth = 1.0f;
             
             // Scissor
             VkRect2D scissor{};
             scissor.offset = {0, 0};
-            scissor.extent = Context::Get().SwapChain->GetSwapChainExtent();
+            scissor.extent = Context::Get().SwapChain->GetExtent();
             
             // Dynamic States for viewport and scissor
             std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
@@ -178,7 +178,7 @@ namespace Mixture::Vulkan
             pipelineInfo.pColorBlendState = &colorBlending;
             pipelineInfo.pDynamicState = &dynamicState;
             pipelineInfo.layout = m_PipelineLayout->GetHandle();
-            pipelineInfo.renderPass = Context::Get().SwapChain->GetRenderPass();
+            pipelineInfo.renderPass = Context::Get().SwapChain->GetRenderPass().GetHandle();
             pipelineInfo.subpass = 0;
             pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
             pipelineInfo.basePipelineIndex = -1; // Optional

@@ -127,10 +127,10 @@ namespace Mixture::Vulkan
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_Context->SwapChain->GetRenderPass();
-        renderPassInfo.framebuffer = m_Context->SwapChain->GetFrameBuffer(m_CurrentImageIndex);
+        renderPassInfo.renderPass = m_Context->SwapChain->GetRenderPass().GetHandle();
+        renderPassInfo.framebuffer = m_Context->SwapChain->GetFrameBuffer(m_CurrentImageIndex).GetHandle();
 
-        VkExtent2D swapChainExtent = m_Context->SwapChain->GetSwapChainExtent();
+        VkExtent2D swapChainExtent = m_Context->SwapChain->GetExtent();
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = swapChainExtent;
 

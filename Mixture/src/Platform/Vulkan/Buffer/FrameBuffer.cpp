@@ -9,7 +9,7 @@ namespace Mixture::Vulkan
     {
         VkFramebufferCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        createInfo.renderPass = renderPass ? renderPass : Context::Get().SwapChain->GetRenderPass();
+        createInfo.renderPass = renderPass ? renderPass : Context::Get().SwapChain->GetRenderPass().GetHandle();
         createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         createInfo.pAttachments = attachments.data();
         createInfo.width = extent.width;

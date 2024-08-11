@@ -2,6 +2,9 @@
 
 #include "Mixture/Core/Base.hpp"
 
+#include "Platform/Vulkan/Buffer/FrameBuffer.hpp"
+#include "Platform/Vulkan/RenderPass.hpp"
+
 #include <vulkan/vulkan.h>
 
 #include <string>
@@ -9,6 +12,9 @@
 
 namespace Mixture::Vulkan
 {
+    class Semaphore;
+    class Fence;
+
 	class SwapChain
 	{
 	public:
@@ -21,18 +27,18 @@ namespace Mixture::Vulkan
 		SwapChain(const SwapChain&) = delete;
 		SwapChain& operator=(const SwapChain&) = delete;
 
-		VkFramebuffer GetFrameBuffer(int index) { return m_SwapChainFramebuffers[index]; }
-		VkRenderPass GetRenderPass() { return m_RenderPass; }
-		VkImageView GetImageView(int index) { return m_SwapChainImageViews[index]; }
-		size_t GetImageCount() { return m_SwapChainImages.size(); }
-		VkFormat GetSwapChainImageFormat() { return m_SwapChainImageFormat; }
-		VkExtent2D GetSwapChainExtent() { return m_SwapChainExtent; }
-		uint32_t GetWidth() { return m_SwapChainExtent.width; }
-		uint32_t GetHeight() { return m_SwapChainExtent.height; }
+		const FrameBuffer& GetFrameBuffer(int index) { return m_Framebuffers[index]; }
+		const RenderPass& GetRenderPass() { return *m_RenderPass; }
+		VkImageView GetImageView(int index) { return m_ImageViews[index]; }
+		size_t GetImageCount() { return m_Images.size(); }
+		VkFormat GetImageFormat() { return m_ImageFormat; }
+		VkExtent2D GetExtent() { return m_Extent; }
+		uint32_t GetWidth() { return m_Extent.width; }
+		uint32_t GetHeight() { return m_Extent.height; }
 
 		float ExtentAspectRatio() 
 		{
-			return static_cast<float>(m_SwapChainExtent.width) / static_cast<float>(m_SwapChainExtent.height);
+			return static_cast<float>(m_Extent.width) / static_cast<float>(m_Extent.height);
 		}
 
 		VkFormat FindDepthFormat();
@@ -42,7 +48,7 @@ namespace Mixture::Vulkan
 
 		bool CompareSwapFormats(const SwapChain& swapChain) const
 		{
-			return swapChain.m_SwapChainImageFormat == m_SwapChainImageFormat;
+			return swapChain.m_ImageFormat == m_ImageFormat;
 		}
 
 	private:
@@ -50,31 +56,30 @@ namespace Mixture::Vulkan
 
 		void CreateSwapChain();
 		void CreateImageViews();
-		void CreateRenderPass();
-		void CreateFramebuffers();
-		void CreateSyncObjects();
 
 		// Helper functions
-		VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-		VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+		VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
+		VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+		VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-		VkFormat m_SwapChainImageFormat;
-		VkExtent2D m_SwapChainExtent;
+		VkFormat m_ImageFormat;
+		VkExtent2D m_Extent;
 
-		std::vector<VkFramebuffer> m_SwapChainFramebuffers;
-		VkRenderPass m_RenderPass;
+		std::vector<FrameBuffer> m_Framebuffers;
+		Scope<RenderPass> m_RenderPass;
 
-		std::vector<VkImage> m_SwapChainImages;
-		std::vector<VkImageView> m_SwapChainImageViews;
+		std::vector<VkImage> m_Images;
+		std::vector<VkImageView> m_ImageViews;
 
-		VkSwapchainKHR m_SwapChain;
+        VULKAN_HANDLE(VkSwapchainKHR, m_SwapChain);
 		Ref<SwapChain> m_OldSwapChain;
 
-		std::vector<VkSemaphore> m_ImageAvailableSemaphores;
-		std::vector<VkSemaphore> m_RenderFinishedSemaphores;
-		std::vector<VkFence> m_InFlightFences;
-		std::vector<VkFence> m_ImagesInFlight;
+        // Sync objects
+		std::vector<Semaphore> m_ImageAvailableSemaphores;
+		std::vector<Semaphore> m_RenderFinishedSemaphores;
+		std::vector<Fence> m_InFlightFences;
+		std::vector<Fence*> m_ImagesInFlight;
+        
 		size_t m_CurrentFrame = 0;
 	};
 }
