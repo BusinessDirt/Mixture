@@ -191,6 +191,7 @@ namespace Mixture
             UniformBufferInformation bufferInfo{};
             bufferInfo.Size = static_cast<uint32_t>(compiler.get_declared_struct_size(bufferType));
             bufferInfo.Binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+            bufferInfo.Set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
             bufferInfo.Flags = m_ShaderStageFlagBits;
             
             // Insert the bufferInfo into the set and get the pointer to the actual stored element

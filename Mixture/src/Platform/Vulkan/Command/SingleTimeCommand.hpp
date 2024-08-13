@@ -6,7 +6,7 @@
 
 namespace Mixture::Vulkan::SingleTimeCommand
 {
-    static VkCommandBuffer Begin()
+    static void Submit(const std::function<void(VkCommandBuffer)>& action)
     {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -22,11 +22,9 @@ namespace Mixture::Vulkan::SingleTimeCommand
         beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
         vkBeginCommandBuffer(commandBuffer, &beginInfo);
-        return commandBuffer;
-    }
 
-    static void End(VkCommandBuffer commandBuffer)
-    {
+        action(commandBuffer);
+
         vkEndCommandBuffer(commandBuffer);
 
         VkSubmitInfo submitInfo{};

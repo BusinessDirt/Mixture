@@ -3,6 +3,7 @@
 #include "Mixture/Core/PlatformDetection.hpp"
 
 #include <memory>
+#include <vector>
 
 // DEBUG
 #ifdef MX_DEBUG
@@ -57,6 +58,9 @@ namespace Mixture
 	{
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
+
+    template<typename T>
+    using Vector = std::vector<T>;
 }
 
 #include "Mixture/Core/Logger/Log.hpp"

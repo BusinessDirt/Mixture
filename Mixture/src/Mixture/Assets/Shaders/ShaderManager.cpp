@@ -35,6 +35,12 @@ namespace Mixture
             m_Shaders.insert({ filename, ShaderCode(sourceFilePath, cachedFilePath,
                 m_UniformBufferInfos, !std::filesystem::exists(cachedFilePath)) });
         }
+        
+        MX_CORE_INFO("Found ubos:");
+        for (const auto& ubo : m_UniformBufferInfos)
+        {
+            MX_CORE_INFO("layout(set={0}, binding={1}) with size({2})", ubo.Set, ubo.Binding, ubo.Size);
+        }
 
         // TODO: recompile if file has been changed
     }

@@ -21,8 +21,8 @@ namespace Mixture::Vulkan
         m_Context->DebugMessenger = CreateScope<DebugMessenger>();
         m_Context->PhysicalDevice = CreateScope<PhysicalDevice>();
         m_Context->Device = CreateScope<Device>(manager);
-        m_Context->SwapChain = CreateScope<SwapChain>();
         m_Context->CommandPool = CreateScope<CommandPool>();
+        m_Context->SwapChain = CreateScope<SwapChain>();
         
         m_Context->DescriptorSetManager = CreateScope<DescriptorSetManager>(Application::Get().GetAssetManager().GetDescriptorBindings(),
             SwapChain::MAX_FRAMES_IN_FLIGHT);
@@ -122,13 +122,13 @@ namespace Mixture::Vulkan
         renderPassInfo.renderPass = m_Context->SwapChain->GetRenderPass().GetHandle();
         renderPassInfo.framebuffer = m_Context->SwapChain->GetFrameBuffer(m_CurrentImageIndex).GetHandle();
 
-        VkExtent2D swapChainExtent = m_Context->SwapChain->GetExtent();
-        renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = swapChainExtent;
-
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { 0.01f, 0.01f, 0.01f, 1.0f };
         clearValues[1].depthStencil = { 1.0f, 0 };
+        
+        VkExtent2D swapChainExtent = m_Context->SwapChain->GetExtent();
+        renderPassInfo.renderArea.offset = { 0, 0 };
+        renderPassInfo.renderArea.extent = swapChainExtent;
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 

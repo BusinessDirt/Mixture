@@ -2,11 +2,18 @@
 #include "FrameBuffer.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Image/ImageView.hpp"
 
 namespace Mixture::Vulkan
 {
-    FrameBuffer::FrameBuffer(const std::vector<VkImageView>& attachments, VkExtent2D extent, VkRenderPass renderPass)
+    FrameBuffer::FrameBuffer(VkImageView depthAttachment, VkImage swapChainImage, VkExtent2D extent, VkFormat format, VkRenderPass renderPass)
+        : m_Image(swapChainImage), m_Format(format)
     {
+        // create image view from swapchain image
+        m_ImageView = CreateScope<ImageView>(m_Image, m_Format, VK_IMAGE_ASPECT_COLOR_BIT);
+        
+        std::vector<VkImageView> attachments = { m_ImageView->GetHandle(), depthAttachment };
+        
         VkFramebufferCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         createInfo.renderPass = renderPass ? renderPass : Context::Get().SwapChain->GetRenderPass().GetHandle();
@@ -26,22 +33,7 @@ namespace Mixture::Vulkan
             vkDestroyFramebuffer(Context::Get().Device->GetHandle(), m_FrameBuffer, nullptr);
             m_FrameBuffer = nullptr;
         }
-    }
-
-    FrameBuffer::FrameBuffer(FrameBuffer&& other)
-        : m_FrameBuffer(other.m_FrameBuffer)
-    {
-        other.m_FrameBuffer = VK_NULL_HANDLE;
-    }
-
-    FrameBuffer& FrameBuffer::operator=(FrameBuffer&& other)
-    {
-        if (this != &other)
-        {
-            this->~FrameBuffer();
-            m_FrameBuffer = other.m_FrameBuffer;
-            other.m_FrameBuffer = VK_NULL_HANDLE;
-        }
-        return *this;
+        
+        m_ImageView = nullptr;
     }
 }

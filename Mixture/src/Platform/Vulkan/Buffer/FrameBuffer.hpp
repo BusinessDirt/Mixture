@@ -6,19 +6,24 @@
 
 namespace Mixture::Vulkan
 {
+    class ImageView;
+
     class FrameBuffer
     {
     public:
-        FrameBuffer(const FrameBuffer&) = delete;
-        FrameBuffer& operator=(const FrameBuffer&) = delete;
+        MX_NON_COPIABLE(FrameBuffer);
         
-        FrameBuffer(FrameBuffer&& other);
-        FrameBuffer& operator=(FrameBuffer&& other);
-        
-        FrameBuffer(const std::vector<VkImageView>& attachments, VkExtent2D extent, VkRenderPass renderPass = nullptr);
+        FrameBuffer(VkImageView depthAttachment, VkImage swapChainImage, VkExtent2D extent, VkFormat format, VkRenderPass renderPass = nullptr);
         ~FrameBuffer();
+        
+        VkFormat GetFormat() const { return m_Format; }
+        const ImageView& GetImageView() const { return *m_ImageView; }
         
     private:
         VULKAN_HANDLE(VkFramebuffer, m_FrameBuffer);
+        
+        const VkFormat m_Format;
+        const VkImage m_Image;
+        Scope<ImageView> m_ImageView;
     };
 }
