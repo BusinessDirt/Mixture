@@ -17,7 +17,8 @@ project "App"
     externalincludedirs {
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.glfw}",
-        "%{IncludeDir.glm}"
+        "%{IncludeDir.glm}",
+        "%{IncludeDir.stb}"
     }
 
     links {

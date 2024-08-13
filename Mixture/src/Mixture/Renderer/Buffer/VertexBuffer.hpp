@@ -9,8 +9,9 @@ namespace Mixture
 {
     struct Vertex
     {
-        glm::vec2 pos;
-        glm::vec3 color;
+        glm::vec3 Position;
+        glm::vec3 Color;
+        glm::vec2 UV;
     };
 
     class VertexBuffer

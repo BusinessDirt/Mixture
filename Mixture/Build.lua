@@ -19,7 +19,7 @@ project "Mixture"
         "%{IncludeDir.glfw}",
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.glm}",
-        "%{IncludeDir.VulkanSDK}",
+        "%{IncludeDir.VulkanSDK}"
     }
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
