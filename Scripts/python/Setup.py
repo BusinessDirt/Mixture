@@ -30,6 +30,7 @@ if (premakeInstalled):
 
     if platform.system() == "Darwin":
         print("\nRunning premake...")
+        subprocess.call(["chmod", "+x", "vendor/premake/bin/premake5"]); # because of apple ._.
         subprocess.call(["sh", os.path.abspath("./scripts/macosx/MacOSX-GenProjects.sh")])
 
     print("\nSetup completed!")

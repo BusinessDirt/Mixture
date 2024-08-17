@@ -110,7 +110,7 @@ namespace Mixture
     }
 
     ShaderCode::ShaderCode(const std::filesystem::path& path, const std::filesystem::path& cachePath,
-        std::unordered_set<UniformBufferInformation>& uboInfos, bool compile)
+        std::unordered_set<UniformBufferInformation>& uboInfos, std::unordered_set<SampledImageInformation>& images, bool compile)
     {
         if (compile)
         {
@@ -132,7 +132,7 @@ namespace Mixture
         }
         
         m_ShaderStageFlagBits = Util::ShaderStageToFlagBits(path);
-        Reflect(path, uboInfos);
+        Reflect(path, uboInfos, images);
     }
 
     VkShaderModuleCreateInfo ShaderCode::CreateInfo() const
@@ -176,7 +176,7 @@ namespace Mixture
         }
     }
 
-    void ShaderCode::Reflect(const std::filesystem::path& path, std::unordered_set<UniformBufferInformation>& uboInfos)
+    void ShaderCode::Reflect(const std::filesystem::path& path, std::unordered_set<UniformBufferInformation>& uboInfos, std::unordered_set<SampledImageInformation>& images)
     {
         //MX_CORE_INFO("Reflecting on shader: {0}", path.filename().string().c_str());
 
@@ -187,7 +187,7 @@ namespace Mixture
         for (const spirv_cross::Resource& resource : resources.uniform_buffers)
         {
             const spirv_cross::SPIRType& bufferType = compiler.get_type(resource.base_type_id);
-
+            
             UniformBufferInformation bufferInfo{};
             bufferInfo.Size = static_cast<uint32_t>(compiler.get_declared_struct_size(bufferType));
             bufferInfo.Binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
@@ -205,6 +205,26 @@ namespace Mixture
             }
             
             m_ShaderInformation.UniformBuffers.push_back(&(*it));
+        }
+        
+        for (const spirv_cross::Resource& resource : resources.sampled_images)
+        {
+            SampledImageInformation imageInfo{};
+            imageInfo.Set = compiler.get_decoration(resource.id, spv::DecorationDescriptorSet);
+            imageInfo.Binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+            imageInfo.Flags = m_ShaderStageFlagBits;
+            
+            // Insert the bufferInfo into the set and get the pointer to the actual stored element
+            auto [it, inserted] = images.insert(imageInfo);
+            if (!inserted)
+            {
+                SampledImageInformation info = *it;
+                images.erase(it);
+                info.Flags |= m_ShaderStageFlagBits;
+                images.insert(info);
+            }
+            
+            m_ShaderInformation.SampledImages.push_back(&(*it));
         }
 
         // Push Constants

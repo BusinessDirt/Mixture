@@ -11,15 +11,15 @@ project "Mixture"
     files { "src/**.hpp", "src/**.cpp" }
 
     includedirs {
-        "src",
-        "%{wks.location}/Citrine/src",
+        "src"
     }
 
     externalincludedirs {
         "%{IncludeDir.glfw}",
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.glm}",
-        "%{IncludeDir.VulkanSDK}"
+        "%{IncludeDir.VulkanSDK}",
+        "%{IncludeDir.stb}"
     }
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")

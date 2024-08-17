@@ -24,6 +24,7 @@ namespace Mixture::Vulkan
         }
         
         MX_CORE_ASSERT(m_PhysicalDevice, "Failed to find a suitable GPU!");
+        vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_Properties);
     }
 
     QueueFamilyIndices PhysicalDevice::FindQueueFamilyIndices() const
@@ -43,6 +44,10 @@ namespace Mixture::Vulkan
         SwapChainSupportDetails swapChainSupport = Context::Get().Surface->QuerySwapChainSupport(device);
         bool swapChainAdequate = !(swapChainSupport.Formats.empty() && swapChainSupport.PresentModes.empty());
         
-        return indices.IsComplete() && swapChainAdequate;
+        // TODO: instead of forcing this disable anisotropic filtering
+        VkPhysicalDeviceFeatures supportedFeatures;
+        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+        
+        return indices.IsComplete() && swapChainAdequate && supportedFeatures.samplerAnisotropy;
     }
 }

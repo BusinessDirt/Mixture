@@ -7,6 +7,7 @@
 #include "Mixture/Renderer/Buffer/VertexBuffer.hpp"
 #include "Mixture/Renderer/Buffer/IndexBuffer.hpp"
 #include "Mixture/Renderer/Buffer/UniformBuffer.hpp"
+#include "Mixture/Renderer/Texture.hpp"
 
 namespace Mixture
 {
@@ -26,5 +27,6 @@ namespace Mixture
         Scope<VertexBuffer> m_VertexBuffer;
         Scope<IndexBuffer> m_IndexBuffer;
         Scope<UniformBuffer> m_UniformBuffer;
+        Scope<Texture> m_Texture;
     };
 }

@@ -19,6 +19,7 @@ namespace Mixture
     private:
         std::unordered_map<std::string, ShaderCode> m_Shaders;
         std::unordered_set<UniformBufferInformation> m_UniformBufferInfos;
+        std::unordered_set<SampledImageInformation> m_SampledImages;
         friend class AssetManager;
     };
 }

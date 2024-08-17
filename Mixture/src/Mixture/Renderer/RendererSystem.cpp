@@ -52,13 +52,16 @@ namespace Mixture
         
         // TODO: figure out some sort of system that creates the descriptors automatically
         // and also creates the uniform buffers that can just be referenced here instead
-        const ShaderInformation& shaderInfo = Application::Get().GetAssetManager().GetShader("shader.vert").GetInformation();
+        const ShaderInformation& vertInfo = Application::Get().GetAssetManager().GetShader("shader.vert").GetInformation();
+        const ShaderInformation& fragInfo = Application::Get().GetAssetManager().GetShader("shader.frag").GetInformation();
         
-        m_UniformBuffer = UniformBuffer::Create(*shaderInfo.UniformBuffers[0]);
+        m_UniformBuffer = UniformBuffer::Create(*vertInfo.UniformBuffers[0]);
+        m_Texture = Texture::Create("texture.jpg", *fragInfo.SampledImages[0]);
     }
 
     RendererSystem::~RendererSystem()
     {
+        m_Texture = nullptr;
         m_UniformBuffer = nullptr;
         m_IndexBuffer = nullptr;
         m_VertexBuffer = nullptr;

@@ -15,6 +15,7 @@ namespace Mixture
         ~AssetManager();
 
         const ShaderCode& GetShader(const std::string& filename) const;
+        std::filesystem::path GetTexturePath(const std::string& filename) const;
         std::vector<Vulkan::DescriptorBinding> GetDescriptorBindings() const;
 
     private:

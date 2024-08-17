@@ -36,6 +36,11 @@ namespace Mixture
         return m_ShaderManager->m_Shaders.at(filename);
     }
 
+    std::filesystem::path AssetManager::GetTexturePath(const std::string& filename) const
+    {
+        return m_AssetsPath / "textures" / filename;
+    }
+
     std::vector<Vulkan::DescriptorBinding> AssetManager::GetDescriptorBindings() const
     {
         std::vector<Vulkan::DescriptorBinding> bindings = std::vector<Vulkan::DescriptorBinding>();
@@ -48,6 +53,16 @@ namespace Mixture
             binding.DescriptorCount = 1;
             binding.Stage = ubo.Flags;
             binding.Type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            bindings.emplace_back(binding);
+        }
+        
+        for (const auto& image : m_ShaderManager->m_SampledImages)
+        {
+            Vulkan::DescriptorBinding binding{};
+            binding.Binding = image.Binding;
+            binding.DescriptorCount = 1;
+            binding.Stage = image.Flags;
+            binding.Type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             bindings.emplace_back(binding);
         }
         

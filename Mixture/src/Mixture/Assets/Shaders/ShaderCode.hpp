@@ -17,7 +17,7 @@ namespace Mixture
     {
     public:
         ShaderCode(const std::filesystem::path& path, const std::filesystem::path& cachePath,
-            std::unordered_set<UniformBufferInformation>& uboInfos, bool compile);
+            std::unordered_set<UniformBufferInformation>& uboInfos, std::unordered_set<SampledImageInformation>& images, bool compile);
         ~ShaderCode() = default;
 
         VkShaderModuleCreateInfo CreateInfo() const;
@@ -27,7 +27,7 @@ namespace Mixture
     private:
         void Compile(const std::filesystem::path& path, const std::filesystem::path& cachePath);
 
-        void Reflect(const std::filesystem::path& path, std::unordered_set<UniformBufferInformation>& uboInfos);
+        void Reflect(const std::filesystem::path& path, std::unordered_set<UniformBufferInformation>& uboInfos, std::unordered_set<SampledImageInformation>& images);
 
     private:
         std::vector<uint32_t> m_Data;

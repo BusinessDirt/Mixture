@@ -7,8 +7,13 @@ import time
 import urllib3 as urllib
 
 from zipfile import ZipFile
-import gzip
-import tarfile
+
+HEADERS = {'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"}
+
+def get_latest_release(base_url):
+    response = requests.get(f"{base_url}/releases/latest", headers=HEADERS)
+    response.raise_for_status()
+    return response.url.replace("tag", "download")
 
 def download_file(url, filepath):
     path = filepath
@@ -38,8 +43,7 @@ def download_file(url, filepath):
         raise TypeError("Argument 'url' must be of type list or string")
     
     with open(filepath, 'wb') as f:
-        headers = {'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"}
-        response = requests.get(url, headers=headers, stream=True)
+        response = requests.get(url, headers=HEADERS, stream=True)
         total = response.headers.get('content-length')
 
         if total is None:
@@ -63,18 +67,6 @@ def unzip_file(filepath: str, delete_zip_file=True):
     path = os.path.abspath(filepath)
     location = os.path.dirname(path)
 
-    if filepath.endswith(".zip"):
-        __unzip_zip__(path, location)
-    elif filepath.endswith(".gz"):
-        __unzip_gz__(path, location)
-    else:
-        print("Unsupported file format.")
-        return
-
-    if delete_zip_file:
-        os.remove(path)
-
-def __unzip_zip__(path, location):
     content = dict()
     size = 0
     with ZipFile(path, 'r') as folder:
@@ -99,11 +91,8 @@ def __unzip_zip__(path, location):
             __speed_write_helper__(done, percentage, avg_speed)
     sys.stdout.write('\n')
 
-def __unzip_gz__(path, location):
-    with gzip.open(path, 'rb') as f:
-        with tarfile.open(fileobj=f, mode='r') as tar:
-            tar.extractall(path=location)
-
+    if delete_zip_file:
+        os.remove(path)
 
 def __percentage_done_helper__(x, total):
     try:

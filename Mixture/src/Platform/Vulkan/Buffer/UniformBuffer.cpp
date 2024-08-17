@@ -25,7 +25,7 @@ namespace Mixture::Vulkan
             
             const std::vector<VkWriteDescriptorSet> descriptorWrites =
             {
-                descriptorSets.Bind(i, 0, uniformBufferInfo)
+                descriptorSets.Bind(i, uboInfo.Binding, uniformBufferInfo)
             };
 
             descriptorSets.Update(i, descriptorWrites);

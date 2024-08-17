@@ -33,13 +33,19 @@ namespace Mixture
             if (filename == ".DS_Store") continue;
 
             m_Shaders.insert({ filename, ShaderCode(sourceFilePath, cachedFilePath,
-                m_UniformBufferInfos, !std::filesystem::exists(cachedFilePath)) });
+                m_UniformBufferInfos, m_SampledImages, !std::filesystem::exists(cachedFilePath)) });
         }
         
         MX_CORE_INFO("Found ubos:");
         for (const auto& ubo : m_UniformBufferInfos)
         {
             MX_CORE_INFO("layout(set={0}, binding={1}) with size({2})", ubo.Set, ubo.Binding, ubo.Size);
+        }
+        
+        MX_CORE_INFO("Found sampled images:");
+        for (const auto& image : m_SampledImages)
+        {
+            MX_CORE_INFO("layout(set={0}, binding={1})", image.Set, image.Binding);
         }
 
         // TODO: recompile if file has been changed

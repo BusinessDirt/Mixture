@@ -20,11 +20,13 @@ namespace Mixture::Vulkan
         
         QueueFamilyIndices FindQueueFamilyIndices() const;
         SwapChainSupportDetails QuerySwapChainSupport() const;
+        VkPhysicalDeviceProperties GetProperties() const { return m_Properties; }
     
     private:
         bool IsDeviceSuitable(VkPhysicalDevice device);
         
     private:
         VULKAN_HANDLE(VkPhysicalDevice, m_PhysicalDevice);
+        VkPhysicalDeviceProperties m_Properties;
     };
 }
