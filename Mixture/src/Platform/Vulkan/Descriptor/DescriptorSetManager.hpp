@@ -20,6 +20,7 @@ namespace Mixture::Vulkan
 
         const DescriptorSetLayout& GetLayout() const { return *m_DescriptorSetLayout; }
         DescriptorSets& GetSets() const { return *m_DescriptorSets; }
+        DescriptorPool& GetPool() const { return *m_DescriptorPool; }
 
     private:
         Scope<DescriptorPool> m_DescriptorPool;

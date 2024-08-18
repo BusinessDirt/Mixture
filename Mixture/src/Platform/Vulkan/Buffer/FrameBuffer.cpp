@@ -12,7 +12,8 @@ namespace Mixture::Vulkan
         // create image view from swapchain image
         m_ImageView = CreateScope<ImageView>(m_Image, m_Format, VK_IMAGE_ASPECT_COLOR_BIT);
         
-        std::vector<VkImageView> attachments = { m_ImageView->GetHandle(), depthAttachment };
+        std::vector<VkImageView> attachments = { m_ImageView->GetHandle() };
+        if (depthAttachment) attachments.push_back(depthAttachment);
         
         VkFramebufferCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

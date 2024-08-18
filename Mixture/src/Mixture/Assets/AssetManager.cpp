@@ -56,6 +56,7 @@ namespace Mixture
             bindings.emplace_back(binding);
         }
         
+        // combined image samplers
         for (const auto& image : m_ShaderManager->m_SampledImages)
         {
             Vulkan::DescriptorBinding binding{};

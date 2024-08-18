@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mixture/Core/Base.hpp"
+#include "Mixture/Renderer/Buffer/CommandBuffer.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -14,11 +15,8 @@ namespace Mixture::Vulkan
         CommandBuffers(size_t size);
         ~CommandBuffers();
         
-        VkCommandBuffer operator[](int i) const
-        {
-            return m_CommandBuffers[i];
-        }
-        
+        CommandBuffer GetCurrent() const;
+        CommandBuffer Get(int i) const { return m_CommandBuffers[i]; }
     private:
         std::vector<VkCommandBuffer> m_CommandBuffers;
     };

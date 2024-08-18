@@ -20,6 +20,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 group "Dependencies"
    include "vendor/premake"
    include "vendor/glfw"
+   include "vendor/imgui"
 group ""
 
 group "Core"

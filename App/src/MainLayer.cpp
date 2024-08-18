@@ -1,17 +1,8 @@
 #include "mxpch.hpp"
-#include "RendererSystem.hpp"
-
-#include "Mixture/Renderer/DrawCommand.hpp"
-#include "Mixture/Renderer/Buffer/VertexBuffer.hpp"
-#include "Mixture/Core/Application.hpp"
-
-#include <chrono>
-
-#include "Platform/Vulkan/Context.hpp"
+#include "MainLayer.hpp"
 
 namespace Mixture
 {
-
     struct UniformBufferObject
     {
         glm::mat4 View;
@@ -22,13 +13,12 @@ namespace Mixture
     {
         glm::mat4 Model;
     };
-    
 
-    RendererSystem::RendererSystem()
+    void MainLayer::OnAttach()
     {
         m_Pipeline = GraphicsPipeline::Create("shader");
         
-        const std::vector<Vertex> vertices = 
+        const std::vector<Vertex> vertices =
         {
             {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}},
             {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
@@ -41,7 +31,7 @@ namespace Mixture
             {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}}
         };
 
-        const std::vector<uint16_t> indices = 
+        const std::vector<uint16_t> indices =
         {
             0, 1, 2, 2, 3, 0,
             4, 5, 6, 6, 7, 4
@@ -56,10 +46,10 @@ namespace Mixture
         const ShaderInformation& fragInfo = Application::Get().GetAssetManager().GetShader("shader.frag").GetInformation();
         
         m_UniformBuffer = UniformBuffer::Create(*vertInfo.UniformBuffers[0]);
-        m_Texture = Texture::Create("texture.jpg", *fragInfo.SampledImages[0]);
+        m_Texture = Texture::Create("spooderman.jpeg", *fragInfo.SampledImages[0]);
     }
 
-    RendererSystem::~RendererSystem()
+    void MainLayer::OnDetach()
     {
         m_Texture = nullptr;
         m_UniformBuffer = nullptr;
@@ -68,7 +58,7 @@ namespace Mixture
         m_Pipeline = nullptr;
     }
 
-    void RendererSystem::Update(const FrameInfo& frameInfo)
+    void MainLayer::OnUpdate(FrameInfo& frameInfo)
     {
         UniformBufferObject ubo{};
         ubo.View = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -76,10 +66,7 @@ namespace Mixture
         ubo.Proj[1][1] *= -1;
         
         m_UniformBuffer->Update(&ubo);
-    }
-
-    void RendererSystem::Draw(const FrameInfo& frameInfo)
-    {
+        
         m_Pipeline->Bind(frameInfo);
         
         PushConstant push{};
@@ -90,5 +77,21 @@ namespace Mixture
         m_IndexBuffer->Bind(frameInfo.CommandBuffer);
         
         DrawCommand::DrawIndexed(frameInfo.CommandBuffer, m_IndexBuffer->GetIndexCount());
+    }
+
+    void MainLayer::OnUIRender()
+    {
+        static bool open = true;
+        static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_None | ImGuiDockNodeFlags_PassthruCentralNode;
+
+        ImGuiUtil::DockSpace("DockSpace Demo", &open, dockspaceFlags);        
+        
+        ImGui::Begin("Test");
+        ImGui::End();
+    }
+
+    void MainLayer::OnEvent(Event& event)
+    {
+        
     }
 }

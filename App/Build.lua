@@ -18,7 +18,8 @@ project "App"
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glm}",
-        "%{IncludeDir.stb}"
+        "%{IncludeDir.stb}",
+        "%{IncludeDir.imgui}"
     }
 
     links {
@@ -39,6 +40,7 @@ project "App"
 
         links {
             "GLFW",
+            "ImGui",
             "vulkan.framework",
             "Cocoa.framework",
             "IOKit.framework",

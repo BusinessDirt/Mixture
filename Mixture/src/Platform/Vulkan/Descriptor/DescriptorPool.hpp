@@ -11,8 +11,11 @@ namespace Mixture::Vulkan
         MX_NON_COPIABLE(DescriptorPool);
 
         DescriptorPool(const std::vector<DescriptorBinding>& descriptorBindings, size_t maxSets);
+        DescriptorPool(const std::vector<VkDescriptorPoolSize> poolSizes);
         ~DescriptorPool();
-
+        
+        static Scope<DescriptorPool> CreateImGuiDescriptorPool();
+        
     private:
         VULKAN_HANDLE(VkDescriptorPool, m_DescriptorPool);
     };

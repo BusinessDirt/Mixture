@@ -1,24 +1,23 @@
+#include "Mixture/Core/Entrypoint.hpp"
 #include "Mixture.hpp"
+
+#include "MainLayer.hpp"
 
 namespace Mixture
 {
-    class ExampleApp : public Application
+    class EditorApp : public Application
     {
     public:
-        ExampleApp(ApplicationCommandLineArgs args) : Application("Example App", args)
+        EditorApp(ApplicationCommandLineArgs args) 
+            : Application("App", args)
         {
-            Renderer::PushRendererSystem(new RendererSystem());
-        }
-        
-        ~ExampleApp()
-        {
-            
+            Renderer::PushLayer(new MainLayer());
         }
     };
 
     Application* CreateApplication(ApplicationCommandLineArgs args)
 	{
-		ExampleApp* app = new ExampleApp(args);
+        EditorApp* app = new EditorApp(args);
 		return app;
 	}
 }

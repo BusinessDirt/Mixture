@@ -85,14 +85,14 @@ namespace Mixture::Vulkan
         MX_VK_ASSERT(vkBeginCommandBuffer(commandBuffer.GetAsVulkanHandle(), &beginInfo),
             "Failed to begin recording command buffer");
         
-        BeginSwapChainRenderPass(commandBuffer);
+        BeginRenderPass(commandBuffer);
         
         return commandBuffer;
     }
 
     void RendererAPI::EndFrame(CommandBuffer commandBuffer)
     {
-        EndSwapChainRenderPass(commandBuffer);
+        EndRenderPass(commandBuffer);
         
         MX_CORE_ASSERT(m_IsFrameStarted, "Can't call EndFrame() while frame is not in progress");
         MX_VK_ASSERT(vkEndCommandBuffer(commandBuffer.GetAsVulkanHandle()), "Failed to record command buffer");
@@ -113,9 +113,9 @@ namespace Mixture::Vulkan
         m_CurrentFrameIndex = (m_CurrentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;
     }
 
-    void RendererAPI::BeginSwapChainRenderPass(CommandBuffer commandBuffer)
+    void RendererAPI::BeginRenderPass(CommandBuffer commandBuffer)
     {
-        MX_CORE_ASSERT(m_IsFrameStarted, "Can't call BeginSwapChainRenderPass() if frame is not in progress");
+        MX_CORE_ASSERT(m_IsFrameStarted, "Can't call BeginRenderPass() if frame is not in progress");
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -148,9 +148,9 @@ namespace Mixture::Vulkan
         vkCmdSetScissor(commandBuffer.GetAsVulkanHandle(), 0, 1, &scissor);
     }
 
-    void RendererAPI::EndSwapChainRenderPass(CommandBuffer commandBuffer)
+    void RendererAPI::EndRenderPass(CommandBuffer commandBuffer)
     {
-        MX_CORE_ASSERT(m_IsFrameStarted, "Can't call EndSwapChainRenderPass() if frame is not in progress");
+        MX_CORE_ASSERT(m_IsFrameStarted, "Can't call EndRenderPass() if frame is not in progress");
         MX_CORE_ASSERT(commandBuffer == GetCurrentCommandBuffer(), "Can't end render pass on command buffer from a different frame");
 
         vkCmdEndRenderPass(commandBuffer.GetAsVulkanHandle());

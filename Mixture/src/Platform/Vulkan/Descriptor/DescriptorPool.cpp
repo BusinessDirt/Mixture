@@ -32,4 +32,11 @@ namespace Mixture::Vulkan
             m_DescriptorPool = nullptr;
         }
     }
+
+    Scope<DescriptorPool> DescriptorPool::CreateImGuiDescriptorPool()
+    {
+        DescriptorBinding imageSamplerBinding{.Type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
+        std::vector<DescriptorBinding> bindings = { imageSamplerBinding };
+        return CreateScope<DescriptorPool>(bindings, 1);
+    }
 }

@@ -31,15 +31,15 @@ namespace Mixture::Vulkan
 		SwapChain(const SwapChain&) = delete;
 		SwapChain& operator=(const SwapChain&) = delete;
 
-		const FrameBuffer& GetFrameBuffer(int index) { return *m_FrameBuffers[index]; }
-		const RenderPass& GetRenderPass() { return *m_RenderPass; }
-		size_t GetImageCount() { return m_FrameBuffers.size(); }
-		VkFormat GetImageFormat() { return m_FrameBuffers[0]->GetFormat(); }
-        VkFormat GetDepthFormat() { return m_DepthBuffers[0]->GetFormat(); }
-		VkExtent2D GetExtent() { return m_Extent; }
-		uint32_t GetWidth() { return m_Extent.width; }
-		uint32_t GetHeight() { return m_Extent.height; }
-        size_t GetCurrentFrameIndex() { return m_CurrentFrame; }
+		const FrameBuffer& GetFrameBuffer(int index) const { return *m_FrameBuffers[index]; }
+		const RenderPass& GetRenderPass() const { return *m_RenderPass; }
+		size_t GetImageCount() const { return m_FrameBuffers.size(); }
+		VkFormat GetImageFormat() const { return m_FrameBuffers[0]->GetFormat(); }
+        VkFormat GetDepthFormat() const { return m_DepthBuffers[0]->GetFormat(); }
+		VkExtent2D GetExtent() const { return m_Extent; }
+		uint32_t GetWidth() const { return m_Extent.width; }
+		uint32_t GetHeight() const { return m_Extent.height; }
+        size_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 
 		float ExtentAspectRatio() 
 		{

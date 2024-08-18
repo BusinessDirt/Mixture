@@ -19,7 +19,8 @@ project "Mixture"
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.VulkanSDK}",
-        "%{IncludeDir.stb}"
+        "%{IncludeDir.stb}",
+        "%{IncludeDir.imgui}"
     }
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -28,6 +29,7 @@ project "Mixture"
     filter "system:windows"
         links {
             "GLFW",
+            "ImGui",
             "%{Library.Vulkan}"
         }
 

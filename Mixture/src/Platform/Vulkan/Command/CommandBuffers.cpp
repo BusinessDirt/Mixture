@@ -25,4 +25,9 @@ namespace Mixture::Vulkan
             static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
         m_CommandBuffers.clear();
     }
+
+    CommandBuffer CommandBuffers::GetCurrent() const
+    {
+        return Get(static_cast<int>(Context::Get().SwapChain->GetCurrentFrameIndex()));
+    }
 }

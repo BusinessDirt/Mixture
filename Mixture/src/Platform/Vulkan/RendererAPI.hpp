@@ -23,13 +23,13 @@ namespace Mixture::Vulkan
         void WaitForDevice() override;
         
     private:
-        void BeginSwapChainRenderPass(CommandBuffer commandBuffer);
-        void EndSwapChainRenderPass(CommandBuffer commandBuffer);
+        void BeginRenderPass(CommandBuffer commandBuffer);
+        void EndRenderPass(CommandBuffer commandBuffer);
         
         CommandBuffer GetCurrentCommandBuffer() const
         {
             MX_CORE_ASSERT(m_IsFrameStarted, "Cannot get command buffer when frame not in progress");
-            return CommandBuffer(m_CommandBuffers->operator[](m_CurrentFrameIndex));
+            return m_CommandBuffers->Get(m_CurrentFrameIndex);
         }
         
         void RebuildSwapChain();

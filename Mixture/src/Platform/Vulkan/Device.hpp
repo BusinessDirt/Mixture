@@ -24,6 +24,9 @@ namespace Mixture::Vulkan
         VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
         VkQueue GetPresentQueue() const { return m_PresentQueue; }
         
+        uint32_t GetGraphicsQueueIndex() const { return m_GraphicsQueueIndex; }
+        uint32_t GetPresentQueueIndex() const { return m_PresentQueueIndex; }
+        
     private:
         VULKAN_HANDLE(VkDevice, m_Device);
         
