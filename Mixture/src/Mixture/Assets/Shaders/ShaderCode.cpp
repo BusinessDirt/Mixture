@@ -3,7 +3,6 @@
 
 #include "Mixture/Util/Util.hpp"
 
-
 namespace Mixture
 {
     namespace Util

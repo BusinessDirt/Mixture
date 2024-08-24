@@ -16,6 +16,7 @@ namespace Mixture
 
         const ShaderCode& GetShader(const std::string& filename) const;
         std::filesystem::path GetTexturePath(const std::string& filename) const;
+        std::filesystem::path GetModelPath(const std::string& filename) const;
         std::vector<Vulkan::DescriptorBinding> GetDescriptorBindings() const;
 
     private:

@@ -31,6 +31,7 @@ namespace Mixture::Vulkan
 
     RendererAPI::~RendererAPI()
     {
+        if (m_Context->ImGuiViewport) m_Context->ImGuiViewport = nullptr;
         m_CommandBuffers = nullptr;
         m_Context->DescriptorSetManager = nullptr;
         m_Context->CommandPool = nullptr;
@@ -55,7 +56,7 @@ namespace Mixture::Vulkan
 
     void RendererAPI::OnWindowResize(uint32_t width, uint32_t height)
     {
-        m_RebuildSwapChain = true;
+        RebuildSwapChain();
     }
 
     void RendererAPI::WaitForDevice()
@@ -67,7 +68,7 @@ namespace Mixture::Vulkan
     {
         MX_CORE_ASSERT(!m_IsFrameStarted, "Can't call BeginFrame() while already in progress");
         
-        VkResult result = Context::Get().SwapChain->AcquireNextImage(&m_CurrentImageIndex);
+        VkResult result = Context::Get().SwapChain->AcquireNextImage();
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             RebuildSwapChain();
@@ -81,27 +82,25 @@ namespace Mixture::Vulkan
         CommandBuffer commandBuffer = GetCurrentCommandBuffer();
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
         MX_VK_ASSERT(vkBeginCommandBuffer(commandBuffer.GetAsVulkanHandle(), &beginInfo),
             "Failed to begin recording command buffer");
-        
-        BeginRenderPass(commandBuffer);
         
         return commandBuffer;
     }
 
     void RendererAPI::EndFrame(CommandBuffer commandBuffer)
     {
-        EndRenderPass(commandBuffer);
-        
         MX_CORE_ASSERT(m_IsFrameStarted, "Can't call EndFrame() while frame is not in progress");
         MX_VK_ASSERT(vkEndCommandBuffer(commandBuffer.GetAsVulkanHandle()), "Failed to record command buffer");
-        
-        VkCommandBuffer bufferHandle = commandBuffer.GetAsVulkanHandle();
-        VkResult result = Context::Get().SwapChain->SubmitCommandBuffers(&bufferHandle, &m_CurrentImageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_RebuildSwapChain)
+    }
+
+    void RendererAPI::SubmitFrame(const std::vector<CommandBuffer>& commandBuffers)
+    {
+        VkResult result = Context::Get().SwapChain->SubmitCommandBuffers(commandBuffers);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
-            m_RebuildSwapChain = false;
             RebuildSwapChain();
         }
         else
@@ -110,23 +109,24 @@ namespace Mixture::Vulkan
         }
 
         m_IsFrameStarted = false;
-        m_CurrentFrameIndex = (m_CurrentFrameIndex + 1) % SwapChain::MAX_FRAMES_IN_FLIGHT;
     }
 
     void RendererAPI::BeginRenderPass(CommandBuffer commandBuffer)
     {
         MX_CORE_ASSERT(m_IsFrameStarted, "Can't call BeginRenderPass() if frame is not in progress");
-
+        
+        const SwapChain& swapChain = *m_Context->SwapChain;
+        
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = m_Context->SwapChain->GetRenderPass().GetHandle();
-        renderPassInfo.framebuffer = m_Context->SwapChain->GetFrameBuffer(m_CurrentImageIndex).GetHandle();
+        renderPassInfo.framebuffer = swapChain.GetFrameBuffer(m_Context->CurrentImageIndex).GetHandle();
 
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = { 0.01f, 0.01f, 0.01f, 1.0f };
+        clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
         clearValues[1].depthStencil = { 1.0f, 0 };
         
-        VkExtent2D swapChainExtent = m_Context->SwapChain->GetExtent();
+        VkExtent2D swapChainExtent = swapChain.GetExtent();
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = swapChainExtent;
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());

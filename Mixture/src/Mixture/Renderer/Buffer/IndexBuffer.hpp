@@ -13,6 +13,6 @@ namespace Mixture
         virtual void Bind(CommandBuffer commandBuffer) = 0;
         virtual uint32_t GetIndexCount() = 0;
         
-        static Scope<IndexBuffer> Create(const std::vector<uint16_t>& indices);
+        static Scope<IndexBuffer> Create(const std::vector<uint32_t>& indices);
     };
 }

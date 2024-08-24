@@ -14,7 +14,7 @@ namespace Mixture::Vulkan
 
         MX_NON_COPIABLE(ImageView);
 
-        explicit ImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+        explicit ImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels = 1);
         ~ImageView();
 
     private:

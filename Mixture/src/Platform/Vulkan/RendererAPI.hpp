@@ -19,17 +19,17 @@ namespace Mixture::Vulkan
         void OnWindowResize(uint32_t width, uint32_t height) override;
 
         CommandBuffer BeginFrame() override;
+        void BeginRenderPass(CommandBuffer commandBuffer) override;
+        void EndRenderPass(CommandBuffer commandBuffer) override;
         void EndFrame(CommandBuffer commandBuffer) override;
+        void SubmitFrame(const std::vector<CommandBuffer>& commandBuffers) override;
         void WaitForDevice() override;
         
     private:
-        void BeginRenderPass(CommandBuffer commandBuffer);
-        void EndRenderPass(CommandBuffer commandBuffer);
-        
         CommandBuffer GetCurrentCommandBuffer() const
         {
             MX_CORE_ASSERT(m_IsFrameStarted, "Cannot get command buffer when frame not in progress");
-            return m_CommandBuffers->Get(m_CurrentFrameIndex);
+            return m_CommandBuffers->Get(m_Context->SwapChain->GetCurrentFrameIndex());
         }
         
         void RebuildSwapChain();
@@ -38,9 +38,6 @@ namespace Mixture::Vulkan
         Context* m_Context;
         Scope<CommandBuffers> m_CommandBuffers;
         
-        uint32_t m_CurrentImageIndex = 0;
-        int m_CurrentFrameIndex = 0;
         bool m_IsFrameStarted = false;
-        bool m_RebuildSwapChain = false;
     };
 }

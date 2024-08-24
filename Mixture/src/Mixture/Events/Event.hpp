@@ -56,7 +56,7 @@ namespace Mixture
 		EventDispatcher(Event& event) : m_Event(event) {}
 
 		template<typename T, typename F>
-		bool dispatch(const F& func) 
+		bool Dispatch(const F& func) 
 		{
 			if (m_Event.GetEventType() == T::GetStaticType()) 
 			{

@@ -41,6 +41,11 @@ namespace Mixture
         return m_AssetsPath / "textures" / filename;
     }
 
+    std::filesystem::path AssetManager::GetModelPath(const std::string& filename) const
+    {
+        return m_AssetsPath / "models" / filename;
+    }
+
     std::vector<Vulkan::DescriptorBinding> AssetManager::GetDescriptorBindings() const
     {
         std::vector<Vulkan::DescriptorBinding> bindings = std::vector<Vulkan::DescriptorBinding>();

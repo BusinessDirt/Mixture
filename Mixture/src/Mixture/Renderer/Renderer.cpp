@@ -29,6 +29,7 @@ namespace Mixture
     void Renderer::OnWindowResize(uint32_t width, uint32_t height)
     {
         s_RendererAPI->OnWindowResize(width, height);
+        s_ImGuiRenderer->OnWindowResize(width, height);
     }
 
     void Renderer::DrawFrame()
@@ -37,21 +38,30 @@ namespace Mixture
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         float frameTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        startTime = currentTime;
+        
+        std::vector<CommandBuffer> commandBuffers{};
+        
+        s_ImGuiRenderer->Begin();
+        s_LayerStack->RenderUI();
+        s_ImGuiRenderer->End();
         
         if (CommandBuffer buffer = s_RendererAPI->BeginFrame())
         {
             uint32_t frameIndex = static_cast<uint32_t>(Vulkan::Context::Get().SwapChain->GetCurrentFrameIndex());
             FrameInfo frameInfo { frameIndex, frameTime, buffer, Vulkan::Context::Get().DescriptorSetManager->GetSets().GetHandle(frameIndex) };
             
+            s_RendererAPI->BeginRenderPass(buffer);
             s_LayerStack->Update(frameInfo);
+            s_RendererAPI->EndRenderPass(buffer);
             
-            s_ImGuiRenderer->BeginFrame(buffer);
-            s_LayerStack->RenderUI();
-            s_ImGuiRenderer->EndFrame(buffer);
+            s_ImGuiRenderer->Render(buffer);
             
             s_RendererAPI->EndFrame(buffer);
+            commandBuffers.push_back(buffer);
         }
         
+        s_RendererAPI->SubmitFrame(commandBuffers);
         s_RendererAPI->WaitForDevice();
     }
 }

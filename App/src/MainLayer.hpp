@@ -18,9 +18,12 @@ namespace Mixture
         
     private:
         Scope<GraphicsPipeline> m_Pipeline;
-        Scope<VertexBuffer> m_VertexBuffer;
-        Scope<IndexBuffer> m_IndexBuffer;
-        Scope<UniformBuffer> m_UniformBuffer;
+        Scope<UniformBuffer> m_GlobalUbo;
+        float m_FrameTime = 0.0f;
+        
+        // Scene
+        EditorCamera m_Camera;
+        Scope<Model> m_Model;
         Scope<Texture> m_Texture;
     };
 }

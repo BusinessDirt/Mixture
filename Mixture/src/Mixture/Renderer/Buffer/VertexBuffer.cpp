@@ -2,7 +2,6 @@
 #include "VertexBuffer.hpp"
 
 #include "Mixture/Renderer/Renderer.hpp"
-
 #include "Platform/Vulkan/Buffer/VertexBuffer.hpp"
 
 namespace Mixture

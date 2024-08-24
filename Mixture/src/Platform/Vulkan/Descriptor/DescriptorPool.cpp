@@ -37,6 +37,8 @@ namespace Mixture::Vulkan
     {
         DescriptorBinding imageSamplerBinding{.Type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER};
         std::vector<DescriptorBinding> bindings = { imageSamplerBinding };
-        return CreateScope<DescriptorPool>(bindings, 1);
+        
+        // 1 for ImGui itself and 1 for the viewport image
+        return CreateScope<DescriptorPool>(bindings, 2);
     }
 }

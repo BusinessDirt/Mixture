@@ -1,6 +1,6 @@
 #include "mxpch.hpp"
 
-#ifdef MIXTURE_PLATFORM_MACOSX
+#ifdef MX_PLATFORM_MACOSX
 #include "Mixture/Input/Input.hpp"
 #include "Mixture/Core/Application.hpp"
 

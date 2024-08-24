@@ -11,6 +11,7 @@
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/SwapChain.hpp"
 #include "Platform/Vulkan/RenderPass.hpp"
+#include "Platform/Vulkan/Viewport.hpp"
 #include "Platform/Vulkan/Command/CommandPool.hpp"
 #include "Platform/Vulkan/Pipeline/GraphicsPipeline.hpp"
 #include "Platform/Vulkan/Descriptor/DescriptorSetManager.hpp"
@@ -25,14 +26,16 @@ namespace Mixture::Vulkan
         static Context& Get();
 
         // Public members
-        Scope<Instance> Instance;
-        Scope<Surface> Surface;
-        Scope<DebugMessenger> DebugMessenger;
-        Scope<PhysicalDevice> PhysicalDevice;
-        Scope<Device> Device;
-        Scope<SwapChain> SwapChain;
-        Scope<CommandPool> CommandPool;
-        Scope<DescriptorSetManager> DescriptorSetManager;
+        Scope<Instance> Instance = nullptr;
+        Scope<Surface> Surface = nullptr;
+        Scope<DebugMessenger> DebugMessenger = nullptr;
+        Scope<PhysicalDevice> PhysicalDevice = nullptr;
+        Scope<Device> Device = nullptr;
+        Scope<SwapChain> SwapChain = nullptr;
+        Scope<CommandPool> CommandPool = nullptr;
+        Scope<DescriptorSetManager> DescriptorSetManager = nullptr;
+        Scope<Viewport> ImGuiViewport = nullptr;
+        uint32_t CurrentImageIndex = 0;
 
     private:
         Context() = default;

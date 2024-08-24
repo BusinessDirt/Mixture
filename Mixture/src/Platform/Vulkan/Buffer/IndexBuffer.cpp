@@ -5,7 +5,7 @@
 
 namespace Mixture::Vulkan
 {
-    IndexBuffer::IndexBuffer(const std::vector<uint16_t>& indices)
+    IndexBuffer::IndexBuffer(const std::vector<uint32_t>& indices)
     {
         m_IndexCount = static_cast<uint32_t>(indices.size());
         if (m_IndexCount == 0) return;
@@ -32,6 +32,6 @@ namespace Mixture::Vulkan
 
     void IndexBuffer::Bind(CommandBuffer commandBuffer)
     {
-        vkCmdBindIndexBuffer(commandBuffer.GetAsVulkanHandle(), m_IndexBuffer->GetHandle(), 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(commandBuffer.GetAsVulkanHandle(), m_IndexBuffer->GetHandle(), 0, VK_INDEX_TYPE_UINT32);
     }
 }

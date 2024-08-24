@@ -39,15 +39,15 @@ namespace Mixture::Vulkan
 		VkExtent2D GetExtent() const { return m_Extent; }
 		uint32_t GetWidth() const { return m_Extent.width; }
 		uint32_t GetHeight() const { return m_Extent.height; }
-        size_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
+        uint32_t GetCurrentFrameIndex() const { return static_cast<uint32_t>(m_CurrentFrame); }
 
 		float ExtentAspectRatio() 
 		{
 			return static_cast<float>(m_Extent.width) / static_cast<float>(m_Extent.height);
 		}
 
-		VkResult AcquireNextImage(uint32_t* imageIndex);
-		VkResult SubmitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex);
+		VkResult AcquireNextImage();
+		VkResult SubmitCommandBuffers(const std::vector<CommandBuffer>& buffers);
 
 		bool CompareSwapFormats(const SwapChain& swapChain) const
 		{

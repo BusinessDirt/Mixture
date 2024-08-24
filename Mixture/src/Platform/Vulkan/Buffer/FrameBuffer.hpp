@@ -17,6 +17,7 @@ namespace Mixture::Vulkan
         ~FrameBuffer();
         
         VkFormat GetFormat() const { return m_Format; }
+        const VkImage GetImage() const { return m_Image; }
         const ImageView& GetImageView() const { return *m_ImageView; }
         
     private:

@@ -22,6 +22,8 @@ namespace Mixture
         
         static void PushLayer(Layer* layer) { s_LayerStack->PushLayer(layer); }
         static void PushOverlay(Layer* overlay) { s_LayerStack->PushOverlay(overlay); }
+        
+        static ImGuiRenderer& GetImGuiRenderer() { return *s_ImGuiRenderer; }
 
     private:
         static Scope<RendererAPI> s_RendererAPI;

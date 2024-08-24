@@ -1,6 +1,6 @@
 #pragma once
 
-//#include <glm/glm.hpp>
+#include <glm/glm.hpp>
 
 #include "Mixture/Core/Base.hpp"
 
@@ -15,7 +15,7 @@ namespace Mixture
 		static bool IsKeyPressed(KeyCode key);
 
 		static bool IsMouseButtonPressed(MouseCode button);
-		//static glm::vec2 GetMousePosition();
+		static glm::vec2 GetMousePosition();
 		static float GetMouseX();
 		static float GetMouseY();
 	};

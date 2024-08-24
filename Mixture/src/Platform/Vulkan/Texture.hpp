@@ -13,7 +13,12 @@ namespace Mixture::Vulkan
     {
     public:
         Texture(const std::string& filename, const SampledImageInformation& sampler);
+        Texture(const SampledImageInformation& sampler, uint32_t width, uint32_t height);
         ~Texture() override;
+        
+        const Image& GetImage() { return *m_Image; }
+        const ImageView& GetImageView() { return *m_ImageView; }
+        const Sampler& GetSampler() { return *m_Sampler; }
         
     private:
         Scope<Image> m_Image;

@@ -141,33 +141,41 @@ namespace Mixture::Vulkan
         }
     }
 
-    VkResult SwapChain::AcquireNextImage(uint32_t* imageIndex) 
+    VkResult SwapChain::AcquireNextImage()
     {
         m_InFlightFences[m_CurrentFrame].Wait(std::numeric_limits<uint64_t>::max());
 
         return vkAcquireNextImageKHR(Context::Get().Device->GetHandle(), m_SwapChain, std::numeric_limits<uint64_t>::max(),
-            m_ImageAvailableSemaphores[m_CurrentFrame].GetHandle(), VK_NULL_HANDLE, imageIndex);
+            m_ImageAvailableSemaphores[m_CurrentFrame].GetHandle(), VK_NULL_HANDLE, &Context::Get().CurrentImageIndex);
     }
 
-    VkResult SwapChain::SubmitCommandBuffers(const VkCommandBuffer* buffers, uint32_t* imageIndex) 
+    VkResult SwapChain::SubmitCommandBuffers(const std::vector<CommandBuffer>& buffers)
     {
-        if (m_ImagesInFlight[*imageIndex] != nullptr)
+        if (m_ImagesInFlight[Context::Get().CurrentImageIndex] != nullptr)
         {
-            m_ImagesInFlight[*imageIndex]->Wait(std::numeric_limits<uint64_t>::max());
+            m_ImagesInFlight[Context::Get().CurrentImageIndex]->Wait(std::numeric_limits<uint64_t>::max());
         }
-        m_ImagesInFlight[*imageIndex] = &m_InFlightFences[m_CurrentFrame];
+        m_ImagesInFlight[Context::Get().CurrentImageIndex] = &m_InFlightFences[m_CurrentFrame];
 
         VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame].GetHandle() };
         VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame].GetHandle() };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        
+        std::vector<VkCommandBuffer> vkCommandBuffers;
+        vkCommandBuffers.reserve(buffers.size());
+
+        for (const auto& cmdBuffer : buffers)
+        {
+            vkCommandBuffers.push_back(cmdBuffer.GetAsVulkanHandle());
+        }
         
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = buffers;
+        submitInfo.commandBufferCount = static_cast<uint32_t>(vkCommandBuffers.size());
+        submitInfo.pCommandBuffers = vkCommandBuffers.data();
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -182,7 +190,7 @@ namespace Mixture::Vulkan
         presentInfo.pWaitSemaphores = signalSemaphores;
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = imageIndex;
+        presentInfo.pImageIndices = &Context::Get().CurrentImageIndex;
 
         VkResult result = vkQueuePresentKHR(Context::Get().Device->GetPresentQueue(), &presentInfo);
 
@@ -195,8 +203,8 @@ namespace Mixture::Vulkan
     {
         for (const auto& availableFormat : availableFormats) 
         {
-            if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
-                availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) 
+            if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM
+                && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) 
             {
                 return availableFormat;
             }

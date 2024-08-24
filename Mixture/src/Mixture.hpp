@@ -5,6 +5,7 @@
 #include "Mixture/Renderer/Pipeline/GraphicsPipeline.hpp"
 
 #include "Mixture/ImGui/ImGuiUtil.hpp"
+#include "Mixture/ImGui/ImGuiRenderer.hpp"
 
 #include "Mixture/Renderer/Buffer/CommandBuffer.hpp"
 #include "Mixture/Renderer/Buffer/VertexBuffer.hpp"
@@ -18,3 +19,6 @@
 #include "Mixture/Renderer/Texture.hpp"
 
 #include "Mixture/Core/Application.hpp"
+
+#include "Mixture/Scene/Model.hpp"
+#include "Mixture/Scene/EditorCamera.hpp"

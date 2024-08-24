@@ -28,6 +28,8 @@ namespace Mixture::Vulkan
         stbi_uc* pixels = stbi_load(filePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         MX_CORE_ASSERT(pixels, "Failed to load texture image");
         
+        uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+        
         // upload the data to a staging buffer
         VkDeviceSize imageSize = texWidth * texHeight * 4;
         Buffer stagingBuffer(imageSize, 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -42,8 +44,7 @@ namespace Mixture::Vulkan
         VkExtent2D imageExtent{};
         imageExtent.width = static_cast<uint32_t>(texWidth);
         imageExtent.height = static_cast<uint32_t>(texHeight);
-        m_Image = CreateScope<Image>(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+        m_Image = CreateScope<Image>(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, mipLevels);
         
         // Allocate the device memory
         m_ImageMemory = CreateScope<DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT));
@@ -51,13 +52,16 @@ namespace Mixture::Vulkan
         // Copy the staging buffer to the image
         m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         m_Image->CopyFrom(stagingBuffer);
-        m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        m_Image->GenerateMipMaps(VK_FORMAT_R8G8B8A8_SRGB);
         
         // Create the image view and sampler
-        m_ImageView = CreateScope<ImageView>(m_Image->GetHandle(), m_Image->GetFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
-        m_Sampler = CreateScope<Sampler>(SamplerConfig());
+        m_ImageView = CreateScope<ImageView>(m_Image->GetHandle(), m_Image->GetFormat(), VK_IMAGE_ASPECT_COLOR_BIT, mipLevels);
         
-        // TODO: might need to change this implementation when using other descriptor types as well
+        SamplerConfig samplerConfig{};
+        samplerConfig.MaxLod = static_cast<float>(mipLevels);
+        m_Sampler = CreateScope<Sampler>(samplerConfig);
+        
+        
         DescriptorSets& descriptorSets = Context::Get().DescriptorSetManager->GetSets();
         for (int i = 0; i < SwapChain::MAX_FRAMES_IN_FLIGHT; i++)
         {
@@ -73,6 +77,23 @@ namespace Mixture::Vulkan
 
             descriptorSets.Update(i, descriptorWrites);
         }
+    }
+
+    Texture::Texture(const SampledImageInformation& sampler, uint32_t width, uint32_t height)
+    {
+        // Create the image
+        VkExtent2D imageExtent{};
+        imageExtent.width = width;
+        imageExtent.height = height;
+        m_Image = CreateScope<Image>(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT);
+        
+        m_ImageMemory = CreateScope<DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
+        
+        // Create the image view and sampler
+        m_ImageView = CreateScope<ImageView>(m_Image->GetHandle(), m_Image->GetFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
+        m_Sampler = CreateScope<Sampler>(SamplerConfig());
+        
+        m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 
     Texture::~Texture()

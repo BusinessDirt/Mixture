@@ -7,7 +7,7 @@
 
 namespace Mixture
 {
-    Scope<IndexBuffer> IndexBuffer::Create(const std::vector<uint16_t>& indices)
+    Scope<IndexBuffer> IndexBuffer::Create(const std::vector<uint32_t>& indices)
     {
         switch (Renderer::GetAPI())
         {

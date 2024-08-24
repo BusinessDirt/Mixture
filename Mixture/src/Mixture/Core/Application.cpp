@@ -36,8 +36,8 @@ namespace Mixture
     void Application::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
-		dispatcher.dispatch<WindowCloseEvent>(MX_BIND_EVENT_FN(Application::OnWindowClose));
-		dispatcher.dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(Application::OnWindowResize));
+		dispatcher.Dispatch<WindowCloseEvent>(MX_BIND_EVENT_FN(Application::OnWindowClose));
+		dispatcher.Dispatch<WindowResizeEvent>(MX_BIND_EVENT_FN(Application::OnWindowResize));
 	}
 
 	void Application::Run()

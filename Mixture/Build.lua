@@ -20,7 +20,8 @@ project "Mixture"
         "%{IncludeDir.glm}",
         "%{IncludeDir.VulkanSDK}",
         "%{IncludeDir.stb}",
-        "%{IncludeDir.imgui}"
+        "%{IncludeDir.imgui}",
+        "%{IncludeDir.tinyobjloader}"
     }
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
