@@ -24,6 +24,13 @@ namespace Mixture
             layer->OnUIRender();
     }
 
+    void LayerStack::OnEvent(Event& e) const
+    {
+        for (Layer* layer : m_Layers)
+            layer->OnEvent(e);
+    }
+
+
     void LayerStack::PushLayer(Layer* layer)
     {
         m_Layers.emplace(m_Layers.begin() + m_LayerInsertIndex, layer);

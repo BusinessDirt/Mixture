@@ -17,6 +17,7 @@ namespace Mixture
 		static void OnWindowResize(uint32_t width, uint32_t height);
 
         static void DrawFrame();
+        static void OnEvent(Event& e);
 
         static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
         

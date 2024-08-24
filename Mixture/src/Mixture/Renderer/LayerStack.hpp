@@ -13,6 +13,7 @@ namespace Mixture
         
         void Update(FrameInfo& info) const;
         void RenderUI() const;
+        void OnEvent(Event& e) const;
 
         void PushLayer(Layer* layer);
         void PushOverlay(Layer* overlay);

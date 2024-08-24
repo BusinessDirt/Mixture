@@ -64,4 +64,9 @@ namespace Mixture
         s_RendererAPI->SubmitFrame(commandBuffers);
         s_RendererAPI->WaitForDevice();
     }
+
+    void Renderer::OnEvent(Event& e)
+    {
+        s_LayerStack->OnEvent(e);
+    }
 }

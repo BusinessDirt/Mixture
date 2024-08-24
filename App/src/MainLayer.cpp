@@ -45,6 +45,8 @@ namespace Mixture
     {
         m_FrameTime = frameInfo.FrameTime;
         
+        m_Camera.OnUpdate(frameInfo.FrameTime);
+        
         UniformBufferObject ubo{};
         ubo.View = m_Camera.GetViewMatrix();
         ubo.Proj = m_Camera.GetProjection();
@@ -59,8 +61,6 @@ namespace Mixture
         
         m_Model->Bind(frameInfo.CommandBuffer);
         m_Model->Draw(frameInfo.CommandBuffer);
-        
-        m_Camera.OnUpdate(frameInfo.FrameTime);
     }
 
     void MainLayer::OnUIRender()
