@@ -1,13 +1,9 @@
 #pragma once
 
 #include "Mixture/Core/Base.hpp"
+#include "Mixture/Assets/Shaders/ShaderInformation.hpp"
 
 #include <vulkan/vulkan.h>
-
-namespace Mixture 
-{
-    class ShaderCode;
-}
 
 namespace Mixture::Vulkan
 {
@@ -17,7 +13,7 @@ namespace Mixture::Vulkan
     public:
         MX_NON_COPIABLE(ShaderModule);
 
-        ShaderModule(const ShaderCode& code);
+        ShaderModule(const SPVShader& shader, ShaderStage stage);
         ~ShaderModule();
         
         VkPipelineShaderStageCreateInfo CreateInfo();

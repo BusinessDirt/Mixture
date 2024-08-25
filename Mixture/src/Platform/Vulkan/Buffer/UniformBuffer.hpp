@@ -17,13 +17,12 @@ namespace Mixture::Vulkan
     public:
         MX_NON_COPIABLE(UniformBuffer);
         
-        UniformBuffer(const UniformBufferInformation& uboInfo);
+        UniformBuffer(uint32_t size);
         ~UniformBuffer();
         
         void Update(void* data) override;
         
     private:
-        UniformBufferInformation m_Info;
         std::vector<Scope<Buffer>> m_Buffers;
     };
 }

@@ -12,8 +12,8 @@ namespace Mixture::Vulkan
     class Texture : public Mixture::Texture
     {
     public:
-        Texture(const std::string& filename, const SampledImageInformation& sampler);
-        Texture(const SampledImageInformation& sampler, uint32_t width, uint32_t height);
+        Texture(const std::string& filename);
+        Texture(uint32_t width, uint32_t height);
         ~Texture() override;
         
         const Image& GetImage() { return *m_Image; }

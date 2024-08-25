@@ -14,14 +14,14 @@
 	#define MX_INTERNAL_ASSERT_NO_MSG(type, check) MX_INTERNAL_ASSERT_IMPL(type, check, "Assertion '{0}' failed at {1}:{2}", MX_STRINGIFY_MACRO(check), std::filesystem::path(__FILE__).filename().string(), __LINE__)
 
 	#define MX_INTERNAL_ASSERT_GET_MACRO_NAME(arg1, arg2, macro, ...) macro
-	#define MX_INTERNAL_ASSERT_GET_MACRO(...) MX_EXPAND_MACRO( MX_INTERNAL_ASSERT_GET_MACRO_NAME(__VA_ARGS__, MX_INTERNAL_ASSERT_WITH_MSG, MX_INTERNAL_ASSERT_NO_MSG) )
+	#define MX_INTERNAL_ASSERT_GET_MACRO(...) MX_INTERNAL_ASSERT_GET_MACRO_NAME(__VA_ARGS__, MX_INTERNAL_ASSERT_WITH_MSG, MX_INTERNAL_ASSERT_NO_MSG)
 
 	// Currently accepts at least the condition and one additional parameter (the message) being optional
-	#define MX_ASSERT(...) MX_EXPAND_MACRO( MX_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_, __VA_ARGS__) )
-	#define MX_CORE_ASSERT(...) MX_EXPAND_MACRO( MX_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_CORE_, __VA_ARGS__) )
+	#define MX_ASSERT(...) MX_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_, __VA_ARGS__)
+	#define MX_CORE_ASSERT(...) MX_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(_CORE_, __VA_ARGS__)
 
 	// Vulkan creation asserts
-	#define MX_VK_ASSERT(result, message) MX_CORE_ASSERT(result == VK_SUCCESS, message)
+	#define MX_VK_ASSERT(result, ...) MX_CORE_ASSERT(result == VK_SUCCESS, __VA_ARGS__)
 
 #else
 

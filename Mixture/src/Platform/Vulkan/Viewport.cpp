@@ -12,7 +12,7 @@ namespace Mixture::Vulkan
     Viewport::Viewport(VkExtent2D extent)
         : m_Extent(extent)
     {
-        m_Texture = CreateScope<Texture>(SampledImageInformation{}, extent.width, extent.height);
+        m_Texture = CreateScope<Texture>(extent.width, extent.height);
         m_TextureSet = ImGui_ImplVulkan_AddTexture(m_Texture->GetSampler().GetHandle(), m_Texture->GetImageView().GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 

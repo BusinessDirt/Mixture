@@ -2,53 +2,26 @@
 #include "GraphicsPipeline.hpp"
 
 #include "Mixture/Core/Application.hpp"
+#include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/ShaderModule.hpp"
 #include "Platform/Vulkan/Pipeline/PipelineLayout.hpp"
-
-namespace Mixture::Util
-{
-    static bool ValidatePushConstant(const PushConstantInformation& vertPush, const PushConstantInformation& fragPush)
-    {
-        // If one size is zero and the other is not, return true
-        if ((vertPush.Size && !fragPush.Size) || (!vertPush.Size && fragPush.Size))
-            return true;
-
-        // If both sizes are the same, return true
-        return vertPush.Size == fragPush.Size;
-    }
-
-    static VkDescriptorSetLayoutBinding CreateLayoutBinding(const UniformBufferInformation& ubo, VkShaderStageFlags stageFlags)
-    {
-        VkDescriptorSetLayoutBinding layoutBinding{};
-        layoutBinding.binding = ubo.Binding;
-        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        layoutBinding.descriptorCount = 1;
-        layoutBinding.stageFlags = stageFlags;
-        layoutBinding.pImmutableSamplers = nullptr; // Only relevant for image sampling
-
-        return layoutBinding;
-    }
-}
 
 namespace Mixture::Vulkan
 {
 
     GraphicsPipeline::GraphicsPipeline(const std::string& shaderName)
     {
-        std::string vertexFile(shaderName + ".vert");
-        std::string fragmentFile(shaderName + ".frag");
-        
-        const ShaderCode& vertexShaderCode = Application::Get().GetAssetManager().GetShader(vertexFile);
-        const ShaderCode& fragmentShaderCode = Application::Get().GetAssetManager().GetShader(fragmentFile);
+        ShaderCompiler::Flags compilerFlags{};
+        compilerFlags.PipelineType = GRAPHICS_PIPELINE;
+
+        SPVShader shader = ShaderCompiler::Compile(shaderName, compilerFlags);
+        ShaderCompiler::Reflect(shader);
         
         // Pipeline Layout
         {
-            const Mixture::PushConstantInformation& vertPush = vertexShaderCode.GetInformation().PushConstantInformation;
-            const Mixture::PushConstantInformation& fragPush = fragmentShaderCode.GetInformation().PushConstantInformation;
-            
-            if (vertPush.Size == 0 && fragPush.Size == 0)
+            if (shader.Push.Size == 0)
             {
                 // no push constants in shaders
                 m_PipelineLayout = CreateScope<PipelineLayout>(nullptr);
@@ -56,37 +29,40 @@ namespace Mixture::Vulkan
             else
             {
                 VkPushConstantRange pushConstantRange{};
-                if (Util::ValidatePushConstant(vertPush, fragPush))
-                {
-                    m_PushConstantInformation.Size = vertPush.Size;
-                    m_PushConstantInformation.Offset = vertPush.Offset;
-                    // push constant can be available in one shader or both
-                    m_PushConstantInformation.Flags = (vertPush.Size > 0 ? VK_SHADER_STAGE_VERTEX_BIT : 0) |
-                        (fragPush.Size > 0 ? VK_SHADER_STAGE_FRAGMENT_BIT : 0);
+                m_PushConstantInformation.Size = shader.Push.Size;
+                m_PushConstantInformation.Offset = shader.Push.Offset;
+                
+                // TODO: read this information from compiling
+                m_PushConstantInformation.Flags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
-                    pushConstantRange.stageFlags = m_PushConstantInformation.Flags;
-                    pushConstantRange.offset = m_PushConstantInformation.Offset;
-                    pushConstantRange.size = m_PushConstantInformation.Size;
-                }
-                else
-                {
-                    MX_CORE_ERROR("Push constant definitions are not the same in '{0}' and '{1}'",
-                        vertexFile, fragmentFile);
-                }
+                pushConstantRange.stageFlags = m_PushConstantInformation.Flags;
+                pushConstantRange.offset = m_PushConstantInformation.Offset;
+                pushConstantRange.size = m_PushConstantInformation.Size;
                 
                 m_PipelineLayout = CreateScope<PipelineLayout>(&pushConstantRange);
             }
         }
         
         {
-            ShaderModule vertModule(vertexShaderCode);
-            ShaderModule fragModule(fragmentShaderCode);
+            ShaderModule vertModule(shader, SHADER_STAGE_VERTEX);
+            ShaderModule fragModule(shader, SHADER_STAGE_FRAGMENT);
             
             int shaderStageCount = 2;
             VkPipelineShaderStageCreateInfo shaderStages[] = { vertModule.CreateInfo(), fragModule.CreateInfo() };
             
-            const std::vector<VkVertexInputBindingDescription>& vertexBindings = vertexShaderCode.GetInformation().Bindings;
-            const std::vector<VkVertexInputAttributeDescription>& vertexAttributes = vertexShaderCode.GetInformation().Attributes;
+            Vector<VkVertexInputBindingDescription> vertexBindings{};
+            for (const auto& shaderBinding : shader.VertexBindings)
+            {
+                VkVertexInputBindingDescription vertexBinding = { shaderBinding.Binding, shaderBinding.Stride, VK_VERTEX_INPUT_RATE_VERTEX };
+                vertexBindings.emplace_back(vertexBinding);
+            }
+
+            Vector<VkVertexInputAttributeDescription> vertexAttributes{};
+            for (const auto& shaderAttrib : shader.VertexAttributes)
+            {
+                VkVertexInputAttributeDescription vertexAttrib = { shaderAttrib.Location, shaderAttrib.Location, shaderAttrib.Format, shaderAttrib.Offset };
+                vertexAttributes.emplace_back(vertexAttrib);
+            }
             
             // Vertex inputs
             VkPipelineVertexInputStateCreateInfo vertexInputInfo{};

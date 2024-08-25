@@ -1,16 +1,21 @@
 #include "mxpch.hpp"
 #include "ShaderModule.hpp"
 
-#include "Mixture/Assets/Shaders/ShaderCode.hpp"
+#include "Mixture/Assets/Shaders/ShaderInformation.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
 
 namespace Mixture::Vulkan
 {
-    ShaderModule::ShaderModule(const ShaderCode& code)
-        : m_ShaderStageFlagBits(code.GetStageFlagBits())
+    ShaderModule::ShaderModule(const SPVShader& shader, ShaderStage stage)
     {
-        VkShaderModuleCreateInfo createInfo = code.CreateInfo();
+        m_ShaderStageFlagBits = static_cast<VkShaderStageFlagBits>(stage);
+        const Vector<uint32_t>& code = shader.Data.at(stage);
+
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = code.size() * sizeof(uint32_t);
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
         MX_VK_ASSERT(vkCreateShaderModule(Context::Get().Device->GetHandle(), &createInfo, nullptr, &m_ShaderModule),
             "Failed to create VkShaderModule");

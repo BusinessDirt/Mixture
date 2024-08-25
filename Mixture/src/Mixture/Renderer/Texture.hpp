@@ -10,6 +10,6 @@ namespace Mixture
     public:
         virtual ~Texture() = default;
         
-        static Scope<Texture> Create(const std::string& filename, const SampledImageInformation& sampler);
+        static Scope<Texture> Create(const std::string& filename);
     };
 }

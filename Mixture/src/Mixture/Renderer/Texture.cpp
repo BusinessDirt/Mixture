@@ -7,12 +7,12 @@
 
 namespace Mixture
 {
-    Scope<Texture> Texture::Create(const std::string& filename, const SampledImageInformation& sampler)
+    Scope<Texture> Texture::Create(const std::string& filename)
     {
         switch (Renderer::GetAPI())
         {
             case RendererAPI::API::None:    MX_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); return nullptr;
-            case RendererAPI::API::Vulkan:  return CreateScope<Vulkan::Texture>(filename, sampler);
+            case RendererAPI::API::Vulkan:  return CreateScope<Vulkan::Texture>(filename);
             case RendererAPI::API::OpenGL:  MX_CORE_ASSERT(false, "RendererAPI::OpenGL is currently not supported!"); return nullptr;
             case RendererAPI::API::DirectX12:  MX_CORE_ASSERT(false, "RendererAPI::DirectX12 is currently not supported!"); return nullptr;
         }

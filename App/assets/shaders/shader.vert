@@ -16,6 +16,8 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
     mat4 ProjectionMatrix;
 } ubo;
 
+layout(set = 1, binding = 0) uniform sampler2D texSampler;
+
 layout(push_constant) uniform Push 
 {
 	mat4 ModelMatrix;

@@ -20,7 +20,7 @@
 
 namespace Mixture::Vulkan
 {
-    Texture::Texture(const std::string& filename, const SampledImageInformation& sampler)
+    Texture::Texture(const std::string& filename)
     {
         // use stb_image to laod the texture data
         int texWidth, texHeight, texChannels;
@@ -60,39 +60,22 @@ namespace Mixture::Vulkan
         SamplerConfig samplerConfig{};
         samplerConfig.MaxLod = static_cast<float>(mipLevels);
         m_Sampler = CreateScope<Sampler>(samplerConfig);
-        
-        
-        DescriptorSets& descriptorSets = Context::Get().DescriptorSetManager->GetSets();
-        for (int i = 0; i < SwapChain::MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = m_ImageView->GetHandle();
-            imageInfo.sampler = m_Sampler->GetHandle();
-            
-            const std::vector<VkWriteDescriptorSet> descriptorWrites =
-            {
-                descriptorSets.Bind(i, sampler.Binding, imageInfo)
-            };
-
-            descriptorSets.Update(i, descriptorWrites);
-        }
     }
 
-    Texture::Texture(const SampledImageInformation& sampler, uint32_t width, uint32_t height)
+    Texture::Texture(uint32_t width, uint32_t height)
     {
         // Create the image
         VkExtent2D imageExtent{};
         imageExtent.width = width;
         imageExtent.height = height;
         m_Image = CreateScope<Image>(imageExtent, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT);
-        
+
         m_ImageMemory = CreateScope<DeviceMemory>(m_Image->AllocateMemory(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT));
-        
+
         // Create the image view and sampler
         m_ImageView = CreateScope<ImageView>(m_Image->GetHandle(), m_Image->GetFormat(), VK_IMAGE_ASPECT_COLOR_BIT);
         m_Sampler = CreateScope<Sampler>(SamplerConfig());
-        
+
         m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
 

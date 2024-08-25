@@ -12,6 +12,6 @@ namespace Mixture
         
         virtual void Update(void* data) = 0;
         
-        static Scope<UniformBuffer> Create(const UniformBufferInformation& uboInfo);
+        static Scope<UniformBuffer> Create(uint32_t size);
     };
 }

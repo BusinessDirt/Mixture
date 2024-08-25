@@ -12,4 +12,6 @@ namespace Mixture
     }
 
     bool Contains(const std::string& str, const std::string& substr);
+
+    std::string ReadFile(const std::filesystem::path& filepath);
 }

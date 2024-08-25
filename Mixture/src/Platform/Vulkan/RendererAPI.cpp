@@ -24,8 +24,8 @@ namespace Mixture::Vulkan
         m_Context->CommandPool = CreateScope<CommandPool>();
         m_Context->SwapChain = CreateScope<SwapChain>();
         
-        m_Context->DescriptorSetManager = CreateScope<DescriptorSetManager>(Application::Get().GetAssetManager().GetDescriptorBindings(),
-            SwapChain::MAX_FRAMES_IN_FLIGHT);
+        
+
         m_CommandBuffers = CreateScope<CommandBuffers>(SwapChain::MAX_FRAMES_IN_FLIGHT);
     }
 

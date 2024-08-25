@@ -3,82 +3,51 @@
 #include "Mixture/Core/Base.hpp"
 
 #include <vulkan/vulkan.h>
-#include <cstdint>
-#include <vector>
 
 namespace Mixture
 {
-    enum ShaderType
+    // Values from VkShaderStageFlagBits
+    enum ShaderStage
     {
-        VERTEX_SHADER, FRAGMENT_SHADER
+        SHADER_STAGE_VERTEX = 0x00000001,
+        SHADER_STAGE_FRAGMENT = 0x00000010
     };
 
-
-    struct UniformBufferInformation
-    {
-        uint32_t Size = 0;
-        uint32_t Binding = 0;
-        uint32_t Set = 0;
-        VkShaderStageFlags Flags = 0;
-        
-        bool operator==(const UniformBufferInformation& other) const
-        {
-            return Size == other.Size && Binding == other.Binding && Set == other.Set;
-        }
-    };
-
-    struct SampledImageInformation
-    {
-        uint32_t Binding = 0;
-        uint32_t Set = 0;
-        VkShaderStageFlags Flags = 0;
-        
-        bool operator==(const SampledImageInformation& other) const
-        {
-            return Binding == other.Binding && Set == other.Set;
-        }
-    };
-
-    struct PushConstantInformation
+    struct PushConstant
     {
         uint32_t Size = 0;
         uint32_t Offset = 0;
     };
 
-    struct ShaderInformation
+    struct VertexInputBinding
     {
-        PushConstantInformation PushConstantInformation{};
-        std::vector<const UniformBufferInformation*> UniformBuffers; // these are owned by the shadermanager
-        std::vector<const SampledImageInformation*> SampledImages; // these are owned by the shadermanager
-        std::vector<VkVertexInputBindingDescription> Bindings;
-        std::vector<VkVertexInputAttributeDescription> Attributes;
-    };
-}
-
-namespace std 
-{
-    template<>
-    struct hash<Mixture::UniformBufferInformation>
-    {
-        std::size_t operator()(const Mixture::UniformBufferInformation& info) const
-        {
-            std::size_t h1 = std::hash<uint32_t>{}(info.Set);
-            std::size_t h2 = std::hash<uint32_t>{}(info.Binding);
-            std::size_t h3 = std::hash<uint32_t>{}(info.Size);
-            return h1 ^ (h2 << 1) ^ (h3 >> 1);
-        }
+        uint32_t Binding = 0;
+        uint32_t Stride = 0;
+        //VkVertexInputRate InputRate;
     };
 
-    template<>
-    struct hash<Mixture::SampledImageInformation>
+    struct VertexInputAttribute
     {
-        std::size_t operator()(const Mixture::SampledImageInformation& info) const noexcept
-        {
-            std::size_t h1 = std::hash<uint32_t>{}(info.Binding);
-            std::size_t h2 = std::hash<uint32_t>{}(info.Set);
-            
-            // Combine the hashes using XOR and bit shifting (example hash combination technique)
-            return h1 ^ (h2 << 1);
-        }
+        uint32_t Location = 0;
+        uint32_t Binding = 0;
+        VkFormat Format = VK_FORMAT_UNDEFINED;
+        uint32_t Offset = 0;
     };
+
+    /**
+    * Contains all the information required by the backend to load the shader and 
+    * set all the required pipeline information.
+    */
+    struct SPVShader
+    {
+        PushConstant Push{};
+        Vector<VertexInputBinding> VertexBindings;
+        Vector<VertexInputAttribute> VertexAttributes;
+        std::unordered_map<ShaderStage, Vector<uint32_t>> Data;
+    };
+
+    namespace Util
+    {
+        ShaderStage FilePathToShaderStage(const std::filesystem::path& filePath);
+    }
 }
