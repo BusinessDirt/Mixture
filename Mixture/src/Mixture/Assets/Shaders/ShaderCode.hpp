@@ -30,6 +30,7 @@ namespace Mixture
         void Reflect(const std::filesystem::path& path, std::unordered_set<UniformBufferInformation>& uboInfos, std::unordered_set<SampledImageInformation>& images);
 
     private:
+
         std::vector<uint32_t> m_Data;
         VkShaderStageFlagBits m_ShaderStageFlagBits{};
         ShaderInformation m_ShaderInformation{};

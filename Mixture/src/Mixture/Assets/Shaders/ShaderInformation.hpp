@@ -8,7 +8,13 @@
 
 namespace Mixture
 {
-   struct UniformBufferInformation
+    enum ShaderType
+    {
+        VERTEX_SHADER, FRAGMENT_SHADER
+    };
+
+
+    struct UniformBufferInformation
     {
         uint32_t Size = 0;
         uint32_t Binding = 0;

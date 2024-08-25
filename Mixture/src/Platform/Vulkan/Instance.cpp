@@ -32,7 +32,9 @@ namespace Mixture::Vulkan
         createInfo.ppEnabledExtensionNames = manager.GetInstanceExtensions().data();
         createInfo.enabledLayerCount = static_cast<uint32_t>(manager.GetLayers().size());
         createInfo.ppEnabledLayerNames = manager.GetLayers().data();
+#ifdef MX_PLATFORM_MACOSX
         createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR; // required for MoltenVK to work
+#endif
         createInfo.pNext = &debugMessengerCreateInfo;
 
         MX_VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &m_Instance),

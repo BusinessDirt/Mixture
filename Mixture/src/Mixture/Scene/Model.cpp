@@ -49,7 +49,7 @@ namespace Mixture
         std::vector<tinyobj::material_t> materials;
         std::string warn, err;
 
-        std::string modelPath = Application::Get().GetAssetManager().GetModelPath(modelName);
+        std::string modelPath = Application::Get().GetAssetManager().GetModelPath(modelName).string();
         bool result = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str());
         MX_CORE_ASSERT(result, warn + err);
 

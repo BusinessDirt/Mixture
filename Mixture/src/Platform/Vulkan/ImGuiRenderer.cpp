@@ -169,7 +169,6 @@ namespace Mixture::Vulkan
     void ImGuiRenderer::OnWindowResize(uint32_t width, uint32_t height)
     {
         const SwapChain& swapChain = *Context::Get().SwapChain;
-        if (swapChain.GetWidth() == width && swapChain.GetHeight() == height) return;
             
         // recreate framebuffers
         for (int i = 0; i < m_FrameBuffers.size(); i++)

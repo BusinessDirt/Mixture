@@ -111,6 +111,9 @@ namespace Mixture
     ShaderCode::ShaderCode(const std::filesystem::path& path, const std::filesystem::path& cachePath,
         std::unordered_set<UniformBufferInformation>& uboInfos, std::unordered_set<SampledImageInformation>& images, bool compile)
     {
+        // determine shader format (vert and frag, compute, rayhit etc)
+
+
         if (compile)
         {
             Compile(path, cachePath);

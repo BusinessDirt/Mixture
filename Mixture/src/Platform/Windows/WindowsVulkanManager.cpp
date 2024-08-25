@@ -1,6 +1,6 @@
 #include "mxpch.hpp"
 
-#ifdef MX_PLATFORM_MACOSX
+#ifdef MX_PLATFORM_WINDOWS
 #include "Platform/Vulkan/Manager.hpp"
 
 #define GLFW_INCLUDE_VULKAN
@@ -29,7 +29,7 @@ namespace Mixture::Vulkan
 
             for (const auto& layerProperties : GetAvailableLayers())
             {
-                if (strcmp(layerName, layerProperties.layerName) == 0) 
+                if (strcmp(layerName, layerProperties.layerName) == 0)
                 {
                     layerFound = true;
                     break;
@@ -54,7 +54,7 @@ namespace Mixture::Vulkan
 
             for (const auto& extensionProperties : GetAvailableInstanceExtensions())
             {
-                if (strcmp(extensionName, extensionProperties.extensionName) == 0) 
+                if (strcmp(extensionName, extensionProperties.extensionName) == 0)
                 {
                     extensionFound = true;
                     break;
@@ -103,14 +103,14 @@ namespace Mixture::Vulkan
 
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-        
+
         /*MX_CORE_INFO("Available Layers: ");
         for (const auto& layer : availableLayers)
         {
             MX_CORE_INFO("    {0}", layer.layerName);
         }*/
-            
-        
+
+
         return availableLayers;
     }
 
@@ -121,13 +121,13 @@ namespace Mixture::Vulkan
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availableExtensions.data());
-        
+
         /*MX_CORE_INFO("Available Extensions: ");
         for (const auto& extension : availableExtensions)
         {
             MX_CORE_INFO("    {0}", extension.extensionName);
         }*/
-        
+
         return availableExtensions;
     }
 
@@ -138,13 +138,13 @@ namespace Mixture::Vulkan
 
         std::vector<VkExtensionProperties> availableExtensions(extensionCount);
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-        
+
         /*MX_CORE_INFO("Available Extensions: ");
         for (const auto& extension : availableExtensions)
         {
             MX_CORE_INFO("    {0}", extension.extensionName);
         }*/
-        
+
         return availableExtensions;
     }
 
@@ -157,14 +157,11 @@ namespace Mixture::Vulkan
 
     void Manager::GetRequiredInstanceExtensions()
     {
-        // Required for MoltenVK
-        m_InstanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        
         // glfw extensions
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
         for (uint32_t i = 0; i < glfwExtensionCount; ++i) m_InstanceExtensions.push_back(glfwExtensions[i]);
-        
+
 #ifdef MX_DEBUG
         m_InstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
@@ -172,9 +169,6 @@ namespace Mixture::Vulkan
 
     void Manager::GetRequiredDeviceExtensions()
     {
-        // Required for MoltenVK
-        m_DeviceExtensions.push_back("VK_KHR_portability_subset");
-        
         // swapchain
         m_DeviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     }

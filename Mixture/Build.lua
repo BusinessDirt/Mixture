@@ -5,7 +5,6 @@ project "Mixture"
     targetdir "Binaries/%{cfg.buildcfg}"
     staticruntime "off"
 
-    pchheader "src/mxpch.hpp"
     pchsource "src/mxpch.cpp"
 
     files { "src/**.hpp", "src/**.cpp" }
@@ -34,6 +33,11 @@ project "Mixture"
             "%{Library.Vulkan}"
         }
 
+        pchheader "mxpch.hpp"
+
+    filter "system:macosx"
+        pchheader "src/mxpch.hpp"
+
     filter "configurations:Debug"
         defines { "MX_DEBUG" }
         runtime "Debug"
@@ -41,8 +45,7 @@ project "Mixture"
         filter "system:windows"
             links {
                 "%{Library.ShaderC_Debug}",
-                "%{Library.SPIRV_Cross_Debug}",
-                "%{Library.SPIRV_Cross_GLSL_Debug}"
+                "%{Library.SPIRV_Cross_Debug}"
             }
 
     filter "configurations:Release"
@@ -53,8 +56,7 @@ project "Mixture"
         filter "system:windows"
             links {
                 "%{Library.ShaderC_Release}",
-                "%{Library.SPIRV_Cross_Release}",
-                "%{Library.SPIRV_Cross_GLSL_Release}"
+                "%{Library.SPIRV_Cross_Release}"
             }
 
     filter "configurations:Dist"
@@ -65,6 +67,5 @@ project "Mixture"
         filter "system:windows"
             links {
                 "%{Library.ShaderC_Release}",
-                "%{Library.SPIRV_Cross_Release}",
-                "%{Library.SPIRV_Cross_GLSL_Release}"
+                "%{Library.SPIRV_Cross_Release}"
             }
