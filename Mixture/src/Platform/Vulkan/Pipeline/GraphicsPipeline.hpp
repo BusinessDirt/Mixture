@@ -19,6 +19,7 @@ namespace Mixture::Vulkan
         ~GraphicsPipeline() override;
         
         void Bind(const FrameInfo& frameInfo) override;
+        void BindInstance(const FrameInfo& frameInfo) override;
         void PushConstants(const FrameInfo& info, const void* pValues) override;
         
     private:

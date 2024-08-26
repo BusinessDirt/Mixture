@@ -37,24 +37,31 @@ namespace Mixture
 
     void MainLayer::OnUpdate(FrameInfo& frameInfo)
     {
-        m_FrameTime = frameInfo.FrameTime;
+        m_ElapsedTime += (float)frameInfo.FrameTime;
+        if (m_ElapsedTime >= 0.25f)
+        {
+            m_FrameTime = (float)frameInfo.FrameTime;
+            m_ElapsedTime = 0.0f;
+        }
         
         m_Camera.OnUpdate(frameInfo.FrameTime);
         
         GlobalUniformBuffer ubo{};
-        ubo.ViewMatrix = m_Camera.GetViewMatrix();
-        ubo.ProjectionMatrix = m_Camera.GetProjection();
+        ubo.ViewProjection = m_Camera.GetViewProjection();
         m_GlobalUbo->Update(&ubo);
         
         m_Pipeline->Bind(frameInfo);
-        
+
         Push push{};
         push.ModelMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(10.0f)) * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         push.NormalMatrix = glm::transpose(glm::inverse(glm::mat3(push.ModelMatrix)));
         m_Pipeline->PushConstants(frameInfo, &push);
         
         // TODO: ECS
+        // Materials etc will also go here
         m_Texture->Bind();
+        m_Pipeline->BindInstance(frameInfo);
+
         m_Model->Bind(frameInfo.CommandBuffer);
         m_Model->Draw(frameInfo.CommandBuffer);
     }
@@ -64,11 +71,9 @@ namespace Mixture
         static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
 
         ImGuiUtil::DockSpace("DockSpaceDemo", nullptr, dockspaceFlags);
-        //ImVec2 viewport = ImGuiUtil::Viewport();
         
-        ImGui::Begin("Settings");
-        ImGui::Text("FPS: %f", (1.0f / m_FrameTime));
-        //ImGui::Text("Viewport Size: %dx%d", (int)viewport.x, (int)viewport.y);
+        ImGui::Begin("Statistics");
+        ImGui::Text("FPS: %d", static_cast<int>(1.0f / m_FrameTime));
         ImGui::End();
     }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mixture/Core/Base.hpp"
+#include "Mixture/Core/Timestep.hpp"
 #include "Mixture/Events/MouseEvent.hpp"
 #include "Mixture/Scene/Camera.hpp"
 
@@ -13,7 +14,7 @@ namespace Mixture
         EditorCamera(float fov, float aspectRatio, float nearClip, float farClip);
         
     public:
-        void OnUpdate(float ts);
+        void OnUpdate(const Timestep& ts);
         void OnEvent(Event& e);
         
         inline void SetViewportSize(float width, float height) { m_ViewportWidth = width; m_ViewportHeight = height; UpdateProjection(); }

@@ -201,9 +201,14 @@ namespace Mixture::Vulkan
     void GraphicsPipeline::Bind(const FrameInfo& frameInfo)
     {
         vkCmdBindPipeline(frameInfo.CommandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-        std::array<VkDescriptorSet, 2> sets = { frameInfo.GlobalSet, frameInfo.InstanceSet };
         vkCmdBindDescriptorSets(frameInfo.CommandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout->GetHandle(), 0, 
-            static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+            1, &frameInfo.GlobalSet, 0, nullptr);
+    }
+
+    void GraphicsPipeline::BindInstance(const FrameInfo& frameInfo)
+    {
+        vkCmdBindDescriptorSets(frameInfo.CommandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout->GetHandle(), 1,
+            1, &frameInfo.InstanceSet, 0, nullptr);
     }
 
     void GraphicsPipeline::PushConstants(const FrameInfo& frameInfo, const void* pValues)

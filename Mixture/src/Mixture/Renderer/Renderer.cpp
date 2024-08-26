@@ -32,7 +32,7 @@ namespace Mixture
         s_ImGuiRenderer->OnWindowResize(width, height);
     }
 
-    void Renderer::DrawFrame()
+    void Renderer::DrawFrame(const Timestep& ts)
     {
         static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -50,7 +50,7 @@ namespace Mixture
         {
             uint32_t frameIndex = static_cast<uint32_t>(Vulkan::Context::Get().SwapChain->GetCurrentFrameIndex());
             FrameInfo frameInfo { 
-                frameIndex, frameTime, buffer, 
+                frameIndex, ts, buffer, 
                 Vulkan::Context::Get().GlobalDescriptors->GetSets().GetHandle(frameIndex),
                 Vulkan::Context::Get().InstanceDescriptors->GetSets().GetHandle(frameIndex) 
             };

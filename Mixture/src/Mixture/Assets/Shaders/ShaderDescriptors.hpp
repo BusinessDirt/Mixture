@@ -50,8 +50,7 @@ namespace Mixture
 
     struct GlobalUniformBuffer
     {
-        glm::mat4 ViewMatrix;
-        glm::mat4 ProjectionMatrix;
+        glm::mat4 ViewProjection;
     };
 
     std::string DescriptorTypeToString(DescriptorType type);

@@ -2,6 +2,7 @@
 #include "EditorCamera.hpp"
 
 #include "Mixture/Input/Input.hpp"
+#include "Mixture/Core/Timestep.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -30,7 +31,7 @@ namespace Mixture
         m_ViewMatrix = glm::inverse(m_ViewMatrix);
     }
 
-    void EditorCamera::OnUpdate(float ts)
+    void EditorCamera::OnUpdate(const Timestep& ts)
     {
         glm::vec3 direction = glm::vec3(0.0f);
         
@@ -55,7 +56,7 @@ namespace Mixture
             glm::vec3 up = orientation * glm::vec3(0.0f, -1.0f, 0.0f);
 
             float speed = 5.0f;
-            m_Velocity = (forward * direction.z + right * direction.x + up * direction.y) * speed * ts;
+            m_Velocity = (forward * direction.z + right * direction.x + up * direction.y) * speed * (float)ts;
 
             m_Position += m_Velocity;
             UpdateView();

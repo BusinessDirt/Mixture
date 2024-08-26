@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mixture/Core/Base.hpp"
+#include "Mixture/Core/Timestep.hpp"
 
 #include "Mixture/Renderer/RendererAPI.hpp"
 #include "Mixture/ImGui/ImGuiRenderer.hpp"
@@ -16,7 +17,7 @@ namespace Mixture
 		
 		static void OnWindowResize(uint32_t width, uint32_t height);
 
-        static void DrawFrame();
+        static void DrawFrame(const Timestep& ts);
         static void OnEvent(Event& e);
 
         static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }

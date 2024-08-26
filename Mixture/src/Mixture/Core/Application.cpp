@@ -47,7 +47,8 @@ namespace Mixture
 		while (m_Running)
 		{
 			m_Window->OnUpdate();
-            Renderer::DrawFrame();
+			m_Timestep.OnUpdate();
+            Renderer::DrawFrame(m_Timestep);
 		}
 	}
 

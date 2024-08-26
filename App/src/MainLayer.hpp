@@ -19,6 +19,8 @@ namespace Mixture
     private:
         Scope<GraphicsPipeline> m_Pipeline;
         Scope<UniformBuffer> m_GlobalUbo;
+
+        float m_ElapsedTime = 0.0f;
         float m_FrameTime = 0.0f;
         
         // Scene

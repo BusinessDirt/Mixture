@@ -7,8 +7,7 @@ layout(location = 3) in vec2 inUV;
 
 layout(set = 0, binding = 0) uniform UniformBufferObject 
 {
-    mat4 ViewMatrix;
-    mat4 ProjectionMatrix;
+    mat4 ViewProjection;
 } ubo;
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler;
@@ -26,7 +25,7 @@ layout(location = 3) out vec2 outUV;
 
 void main() {
     vec4 positionWorld = push.ModelMatrix * vec4(inPosition, 1.0);
-    gl_Position = ubo.ProjectionMatrix * ubo.ViewMatrix * positionWorld;
+    gl_Position = ubo.ViewProjection * positionWorld;
     
     fragColor = inColor;
     fragPosWorld = positionWorld.xyz;

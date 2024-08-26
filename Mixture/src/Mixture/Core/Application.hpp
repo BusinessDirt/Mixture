@@ -3,6 +3,7 @@
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Core/Window.hpp"
+#include "Mixture/Core/Timestep.hpp"
 
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Events/ApplicationEvent.hpp"
@@ -44,6 +45,7 @@ namespace Mixture
 		static Application& Get() { return *s_Instance; }
         const Window& GetWindow() const { return *m_Window; }
 		const AssetManager& GetAssetManager() const { return *m_AssetManager; }
+		const Timestep& GetTimestep() const { return m_Timestep; }
 
 	private:
 		void Run();
@@ -54,6 +56,7 @@ namespace Mixture
 		Scope<Window> m_Window;
         Scope<AssetManager> m_AssetManager;
 		bool m_Running = true;
+		Timestep m_Timestep;
 
 	private:
 		static Application* s_Instance;
