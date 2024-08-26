@@ -11,6 +11,8 @@ namespace Mixture
         uint32_t FrameIndex;
         float FrameTime;
         CommandBuffer CommandBuffer;
-        VkDescriptorSet DescriptorSet; // TODO: abstract
+
+        VkDescriptorSet GlobalSet; // TODO: abstract
+        VkDescriptorSet InstanceSet; // TODO: abstract
     };
 }

@@ -18,6 +18,7 @@ namespace Mixture::Vulkan
         MX_NON_COPIABLE(UniformBuffer);
         
         UniformBuffer(uint32_t size);
+        UniformBuffer();
         ~UniformBuffer();
         
         void Update(void* data) override;

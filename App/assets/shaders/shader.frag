@@ -8,6 +8,12 @@ layout(set = 0, binding = 0) uniform UniformBufferObject
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler;
 
+layout(push_constant) uniform Push 
+{
+	mat4 ModelMatrix;
+    mat4 NormalMatrix;
+} push;
+
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec3 fragPosWorld;
 layout(location = 2) in vec3 fragNormalWorld;

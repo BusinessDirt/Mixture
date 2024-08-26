@@ -33,7 +33,10 @@ namespace Mixture::Vulkan
         Scope<Device> Device = nullptr;
         Scope<SwapChain> SwapChain = nullptr;
         Scope<CommandPool> CommandPool = nullptr;
-        Scope<DescriptorSetManager> DescriptorSetManager = nullptr;
+
+        Scope<DescriptorSetManager> GlobalDescriptors = nullptr;
+        Scope<DescriptorSetManager> InstanceDescriptors = nullptr;
+
         Scope<Viewport> ImGuiViewport = nullptr;
         uint32_t CurrentImageIndex = 0;
 

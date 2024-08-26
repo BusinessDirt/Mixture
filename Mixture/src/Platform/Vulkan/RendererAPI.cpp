@@ -3,11 +3,30 @@
 
 #include "Platform/Vulkan/Manager.hpp"
 #include "Platform/Vulkan/Buffer/FrameBuffer.hpp"
+#include "Mixture/Assets/Shaders/ShaderDescriptors.hpp"
 
 #include "Mixture/Core/Application.hpp"
 
 namespace Mixture::Vulkan
 {
+    namespace Util
+    {
+        static Vector<Vulkan::DescriptorBinding> ConvertToVulkanBindings(const DescriptorLayout& layout)
+        {
+            Vector<Vulkan::DescriptorBinding> vulkanBindings{};
+            for (const auto& [binding, descriptor] : layout.Elements)
+            {
+                Vulkan::DescriptorBinding vulkanBinding{};
+                vulkanBinding.Binding = binding;
+                vulkanBinding.DescriptorCount = 1;
+                vulkanBinding.Stage = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+                vulkanBinding.Type = static_cast<VkDescriptorType>(descriptor.Type);
+                vulkanBindings.emplace_back(vulkanBinding);
+            }
+            return vulkanBindings;
+        }
+    }
+
     void RendererAPI::Init(const std::string& applicationName)
     {
         m_Context = &Context::Get();
@@ -24,7 +43,12 @@ namespace Mixture::Vulkan
         m_Context->CommandPool = CreateScope<CommandPool>();
         m_Context->SwapChain = CreateScope<SwapChain>();
         
-        
+        // assume set 0 is global and set 1 is instance
+        Vector<DescriptorLayout> defaultLayouts = GetDefaultLayouts();
+        m_Context->GlobalDescriptors = CreateScope<DescriptorSetManager>(Util::ConvertToVulkanBindings(defaultLayouts[0]), 
+            SwapChain::MAX_FRAMES_IN_FLIGHT);
+        m_Context->InstanceDescriptors = CreateScope<DescriptorSetManager>(Util::ConvertToVulkanBindings(defaultLayouts[1]), 
+            SwapChain::MAX_FRAMES_IN_FLIGHT);
 
         m_CommandBuffers = CreateScope<CommandBuffers>(SwapChain::MAX_FRAMES_IN_FLIGHT);
     }
@@ -33,7 +57,10 @@ namespace Mixture::Vulkan
     {
         if (m_Context->ImGuiViewport) m_Context->ImGuiViewport = nullptr;
         m_CommandBuffers = nullptr;
-        m_Context->DescriptorSetManager = nullptr;
+
+        m_Context->GlobalDescriptors = nullptr;
+        m_Context->InstanceDescriptors = nullptr;
+
         m_Context->CommandPool = nullptr;
         m_Context->SwapChain = nullptr;
         m_Context->Device = nullptr;

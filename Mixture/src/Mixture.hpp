@@ -20,5 +20,7 @@
 
 #include "Mixture/Core/Application.hpp"
 
+#include "Mixture/Assets/Shaders/ShaderDescriptors.hpp"
+
 #include "Mixture/Scene/Model.hpp"
 #include "Mixture/Scene/EditorCamera.hpp"

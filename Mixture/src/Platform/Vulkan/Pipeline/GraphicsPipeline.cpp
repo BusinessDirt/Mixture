@@ -60,7 +60,7 @@ namespace Mixture::Vulkan
             Vector<VkVertexInputAttributeDescription> vertexAttributes{};
             for (const auto& shaderAttrib : shader.VertexAttributes)
             {
-                VkVertexInputAttributeDescription vertexAttrib = { shaderAttrib.Location, shaderAttrib.Location, shaderAttrib.Format, shaderAttrib.Offset };
+                VkVertexInputAttributeDescription vertexAttrib = { shaderAttrib.Location, shaderAttrib.Binding, shaderAttrib.Format, shaderAttrib.Offset };
                 vertexAttributes.emplace_back(vertexAttrib);
             }
             
@@ -201,7 +201,9 @@ namespace Mixture::Vulkan
     void GraphicsPipeline::Bind(const FrameInfo& frameInfo)
     {
         vkCmdBindPipeline(frameInfo.CommandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-        vkCmdBindDescriptorSets(frameInfo.CommandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout->GetHandle(), 0, 1, &frameInfo.DescriptorSet, 0, nullptr);
+        std::array<VkDescriptorSet, 2> sets = { frameInfo.GlobalSet, frameInfo.InstanceSet };
+        vkCmdBindDescriptorSets(frameInfo.CommandBuffer.GetAsVulkanHandle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout->GetHandle(), 0, 
+            static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
     }
 
     void GraphicsPipeline::PushConstants(const FrameInfo& frameInfo, const void* pValues)

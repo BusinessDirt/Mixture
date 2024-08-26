@@ -3,12 +3,6 @@
 
 namespace Mixture
 {
-    struct UniformBufferObject
-    {
-        glm::mat4 View;
-        glm::mat4 Proj;
-    };
-
     struct Push
     {
         glm::mat4 ModelMatrix;
@@ -25,12 +19,12 @@ namespace Mixture
         // TODO: move this out of here and also create the descriptor set from the texture sampler there
         // TODO: update set when "binding" texture
         // TODO: the group models by their texture and material etc to save update time
-        //m_GlobalUbo = UniformBuffer::Create(*vertInfo.UniformBuffers[0]);
-        
+        m_GlobalUbo = UniformBuffer::CreateGlobal();
+        m_Texture = Texture::Create("viking_room.png");
+
         m_Camera = EditorCamera(90.0f, Application::Get().GetWindow().GetAspectRatio(), 0.01f, 100.0f);
         
-        //m_Model = Model::Create("viking_room.obj");
-        //m_Texture = Texture::Create("viking_room.png", *fragInfo.SampledImages[0]);
+        m_Model = Model::Create("viking_room.obj");
     }
 
     void MainLayer::OnDetach()
@@ -47,9 +41,9 @@ namespace Mixture
         
         m_Camera.OnUpdate(frameInfo.FrameTime);
         
-        UniformBufferObject ubo{};
-        ubo.View = m_Camera.GetViewMatrix();
-        ubo.Proj = m_Camera.GetProjection();
+        GlobalUniformBuffer ubo{};
+        ubo.ViewMatrix = m_Camera.GetViewMatrix();
+        ubo.ProjectionMatrix = m_Camera.GetProjection();
         m_GlobalUbo->Update(&ubo);
         
         m_Pipeline->Bind(frameInfo);
@@ -59,6 +53,8 @@ namespace Mixture
         push.NormalMatrix = glm::transpose(glm::inverse(glm::mat3(push.ModelMatrix)));
         m_Pipeline->PushConstants(frameInfo, &push);
         
+        // TODO: ECS
+        m_Texture->Bind();
         m_Model->Bind(frameInfo.CommandBuffer);
         m_Model->Draw(frameInfo.CommandBuffer);
     }

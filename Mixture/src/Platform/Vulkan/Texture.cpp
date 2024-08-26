@@ -86,4 +86,22 @@ namespace Mixture::Vulkan
         m_Image = nullptr;
         m_ImageMemory = nullptr;
     }
+
+    void Texture::Bind()
+    {
+        DescriptorSets& descriptorSets = Context::Get().InstanceDescriptors->GetSets();
+        uint32_t index = Context::Get().SwapChain->GetCurrentFrameIndex();
+
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = m_ImageView->GetHandle();
+        imageInfo.sampler = m_Sampler->GetHandle();
+
+        const std::vector<VkWriteDescriptorSet> descriptorWrites =
+        {
+            descriptorSets.Bind(index, 0, imageInfo)
+        };
+
+        descriptorSets.Update(index, descriptorWrites);
+    }
 }

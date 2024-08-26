@@ -8,11 +8,14 @@ namespace Mixture::Vulkan
 {
     PipelineLayout::PipelineLayout(VkPushConstantRange* range)
     {
-        VkDescriptorSetLayout layout = Context::Get().DescriptorSetManager->GetLayout().GetHandle();
+        VkDescriptorSetLayout global = Context::Get().GlobalDescriptors->GetLayout().GetHandle();
+        VkDescriptorSetLayout instance = Context::Get().InstanceDescriptors->GetLayout().GetHandle();
+        std::vector<VkDescriptorSetLayout> layouts{ global, instance };
+
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &layout;
+        pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(layouts.size());
+        pipelineLayoutInfo.pSetLayouts = layouts.data();
         pipelineLayoutInfo.pushConstantRangeCount = range ? 1 : 0;
         pipelineLayoutInfo.pPushConstantRanges = range;
 

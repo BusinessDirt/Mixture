@@ -9,6 +9,8 @@ namespace Mixture
     {
     public:
         virtual ~Texture() = default;
+
+        virtual void Bind() = 0;
         
         static Scope<Texture> Create(const std::string& filename);
     };

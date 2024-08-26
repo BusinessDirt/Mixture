@@ -15,6 +15,8 @@ namespace Mixture::Vulkan
         Texture(const std::string& filename);
         Texture(uint32_t width, uint32_t height);
         ~Texture() override;
+
+        void Bind() override;
         
         const Image& GetImage() { return *m_Image; }
         const ImageView& GetImageView() { return *m_ImageView; }
