@@ -9,15 +9,13 @@ project "Mixture"
 
     files { "src/**.hpp", "src/**.cpp" }
 
-    includedirs {
-        "src"
-    }
+    includedirs { "src" }
 
     externalincludedirs {
         "%{IncludeDir.glfw}",
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.glm}",
-        "%{IncludeDir.VulkanSDK}",
+        "%{IncludeDir.Vulkan}",
         "%{IncludeDir.stb}",
         "%{IncludeDir.imgui}",
         "%{IncludeDir.tinyobjloader}"
@@ -26,46 +24,29 @@ project "Mixture"
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
     objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
-    filter "system:windows"
-        links {
-            "GLFW",
-            "ImGui",
-            "%{Library.Vulkan}"
-        }
-
-        pchheader "mxpch.hpp"
-
-    filter "system:macosx"
+    filter "action:xcode4"
         pchheader "src/mxpch.hpp"
+        filter "files:**.mm"
+            compileas "Objective-C++"  -- Compile .mm files as Objective-C++
+
+    -- Add the /utf-8 flag
+    filter "action:vs2022" -- Only apply for MSVC toolset
+        buildoptions { "/utf-8" }
+        pchheader "mxpch.hpp"
 
     filter "configurations:Debug"
         defines { "MX_DEBUG" }
         runtime "Debug"
         symbols "On"
-        filter "system:windows"
-            links {
-                "%{Library.ShaderC_Debug}",
-                "%{Library.SPIRV_Cross_Debug}"
-            }
 
     filter "configurations:Release"
         defines { "MX_RELEASE" }
         runtime "Release"
         optimize "On"
         symbols "On"
-        filter "system:windows"
-            links {
-                "%{Library.ShaderC_Release}",
-                "%{Library.SPIRV_Cross_Release}"
-            }
 
     filter "configurations:Dist"
         defines { "MX_DIST" }
         runtime "Release"
         optimize "On"
         symbols "Off"
-        filter "system:windows"
-            links {
-                "%{Library.ShaderC_Release}",
-                "%{Library.SPIRV_Cross_Release}"
-            }
