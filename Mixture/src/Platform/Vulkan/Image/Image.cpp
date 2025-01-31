@@ -33,7 +33,7 @@ namespace Mixture::Vulkan
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.flags = 0; // Optional
 
-        MX_VK_ASSERT(vkCreateImage(Context::Get().Device->GetHandle(), &imageInfo, nullptr, &m_Image),
+        MX_VK_ASSERT(vkCreateImage(Context::Get().GetDevice().GetHandle(), &imageInfo, nullptr, &m_Image),
             "Failed to create VkImage");
     }
 
@@ -47,7 +47,7 @@ namespace Mixture::Vulkan
     {
         if (m_Image)
         {
-            vkDestroyImage(Context::Get().Device->GetHandle(), m_Image, nullptr);
+            vkDestroyImage(Context::Get().GetDevice().GetHandle(), m_Image, nullptr);
             m_Image = nullptr;
         }
     }
@@ -57,7 +57,7 @@ namespace Mixture::Vulkan
         const auto requirements = GetMemoryRequirements();
         DeviceMemory memory(requirements.size, requirements.memoryTypeBits, 0, properties);
 
-        MX_VK_ASSERT(vkBindImageMemory(Context::Get().Device->GetHandle(), m_Image, memory.GetHandle(), 0),
+        MX_VK_ASSERT(vkBindImageMemory(Context::Get().GetDevice().GetHandle(), m_Image, memory.GetHandle(), 0),
             "Failed to bind VkImage VkDeviceMemory");
 
         return memory;
@@ -66,7 +66,7 @@ namespace Mixture::Vulkan
     VkMemoryRequirements Image::GetMemoryRequirements() const
     {
         VkMemoryRequirements requirements;
-        vkGetImageMemoryRequirements(Context::Get().Device->GetHandle(), m_Image, &requirements);
+        vkGetImageMemoryRequirements(Context::Get().GetDevice().GetHandle(), m_Image, &requirements);
         return requirements;
     }
 
@@ -177,7 +177,7 @@ namespace Mixture::Vulkan
     {
         // Check if image format supports linear blitting
         VkFormatProperties formatProperties;
-        vkGetPhysicalDeviceFormatProperties(Context::Get().PhysicalDevice->GetHandle(), imageFormat, &formatProperties);
+        vkGetPhysicalDeviceFormatProperties(Context::Get().GetPhysicalDevice().GetHandle(), imageFormat, &formatProperties);
         
         MX_CORE_ASSERT(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT,
             "Texture image format does not support linear blitting");

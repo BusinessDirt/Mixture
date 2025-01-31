@@ -2,6 +2,7 @@
 #include "Surface.hpp"
 
 #include "Mixture/Core/Window.hpp"
+#include "Mixture/Core/Application.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
 
@@ -12,16 +13,16 @@ namespace Mixture::Vulkan
         return Graphics.has_value() && Present.has_value();
     }
 
-    Surface::Surface(const Window& window)
+    Surface::Surface()
     {
-        window.CreateSurface(Context::Get().Instance->GetHandle(), nullptr, &m_Surface);
+        Application::Get().GetWindow().CreateSurface(Context::Get().GetInstance().GetHandle(), nullptr, &m_Surface);
     }
 
     Surface::~Surface()
     {
         if (m_Surface)
         {
-            vkDestroySurfaceKHR(Context::Get().Instance->GetHandle(), m_Surface, nullptr);
+            vkDestroySurfaceKHR(Context::Get().GetInstance().GetHandle(), m_Surface, nullptr);
             m_Surface = nullptr;
         }
     }
@@ -39,12 +40,15 @@ namespace Mixture::Vulkan
         int i = 0;
         for (const auto& queueFamily : queueFamilies)
         {
+            // Graphics Queue
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) indices.Graphics = i;
             
+            // Present Queue
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_Surface, &presentSupport);
             if (presentSupport) indices.Present = i;
             
+            // Break early if all indices have been found
             if (indices.IsComplete()) break;
 
             i++;
@@ -57,10 +61,10 @@ namespace Mixture::Vulkan
     {
         SwapChainSupportDetails details{};
         
-        // Capabilities
+        // Basic surface capabilities
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, m_Surface, &details.Capabilities);
         
-        // Formats
+        // Supported surface formats
         uint32_t formatCount;
         vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formatCount, nullptr);
 
@@ -70,7 +74,7 @@ namespace Mixture::Vulkan
             vkGetPhysicalDeviceSurfaceFormatsKHR(device, m_Surface, &formatCount, details.Formats.data());
         }
         
-        // Present Modes
+        // Supported presentation modes
         uint32_t presentModeCount;
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, m_Surface, &presentModeCount, nullptr);
 

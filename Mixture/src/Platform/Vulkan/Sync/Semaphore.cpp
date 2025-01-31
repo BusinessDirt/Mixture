@@ -10,7 +10,7 @@ namespace Mixture::Vulkan
         VkSemaphoreCreateInfo semaphoreInfo = {};
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         
-        MX_VK_ASSERT(vkCreateSemaphore(Context::Get().Device->GetHandle(), &semaphoreInfo, nullptr, &m_Semaphore),
+        MX_VK_ASSERT(vkCreateSemaphore(Context::Get().GetDevice().GetHandle(), &semaphoreInfo, nullptr, &m_Semaphore),
             "Failed to create VkSemaphore");
     }
 
@@ -18,7 +18,7 @@ namespace Mixture::Vulkan
     {
         if (m_Semaphore)
         {
-            vkDestroySemaphore(Context::Get().Device->GetHandle(), m_Semaphore, nullptr);
+            vkDestroySemaphore(Context::Get().GetDevice().GetHandle(), m_Semaphore, nullptr);
             m_Semaphore = nullptr;
         }
     }

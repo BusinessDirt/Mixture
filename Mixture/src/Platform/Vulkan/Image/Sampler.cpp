@@ -15,7 +15,7 @@ namespace Mixture::Vulkan
         samplerInfo.addressModeV = config.AddressModeV;
         samplerInfo.addressModeW = config.AddressModeW;
         samplerInfo.anisotropyEnable = config.AnisotropyEnable;
-        samplerInfo.maxAnisotropy = Context::Get().PhysicalDevice->GetProperties().limits.maxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = Context::Get().GetPhysicalDevice().GetProperties().limits.maxSamplerAnisotropy;
         samplerInfo.borderColor = config.BorderColor;
         samplerInfo.unnormalizedCoordinates = config.UnnormalizedCoordinates;
         samplerInfo.compareEnable = config.CompareEnable;
@@ -25,7 +25,7 @@ namespace Mixture::Vulkan
         samplerInfo.minLod = config.MinLod;
         samplerInfo.maxLod = config.MaxLod;
 
-        MX_VK_ASSERT(vkCreateSampler(Context::Get().Device->GetHandle(), &samplerInfo, nullptr, &m_Sampler),
+        MX_VK_ASSERT(vkCreateSampler(Context::Get().GetDevice().GetHandle(), &samplerInfo, nullptr, &m_Sampler),
             "Failed to create VkSampler");
     }
 
@@ -33,7 +33,7 @@ namespace Mixture::Vulkan
     {
         if (m_Sampler)
         {
-            vkDestroySampler(Context::Get().Device->GetHandle(), m_Sampler, nullptr);
+            vkDestroySampler(Context::Get().GetDevice().GetHandle(), m_Sampler, nullptr);
             m_Sampler = nullptr;
         }
     }

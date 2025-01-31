@@ -48,11 +48,11 @@ namespace Mixture
         
         if (CommandBuffer buffer = s_RendererAPI->BeginFrame())
         {
-            uint32_t frameIndex = static_cast<uint32_t>(Vulkan::Context::Get().SwapChain->GetCurrentFrameIndex());
+            uint32_t frameIndex = static_cast<uint32_t>(Vulkan::Context::Get().GetSwapChain().GetCurrentFrameIndex());
             FrameInfo frameInfo { 
                 frameIndex, ts, buffer, 
-                Vulkan::Context::Get().GlobalDescriptors->GetSets().GetHandle(frameIndex),
-                Vulkan::Context::Get().InstanceDescriptors->GetSets().GetHandle(frameIndex) 
+                Vulkan::Context::Get().GetGlobalDescriptorSet().GetSets().GetHandle(frameIndex),
+                Vulkan::Context::Get().GetInstanceDescriptorSet().GetSets().GetHandle(frameIndex)
             };
             
             s_RendererAPI->BeginRenderPass(buffer);

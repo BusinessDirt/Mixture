@@ -76,7 +76,7 @@ namespace Mixture::Vulkan
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        MX_VK_ASSERT(vkCreateRenderPass(Context::Get().Device->GetHandle(), &renderPassInfo, nullptr, &m_RenderPass),
+        MX_VK_ASSERT(vkCreateRenderPass(Context::Get().GetDevice().GetHandle(), &renderPassInfo, nullptr, &m_RenderPass),
             "Failed to create VkRenderPass");
     }
 
@@ -84,7 +84,7 @@ namespace Mixture::Vulkan
     {
         if (m_RenderPass)
         {
-            vkDestroyRenderPass(Context::Get().Device->GetHandle(), m_RenderPass, nullptr);
+            vkDestroyRenderPass(Context::Get().GetDevice().GetHandle(), m_RenderPass, nullptr);
             m_RenderPass = nullptr;
         }
     }

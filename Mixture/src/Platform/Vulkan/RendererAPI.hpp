@@ -29,7 +29,7 @@ namespace Mixture::Vulkan
         CommandBuffer GetCurrentCommandBuffer() const
         {
             MX_CORE_ASSERT(m_IsFrameStarted, "Cannot get command buffer when frame not in progress");
-            return m_CommandBuffers->Get(m_Context->SwapChain->GetCurrentFrameIndex());
+            return m_CommandBuffers->Get(m_Context->GetSwapChain().GetCurrentFrameIndex());
         }
         
         void RebuildSwapChain();

@@ -24,7 +24,7 @@ namespace Mixture::Vulkan
         createInfo.subresourceRange.baseArrayLayer = 0;
         createInfo.subresourceRange.layerCount = 1;
 
-        MX_VK_ASSERT(vkCreateImageView(Context::Get().Device->GetHandle(), &createInfo, nullptr, &m_ImageView),
+        MX_VK_ASSERT(vkCreateImageView(Context::Get().GetDevice().GetHandle(), &createInfo, nullptr, &m_ImageView),
             "Failed to create VkImageView");
     }
 
@@ -32,7 +32,7 @@ namespace Mixture::Vulkan
     {
         if (m_ImageView)
         {
-            vkDestroyImageView(Context::Get().Device->GetHandle(), m_ImageView, nullptr);
+            vkDestroyImageView(Context::Get().GetDevice().GetHandle(), m_ImageView, nullptr);
             m_ImageView = nullptr;
         }
     }

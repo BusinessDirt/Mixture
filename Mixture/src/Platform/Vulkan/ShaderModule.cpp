@@ -17,7 +17,7 @@ namespace Mixture::Vulkan
         createInfo.codeSize = code.size() * sizeof(uint32_t);
         createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
-        MX_VK_ASSERT(vkCreateShaderModule(Context::Get().Device->GetHandle(), &createInfo, nullptr, &m_ShaderModule),
+        MX_VK_ASSERT(vkCreateShaderModule(Context::Get().GetDevice().GetHandle(), &createInfo, nullptr, &m_ShaderModule),
             "Failed to create VkShaderModule");
     }
 
@@ -25,7 +25,7 @@ namespace Mixture::Vulkan
     {
         if (m_ShaderModule)
         {
-            vkDestroyShaderModule(Context::Get().Device->GetHandle(), m_ShaderModule, nullptr);
+            vkDestroyShaderModule(Context::Get().GetDevice().GetHandle(), m_ShaderModule, nullptr);
             m_ShaderModule = nullptr;
         }
     }

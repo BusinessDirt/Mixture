@@ -21,7 +21,7 @@ namespace Mixture::Vulkan
 
         m_DescriptorSets.resize(size);
 
-        MX_VK_ASSERT(vkAllocateDescriptorSets(Context::Get().Device->GetHandle(), &allocInfo, m_DescriptorSets.data()),
+        MX_VK_ASSERT(vkAllocateDescriptorSets(Context::Get().GetDevice().GetHandle(), &allocInfo, m_DescriptorSets.data()),
             "Failed to allocate VkDescriptorSets");
     }
 
@@ -57,7 +57,7 @@ namespace Mixture::Vulkan
 
     void DescriptorSets::Update(uint32_t index, const std::vector<VkWriteDescriptorSet>& writes)
     {
-        vkUpdateDescriptorSets(Context::Get().Device->GetHandle(), static_cast<uint32_t>(writes.size()),
+        vkUpdateDescriptorSets(Context::Get().GetDevice().GetHandle(), static_cast<uint32_t>(writes.size()),
             writes.data(), 0, nullptr);
     }
 

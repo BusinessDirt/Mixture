@@ -32,8 +32,8 @@ namespace Mixture::Vulkan
     Buffer::~Buffer()
     {
         Unmap();
-        vkDestroyBuffer(Context::Get().Device->GetHandle(), m_Buffer, nullptr);
-        vkFreeMemory(Context::Get().Device->GetHandle(), m_Memory, nullptr);
+        vkDestroyBuffer(Context::Get().GetDevice().GetHandle(), m_Buffer, nullptr);
+        vkFreeMemory(Context::Get().GetDevice().GetHandle(), m_Memory, nullptr);
     }
 
     /**
@@ -48,7 +48,7 @@ namespace Mixture::Vulkan
     VkResult Buffer::Map(VkDeviceSize size, VkDeviceSize offset)
     {
         MX_CORE_ASSERT(m_Buffer && m_Memory, "Called map on buffer before create");
-        return vkMapMemory(Context::Get().Device->GetHandle(), m_Memory, offset, size, 0, &m_Mapped);
+        return vkMapMemory(Context::Get().GetDevice().GetHandle(), m_Memory, offset, size, 0, &m_Mapped);
     }
 
     /**
@@ -60,7 +60,7 @@ namespace Mixture::Vulkan
     {
         if (m_Mapped)
         {
-            vkUnmapMemory(Context::Get().Device->GetHandle(), m_Memory);
+            vkUnmapMemory(Context::Get().GetDevice().GetHandle(), m_Memory);
             m_Mapped = nullptr;
         }
     }
@@ -108,7 +108,7 @@ namespace Mixture::Vulkan
         m_MappedRange.memory = m_Memory;
         m_MappedRange.offset = offset;
         m_MappedRange.size = size;
-        return vkFlushMappedMemoryRanges(Context::Get().Device->GetHandle(), 1, &m_MappedRange);
+        return vkFlushMappedMemoryRanges(Context::Get().GetDevice().GetHandle(), 1, &m_MappedRange);
     }
 
     /**
@@ -129,7 +129,7 @@ namespace Mixture::Vulkan
         m_MappedRange.memory = m_Memory;
         m_MappedRange.offset = offset;
         m_MappedRange.size = size;
-        return vkInvalidateMappedMemoryRanges(Context::Get().Device->GetHandle(), 1, &m_MappedRange);
+        return vkInvalidateMappedMemoryRanges(Context::Get().GetDevice().GetHandle(), 1, &m_MappedRange);
     }
 
     /**
@@ -202,19 +202,19 @@ namespace Mixture::Vulkan
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        MX_VK_ASSERT(vkCreateBuffer(Context::Get().Device->GetHandle(), &bufferInfo, nullptr, &buffer), "Failed to create VkBuffer");
+        MX_VK_ASSERT(vkCreateBuffer(Context::Get().GetDevice().GetHandle(), &bufferInfo, nullptr, &buffer), "Failed to create VkBuffer");
 
         VkMemoryRequirements memRequirements;
-        vkGetBufferMemoryRequirements(Context::Get().Device->GetHandle(), buffer, &memRequirements);
+        vkGetBufferMemoryRequirements(Context::Get().GetDevice().GetHandle(), buffer, &memRequirements);
 
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = Context::Get().Device->FindMemoryType(memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = Context::Get().GetDevice().FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-        MX_VK_ASSERT(vkAllocateMemory(Context::Get().Device->GetHandle(), &allocInfo, nullptr, &bufferMemory), "Failed to allocate buffer memory");
+        MX_VK_ASSERT(vkAllocateMemory(Context::Get().GetDevice().GetHandle(), &allocInfo, nullptr, &bufferMemory), "Failed to allocate buffer memory");
 
-        vkBindBufferMemory(Context::Get().Device->GetHandle(), buffer, bufferMemory, 0);
+        vkBindBufferMemory(Context::Get().GetDevice().GetHandle(), buffer, bufferMemory, 0);
     }
 
     void Buffer::Copy(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)

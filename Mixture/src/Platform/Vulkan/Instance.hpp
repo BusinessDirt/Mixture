@@ -13,7 +13,7 @@ namespace Mixture::Vulkan
     public:
         MX_NON_COPIABLE(Instance);
         
-        Instance(const std::string& applicationName, const Manager& manager);
+        Instance(const std::string& applicationName, const std::vector<const char*>& requiredLayers, const std::vector<const char*>& requiredExtensions);
         ~Instance();
         
     private:

@@ -11,11 +11,11 @@ namespace Mixture::Vulkan::SingleTimeCommand
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = Context::Get().CommandPool->GetHandle();
+        allocInfo.commandPool = Context::Get().GetCommandPool().GetHandle();
         allocInfo.commandBufferCount = 1;
 
         VkCommandBuffer commandBuffer;
-        vkAllocateCommandBuffers(Context::Get().Device->GetHandle(), &allocInfo, &commandBuffer);
+        vkAllocateCommandBuffers(Context::Get().GetDevice().GetHandle(), &allocInfo, &commandBuffer);
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -32,9 +32,9 @@ namespace Mixture::Vulkan::SingleTimeCommand
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        vkQueueSubmit(Context::Get().Device->GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
-        vkQueueWaitIdle(Context::Get().Device->GetGraphicsQueue());
+        vkQueueSubmit(Context::Get().GetDevice().GetGraphicsQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(Context::Get().GetDevice().GetGraphicsQueue());
 
-        vkFreeCommandBuffers(Context::Get().Device->GetHandle(), Context::Get().CommandPool->GetHandle(), 1, &commandBuffer);
+        vkFreeCommandBuffers(Context::Get().GetDevice().GetHandle(), Context::Get().GetCommandPool().GetHandle(), 1, &commandBuffer);
     }
 }

@@ -36,7 +36,7 @@ namespace Mixture::Vulkan
 
     void ImGuiRenderer::Init()
     {
-        const SwapChain& swapChain = *Context::Get().SwapChain;
+        const SwapChain& swapChain = Context::Get().GetSwapChain();
         
         m_DescriptorPool = DescriptorPool::CreateImGuiDescriptorPool();
         m_RenderPass = CreateScope<RenderPass>(swapChain.GetImageFormat(), false, VK_ATTACHMENT_LOAD_OP_LOAD, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -84,16 +84,16 @@ namespace Mixture::Vulkan
         ImGui_ImplGlfw_InitForVulkan((GLFWwindow*)Application::Get().GetWindow().GetNativeWindow(), true);
         
         ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = Context::Get().Instance->GetHandle();
-        init_info.PhysicalDevice = Context::Get().PhysicalDevice->GetHandle();
-        init_info.Device = Context::Get().Device->GetHandle();
-        init_info.QueueFamily = Context::Get().Device->GetGraphicsQueueIndex();
-        init_info.Queue = Context::Get().Device->GetGraphicsQueue();
+        init_info.Instance = Context::Get().GetInstance().GetHandle();
+        init_info.PhysicalDevice = Context::Get().GetPhysicalDevice().GetHandle();
+        init_info.Device = Context::Get().GetDevice().GetHandle();
+        init_info.QueueFamily = Context::Get().GetDevice().GetGraphicsQueueIndex();
+        init_info.Queue = Context::Get().GetDevice().GetGraphicsQueue();
         init_info.DescriptorPool = m_DescriptorPool->GetHandle();
         init_info.RenderPass = m_RenderPass->GetHandle();
         init_info.Subpass = 0;
         init_info.MinImageCount = SwapChain::MAX_FRAMES_IN_FLIGHT;
-        init_info.ImageCount = static_cast<uint32_t>(Context::Get().SwapChain->GetImageCount());
+        init_info.ImageCount = static_cast<uint32_t>(Context::Get().GetSwapChain().GetImageCount());
         init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
         ImGui_ImplVulkan_Init(&init_info);
         
@@ -132,14 +132,14 @@ namespace Mixture::Vulkan
 
     void ImGuiRenderer::Render(CommandBuffer commandBuffer)
     {
-        const SwapChain& swapChain = *Context::Get().SwapChain;
+        const SwapChain& swapChain = Context::Get().GetSwapChain();
         
         static VkClearValue clearValue = { 0.0f, 0.0f, 0.0f, 1.0f };
         
         VkRenderPassBeginInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         info.renderPass = m_RenderPass->GetHandle();
-        info.framebuffer = m_FrameBuffers[Context::Get().CurrentImageIndex]->GetHandle();
+        info.framebuffer = m_FrameBuffers[Context::Get().GetCurrentImageIndex()]->GetHandle();
         info.renderArea.extent.width = swapChain.GetWidth();
         info.renderArea.extent.height = swapChain.GetHeight();
         info.clearValueCount = 1;
@@ -153,22 +153,19 @@ namespace Mixture::Vulkan
 
     void* ImGuiRenderer::GetViewportImage()
     {
-        const SwapChain& swapChain = *Context::Get().SwapChain;
+        const SwapChain& swapChain = Context::Get().GetSwapChain();
         
         // Create the viewport if it doesnt exist
-        if (!Context::Get().ImGuiViewport)
-        {
-            Context::Get().ImGuiViewport = CreateScope<Viewport>(swapChain.GetExtent());
-        }
+        Context::Get().CreateImGuiViewport();
         
-        Context::Get().ImGuiViewport->Update(swapChain.GetFrameBuffer(Context::Get().CurrentImageIndex).GetImage());
+        Context::Get().GetImGuiViewport().Update(swapChain.GetFrameBuffer(Context::Get().GetCurrentImageIndex()).GetImage());
         
-        return Context::Get().ImGuiViewport->GetDescriptorSet();
+        return Context::Get().GetImGuiViewport().GetDescriptorSet();
     }
 
     void ImGuiRenderer::OnWindowResize(uint32_t width, uint32_t height)
     {
-        const SwapChain& swapChain = *Context::Get().SwapChain;
+        const SwapChain& swapChain = Context::Get().GetSwapChain();
             
         // recreate framebuffers
         for (int i = 0; i < m_FrameBuffers.size(); i++)

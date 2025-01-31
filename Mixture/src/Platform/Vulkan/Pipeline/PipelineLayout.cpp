@@ -8,8 +8,8 @@ namespace Mixture::Vulkan
 {
     PipelineLayout::PipelineLayout(VkPushConstantRange* range)
     {
-        VkDescriptorSetLayout global = Context::Get().GlobalDescriptors->GetLayout().GetHandle();
-        VkDescriptorSetLayout instance = Context::Get().InstanceDescriptors->GetLayout().GetHandle();
+        VkDescriptorSetLayout global = Context::Get().GetGlobalDescriptorSet().GetLayout().GetHandle();
+        VkDescriptorSetLayout instance = Context::Get().GetInstanceDescriptorSet().GetLayout().GetHandle();
         std::vector<VkDescriptorSetLayout> layouts{ global, instance };
 
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -19,7 +19,7 @@ namespace Mixture::Vulkan
         pipelineLayoutInfo.pushConstantRangeCount = range ? 1 : 0;
         pipelineLayoutInfo.pPushConstantRanges = range;
 
-        MX_VK_ASSERT(vkCreatePipelineLayout(Context::Get().Device->GetHandle(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout),
+        MX_VK_ASSERT(vkCreatePipelineLayout(Context::Get().GetDevice().GetHandle(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout),
             "Failed to create VkPipelineLayout");
     }
 
@@ -27,7 +27,7 @@ namespace Mixture::Vulkan
     {
         if (m_PipelineLayout != nullptr)
         {
-            vkDestroyPipelineLayout(Context::Get().Device->GetHandle(), m_PipelineLayout, nullptr);
+            vkDestroyPipelineLayout(Context::Get().GetDevice().GetHandle(), m_PipelineLayout, nullptr);
             m_PipelineLayout = nullptr;
         }
     }

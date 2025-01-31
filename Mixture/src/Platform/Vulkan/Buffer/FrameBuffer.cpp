@@ -17,14 +17,14 @@ namespace Mixture::Vulkan
         
         VkFramebufferCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        createInfo.renderPass = renderPass ? renderPass : Context::Get().SwapChain->GetRenderPass().GetHandle();
+        createInfo.renderPass = renderPass ? renderPass : Context::Get().GetSwapChain().GetRenderPass().GetHandle();
         createInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         createInfo.pAttachments = attachments.data();
         createInfo.width = extent.width;
         createInfo.height = extent.height;
         createInfo.layers = 1;
 
-        MX_VK_ASSERT(vkCreateFramebuffer(Context::Get().Device->GetHandle(), &createInfo, nullptr, &m_FrameBuffer), 
+        MX_VK_ASSERT(vkCreateFramebuffer(Context::Get().GetDevice().GetHandle(), &createInfo, nullptr, &m_FrameBuffer), 
             "Failed to create VkFramebuffer");
     }
 
@@ -32,7 +32,7 @@ namespace Mixture::Vulkan
     {
         if (m_FrameBuffer)
         {
-            vkDestroyFramebuffer(Context::Get().Device->GetHandle(), m_FrameBuffer, nullptr);
+            vkDestroyFramebuffer(Context::Get().GetDevice().GetHandle(), m_FrameBuffer, nullptr);
             m_FrameBuffer = nullptr;
         }
         

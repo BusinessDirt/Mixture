@@ -1,84 +1,29 @@
 #include "mxpch.hpp"
 #include "RendererAPI.hpp"
 
-#include "Platform/Vulkan/Manager.hpp"
-#include "Platform/Vulkan/Buffer/FrameBuffer.hpp"
-#include "Mixture/Assets/Shaders/ShaderDescriptors.hpp"
-
 #include "Mixture/Core/Application.hpp"
 
 namespace Mixture::Vulkan
 {
-    namespace Util
-    {
-        static Vector<Vulkan::DescriptorBinding> ConvertToVulkanBindings(const DescriptorLayout& layout)
-        {
-            Vector<Vulkan::DescriptorBinding> vulkanBindings{};
-            for (const auto& [binding, descriptor] : layout.Elements)
-            {
-                Vulkan::DescriptorBinding vulkanBinding{};
-                vulkanBinding.Binding = binding;
-                vulkanBinding.DescriptorCount = 1;
-                vulkanBinding.Stage = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
-                vulkanBinding.Type = static_cast<VkDescriptorType>(descriptor.Type);
-                vulkanBindings.emplace_back(vulkanBinding);
-            }
-            return vulkanBindings;
-        }
-    }
 
     void RendererAPI::Init(const std::string& applicationName)
     {
         m_Context = &Context::Get();
-        
-        // TODO: custom allocator
-        Manager manager{};
-        manager.Init();
-        
-        m_Context->Instance = CreateScope<Instance>(applicationName, manager);
-        m_Context->Surface = CreateScope<Surface>(Application::Get().GetWindow());
-        m_Context->DebugMessenger = CreateScope<DebugMessenger>();
-        m_Context->PhysicalDevice = CreateScope<PhysicalDevice>();
-        m_Context->Device = CreateScope<Device>(manager);
-        m_Context->CommandPool = CreateScope<CommandPool>();
-        m_Context->SwapChain = CreateScope<SwapChain>();
-        
-        // assume set 0 is global and set 1 is instance
-        Vector<DescriptorLayout> defaultLayouts = GetDefaultLayouts();
-        m_Context->GlobalDescriptors = CreateScope<DescriptorSetManager>(Util::ConvertToVulkanBindings(defaultLayouts[0]), 
-            SwapChain::MAX_FRAMES_IN_FLIGHT);
-        m_Context->InstanceDescriptors = CreateScope<DescriptorSetManager>(Util::ConvertToVulkanBindings(defaultLayouts[1]), 
-            SwapChain::MAX_FRAMES_IN_FLIGHT);
+        m_Context->Initialize(applicationName);
 
         m_CommandBuffers = CreateScope<CommandBuffers>(SwapChain::MAX_FRAMES_IN_FLIGHT);
     }
 
     RendererAPI::~RendererAPI()
     {
-        if (m_Context->ImGuiViewport) m_Context->ImGuiViewport = nullptr;
         m_CommandBuffers = nullptr;
-
-        m_Context->GlobalDescriptors = nullptr;
-        m_Context->InstanceDescriptors = nullptr;
-
-        m_Context->CommandPool = nullptr;
-        m_Context->SwapChain = nullptr;
-        m_Context->Device = nullptr;
-        m_Context->PhysicalDevice = nullptr;
-        m_Context->DebugMessenger = nullptr;
-        m_Context->Surface = nullptr;
-        m_Context->Instance = nullptr;
+        m_Context->Shutdown();
     }
 
     void RendererAPI::RebuildSwapChain()
     {
-        vkDeviceWaitIdle(Context::Get().Device->GetHandle());
-
-        Ref<SwapChain> oldSwapChain = std::move(Context::Get().SwapChain);
-        Context::Get().SwapChain = CreateScope<SwapChain>(oldSwapChain);
-
-        MX_CORE_ASSERT(oldSwapChain->CompareSwapFormats(*Context::Get().SwapChain.get()),
-                       "Swap chain image(or depth) format has changed!");
+        Context::Get().GetDevice().WaitIdle();
+        Context::Get().RebuildSwapChain();
     }
 
     void RendererAPI::OnWindowResize(uint32_t width, uint32_t height)
@@ -88,14 +33,14 @@ namespace Mixture::Vulkan
 
     void RendererAPI::WaitForDevice()
     {
-        vkDeviceWaitIdle(Context::Get().Device->GetHandle());
+        Context::Get().GetDevice().WaitIdle();
     }
 
     CommandBuffer RendererAPI::BeginFrame()
     {
         MX_CORE_ASSERT(!m_IsFrameStarted, "Can't call BeginFrame() while already in progress");
         
-        VkResult result = Context::Get().SwapChain->AcquireNextImage();
+        VkResult result = Context::Get().AcquireSwapChainImage();
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             RebuildSwapChain();
@@ -125,7 +70,7 @@ namespace Mixture::Vulkan
 
     void RendererAPI::SubmitFrame(const std::vector<CommandBuffer>& commandBuffers)
     {
-        VkResult result = Context::Get().SwapChain->SubmitCommandBuffers(commandBuffers);
+        VkResult result = Context::Get().SubmitSwapChainCommandBuffers(commandBuffers);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
             RebuildSwapChain();
@@ -142,12 +87,12 @@ namespace Mixture::Vulkan
     {
         MX_CORE_ASSERT(m_IsFrameStarted, "Can't call BeginRenderPass() if frame is not in progress");
         
-        const SwapChain& swapChain = *m_Context->SwapChain;
+        const SwapChain& swapChain = Context::Get().GetSwapChain();
         
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = m_Context->SwapChain->GetRenderPass().GetHandle();
-        renderPassInfo.framebuffer = swapChain.GetFrameBuffer(m_Context->CurrentImageIndex).GetHandle();
+        renderPassInfo.renderPass = swapChain.GetRenderPass().GetHandle();
+        renderPassInfo.framebuffer = swapChain.GetFrameBuffer(Context::Get().GetCurrentImageIndex()).GetHandle();
 
         std::array<VkClearValue, 2> clearValues{};
         clearValues[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };

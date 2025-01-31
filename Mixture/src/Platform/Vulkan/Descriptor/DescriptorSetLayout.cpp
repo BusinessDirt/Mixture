@@ -25,7 +25,7 @@ namespace Mixture::Vulkan
         layoutInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
         layoutInfo.pBindings = layoutBindings.data();
 
-        MX_VK_ASSERT(vkCreateDescriptorSetLayout(Context::Get().Device->GetHandle(), &layoutInfo, nullptr, &m_Layout),
+        MX_VK_ASSERT(vkCreateDescriptorSetLayout(Context::Get().GetDevice().GetHandle(), &layoutInfo, nullptr, &m_Layout),
             "Failed to create VkDescriptorSetLayout");
     }
 
@@ -33,7 +33,7 @@ namespace Mixture::Vulkan
     {
         if (m_Layout != nullptr)
         {
-            vkDestroyDescriptorSetLayout(Context::Get().Device->GetHandle(), m_Layout, nullptr);
+            vkDestroyDescriptorSetLayout(Context::Get().GetDevice().GetHandle(), m_Layout, nullptr);
             m_Layout = nullptr;
         }
     }

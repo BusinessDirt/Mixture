@@ -20,7 +20,7 @@ namespace Mixture::Vulkan
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = static_cast<uint32_t>(maxSets);
 
-        MX_VK_ASSERT(vkCreateDescriptorPool(Context::Get().Device->GetHandle(), &poolInfo, nullptr, &m_DescriptorPool),
+        MX_VK_ASSERT(vkCreateDescriptorPool(Context::Get().GetDevice().GetHandle(), &poolInfo, nullptr, &m_DescriptorPool),
             "Failed to create VkDescriptorPool");
     }
 
@@ -28,7 +28,7 @@ namespace Mixture::Vulkan
     {
         if (m_DescriptorPool != nullptr)
         {
-            vkDestroyDescriptorPool(Context::Get().Device->GetHandle(), m_DescriptorPool, nullptr);
+            vkDestroyDescriptorPool(Context::Get().GetDevice().GetHandle(), m_DescriptorPool, nullptr);
             m_DescriptorPool = nullptr;
         }
     }

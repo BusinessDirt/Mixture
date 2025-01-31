@@ -57,8 +57,6 @@ namespace Mixture::Vulkan
 	private:
 		void Init();
 
-		void CreateSwapChain();
-
 		// Helper functions
 		VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		VkPresentModeKHR ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);

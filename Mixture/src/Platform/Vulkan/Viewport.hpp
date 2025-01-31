@@ -16,9 +16,9 @@ namespace Mixture::Vulkan
         Viewport(VkExtent2D extent);
         ~Viewport();
         
-        void Update(VkImage swapChainImage);
+        void Update(VkImage swapChainImage) const;
         
-        VkDescriptorSet GetDescriptorSet() { return m_TextureSet; }
+        VkDescriptorSet GetDescriptorSet() const { return m_TextureSet; }
         
     private:
         VkExtent2D m_Extent;

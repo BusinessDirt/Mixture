@@ -29,7 +29,7 @@ namespace Mixture::Vulkan
             m_Buffers[i]->Map();
         }
 
-        DescriptorSets& descriptorSets = Context::Get().GlobalDescriptors->GetSets();
+        DescriptorSets& descriptorSets = Context::Get().GetGlobalDescriptorSet().GetSets();
         for (int i = 0; i < SwapChain::MAX_FRAMES_IN_FLIGHT; i++)
         {
             VkDescriptorBufferInfo uniformBufferInfo = m_Buffers[i]->GetDescriptorInfo();
@@ -53,6 +53,6 @@ namespace Mixture::Vulkan
 
     void UniformBuffer::Update(void *data)
     {
-        m_Buffers[Context::Get().SwapChain->GetCurrentFrameIndex()]->WriteToBuffer(data);
+        m_Buffers[Context::Get().GetSwapChain().GetCurrentFrameIndex()]->WriteToBuffer(data);
     }
 }

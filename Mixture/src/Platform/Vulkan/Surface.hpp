@@ -32,7 +32,7 @@ namespace Mixture::Vulkan
     public:
         MX_NON_COPIABLE(Surface);
         
-        Surface(const Window& window);
+        Surface();
         ~Surface();
         
         QueueFamilyIndices FindQueueFamilyIndices(VkPhysicalDevice device) const;

@@ -5,15 +5,11 @@
 
 #include "Platform/Vulkan/Context.hpp"
 
-#include "Platform/Vulkan/Manager.hpp"
-
 namespace Mixture::Vulkan
 {
-    Device::Device(const Manager& manager)
+    Device::Device(const std::vector<const char*>& requiredLayers, const std::vector<const char*>& requiredExtensions)
     {
-        manager.CheckDeviceExtensionSupport(Context::Get().PhysicalDevice->GetHandle());
-        
-        QueueFamilyIndices indices = Context::Get().PhysicalDevice->FindQueueFamilyIndices();
+        QueueFamilyIndices indices = Context::Get().GetPhysicalDevice().GetQueueFamilyIndices();
         m_GraphicsQueueIndex = indices.Graphics.value();
         m_PresentQueueIndex = indices.Present.value();
         
@@ -39,12 +35,12 @@ namespace Mixture::Vulkan
         createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
         createInfo.pQueueCreateInfos = queueCreateInfos.data();
         createInfo.pEnabledFeatures = &deviceFeatures;
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(manager.GetDeviceExtensions().size());
-        createInfo.ppEnabledExtensionNames = manager.GetDeviceExtensions().data();
-        createInfo.enabledLayerCount = static_cast<uint32_t>(manager.GetLayers().size());
-        createInfo.ppEnabledLayerNames = manager.GetLayers().data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(requiredLayers.size());
+        createInfo.ppEnabledLayerNames = requiredLayers.data();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
+        createInfo.ppEnabledExtensionNames = requiredExtensions.data();
         
-        MX_VK_ASSERT(vkCreateDevice(Context::Get().PhysicalDevice->GetHandle(), &createInfo, nullptr, &m_Device),
+        MX_VK_ASSERT(vkCreateDevice(Context::Get().GetPhysicalDevice().GetHandle(), &createInfo, nullptr, &m_Device),
                      "Failed to create VkDevice");
         
         vkGetDeviceQueue(m_Device, m_GraphicsQueueIndex, 0, &m_GraphicsQueue);
@@ -65,7 +61,7 @@ namespace Mixture::Vulkan
         for (VkFormat format : candidates)
         {
             VkFormatProperties props;
-            vkGetPhysicalDeviceFormatProperties(Context::Get().PhysicalDevice->GetHandle(), format, &props);
+            vkGetPhysicalDeviceFormatProperties(Context::Get().GetPhysicalDevice().GetHandle(), format, &props);
 
             if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
             {
@@ -80,10 +76,10 @@ namespace Mixture::Vulkan
         return VK_FORMAT_UNDEFINED;
     }
 
-    uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+    uint32_t Device::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const
     {
         VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(Context::Get().PhysicalDevice->GetHandle(), &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(Context::Get().GetPhysicalDevice().GetHandle(), &memProperties);
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
         {
             if ((typeFilter & (1 << i)) &&(memProperties.memoryTypes[i].propertyFlags & properties) == properties)

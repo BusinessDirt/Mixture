@@ -22,7 +22,7 @@ namespace Mixture::Vulkan
         m_Texture = nullptr;
     }
 
-    void Viewport::Update(VkImage swapChainImage)
+    void Viewport::Update(VkImage swapChainImage) const
     {
         SingleTimeCommand::Submit([&](VkCommandBuffer commandBuffer)
             {

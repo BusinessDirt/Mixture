@@ -14,11 +14,13 @@ namespace Mixture::Vulkan
     public:
         MX_NON_COPIABLE(Device);
         
-        Device(const Manager& manager);
+        Device(const std::vector<const char*>& requiredLayers, const std::vector<const char*>& requiredExtensions);
         ~Device();
+
+        void WaitIdle() const { vkDeviceWaitIdle(m_Device); }
         
         VkFormat FindSupportedFormat( const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
-        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
+        uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) const;
         void CreateImageWithInfo(const VkImageCreateInfo& imageInfo, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
         
         VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }

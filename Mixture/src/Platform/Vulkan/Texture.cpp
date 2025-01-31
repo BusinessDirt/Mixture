@@ -89,8 +89,8 @@ namespace Mixture::Vulkan
 
     void Texture::Bind()
     {
-        DescriptorSets& descriptorSets = Context::Get().InstanceDescriptors->GetSets();
-        uint32_t index = Context::Get().SwapChain->GetCurrentFrameIndex();
+        DescriptorSets& descriptorSets = Context::Get().GetInstanceDescriptorSet().GetSets();
+        uint32_t index = Context::Get().GetSwapChain().GetCurrentFrameIndex();
 
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

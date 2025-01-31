@@ -18,31 +18,46 @@
 
 namespace Mixture::Vulkan
 {
-    struct Context
+    class Context
     {
+    public:
         Context(const Context&) = delete;
         Context& operator=(const Context&) = delete;
 
         static Context& Get();
 
-        // Public members
-        Scope<Instance> Instance = nullptr;
-        Scope<Surface> Surface = nullptr;
-        Scope<DebugMessenger> DebugMessenger = nullptr;
-        Scope<PhysicalDevice> PhysicalDevice = nullptr;
-        Scope<Device> Device = nullptr;
-        Scope<SwapChain> SwapChain = nullptr;
-        Scope<CommandPool> CommandPool = nullptr;
+        Context() = default;
+        ~Context() = default;
 
-        Scope<DescriptorSetManager> GlobalDescriptors = nullptr;
-        Scope<DescriptorSetManager> InstanceDescriptors = nullptr;
+        void Initialize(const std::string& applicationName);
+        void Shutdown();
 
-        Scope<Viewport> ImGuiViewport = nullptr;
-        uint32_t CurrentImageIndex = 0;
+        void RebuildSwapChain();
+        void CreateImGuiViewport();
+        VkResult AcquireSwapChainImage() { return m_SwapChain->AcquireNextImage(); }
+        VkResult SubmitSwapChainCommandBuffers(const std::vector<CommandBuffer>& buffers) { return m_SwapChain->SubmitCommandBuffers(buffers); }
+
+    public:
+#define CONTEXT_MEMBER(className, varName) private: Scope<className> m_##varName = nullptr; public: const className& Get##varName() const { return *m_##varName; }
+        CONTEXT_MEMBER(Instance, Instance)
+        CONTEXT_MEMBER(Surface, Surface)
+        CONTEXT_MEMBER(DebugMessenger, DebugMessenger)
+        CONTEXT_MEMBER(PhysicalDevice, PhysicalDevice)
+        CONTEXT_MEMBER(Device, Device)
+        CONTEXT_MEMBER(SwapChain, SwapChain)
+        CONTEXT_MEMBER(CommandPool, CommandPool)
+        CONTEXT_MEMBER(DescriptorSetManager, GlobalDescriptorSet)
+        CONTEXT_MEMBER(DescriptorSetManager, InstanceDescriptorSet)
+        CONTEXT_MEMBER(Viewport, ImGuiViewport)
+
+        uint32_t* GetCurrentImageIndexPtr() { return &m_CurrentImageIndex; }
+        uint32_t GetCurrentImageIndex() { return m_CurrentImageIndex; }
 
     private:
-        Context() = default;
-        static Context* s_Instance;
+        uint32_t m_CurrentImageIndex = 0;
+
+    private:
+        static Scope<Context> s_Instance;
         static std::mutex s_Mutex;
     };
 }

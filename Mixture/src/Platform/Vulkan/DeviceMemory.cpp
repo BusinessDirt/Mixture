@@ -18,7 +18,7 @@ namespace Mixture::Vulkan {
         allocInfo.allocationSize = size;
         allocInfo.memoryTypeIndex = FindMemoryType(memoryTypeBits, propertyFlags);
 
-        MX_VK_ASSERT(vkAllocateMemory(Context::Get().Device->GetHandle(), &allocInfo, nullptr, &m_Memory),
+        MX_VK_ASSERT(vkAllocateMemory(Context::Get().GetDevice().GetHandle(), &allocInfo, nullptr, &m_Memory),
             "Failed to allocate VkDeviceMemory");
     }
 
@@ -32,7 +32,7 @@ namespace Mixture::Vulkan {
     {
         if (m_Memory)
         {
-            vkFreeMemory(Context::Get().Device->GetHandle(), m_Memory, nullptr);
+            vkFreeMemory(Context::Get().GetDevice().GetHandle(), m_Memory, nullptr);
             m_Memory = nullptr;
         }
     }
@@ -40,7 +40,7 @@ namespace Mixture::Vulkan {
     void* DeviceMemory::Map(const size_t offset, const size_t size)
     {
         void* data;
-        MX_VK_ASSERT(vkMapMemory(Context::Get().Device->GetHandle(), m_Memory, offset, size, 0, &data),
+        MX_VK_ASSERT(vkMapMemory(Context::Get().GetDevice().GetHandle(), m_Memory, offset, size, 0, &data),
             "Failed to map VkDeviceMemory");
 
         return data;
@@ -48,13 +48,13 @@ namespace Mixture::Vulkan {
 
     void DeviceMemory::Unmap()
     {
-        vkUnmapMemory(Context::Get().Device->GetHandle(), m_Memory);
+        vkUnmapMemory(Context::Get().GetDevice().GetHandle(), m_Memory);
     }
 
     uint32_t DeviceMemory::FindMemoryType(const uint32_t typeFilter, const VkMemoryPropertyFlags propertyFlags) const
     {
         VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(Context::Get().PhysicalDevice->GetHandle(), &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(Context::Get().GetPhysicalDevice().GetHandle(), &memProperties);
 
         for (uint32_t i = 0; i != memProperties.memoryTypeCount; ++i)
         {
