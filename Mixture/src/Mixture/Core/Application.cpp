@@ -11,7 +11,10 @@ namespace Mixture
 		MX_CORE_ASSERT(!s_Instance, "Application already exisits!");
 		s_Instance = this;
 
-        m_Window = Window::Create(WindowProps(name));
+		WindowProps props{};
+		props.Title = name;
+
+        m_Window = CreateScope<Window>(props);
         m_Window->SetEventCallback(MX_BIND_EVENT_FN(Application::OnEvent));
         
         m_AssetManager = CreateScope<AssetManager>();

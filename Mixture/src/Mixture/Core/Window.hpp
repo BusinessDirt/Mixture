@@ -7,6 +7,8 @@
 
 #include <vulkan/vulkan.h>
 
+struct GLFWwindow;
+
 namespace Mixture
 {
     struct WindowProps
@@ -25,23 +27,35 @@ namespace Mixture
 	public:
         using EventCallbackFn = std::function<void(Event&)>;
 
-		Window() = default;
-		virtual ~Window() = default;
+		Window(const WindowProps& props);
+		~Window();
 
 		Window(const Window&) = delete;
 		Window& operator=(const Window&) = delete;
 
-		virtual void OnUpdate() = 0;
+		void OnUpdate();
 
-		virtual uint32_t GetWidth() const = 0;
-		virtual uint32_t GetHeight() const = 0;
+		uint32_t GetWidth() const { return m_Data.Width; }
+		uint32_t GetHeight() const { return m_Data.Height; }
         float GetAspectRatio() const { return static_cast<float>(GetWidth()) / static_cast<float>(GetHeight()); }
-		virtual void* GetNativeWindow() const = 0;
+		GLFWwindow* GetNativeWindow() const { return m_WindowHandle; }
 
-        virtual void SetEventCallback(const EventCallbackFn& callback) = 0;
+        void SetEventCallback(const EventCallbackFn& callback) { m_Data.EventCallback = callback; }
         
-        virtual void CreateSurface(VkInstance instance, VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const = 0;
+        void CreateSurface(VkInstance instance, VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const;
 
-        static Scope<Window> Create(const WindowProps& props = WindowProps());
+	private:
+		struct WindowData
+		{
+			std::string Title;
+			unsigned int Width = 0, Height = 0;
+			bool VSync = true;
+			bool Minimized = false;
+			EventCallbackFn EventCallback;
+		};
+
+	private:
+		WindowData m_Data;
+		GLFWwindow* m_WindowHandle;
 	};
 }
