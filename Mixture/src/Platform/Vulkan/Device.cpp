@@ -10,7 +10,7 @@ namespace Mixture::Vulkan
 {
     Device::Device(const std::vector<const char*>& requiredLayers, const std::vector<const char*>& requiredExtensions)
     {
-        const auto& [Graphics, Present] = Context::Get().PhysicalDevice().GetQueueFamilyIndices();
+        const auto& [Graphics, Present] = Context::PhysicalDevice->GetQueueFamilyIndices();
         
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
         std::set uniqueQueueFamilies = { Graphics.value(), Present.value() };
@@ -39,7 +39,7 @@ namespace Mixture::Vulkan
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
         
-        VK_ASSERT(vkCreateDevice(Context::Get().PhysicalDevice().GetHandle(), &createInfo, nullptr, &m_Device), "Failed to create logical device!")
+        VK_ASSERT(vkCreateDevice(Context::PhysicalDevice->GetHandle(), &createInfo, nullptr, &m_Device), "Failed to create logical device!")
         
         // retrieve queues
         vkGetDeviceQueue(m_Device, Graphics.value(), 0, &m_GraphicsQueue);
@@ -60,7 +60,7 @@ namespace Mixture::Vulkan
         for (const VkFormat format : candidates)
         {
             VkFormatProperties props;
-            vkGetPhysicalDeviceFormatProperties(Context::Get().PhysicalDevice().GetHandle(), format, &props);
+            vkGetPhysicalDeviceFormatProperties(Context::PhysicalDevice->GetHandle(), format, &props);
 
             if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
             {
@@ -79,7 +79,7 @@ namespace Mixture::Vulkan
     uint32_t Device::FindMemoryType(const uint32_t typeFilter, const VkMemoryPropertyFlags properties)
     {
         VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(Context::Get().PhysicalDevice().GetHandle(), &memProperties);
+        vkGetPhysicalDeviceMemoryProperties(Context::PhysicalDevice->GetHandle(), &memProperties);
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
         {
             if (typeFilter & 1 << i && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)

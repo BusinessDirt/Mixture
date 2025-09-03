@@ -10,14 +10,14 @@ namespace Mixture::Vulkan
     WindowSurface::WindowSurface()
     {
         const Window& window = Application::Get().GetWindow();
-        window.CreateVulkanSurface(Context::Get().Instance().GetHandle(), nullptr, &m_Surface);
+        window.CreateVulkanSurface(Context::Instance->GetHandle(), nullptr, &m_Surface);
     }
 
     WindowSurface::~WindowSurface()
     {
         if (m_Surface)
         {
-            vkDestroySurfaceKHR(Context::Get().Instance().GetHandle(), m_Surface, nullptr);
+            vkDestroySurfaceKHR(Context::Instance->GetHandle(), m_Surface, nullptr);
             m_Surface = VK_NULL_HANDLE;
         }
     }

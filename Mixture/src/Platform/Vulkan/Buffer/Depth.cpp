@@ -16,7 +16,7 @@ namespace Mixture::Vulkan
 				for (const auto format : candidates)
 				{
 					VkFormatProperties props;
-					vkGetPhysicalDeviceFormatProperties(Context::Get().PhysicalDevice().GetHandle(), format, &props);
+					vkGetPhysicalDeviceFormatProperties(Context::PhysicalDevice->GetHandle(), format, &props);
 
 					if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) 
 						return format;

@@ -1,10 +1,7 @@
 #pragma once
 
-#include "Mixture/Core/Base.hpp"
-
-#include "Mixture/Renderer/LayerStack.hpp"
-#include "Mixture/Renderer/Shapes/ShapeRenderer.hpp"
-#include "Mixture/Renderer/ImGui/ImGuiRenderer.hpp"
+#include "Mixture/Core/LayerStack.hpp"
+#include "Mixture/Renderer/RendererAPI.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
 
@@ -13,19 +10,25 @@ namespace Mixture
 	class Renderer
 	{
 	public:
-		static void Init(const std::string& applicationName);
+		static void Initialize(const std::string& applicationName);
+		static void DestroyImGuiContext();
 		static void Shutdown();
 
-		static void OnFramebufferResize(uint32_t width, uint32_t height);
+		static void OnFramebufferResize(const uint32_t width, const uint32_t height) { s_RendererAPI->SetViewport(0, 0, width, height); }
+		static void SetClearColor(const glm::vec4& color) { s_RendererAPI->SetClearColor(color); }
 
-		static void DrawFrame(FrameInfo& frameInfo, const LayerStack& layerStack);
-        
-        static ShapeRenderer& Shapes() { return *s_ShapeRenderer; }
+		static void BeginFrame();
+		static void EndFrame();
+		
+		static void BeginSceneRenderpass();
+		static void EndSceneRenderpass();
 
+		static void BeginImGuiImpl();
+		static void RenderImGui();
+
+		static RendererAPI::API GetAPI() { return RendererAPI::GetAPI(); }
 	private:
-		static Vulkan::Context& s_VulkanContext;
-        
-        static Scope<ShapeRenderer> s_ShapeRenderer;
-        static Scope<ImGuiRenderer> s_ImGuiRenderer;
+		static Scope<RendererAPI> s_RendererAPI;
+		friend class RenderCommand;
 	};
 }

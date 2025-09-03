@@ -7,7 +7,7 @@ namespace Mixture::Vulkan
 {
     DescriptorPool::DescriptorPool()
     {
-        m_Device = Context::Get().Device().GetHandle();
+        m_Device = Context::Device->GetHandle();
         m_FramesInFlight = Swapchain::MAX_FRAMES_IN_FLIGHT;
         
         // ---- Create Global Pool ----

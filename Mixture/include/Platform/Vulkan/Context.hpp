@@ -13,59 +13,24 @@
 
 namespace Mixture::Vulkan
 {
-    #define VK_CONTEXT_MEMBER(type, varName) private: Scope<type> varName = nullptr; public: const type& type() { return *varName; }
-
-    class Context
+    struct Context
     {
-    public:
-        OPAL_NON_COPIABLE(Context);
-
-        static Context& Get();
-
-        Context() = default;
-        ~Context() = default;
+        static Scope<Instance> Instance;
+        static Scope<DebugMessenger> DebugMessenger;
+        static Scope<WindowSurface> WindowSurface;
+        static Scope<PhysicalDevice> PhysicalDevice;
+        static Scope<Device> Device;
+        static Scope<Swapchain> Swapchain;
+        static Scope<CommandPool> CommandPool;
+        static Scope<CommandBuffers> CommandBuffers;
+        static Scope<DescriptorPool> DescriptorPool;
         
-        void Initialize(const std::string& applicationName);
-        void Shutdown();
+        static uint32_t CurrentImageIndex;
+        static VkCommandBuffer CurrentCommandBuffer;
 
-        void OnFramebufferResize(uint32_t width, uint32_t height);
+        static Scope<Renderpass> ImGuiRenderpass;
+        static Vector<Scope<FrameBuffer>> ImGuiFrameBuffers;
 
-        void WaitForDevice() const;
-        VkCommandBuffer BeginFrame();
-        void BeginRenderpass(VkCommandBuffer commandBuffer) const;
-        void EndRenderpass(VkCommandBuffer commandBuffer) const;
-        void EndFrame(VkCommandBuffer commandBuffer) const;
-        void SubmitFrame(const std::vector<VkCommandBuffer>& commandBuffers);
-        
-        OPAL_NODISCARD uint32_t CurrentImageIndex() const { return m_CurrentImageIndex; }
-        OPAL_NODISCARD uint32_t* CurrentImageIndexPtr() { return &m_CurrentImageIndex; }
-
-    private:
-        OPAL_NODISCARD VkCommandBuffer GetCurrentCommandBuffer() const
-        {
-            OPAL_CORE_ASSERT(m_IsFrameStarted, "Cannot get command buffer when frame is not in progress!")
-            return m_CommandBuffers->Get(m_Swapchain->GetCurrentFrameIndex());
-        }
-
-        void RebuildSwapchain();
-
-        uint32_t m_CurrentImageIndex = 0;
-        VK_CONTEXT_MEMBER(Instance, m_Instance)
-        VK_CONTEXT_MEMBER(DebugMessenger, m_DebugMessenger)
-        VK_CONTEXT_MEMBER(WindowSurface, m_WindowSurface)
-        VK_CONTEXT_MEMBER(PhysicalDevice, m_PhysicalDevice)
-        VK_CONTEXT_MEMBER(Device, m_Device)
-        VK_CONTEXT_MEMBER(Swapchain, m_Swapchain)
-        VK_CONTEXT_MEMBER(CommandPool, m_CommandPool)
-        VK_CONTEXT_MEMBER(CommandBuffers, m_CommandBuffers)
-        VK_CONTEXT_MEMBER(DescriptorPool, m_DescriptorPool)
-
-    private:
-        bool m_IsFrameStarted = false;
-        bool m_FramebufferResized = false;
-
-    private:
-        static Scope<Context> s_Instance;
-        static std::mutex s_Mutex;
+        static void WaitForDevice() { vkDeviceWaitIdle(Device->GetHandle()); }
     };
 }

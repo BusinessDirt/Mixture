@@ -3,24 +3,24 @@
 #include "Platform/Vulkan/Base.hpp"
 #include "Platform/Vulkan/Buffer/Buffer.hpp"
 
-#include "Mixture/Renderer/RendererInfo.hpp"
+#include "Mixture/Renderer/Buffer.hpp"
 
 namespace Mixture::Vulkan
 {
-    class IndexBuffer
+    class IndexBuffer final : public Mixture::IndexBuffer
     {
     public:
         OPAL_NON_COPIABLE(IndexBuffer);
         
         explicit IndexBuffer(const std::vector<uint32_t>& indices);
         IndexBuffer();
-        ~IndexBuffer();
+        ~IndexBuffer() override;
 
-        void SetData(const std::vector<uint32_t>& indices, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+        void SetData(const std::vector<uint32_t>& indices) override;
         
-        void Bind(VkCommandBuffer commandBuffer) const;
+        void Bind() const override;
         
-        OPAL_NODISCARD uint32_t GetIndexCount() const { return m_IndexCount; }
+        OPAL_NODISCARD uint32_t GetCount() const override { return m_IndexCount; }
 
     private:
         uint32_t m_IndexCount = 0;

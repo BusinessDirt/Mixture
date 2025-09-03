@@ -2,27 +2,29 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Platform/Vulkan/Buffer/Uniform.hpp"
+
 namespace Mixture
 {
     void MainLayer::OnAttach()
     {
-        std::vector<Vertex> vertices = {
+        const std::vector<Vertex> vertices = {
             {.Position = { -1.0f, -1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f } },
             {.Position = {  1.0f, -1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f } },
             {.Position = {  1.0f,  1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f } },
             {.Position = { -1.0f,  1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f } }
         };
-        
-        std::vector<uint32_t> indices = {
+
+        const std::vector<uint32_t> indices = {
             0, 1, 2, 0, 2, 3
         };
         
-        m_GraphicsPipeline = CreateScope<Vulkan::GraphicsPipeline>("MixtureBuiltin.Object");
-        m_VertexBuffer = CreateScope<Vulkan::VertexBuffer<Vertex>>(vertices);
-        m_IndexBuffer = CreateScope<Vulkan::IndexBuffer>(indices);
+        m_GraphicsPipeline = GraphicsPipeline::Create("MixtureBuiltin.Object");
+        m_VertexBuffer = VertexBuffer::Create(vertices.data(), sizeof(Vertex), vertices.size());
+        m_IndexBuffer = IndexBuffer::Create(indices);
         
         m_UniformBufferObject = {};
-        m_UniformBuffer = CreateScope<Vulkan::UniformBuffer>(sizeof(UniformBufferObject));
+        m_UniformBuffer = UniformBuffer::Create(sizeof(UniformBufferObject));
     }
 
     void MainLayer::OnDetach()
@@ -44,11 +46,11 @@ namespace Mixture
 
     void MainLayer::OnRender(FrameInfo& frameInfo)
     {
-        m_GraphicsPipeline->Bind(frameInfo.CommandBuffer);
-        m_VertexBuffer->Bind(frameInfo.CommandBuffer);
-        m_IndexBuffer->Bind(frameInfo.CommandBuffer);
+        m_GraphicsPipeline->Bind();
+        m_VertexBuffer->Bind();
+        m_IndexBuffer->Bind();
         
-        DrawCommand::DrawIndexed(frameInfo.CommandBuffer, m_IndexBuffer->GetIndexCount());
+        RenderCommand::DrawIndexed(m_IndexBuffer);
     }
 
     void MainLayer::OnRenderImGui(FrameInfo& frameInfo)

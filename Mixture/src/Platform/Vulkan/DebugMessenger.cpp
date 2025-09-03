@@ -52,10 +52,10 @@ namespace Mixture::Vulkan
         PopulateCreateInfo(createInfo);
 
         const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(  // NOLINT(clang-diagnostic-cast-function-type-strict)
-            vkGetInstanceProcAddr(Context::Get().Instance().GetHandle(), "vkCreateDebugUtilsMessengerEXT"));
+            vkGetInstanceProcAddr(Context::Instance->GetHandle(), "vkCreateDebugUtilsMessengerEXT"));
         if (func)
         {
-            func(Context::Get().Instance().GetHandle(), &createInfo, nullptr, &m_DebugMessenger);
+            func(Context::Instance->GetHandle(), &createInfo, nullptr, &m_DebugMessenger);
         }
         else
         {
@@ -66,9 +66,9 @@ namespace Mixture::Vulkan
     DebugMessenger::~DebugMessenger()
     {
         if (const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(  // NOLINT(clang-diagnostic-cast-function-type-strict)
-            Context::Get().Instance().GetHandle(), "vkDestroyDebugUtilsMessengerEXT")))
+            Context::Instance->GetHandle(), "vkDestroyDebugUtilsMessengerEXT")))
         {
-            func(Context::Get().Instance().GetHandle(), m_DebugMessenger, nullptr);
+            func(Context::Instance->GetHandle(), m_DebugMessenger, nullptr);
         }
     }
 

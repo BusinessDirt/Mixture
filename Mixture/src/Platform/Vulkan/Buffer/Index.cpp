@@ -1,11 +1,13 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Buffer/Index.hpp"
 
+#include "Platform/Vulkan/Command/SingleTime.hpp"
+
 namespace Mixture::Vulkan
 {
     IndexBuffer::IndexBuffer(const std::vector<uint32_t>& indices)
     {
-        SetData(indices, VK_NULL_HANDLE);
+        IndexBuffer::SetData(indices);
     }
 
     IndexBuffer::IndexBuffer() : m_IndexBuffer(VK_NULL_HANDLE) {}
@@ -15,8 +17,11 @@ namespace Mixture::Vulkan
         m_IndexBuffer = nullptr;
     }
 
-    void IndexBuffer::SetData(const std::vector<uint32_t>& indices, const VkCommandBuffer commandBuffer)
+    void IndexBuffer::SetData(const std::vector<uint32_t>& indices)
     {
+        const bool validCommandBuffer = Context::CurrentCommandBuffer != VK_NULL_HANDLE;
+        const VkCommandBuffer commandBuffer = validCommandBuffer ? Context::CurrentCommandBuffer : SingleTimeCommand::Begin();
+        
         m_IndexCount = static_cast<uint32_t>(indices.size());
         if (m_IndexCount == 0) return;
 
@@ -33,10 +38,12 @@ namespace Mixture::Vulkan
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         Buffer::Copy(stagingBuffer.GetHandle(), m_IndexBuffer->GetHandle(), bufferSize, commandBuffer);
+
+        if (!validCommandBuffer) SingleTimeCommand::End(commandBuffer);
     }
 
-    void IndexBuffer::Bind(const VkCommandBuffer commandBuffer) const
+    void IndexBuffer::Bind() const
     {
-        vkCmdBindIndexBuffer(commandBuffer, m_IndexBuffer->GetHandle(), 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindIndexBuffer(Context::CurrentCommandBuffer, m_IndexBuffer->GetHandle(), 0, VK_INDEX_TYPE_UINT32);
     }
 }

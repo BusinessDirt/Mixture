@@ -5,20 +5,21 @@
 #include "Platform/Vulkan/Descriptor/Set.hpp"
 
 #include "Mixture/Renderer/RendererInfo.hpp"
+#include "Mixture/Renderer/Pipeline.hpp"
 
 namespace Mixture::Vulkan
 {
-    class GraphicsPipeline
+    class GraphicsPipeline final : public Mixture::GraphicsPipeline
     {
     public:
         OPAL_NON_COPIABLE(GraphicsPipeline);
 
         explicit GraphicsPipeline(const std::string& shaderName);
-        ~GraphicsPipeline();
+        ~GraphicsPipeline() override;
 
-        void Bind(VkCommandBuffer commandBuffer) const;
-        void PushConstants(VkCommandBuffer commandBuffer, const void* pValues) const;
-        void UpdateGlobalUniformBuffer(const VkDescriptorBufferInfo* bufferInfo) const;
+        void Bind() const override;
+        void PushConstants(const void* pValues) const override;
+        void UpdateGlobalUniformBuffer(const void* bufferInfo) const override;
 
     private:
         VULKAN_HANDLE(VkPipeline, m_GraphicsPipeline);

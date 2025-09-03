@@ -2,9 +2,6 @@
 
 #include <filesystem>
 
-#include "Opal/Base.hpp"
-#include "Opal/Log.hpp"
-
 #ifdef OPAL_ENABLE_ASSERTS
 
     // Alternatively we could use the same "default" message for both "WITH_MSG" and "NO_MSG" and

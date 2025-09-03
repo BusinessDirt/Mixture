@@ -8,7 +8,7 @@ namespace Mixture::Vulkan
     DescriptorSetLayout::DescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings)
         : m_Bindings(bindings)
     {
-        m_Device = Context::Get().Device().GetHandle();
+        m_Device = Context::Device->GetHandle();
         
         VkDescriptorSetLayoutCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

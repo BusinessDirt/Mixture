@@ -7,21 +7,21 @@ namespace Mixture::Vulkan
 {
     CommandPool::CommandPool()
     {
-        const auto [Graphics, Present] = Context::Get().PhysicalDevice().GetQueueFamilyIndices();
+        const auto [Graphics, Present] = Context::PhysicalDevice->GetQueueFamilyIndices();
 
         VkCommandPoolCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         createInfo.queueFamilyIndex = Graphics.value();
 
-        VK_ASSERT(vkCreateCommandPool(Context::Get().Device().GetHandle(), &createInfo, nullptr, &m_CommandPool), "Failed to create VkCommandPool")
+        VK_ASSERT(vkCreateCommandPool(Context::Device->GetHandle(), &createInfo, nullptr, &m_CommandPool), "Failed to create VkCommandPool")
     }
 
     CommandPool::~CommandPool()
     {
         if (m_CommandPool)
         {
-            vkDestroyCommandPool(Context::Get().Device().GetHandle(), m_CommandPool, nullptr);
+            vkDestroyCommandPool(Context::Device->GetHandle(), m_CommandPool, nullptr);
             m_CommandPool = nullptr;
         }
     }

@@ -6,7 +6,7 @@
 namespace Mixture::Vulkan
 {
     DescriptorSet::DescriptorSet(const VkDescriptorPool pool, const Ref<DescriptorSetLayout>& layout)
-        : m_Layout(layout), m_Device(Context::Get().Device().GetHandle())
+        : m_Layout(layout), m_Device(Context::Device->GetHandle())
     {
         const VkDescriptorSetLayout layoutHandle = m_Layout->GetHandle();
         VkDescriptorSetAllocateInfo allocInfo{};

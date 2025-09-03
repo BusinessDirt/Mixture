@@ -27,7 +27,7 @@
 #define OPAL_EXPAND_MACRO(x) x
 #define OPAL_STRINGIFY_MACRO(x) #x
 
-#define BIT(x) (1 << x)
+#define BIT(x) (1 << (x))
 #define OPAL_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 #define OPAL_NON_COPIABLE(name) name(const name&) = delete; \

@@ -23,7 +23,7 @@ namespace Mixture::Vulkan
         m_Buffer->Unmap();
     }
 
-    const VkDescriptorBufferInfo* UniformBuffer::GetDescriptorInfo(const uint32_t index)
+    const void* UniformBuffer::GetDescriptorInfo(const uint32_t index)
     {
         const uint32_t size = static_cast<uint32_t>(m_Buffer->GetInstanceSize());
         m_DescriptorInfo.buffer = m_Buffer->GetHandle();

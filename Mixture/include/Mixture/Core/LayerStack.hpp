@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Mixture/Renderer/Layer.hpp"
+#include "Mixture/Core/Layer.hpp"
 
 namespace Mixture
 {
@@ -10,16 +10,14 @@ namespace Mixture
         OPAL_NON_COPIABLE(LayerStack);
         
         LayerStack() = default;
-        ~LayerStack();
+        ~LayerStack() = default;
 
-        void Update(FrameInfo& frameInfo) const;
-        void Render(FrameInfo& frameInfo) const;
-        void RenderImGui(FrameInfo& frameInfo) const;
-        
-        void OnEvent(Event& e) const;
+        void Shutdown() const;
 
         void PushLayer(Layer* layer);
+        void PushOverlay(Layer* layer);
         void PopLayer(Layer* layer);
+        void PopOverlay(Layer* layer);
 
         std::vector<Layer*>::iterator begin() { return m_Layers.begin(); }
         std::vector<Layer*>::iterator end() { return m_Layers.end(); }
@@ -33,5 +31,6 @@ namespace Mixture
 
     private:
         std::vector<Layer*> m_Layers;
+        unsigned int m_LayerInsertIndex = 0;
     };
 }

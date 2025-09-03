@@ -26,7 +26,7 @@ namespace Mixture::Vulkan
 
     void Swapchain::Init(const bool debug)
     {
-        const auto [Capabilities, Formats, PresentModes] = Context::Get().PhysicalDevice().QuerySwapchainSupport();
+        const auto [Capabilities, Formats, PresentModes] = Context::PhysicalDevice->QuerySwapchainSupport();
         auto [format, colorSpace] = ChooseSurfaceFormat(Formats);
         const VkPresentModeKHR presentMode = ChoosePresentMode(PresentModes);
         VkExtent2D extent = ChooseExtent(Capabilities);
@@ -39,7 +39,7 @@ namespace Mixture::Vulkan
         {
             VkSwapchainCreateInfoKHR createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-            createInfo.surface = Context::Get().WindowSurface().GetHandle();
+            createInfo.surface = Context::WindowSurface->GetHandle();
             createInfo.minImageCount = imageCount;
             createInfo.imageFormat = format;
             createInfo.imageColorSpace = colorSpace;
@@ -51,7 +51,7 @@ namespace Mixture::Vulkan
             createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 #endif
 
-            const auto [Graphics, Present] = Context::Get().PhysicalDevice().GetQueueFamilyIndices();
+            const auto [Graphics, Present] = Context::PhysicalDevice->GetQueueFamilyIndices();
             const uint32_t queueFamilyIndices[] = { Graphics.value(), Present.value() };
 
             if (Graphics != Present)
@@ -74,7 +74,7 @@ namespace Mixture::Vulkan
 
             createInfo.oldSwapchain = m_OldSwapchain ? m_OldSwapchain->m_Swapchain : VK_NULL_HANDLE;
 
-            VK_ASSERT(vkCreateSwapchainKHR(Context::Get().Device().GetHandle(), &createInfo, nullptr, &m_Swapchain),
+            VK_ASSERT(vkCreateSwapchainKHR(Context::Device->GetHandle(), &createInfo, nullptr, &m_Swapchain),
                       "Failed to create Swapchain!")
 
             if (debug)
@@ -91,9 +91,9 @@ namespace Mixture::Vulkan
         // allowed to create a swap chain with more. That's why we'll first query the final number of
         // images with vkGetSwapchainImagesKHR, then resize the container and finally call it again to
         // retrieve the handles.
-        vkGetSwapchainImagesKHR(Context::Get().Device().GetHandle(), m_Swapchain, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(Context::Device->GetHandle(), m_Swapchain, &imageCount, nullptr);
         std::vector<VkImage> images(imageCount);
-        vkGetSwapchainImagesKHR(Context::Get().Device().GetHandle(), m_Swapchain, &imageCount, images.data());
+        vkGetSwapchainImagesKHR(Context::Device->GetHandle(), m_Swapchain, &imageCount, images.data());
 
         m_Extent = extent;
         m_Renderpass = CreateScope<Renderpass>(format, true,
@@ -125,7 +125,7 @@ namespace Mixture::Vulkan
 
         if (m_Swapchain)
         {
-            vkDestroySwapchainKHR(Context::Get().Device().GetHandle(), m_Swapchain, nullptr);
+            vkDestroySwapchainKHR(Context::Device->GetHandle(), m_Swapchain, nullptr);
             m_Swapchain = VK_NULL_HANDLE;
         }
 
@@ -144,13 +144,13 @@ namespace Mixture::Vulkan
     {
         m_InFlightFences[m_CurrentFrame].Wait(std::numeric_limits<uint64_t>::max());
         
-        return vkAcquireNextImageKHR(Context::Get().Device().GetHandle(), m_Swapchain, std::numeric_limits<uint64_t>::max(),
-            m_ImageAvailableSemaphores[m_CurrentFrame].GetHandle(), VK_NULL_HANDLE, Context::Get().CurrentImageIndexPtr());
+        return vkAcquireNextImageKHR(Context::Device->GetHandle(), m_Swapchain, std::numeric_limits<uint64_t>::max(),
+            m_ImageAvailableSemaphores[m_CurrentFrame].GetHandle(), VK_NULL_HANDLE, &Context::CurrentImageIndex);
     }
 
     VkResult Swapchain::SubmitCommandBuffers(const std::vector<VkCommandBuffer>& commandBuffers)
     {
-        const uint32_t currentImageIndex = Context::Get().CurrentImageIndex();
+        const uint32_t currentImageIndex = Context::CurrentImageIndex;
         if (m_ImagesInFlight[currentImageIndex] != nullptr)
         {
             m_ImagesInFlight[currentImageIndex]->Wait(std::numeric_limits<uint64_t>::max());
@@ -172,7 +172,7 @@ namespace Mixture::Vulkan
         submitInfo.pCommandBuffers = commandBuffers.data();
 
         m_InFlightFences[m_CurrentFrame].Reset();
-        VK_ASSERT(vkQueueSubmit(Context::Get().Device().GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame].GetHandle()),
+        VK_ASSERT(vkQueueSubmit(Context::Device->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame].GetHandle()),
                   "Failed to submit draw command buffer!")
 
         const VkSwapchainKHR swapChains[] = { m_Swapchain };
@@ -184,7 +184,7 @@ namespace Mixture::Vulkan
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &currentImageIndex;
 
-        const VkResult result = vkQueuePresentKHR(Context::Get().Device().GetPresentQueue(), &presentInfo);
+        const VkResult result = vkQueuePresentKHR(Context::Device->GetPresentQueue(), &presentInfo);
         m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
         return result;
     }

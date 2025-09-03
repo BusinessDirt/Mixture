@@ -15,7 +15,8 @@ namespace Mixture
 
         OPAL_NODISCARD float Elapsed() const
         {
-            return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - m_Start).count() * 0.001f * 0.001f * 0.001f;
+            const auto time = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - m_Start);
+            return static_cast<float>(time.count()) * 0.001f * 0.001f * 0.001f;
         }
 
         OPAL_NODISCARD float ElapsedMillis() const

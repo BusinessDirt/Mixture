@@ -1,59 +1,52 @@
 #include "mxpch.hpp"
 #include "Mixture/Renderer/Renderer.hpp"
 
-#include "Mixture/Renderer/RendererInfo.hpp"
-
 namespace Mixture
 {
-    Vulkan::Context& Renderer::s_VulkanContext = Vulkan::Context::Get();
-
-    Scope<ShapeRenderer> Renderer::s_ShapeRenderer = CreateScope<ShapeRenderer>();
-    Scope<ImGuiRenderer> Renderer::s_ImGuiRenderer = CreateScope<ImGuiRenderer>();
-
-    void Renderer::Init(const std::string& applicationName)
+    Scope<RendererAPI> Renderer::s_RendererAPI = RendererAPI::Create();
+    
+    void Renderer::Initialize(const std::string& applicationName)
     {
-        s_VulkanContext.Initialize(applicationName);
-        s_ImGuiRenderer->Initialize();
+        s_RendererAPI->Initialize(applicationName);
+    }
+
+    void Renderer::DestroyImGuiContext()
+    {
+        s_RendererAPI->DestroyImGuiContext();
     }
 
     void Renderer::Shutdown()
     {
-        s_ImGuiRenderer->Shutdown();
-        s_VulkanContext.Shutdown();
+        s_RendererAPI->Shutdown();
     }
 
-    void Renderer::OnFramebufferResize(const uint32_t width, const uint32_t height)
+    void Renderer::BeginFrame()
     {
-        s_VulkanContext.OnFramebufferResize(width, height);
-        
-        s_ImGuiRenderer->OnFramebufferResize(width, height);
+        s_RendererAPI->BeginFrame();
     }
 
-    void Renderer::DrawFrame(FrameInfo& frameInfo, const LayerStack& layerStack)
+    void Renderer::EndFrame()
     {
-        std::vector<VkCommandBuffer> commandBuffers{};
+        s_RendererAPI->EndFrame();
+    }
 
-        if (const VkCommandBuffer commandBuffer = s_VulkanContext.BeginFrame())
-        {
-            frameInfo.CommandBuffer = commandBuffer;
-            
-            s_VulkanContext.BeginRenderpass(commandBuffer);
-            layerStack.Render(frameInfo);
-            s_VulkanContext.EndRenderpass(commandBuffer);
-            
-            s_ImGuiRenderer->BeginFrame();
-            layerStack.RenderImGui(frameInfo);
-            s_ImGuiRenderer->EndFrame();
-            
-            s_ImGuiRenderer->BeginRenderpass(commandBuffer);
-            s_ImGuiRenderer->Draw(commandBuffer);
-            s_ImGuiRenderer->EndRenderpass(commandBuffer);
-            
-            s_VulkanContext.EndFrame(commandBuffer);
-            commandBuffers.push_back(commandBuffer);
-        }
+    void Renderer::BeginSceneRenderpass()
+    {
+        s_RendererAPI->BeginSceneRenderpass();
+    }
 
-        s_VulkanContext.SubmitFrame(commandBuffers);
-        s_VulkanContext.WaitForDevice();
+    void Renderer::EndSceneRenderpass()
+    {
+        s_RendererAPI->EndSceneRenderpass();
+    }
+
+    void Renderer::BeginImGuiImpl()
+    {
+        s_RendererAPI->BeginImGuiImpl();
+    }
+
+    void Renderer::RenderImGui()
+    {
+        s_RendererAPI->RenderImGui();
     }
 }

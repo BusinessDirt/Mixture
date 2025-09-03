@@ -1,12 +1,15 @@
 #pragma once
 
 #include "Mixture/Assets/AssetManager.hpp"
+
 #include "Mixture/Core/Window.hpp"
+#include "Mixture/Core/LayerStack.hpp"
+
+#include "Mixture/ImGui/ImGuiLayer.hpp"
 
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Events/ApplicationEvent.hpp"
 
-#include "Mixture/Renderer/LayerStack.hpp"
 #include "Mixture/Renderer/RendererInfo.hpp"
 
 int Entrypoint(int argc, char** argv);
@@ -41,20 +44,20 @@ namespace Mixture
         OPAL_NODISCARD const Window& GetWindow() const { return *m_Window; }
         OPAL_NODISCARD const AssetManager& GetAssetManager() const { return *m_AssetManager; }
         
-        void PushLayer(Layer* layer) const { m_LayerStack->PushLayer(layer); }
-        void PopLayer(Layer* layer) const { m_LayerStack->PopLayer(layer); }
+        void PushLayer(Layer* layer) { m_LayerStack.PushLayer(layer); }
+        void PushOverlay(Layer* layer) { m_LayerStack.PushOverlay(layer); }
 
     private:
         void Run() const;
         bool OnWindowClose(WindowCloseEvent& e);
-        bool OnFramebufferResize(const FramebufferResizeEvent& e);
+        static bool OnFramebufferResize(const FramebufferResizeEvent& e);
 
     private:
+        bool m_Running = true;
+        LayerStack m_LayerStack;
         Scope<Window> m_Window;
         Scope<AssetManager> m_AssetManager;
-        Scope<LayerStack> m_LayerStack;
         
-        bool m_Running = true;
     private:
         static Application* s_Instance;
         friend int ::Entrypoint(int argc, char** argv);

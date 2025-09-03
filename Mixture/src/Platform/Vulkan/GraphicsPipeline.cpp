@@ -12,7 +12,7 @@ namespace Mixture::Vulkan
 {
     GraphicsPipeline::GraphicsPipeline(const std::string& shaderName)
     {
-        const Swapchain& swapchain = Context::Get().Swapchain();
+        const Swapchain& swapchain = *Context::Swapchain;
 
         ShaderCompiler::Flags flags{};
         flags.PipelineType = ShaderCompiler::Graphics;
@@ -135,7 +135,7 @@ namespace Mixture::Vulkan
             pipelineLayoutInfo.pPushConstantRanges = &shader.PushConstant;
         }
 
-        VK_ASSERT(vkCreatePipelineLayout(Context::Get().Device().GetHandle(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout),
+        VK_ASSERT(vkCreatePipelineLayout(Context::Device->GetHandle(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout),
                   "Failed to create Graphics Pipeline Layout!")
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -156,13 +156,13 @@ namespace Mixture::Vulkan
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
         pipelineInfo.basePipelineIndex = -1;
 
-        VK_ASSERT(vkCreateGraphicsPipelines(Context::Get().Device().GetHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline),
+        VK_ASSERT(vkCreateGraphicsPipelines(Context::Device->GetHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline),
                   "Failed to create Graphics Pipeline")
         
         if (!m_SetLayouts.empty())
         {
             // Define the global set to be set=0
-            m_GlobalSet = CreateScope<DescriptorSet>(Context::Get().DescriptorPool().AllocateGlobalSet(m_SetLayouts[0]));
+            m_GlobalSet = CreateScope<DescriptorSet>(Context::DescriptorPool->AllocateGlobalSet(m_SetLayouts[0]));
         }
     }
 
@@ -170,31 +170,31 @@ namespace Mixture::Vulkan
     {
         if (m_GraphicsPipeline)
         {
-            vkDestroyPipeline(Context::Get().Device().GetHandle(), m_GraphicsPipeline, nullptr);
+            vkDestroyPipeline(Context::Device->GetHandle(), m_GraphicsPipeline, nullptr);
             m_GraphicsPipeline = nullptr;
         }
 
         if (m_PipelineLayout)
         {
-            vkDestroyPipelineLayout(Context::Get().Device().GetHandle(), m_PipelineLayout, nullptr);
+            vkDestroyPipelineLayout(Context::Device->GetHandle(), m_PipelineLayout, nullptr);
             m_PipelineLayout = nullptr;
         }
     }
 
-    void GraphicsPipeline::Bind(const VkCommandBuffer commandBuffer) const
+    void GraphicsPipeline::Bind() const
     {
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+        vkCmdBindPipeline(Context::CurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 
         const std::array sets = { m_GlobalSet->GetHandle() };
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0,
+        vkCmdBindDescriptorSets(Context::CurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0,
                                 sets.size(), sets.data(), 0, nullptr);
     }
 
-    void GraphicsPipeline::PushConstants(const VkCommandBuffer commandBuffer, const void* pValues) const
+    void GraphicsPipeline::PushConstants(const void* pValues) const
     {
         if (m_PushConstant.size > 0)
         {
-            vkCmdPushConstants(commandBuffer, m_PipelineLayout, m_PushConstant.stageFlags,
+            vkCmdPushConstants(Context::CurrentCommandBuffer, m_PipelineLayout, m_PushConstant.stageFlags,
                 m_PushConstant.offset, m_PushConstant.size, pValues);
         }
         else
@@ -203,7 +203,7 @@ namespace Mixture::Vulkan
         } 
     }
 
-    void GraphicsPipeline::UpdateGlobalUniformBuffer(const VkDescriptorBufferInfo* bufferInfo) const
+    void GraphicsPipeline::UpdateGlobalUniformBuffer(const void* bufferInfo) const
     {
         if (!m_GlobalSet->GetHandle())
         {
@@ -212,7 +212,7 @@ namespace Mixture::Vulkan
         }
         
         // Binding 0 is inferred here
-        m_GlobalSet->UpdateBuffer(0, bufferInfo);
+        m_GlobalSet->UpdateBuffer(0, static_cast<const VkDescriptorBufferInfo*>(bufferInfo));
     }
 
 }

@@ -16,13 +16,13 @@ namespace Mixture::Vulkan
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
 
-        VK_ASSERT(vkAllocateCommandBuffers(Context::Get().Device().GetHandle(), &allocInfo, m_CommandBuffers.data()),
+        VK_ASSERT(vkAllocateCommandBuffers(Context::Device->GetHandle(), &allocInfo, m_CommandBuffers.data()),
                   "Failed to allocate VkCommandBuffer")
     }
 
     CommandBuffers::~CommandBuffers()
     {
-        vkFreeCommandBuffers(Context::Get().Device().GetHandle(), m_CommandPool, static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
+        vkFreeCommandBuffers(Context::Device->GetHandle(), m_CommandPool, static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
         m_CommandBuffers.clear();
     }
 }

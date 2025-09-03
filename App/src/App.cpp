@@ -5,7 +5,7 @@
 
 namespace Mixture
 {
-    class ExampleApp : public Application
+    class ExampleApp final : public Application
     {
     public:
         explicit ExampleApp(ApplicationCommandLineArgs args)
@@ -17,7 +17,7 @@ namespace Mixture
 
     Application* CreateApplication(ApplicationCommandLineArgs args)
     {
-        ExampleApp* app = new ExampleApp(args);
+        const auto app = new ExampleApp(args);
         return app;
     }
 }

@@ -10,9 +10,10 @@ namespace Mixture
         glm::mat4 Projection;
     };
 
-    class MainLayer : public Layer
+    class MainLayer final : public Layer
     {
     public:
+        OPAL_NON_COPIABLE(MainLayer);
         MainLayer() : Layer("MainLayer") {}
         ~MainLayer() override = default;
 
@@ -26,12 +27,13 @@ namespace Mixture
         void OnEvent(Event& event) override;
         
     private:
-        Scope<Vulkan::GraphicsPipeline> m_GraphicsPipeline;
-        Scope<Vulkan::VertexBuffer<Vertex>> m_VertexBuffer;
-        Scope<Vulkan::IndexBuffer> m_IndexBuffer;
+        Ref<GraphicsPipeline> m_GraphicsPipeline;
+        Ref<VertexBuffer> m_VertexBuffer;
+        Ref<IndexBuffer> m_IndexBuffer;
         
-        Scope<Vulkan::UniformBuffer> m_UniformBuffer;
+        Ref<UniformBuffer> m_UniformBuffer;
         UniformBufferObject m_UniformBufferObject{};
+        
         float m_Z = 1.0f;
         
         bool m_ViewportFocused = false;

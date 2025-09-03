@@ -5,6 +5,7 @@
 #include "Mixture/Core/Time.hpp"
 
 #include <Opal/Base.hpp>
+#include <ranges>
 
 namespace Mixture
 {
@@ -24,15 +25,14 @@ namespace Mixture
 
         m_AssetManager = CreateScope<AssetManager>();
         
-        Renderer::Init(name);
-        
-        m_LayerStack = CreateScope<LayerStack>();
+        PushOverlay(new ImGuiLayer());
+        Renderer::Initialize(name);
     }
 
     Application::~Application()
     {
-        m_LayerStack.reset();
-        
+        Renderer::DestroyImGuiContext();
+        m_LayerStack.Shutdown(); 
         Renderer::Shutdown();
         
         m_AssetManager.reset();
@@ -51,30 +51,45 @@ namespace Mixture
         
         while (m_Running)
         {
+            m_Window->OnUpdate();
+            
             // Update information about current frame
             frameInfo.FrameTime = frameTimer.Tick();
-            frameInfo.CommandBuffer = VK_NULL_HANDLE;
             
-            // Update everything
-            m_Window->OnUpdate();
-            m_LayerStack->Update(frameInfo);
+            // Update Layers
+            for (Layer* layer : m_LayerStack) layer->OnUpdate(frameInfo);
 
-            // Render after updating
-            Renderer::DrawFrame(frameInfo, *m_LayerStack);
+            // Draw to ImGui
+            Renderer::BeginImGuiImpl();
+            ImGuiLayer::Begin();
+            for (Layer* layer : m_LayerStack) layer->OnRenderImGui(frameInfo);
+            ImGuiLayer::End();
             
+            Renderer::BeginFrame();
+            {
+                // Draw Scene
+                Renderer::BeginSceneRenderpass();
+                for (Layer* layer : m_LayerStack) layer->OnRender(frameInfo);
+                Renderer::EndSceneRenderpass();
+
+                // Draw UI
+                Renderer::RenderImGui();
+            }
+            Renderer::EndFrame();
         }
     }
 
     void Application::OnEvent(Event& event)
     {
-        // Dispatch events to specific handlers
         EventDispatcher dispatcher(event);
-
-        // Handle window close and resize event
         dispatcher.Dispatch<WindowCloseEvent>(OPAL_BIND_EVENT_FN(OnWindowClose));
         dispatcher.Dispatch<FramebufferResizeEvent>(OPAL_BIND_EVENT_FN(OnFramebufferResize));
 
-        m_LayerStack->OnEvent(event);
+        for (const auto& it : std::ranges::reverse_view(m_LayerStack))
+        {
+            if (event.Handled) break;
+            it->OnEvent(event);
+        }
     }
 
     bool Application::OnWindowClose(WindowCloseEvent& e)

@@ -11,7 +11,7 @@ namespace Mixture::Vulkan
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
-        VK_ASSERT(vkCreateFence(Context::Get().Device().GetHandle(), &fenceInfo, nullptr, &m_Fence),
+        VK_ASSERT(vkCreateFence(Context::Device->GetHandle(), &fenceInfo, nullptr, &m_Fence),
                   "Failed to create VkFence!")
     }
 
@@ -19,7 +19,7 @@ namespace Mixture::Vulkan
     {
         if (m_Fence)
         {
-            vkDestroyFence(Context::Get().Device().GetHandle(), m_Fence, nullptr);
+            vkDestroyFence(Context::Device->GetHandle(), m_Fence, nullptr);
             m_Fence = nullptr;
         }
     }
@@ -43,11 +43,11 @@ namespace Mixture::Vulkan
 
     void Fence::Wait(const uint64_t timeout) const
     {
-        vkWaitForFences(Context::Get().Device().GetHandle(), 1, &m_Fence, VK_TRUE, timeout);
+        vkWaitForFences(Context::Device->GetHandle(), 1, &m_Fence, VK_TRUE, timeout);
     }
 
     void Fence::Reset() const
     {
-        vkResetFences(Context::Get().Device().GetHandle(), 1, &m_Fence);
+        vkResetFences(Context::Device->GetHandle(), 1, &m_Fence);
     }
 }

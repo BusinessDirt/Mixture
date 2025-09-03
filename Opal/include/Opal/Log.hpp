@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Opal/Base.hpp"
-
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
