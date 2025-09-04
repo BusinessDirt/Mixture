@@ -1,5 +1,5 @@
 #include "mxpch.hpp"
-#include "Mixture/Assets/AssetManager.hpp"
+#include "Mixture/Core/AssetManager.hpp"
 
 namespace Mixture
 {
@@ -25,11 +25,18 @@ namespace Mixture
 	{
 		const std::filesystem::path relativePath = Util::GetProjectRootPath() / "App" / "assets";
 		m_AssetsPath = std::filesystem::absolute(relativePath);
+
+		Jasper::ShaderManager::Settings shaderManagerSettings{};
+		shaderManagerSettings.Debug = true;
+		shaderManagerSettings.Environment = Jasper::ShaderCompiler::TargetEnvironment::Vulkan;
+		shaderManagerSettings.AssetDirectory = m_AssetsPath;
+		
+		m_ShaderManager = CreateScope<Jasper::ShaderManager>(shaderManagerSettings);
 	}
 
-	std::filesystem::path AssetManager::GetShaderPath() const
+	const Jasper::SPVShader& AssetManager::GetShader(const char* shaderName) const
 	{
-		return m_AssetsPath / "shaders";
+		return m_ShaderManager->GetShader(shaderName);
 	}
 
 	std::filesystem::path AssetManager::GetTexturePath() const

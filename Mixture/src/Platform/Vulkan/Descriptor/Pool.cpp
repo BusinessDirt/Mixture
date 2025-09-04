@@ -46,7 +46,9 @@ namespace Mixture::Vulkan
         poolInfo.flags = flags;
 
         VkDescriptorPool pool;
-        VK_ASSERT(vkCreateDescriptorPool(m_Device, &poolInfo, nullptr, &pool), "Failed to create Descriptor Pool")
+        VK_ASSERT(vkCreateDescriptorPool(m_Device, &poolInfo, nullptr, &pool),
+                  "Mixture::Vulkan::DescriptorPool::CreatePool() - Creation failed!")
+        
         return pool;
     }
 

@@ -113,7 +113,7 @@ namespace Mixture::Vulkan
             initInfo.ImageCount = static_cast<uint32_t>(swapchain.GetImageCount());
             initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
             initInfo.Allocator = nullptr;
-            initInfo.CheckVkResultFn = [](const VkResult res) { OPAL_CORE_ASSERT(res == VK_SUCCESS, "ImGui Vulkan backend error") };
+            initInfo.CheckVkResultFn = [](const VkResult res) { OPAL_CORE_ASSERT(res == VK_SUCCESS, "ImGui - Vulkan backend error") };
 
             ImGui_ImplVulkan_Init(&initInfo);
             ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow()), true);
@@ -157,7 +157,7 @@ namespace Mixture::Vulkan
 
     void RendererAPI::BeginFrame()
     {
-        OPAL_CORE_ASSERT(!m_IsFrameStarted, "Can't call BeginFrame() while already in progess!")
+        OPAL_CORE_ASSERT(!m_IsFrameStarted, "Mixture::Vulkan::RendererAPI::BeginFrame() - Can't call BeginFrame() while already in progess!")
 
         const VkResult result = Context::Swapchain->AcquireNextImage();
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -167,7 +167,7 @@ namespace Mixture::Vulkan
             return;
         }
 
-        OPAL_CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Failed to acquire Swapchain image!")
+        OPAL_CORE_ASSERT(result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR, "Mixture::Vulkan::RendererAPI::BeginFrame() - Failed to acquire Swapchain image!")
 
         m_IsFrameStarted = true;
 
@@ -176,15 +176,15 @@ namespace Mixture::Vulkan
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-        VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo), "Failed to begin recording command buffer!")
+        VK_ASSERT(vkBeginCommandBuffer(commandBuffer, &beginInfo), "Mixture::Vulkan::RendererAPI::BeginFrame() - Failed to begin recording command buffer!")
 
         Context::CurrentCommandBuffer = commandBuffer;
     }
 
     void RendererAPI::EndFrame()
     {
-        OPAL_CORE_ASSERT(m_IsFrameStarted, "Can't call EndFrame() while frame is not in progress!")
-        VK_ASSERT(vkEndCommandBuffer(Context::CurrentCommandBuffer), "Failed to record command buffer!")
+        OPAL_CORE_ASSERT(m_IsFrameStarted, "Mixture::Vulkan::RendererAPI::EndFrame() - Can't call EndFrame() while frame is not in progress!")
+        VK_ASSERT(vkEndCommandBuffer(Context::CurrentCommandBuffer), "Mixture::Vulkan::RendererAPI::EndFrame() - Failed to record command buffer!")
 
         const std::vector commandBuffers = { Context::CurrentCommandBuffer };
         if (const VkResult result = Context::Swapchain->SubmitCommandBuffers(commandBuffers);
@@ -194,7 +194,7 @@ namespace Mixture::Vulkan
         }
         else
         {
-            OPAL_CORE_ASSERT(result == VK_SUCCESS, "Failed to present Swapchain image!")
+            OPAL_CORE_ASSERT(result == VK_SUCCESS, "Mixture::Vulkan::RendererAPI::EndFrame() - Failed to present Swapchain image!")
         }
 
         m_IsFrameStarted = false;
@@ -204,7 +204,7 @@ namespace Mixture::Vulkan
 
     void RendererAPI::BeginSceneRenderpass()
     {
-        OPAL_CORE_ASSERT(m_IsFrameStarted, "Can't call BeginRenderPass() if frame is not in progress!")
+        OPAL_CORE_ASSERT(m_IsFrameStarted, "Mixture::Vulkan::RendererAPI::BeginSceneRenderpass() - Can't call BeginRenderPass() if frame is not in progress!")
 
         VkRenderPassBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -238,8 +238,9 @@ namespace Mixture::Vulkan
 
     void RendererAPI::EndSceneRenderpass()
     {
-        OPAL_CORE_ASSERT(m_IsFrameStarted, "Can't call EndRenderPass() if frame is not in progress!")
-        OPAL_CORE_ASSERT(Context::CurrentCommandBuffer == GetCurrentCommandBuffer(), "Can't end render pass on command buffer from a different frame!")
+        OPAL_CORE_ASSERT(m_IsFrameStarted, "Mixture::Vulkan::RendererAPI::EndSceneRenderpass() - Can't call EndRenderPass() if frame is not in progress!")
+        OPAL_CORE_ASSERT(Context::CurrentCommandBuffer == GetCurrentCommandBuffer(),
+            "Mixture::Vulkan::RendererAPI::EndSceneRenderpass() - Can't end render pass on command buffer from a different frame!")
 
         vkCmdEndRenderPass(Context::CurrentCommandBuffer);
     }
@@ -282,7 +283,8 @@ namespace Mixture::Vulkan
         std::shared_ptr oldSwapchain = std::move(Context::Swapchain);
         Context::Swapchain = CreateScope<Swapchain>(oldSwapchain);
 
-        OPAL_CORE_ASSERT(oldSwapchain->CompareSwapFormats(*Context::Swapchain.get()), "Swap chain image (or depth) format has changed!")
+        OPAL_CORE_ASSERT(oldSwapchain->CompareSwapFormats(*Context::Swapchain.get()),
+            "Mixture::Vulkan::RendererAPI::RebuildSwapchain() - Swapchain image (or depth) format has changed!")
         
         Context::ImGuiFrameBuffers.clear();
         CreateImGuiFrameBuffers();

@@ -75,7 +75,7 @@ namespace Mixture::Vulkan
             createInfo.oldSwapchain = m_OldSwapchain ? m_OldSwapchain->m_Swapchain : VK_NULL_HANDLE;
 
             VK_ASSERT(vkCreateSwapchainKHR(Context::Device->GetHandle(), &createInfo, nullptr, &m_Swapchain),
-                      "Failed to create Swapchain!")
+                      "Mixture::Vulkan::Swapchain::Swapchain() - Creation failed!")
 
             if (debug)
             {
@@ -173,7 +173,7 @@ namespace Mixture::Vulkan
 
         m_InFlightFences[m_CurrentFrame].Reset();
         VK_ASSERT(vkQueueSubmit(Context::Device->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame].GetHandle()),
-                  "Failed to submit draw command buffer!")
+                  "Mixture::Vulkan::Swapchain::SubmitCommandBuffers() - Failed to submit draw command buffer!")
 
         const VkSwapchainKHR swapChains[] = { m_Swapchain };
         VkPresentInfoKHR presentInfo{};

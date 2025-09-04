@@ -25,7 +25,7 @@ namespace Mixture::Vulkan
 						return format;
 				}
 
-				OPAL_CORE_ERROR("Failed to find supported format!");
+				OPAL_CORE_ERROR("Mixture::Vulkan::Util::FindSupportedFormat() - Failed to find supported format!");
 				return VK_FORMAT_UNDEFINED;
 			}
 		}

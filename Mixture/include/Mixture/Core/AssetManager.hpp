@@ -2,6 +2,8 @@
 
 #include "Mixture/Core/Base.hpp"
 
+#include "Jasper.hpp"
+
 namespace Mixture
 {
 	class AssetManager
@@ -12,10 +14,11 @@ namespace Mixture
 		AssetManager();
 		~AssetManager() = default;
 
-		OPAL_NODISCARD std::filesystem::path GetShaderPath() const;
+		OPAL_NODISCARD const Jasper::SPVShader& GetShader(const char* shaderName) const;
 		OPAL_NODISCARD std::filesystem::path GetTexturePath() const;
 
 	private:
 		std::filesystem::path m_AssetsPath;
+		Scope<Jasper::ShaderManager> m_ShaderManager;
 	};
 }

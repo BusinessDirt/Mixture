@@ -59,7 +59,7 @@ namespace Mixture::Vulkan
         }
         else
         {
-            OPAL_CORE_ERROR("Failed to set up VkDebugUtilsMessengerEXT");
+            OPAL_CORE_ERROR("Mixture::Vulkan::DebugMessenger::DebugMessenger() - Creation failed!");
         }
     }
 

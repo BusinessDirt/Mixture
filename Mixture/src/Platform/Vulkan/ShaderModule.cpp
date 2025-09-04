@@ -5,12 +5,13 @@
 
 namespace Mixture::Vulkan
 {
-	ShaderModule::ShaderModule(const SpvShader& shader, const ShaderStage stage)
+	ShaderModule::ShaderModule(const Jasper::SPVShader& shader, const Jasper::ShaderStageFlagBits stage)
 		: m_Stage(stage)
 	{
 		if (!shader.Data.contains(stage))
 		{
-			OPAL_CORE_ERROR("SPVShader doesn't contain code for stage '{}'", Mixture::Util::ShaderStageToString(stage));
+			OPAL_CORE_ERROR("Mixture::Vulkan::ShaderModule::ShaderModule() - SPVShader doesn't contain code for stage '{}'",
+				Jasper::Util::ShaderStageToString(stage));
 			OPAL_CORE_ASSERT(false)
 		}
 
@@ -22,7 +23,7 @@ namespace Mixture::Vulkan
 		createInfo.pCode = code.data();
 
 		VK_ASSERT(vkCreateShaderModule(Context::Device->GetHandle(), &createInfo, nullptr, &m_ShaderModule),
-				  "Failed to create VkShaderModule!")
+				  "Mixture::Vulkan::ShaderModule::ShaderModule() - Creation failed!")
 	}
 
 	ShaderModule::~ShaderModule()

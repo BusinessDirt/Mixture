@@ -3,7 +3,8 @@
 
 #include <ranges>
 
-#include "Mixture/Assets/ShaderCompiler.hpp"
+#include "Jasper.hpp"
+#include "Mixture/Core/Application.hpp"
 
 #include "Platform/Vulkan/ShaderModule.hpp"
 #include "Platform/Vulkan/Context.hpp"
@@ -14,28 +15,47 @@ namespace Mixture::Vulkan
     {
         const Swapchain& swapchain = *Context::Swapchain;
 
-        ShaderCompiler::Flags flags{};
-        flags.PipelineType = ShaderCompiler::Graphics;
-        flags.Debug = true;
+        const Jasper::SPVShader& shader = Application::Get().GetAssetManager().GetShader(shaderName.c_str());
 
-        SpvShader shader = Mixture::ShaderCompiler::Compile(shaderName, flags);
-        ShaderModule vertShader(shader, ShaderStageVertex);
-        ShaderModule fragShader(shader, ShaderStageFragment);
+        std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
+        for (const auto& [Binding, Stride, InputRate] : shader.VertexInputBindings)
+        {
+            VkVertexInputBindingDescription bindingDescription;
+            bindingDescription.binding = Binding;
+            bindingDescription.stride = Stride;
+            bindingDescription.inputRate = static_cast<VkVertexInputRate>(InputRate);
+            bindingDescriptions.emplace_back(bindingDescription);
+        }
+
+        std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
+        for (const auto& [Location, Binding, Format, Offset] : shader.VertexInputAttributes)
+        {
+            VkVertexInputAttributeDescription attributeDescription;
+            attributeDescription.location = Location;
+            attributeDescription.binding = Binding;
+            attributeDescription.format = static_cast<VkFormat>(Format);
+            attributeDescription.offset = Offset;
+            attributeDescriptions.emplace_back(attributeDescription);
+        }
+        
+        ShaderModule vertShader(shader, Jasper::Vertex);
+        ShaderModule fragShader(shader, Jasper::Fragment);
         VkPipelineShaderStageCreateInfo shaderStages[] = { vertShader.CreateInfo(), fragShader.CreateInfo() };
         
         // Descriptor Set Layouts
-        for (const auto& bindings : shader.DescriptorSetLayoutBindings | std::views::values)
-            m_SetLayouts.push_back(CreateRef<DescriptorSetLayout>(bindings));
+        m_SetLayouts.resize(shader.DescriptorSetLayoutBindings.size());
+        for (const auto& [set, bindings] : shader.DescriptorSetLayoutBindings)
+            m_SetLayouts[set] = CreateRef<DescriptorSetLayout>(bindings);
         
         std::vector<VkDescriptorSetLayout> vkLayouts;
         for (auto& layout : m_SetLayouts) vkLayouts.push_back(layout->GetHandle());
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(shader.VertexInputBindings.size());
-        vertexInputInfo.pVertexBindingDescriptions = shader.VertexInputBindings.data();
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(shader.VertexInputAttributes.size());
-        vertexInputInfo.pVertexAttributeDescriptions = shader.VertexInputAttributes.data();
+        vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescriptions.size());
+        vertexInputInfo.pVertexBindingDescriptions = bindingDescriptions.data();
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -128,15 +148,19 @@ namespace Mixture::Vulkan
         pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(vkLayouts.size());
         pipelineLayoutInfo.pSetLayouts = vkLayouts.data();
 
-        if (shader.PushConstant.size > 0)
+        if (shader.PushConstant.Size > 0)
         {
-            m_PushConstant = shader.PushConstant;
+            m_PushConstant = {};
+            m_PushConstant.size = shader.PushConstant.Size;
+            m_PushConstant.offset = shader.PushConstant.Offset;
+            m_PushConstant.stageFlags = static_cast<VkShaderStageFlags>(shader.PushConstant.StageFlags);
+            
             pipelineLayoutInfo.pushConstantRangeCount = 1;
-            pipelineLayoutInfo.pPushConstantRanges = &shader.PushConstant;
+            pipelineLayoutInfo.pPushConstantRanges = &m_PushConstant;
         }
 
         VK_ASSERT(vkCreatePipelineLayout(Context::Device->GetHandle(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout),
-                  "Failed to create Graphics Pipeline Layout!")
+                  "Mixture::Vulkan::GraphicsPipeline::GraphicsPipeline() - PipelineLayout creation failed!")
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -157,7 +181,7 @@ namespace Mixture::Vulkan
         pipelineInfo.basePipelineIndex = -1;
 
         VK_ASSERT(vkCreateGraphicsPipelines(Context::Device->GetHandle(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline),
-                  "Failed to create Graphics Pipeline")
+                  "Mixture::Vulkan::GraphicsPipeline::GraphicsPipeline() - Creation failed!")
         
         if (!m_SetLayouts.empty())
         {
@@ -197,7 +221,7 @@ namespace Mixture::Vulkan
 
         const std::array sets = { m_GlobalSet->GetHandle(), m_InstanceSets[Context::Swapchain->GetCurrentFrameIndex()]->GetHandle() };
         vkCmdBindDescriptorSets(Context::CurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0,
-                                sets.size(), sets.data(), 0, nullptr);
+                                static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
     }
 
     void GraphicsPipeline::PushConstants(const void* pValues) const
@@ -209,7 +233,7 @@ namespace Mixture::Vulkan
         }
         else
         {
-            OPAL_CORE_ERROR("Shader doesn't use push constant!");
+            OPAL_CORE_ERROR("Mixture::Vulkan::GraphicsPipeline::PushConstants() - Shader doesn't use push constant!");
         } 
     }
 
@@ -217,7 +241,7 @@ namespace Mixture::Vulkan
     {
         if (!m_GlobalSet->GetHandle())
         {
-            OPAL_CORE_ERROR("Global descriptor set not initialized!");
+            OPAL_CORE_ERROR("Mixture::Vulkan::GraphicsPipeline::UpdateGlobalUniformBuffer() - Global descriptor set not initialized!");
             return;
         }
         
@@ -230,7 +254,7 @@ namespace Mixture::Vulkan
         const DescriptorSet& currentSet = *m_InstanceSets.at(Context::Swapchain->GetCurrentFrameIndex());
         if (!currentSet.GetHandle())
         {
-            OPAL_CORE_ERROR("Instance descriptor set not initialized!");
+            OPAL_CORE_ERROR("Mixture::Vulkan::GraphicsPipeline::UpdateInstanceTexture() - Instance descriptor set not initialized!");
             return;
         }
 

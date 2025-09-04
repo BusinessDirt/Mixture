@@ -23,7 +23,8 @@ namespace Mixture::Vulkan
 		createInfo.height = extent.height;
 		createInfo.layers = 1;
 
-		VK_ASSERT(vkCreateFramebuffer(Context::Device->GetHandle(), &createInfo, nullptr, &m_FrameBuffer), "Failed to create VkFramebuffer")
+		VK_ASSERT(vkCreateFramebuffer(Context::Device->GetHandle(), &createInfo, nullptr, &m_FrameBuffer),
+				  "Mixture::Vulkan::FrameBuffer::FrameBuffer() - Creation failed!")
 	}
 
 	FrameBuffer::~FrameBuffer()

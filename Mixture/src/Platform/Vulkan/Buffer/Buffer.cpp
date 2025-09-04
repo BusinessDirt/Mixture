@@ -77,7 +77,7 @@ namespace Mixture::Vulkan
      */
     void Buffer::WriteToBuffer(const void* data, const VkDeviceSize size, const VkDeviceSize offset) const
     {
-        OPAL_CORE_ASSERT(m_Mapped, "Cannot copy to unmapped buffer")
+        OPAL_CORE_ASSERT(m_Mapped, "Mixture::Vulkan::Buffer::WriteToBuffer() - Cannot copy to unmapped buffer")
 
         if (size == VK_WHOLE_SIZE)
         {
@@ -203,7 +203,8 @@ namespace Mixture::Vulkan
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-        VK_ASSERT(vkCreateBuffer(Context::Device->GetHandle(), &bufferInfo, nullptr, &buffer), "Failed to create VkBuffer")
+        VK_ASSERT(vkCreateBuffer(Context::Device->GetHandle(), &bufferInfo, nullptr, &buffer),
+                  "Mixture::Vulkan::Buffer::Create() - Creation failed!")
 
         VkMemoryRequirements memRequirements;
         vkGetBufferMemoryRequirements(Context::Device->GetHandle(), buffer, &memRequirements);
@@ -213,7 +214,8 @@ namespace Mixture::Vulkan
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = Device::FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-        VK_ASSERT(vkAllocateMemory(Context::Device->GetHandle(), &allocInfo, nullptr, &bufferMemory), "Failed to allocate buffer memory")
+        VK_ASSERT(vkAllocateMemory(Context::Device->GetHandle(), &allocInfo, nullptr, &bufferMemory),
+                  "Mixture::Vulkan::Buffer::Create() - Memory allocation failed!")
 
         vkBindBufferMemory(Context::Device->GetHandle(), buffer, bufferMemory, 0);
     }

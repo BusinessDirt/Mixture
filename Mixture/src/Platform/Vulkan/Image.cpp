@@ -32,7 +32,7 @@ namespace Mixture::Vulkan
         imageInfo.flags = 0; // Optional
 
         VK_ASSERT(vkCreateImage(Context::Device->GetHandle(), &imageInfo, nullptr, &m_Image),
-                  "Failed to create VkImage!")
+                  "Mixture::Vulkan::Image::Image() - Creation Failed!")
     }
 
     Image::Image(Image&& other) noexcept
@@ -57,7 +57,7 @@ namespace Mixture::Vulkan
         DeviceMemory memory(requirements.size, requirements.memoryTypeBits, 0, properties);
 
         VK_ASSERT(vkBindImageMemory(Context::Device->GetHandle(), m_Image, memory.GetHandle(), 0),
-            "Failed to bind VkImage VkDeviceMemory!")
+                  "Mixture::Vulkan::Image::AllocateMemory() - Memory binding failed!")
 
         return memory;
     }
@@ -137,7 +137,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Unsupported layout transition! (from VK_IMAGE_LAYOUT_UNDEFINED)");
+                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_UNDEFINED)");
             }
 
         }
@@ -153,7 +153,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Unsupported layout transition! (from VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)");
+                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)");
             }
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
@@ -176,7 +176,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Unsupported layout transition! (from VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)");
+                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)");
             }
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
@@ -191,7 +191,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Unsupported layout transition! (from VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)");
+                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)");
             }
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
@@ -206,7 +206,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Unsupported layout transition! (from VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)");
+                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)");
             }
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
@@ -221,12 +221,12 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Unsupported layout transition! (from VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)");
+                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)");
             }
         }
         else
         {
-            OPAL_CORE_ERROR("Unsupported layout transition!");
+            OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition!");
         }
 
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
@@ -257,7 +257,7 @@ namespace Mixture::Vulkan
         vkGetPhysicalDeviceFormatProperties(Context::PhysicalDevice->GetHandle(), imageFormat, &formatProperties);
 
         OPAL_CORE_ASSERT(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT, 
-            "Texture image format does not support linear blitting!")
+                         "Mixture::Vulkan::Image::GenerateMipMaps() - Texture image format does not support linear blitting!")
 
         SingleTimeCommand::Submit([&](const VkCommandBuffer commandBuffer)
             {
@@ -363,7 +363,7 @@ namespace Mixture::Vulkan
         createInfo.subresourceRange.layerCount = 1;
 
         VK_ASSERT(vkCreateImageView(Context::Device->GetHandle(), &createInfo, nullptr, &m_ImageView),
-                  "Failed to create VkImageView!")
+                  "Mixture::Vulkan::ImageView::ImageView() - Creation failed!")
 	}
 
 	ImageView::~ImageView()
@@ -392,7 +392,7 @@ namespace Mixture::Vulkan
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
         VK_ASSERT(vkCreateSampler(Context::Device->GetHandle(), &samplerInfo, nullptr, &m_Sampler),
-            "Failed to create image sampler!")
+                  "Mixture::Vulkan::ImageSampler::ImageSampler() - Creation failed!")
     }
 
     ImageSampler::~ImageSampler()

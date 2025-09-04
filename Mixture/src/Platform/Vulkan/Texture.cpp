@@ -30,7 +30,7 @@ namespace Mixture::Vulkan
                 return VK_FORMAT_UNDEFINED;
             }
 		
-            uint32_t MixtureImageFormatToByteSize(ImageFormat format)
+            uint32_t MixtureImageFormatToByteSize(const ImageFormat format)
             {
                 switch (format)
                 {
@@ -70,7 +70,7 @@ namespace Mixture::Vulkan
         int width, height, channels;
         const std::filesystem::path fullPath = Application::Get().GetAssetManager().GetTexturePath() / path;
         stbi_uc* pixels = stbi_load(fullPath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
-        OPAL_ASSERT(pixels, "Failed to load image!")
+        OPAL_ASSERT(pixels, "Mixture::Vulkan::Texture2D::Texture2D() - Failed to load image from disk!")
 
         m_Specification.Width = width;
         m_Specification.Height = height;
@@ -112,10 +112,10 @@ namespace Mixture::Vulkan
 
     Texture2D::~Texture2D() = default;
 
-    void Texture2D::SetData(const void* data, uint32_t size)
+    void Texture2D::SetData(const void* data, const uint32_t size)
     {
         OPAL_CORE_ASSERT(size == m_Specification.Width * m_Specification.Height * Util::MixtureImageFormatToByteSize(m_Specification.Format),
-            "SetData requires full texture data!")
+                         "Mixture::Vulkan::Texture2D::SetData() - SetData() requires full texture data!")
 
         Buffer stagingBuffer(size, 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         stagingBuffer.Map();

@@ -16,7 +16,7 @@ namespace Mixture::Vulkan
         allocInfo.pSetLayouts = &layoutHandle;
 
         VK_ASSERT(vkAllocateDescriptorSets(m_Device, &allocInfo, &m_Set),
-                  "Failed to allocate DescriptorSet")
+                  "Mixture::Vulkan::DescriptorSet::DescriptorSet() - Allocation failed!")
     }
 
     void DescriptorSet::Free(const VkDescriptorPool pool) const

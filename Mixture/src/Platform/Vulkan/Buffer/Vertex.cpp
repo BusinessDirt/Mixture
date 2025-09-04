@@ -22,7 +22,7 @@ namespace Mixture::Vulkan
         const VkCommandBuffer commandBuffer = validCommandBuffer ? Context::CurrentCommandBuffer : SingleTimeCommand::Begin();
         
         m_VertexCount = count;
-        OPAL_CORE_ASSERT(m_VertexCount >= 3, "Vertex count must be at least 3!")
+        OPAL_CORE_ASSERT(m_VertexCount >= 3, "Mixture::Vulkan::VertexBuffer::SetData() - Vertex count must be at least 3!")
 
         const VkDeviceSize bufferSize = static_cast<VkDeviceSize>(size) * m_VertexCount;
 

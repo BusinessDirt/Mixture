@@ -23,9 +23,6 @@ namespace Mixture::Vulkan
         void Unmap() const;
 
     private:
-        static uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags propertyFlags);
-
-    private:
         VULKAN_HANDLE(VkDeviceMemory, m_Memory);
     };
 

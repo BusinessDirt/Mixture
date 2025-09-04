@@ -12,7 +12,7 @@ namespace Mixture::Vulkan
         fenceInfo.flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
         VK_ASSERT(vkCreateFence(Context::Device->GetHandle(), &fenceInfo, nullptr, &m_Fence),
-                  "Failed to create VkFence!")
+                  "Mixture::Vulkan::Fence::Fence() - Creation failed!")
     }
 
     Fence::~Fence()

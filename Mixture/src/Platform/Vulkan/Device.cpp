@@ -39,7 +39,8 @@ namespace Mixture::Vulkan
         createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
         
-        VK_ASSERT(vkCreateDevice(Context::PhysicalDevice->GetHandle(), &createInfo, nullptr, &m_Device), "Failed to create logical device!")
+        VK_ASSERT(vkCreateDevice(Context::PhysicalDevice->GetHandle(), &createInfo, nullptr, &m_Device),
+                  "Mixture::Vulkan::Device::Device() - Failed!")
         
         // retrieve queues
         vkGetDeviceQueue(m_Device, Graphics.value(), 0, &m_GraphicsQueue);
@@ -72,7 +73,7 @@ namespace Mixture::Vulkan
                 return format;
             }
         }
-        OPAL_CORE_ERROR("Failed to find supported format!");
+        OPAL_CORE_ERROR("Mixture::Vulkan::Device::FindSupportedFormat() - Failed!");
         return VK_FORMAT_UNDEFINED;
     }
 
@@ -88,14 +89,15 @@ namespace Mixture::Vulkan
             }
         }
 
-        OPAL_CORE_ERROR("Failed to find suitable memory type!");
+        OPAL_CORE_ERROR("Mixture::Vulkan::Device::FindMemoryType() - Failed!");
         return 0;
     }
 
     void Device::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, const VkMemoryPropertyFlags properties,
         VkImage& image, VkDeviceMemory& imageMemory) const
     {
-        VK_ASSERT(vkCreateImage(m_Device, &imageInfo, nullptr, &image), "Failed to create VkImage!")
+        VK_ASSERT(vkCreateImage(m_Device, &imageInfo, nullptr, &image),
+                  "Mixture::Vulkan::Device::CreateImageWithInfo() - Image creation failed!")
 
         VkMemoryRequirements memRequirements;
         vkGetImageMemoryRequirements(m_Device, image, &memRequirements);
@@ -105,7 +107,9 @@ namespace Mixture::Vulkan
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-        VK_ASSERT(vkAllocateMemory(m_Device, &allocInfo, nullptr, &imageMemory), "Failed to allocate VkImageMemory!")
-        VK_ASSERT(vkBindImageMemory(m_Device, image, imageMemory, 0), "Failed to bind VkImageMemory!")
+        VK_ASSERT(vkAllocateMemory(m_Device, &allocInfo, nullptr, &imageMemory),
+                  "Mixture::Vulkan::Device::CreateImageWithInfo() - Memory allocation failed!")
+        VK_ASSERT(vkBindImageMemory(m_Device, image, imageMemory, 0),
+                  "Mixture::Vulkan::Device::CreateImageWithInfo() - Memory binding failed!")
     }
 }

@@ -22,6 +22,7 @@ group ""
 
 group "Core"
    include "Opal/premake5.lua"
+   include "Jasper/premake5.lua"
 	include "Mixture/premake5.lua"
 group ""
 

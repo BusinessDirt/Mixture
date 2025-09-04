@@ -12,8 +12,6 @@ layout(set = 0, binding = 0) uniform GlobalUniformBuffer {
     mat4 Projection;
 } globalUBO;
 
-layout(set = 1, binding = 0) uniform sampler2D u_Texture;
-
 void main() 
 {
     gl_Position = globalUBO.Projection * globalUBO.View * vec4(inPosition, 1.0);

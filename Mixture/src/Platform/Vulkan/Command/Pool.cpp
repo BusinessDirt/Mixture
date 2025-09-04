@@ -14,7 +14,8 @@ namespace Mixture::Vulkan
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         createInfo.queueFamilyIndex = Graphics.value();
 
-        VK_ASSERT(vkCreateCommandPool(Context::Device->GetHandle(), &createInfo, nullptr, &m_CommandPool), "Failed to create VkCommandPool")
+        VK_ASSERT(vkCreateCommandPool(Context::Device->GetHandle(), &createInfo, nullptr, &m_CommandPool),
+                  "Mixture::Vulkan::CommandPool::CommandPool() - Creation failed!")
     }
 
     CommandPool::~CommandPool()

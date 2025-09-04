@@ -30,9 +30,9 @@ namespace Mixture
 		glfwInitVulkanLoader(vkGetInstanceProcAddr);
 
 		{
-			OPAL_CORE_INFO("Initializing GLFW");
+			OPAL_CORE_INFO("Mixture::Window::Window() - Initializing GLFW");
 			const int success = glfwInit();
-			OPAL_CORE_ASSERT(success, "Could not initialize GLFW!")
+			OPAL_CORE_ASSERT(success, "Mixture::Window::Window() - Could not initialize GLFW!")
 			glfwSetErrorCallback(GlfwErrorCallback);
 		}
 
@@ -170,7 +170,7 @@ namespace Mixture
     void Window::CreateVulkanSurface(const VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const
     {
 		const VkResult res = glfwCreateWindowSurface(instance, m_WindowHandle, allocator, surface);
-		OPAL_CORE_ASSERT(res == VK_SUCCESS,"Failed to create VkSurfaceKHR!")
+		OPAL_CORE_ASSERT(res == VK_SUCCESS, "Mixture::Window::CreateVulkanSurface() - Failed to create VkSurfaceKHR!")
     }
 
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Platform/Vulkan/Base.hpp"
-#include "Mixture/Assets/SPVShader.hpp"
+#include "Jasper.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -10,13 +10,13 @@ namespace Mixture::Vulkan
 	public:
 		OPAL_NON_COPIABLE(ShaderModule);
 		
-		ShaderModule(const SpvShader& shader, ShaderStage stage);
+		ShaderModule(const Jasper::SPVShader& shader, Jasper::ShaderStageFlagBits stage);
 		~ShaderModule();
 
 		VkPipelineShaderStageCreateInfo CreateInfo();
 
 	private:
 		VULKAN_HANDLE(VkShaderModule, m_ShaderModule);
-		ShaderStage m_Stage;
+		Jasper::ShaderStageFlagBits m_Stage;
 	};
 }

@@ -11,7 +11,7 @@ namespace Mixture::Vulkan
         semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
         VK_ASSERT(vkCreateSemaphore(Context::Device->GetHandle(), &semaphoreInfo, nullptr, &m_Semaphore),
-                  "Failed to create VkSemaphore!")
+                  "Mixture::Vulkan::Semaphore::Semaphore() - Creation failed!")
     }
 
     Semaphore::~Semaphore()

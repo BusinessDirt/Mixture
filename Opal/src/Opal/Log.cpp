@@ -30,6 +30,6 @@ namespace Opal
         s_ClientLogger->set_level(spdlog::level::trace);
         s_ClientLogger->flush_on(spdlog::level::trace);
         
-        OPAL_CORE_INFO("Initialized Log");
+        OPAL_CORE_INFO("Opal::Log::Init() - Initialized Loggers");
     }
 }

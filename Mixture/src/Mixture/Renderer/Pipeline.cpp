@@ -10,13 +10,13 @@ namespace Mixture
     {
         switch (Renderer::GetAPI())
         {
-            case RendererAPI::API::None:    OPAL_CORE_ASSERT(false, "RendererAPI::None is currently not supported!") return nullptr;
+            case RendererAPI::API::None:    OPAL_CORE_ASSERT(false, "Mixture::GraphicsPipeline::Create() - RendererAPI::None is currently not supported!") return nullptr;
             case RendererAPI::API::Vulkan:  return CreateRef<Vulkan::GraphicsPipeline>(shaderName);
-            case RendererAPI::API::OpenGL:  OPAL_CORE_ASSERT(false, "RendererAPI::OpenGL is currently not supported!") return nullptr;
-            case RendererAPI::API::DirectX: OPAL_CORE_ASSERT(false, "RendererAPI::DirectX is currently not supported!") return nullptr;
+            case RendererAPI::API::OpenGL:  OPAL_CORE_ASSERT(false, "Mixture::GraphicsPipeline::Create() - RendererAPI::OpenGL is currently not supported!") return nullptr;
+            case RendererAPI::API::DirectX: OPAL_CORE_ASSERT(false, "Mixture::GraphicsPipeline::Create() - RendererAPI::DirectX is currently not supported!") return nullptr;
         }
 
-        OPAL_CORE_ASSERT(false, "Unknown RendererAPI!")
+        OPAL_CORE_ASSERT(false, "Mixture::GraphicsPipeline::Create() - Unknown RendererAPI!")
         return nullptr;
     }
 }

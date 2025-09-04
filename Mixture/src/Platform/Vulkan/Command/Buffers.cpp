@@ -17,7 +17,7 @@ namespace Mixture::Vulkan
         allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
 
         VK_ASSERT(vkAllocateCommandBuffers(Context::Device->GetHandle(), &allocInfo, m_CommandBuffers.data()),
-                  "Failed to allocate VkCommandBuffer")
+                  "Mixture::Vulkan::CommandBuffers::CommandBuffers() - Allocation failed!")
     }
 
     CommandBuffers::~CommandBuffers()

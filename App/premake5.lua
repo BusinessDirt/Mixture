@@ -10,6 +10,7 @@ project "App"
 
     externalincludedirs {
         "../Opal/include",
+        "../Jasper/include",
         "../Mixture/include",
 
         "%{IncludeDir.spdlog}",
@@ -22,6 +23,7 @@ project "App"
     links {
         "GLFW",
         "Opal",
+        "Jasper",
         "Mixture",
         "ImGui"
     }

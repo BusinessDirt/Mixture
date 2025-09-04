@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Jasper.hpp"
+
 #include "Platform/Vulkan/Base.hpp"
 
 namespace Mixture::Vulkan
@@ -9,7 +11,7 @@ namespace Mixture::Vulkan
     public:
         OPAL_NON_COPIABLE(DescriptorSetLayout);
         
-        explicit DescriptorSetLayout(const std::vector<VkDescriptorSetLayoutBinding>& bindings);
+        explicit DescriptorSetLayout(const std::vector<Jasper::DescriptorSetLayoutBinding>& bindings);
         ~DescriptorSetLayout();
 
         OPAL_NODISCARD const std::vector<VkDescriptorSetLayoutBinding>& GetBindings() const { return m_Bindings; }

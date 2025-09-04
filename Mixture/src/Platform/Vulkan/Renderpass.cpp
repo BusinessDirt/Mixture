@@ -77,7 +77,7 @@ namespace Mixture::Vulkan
 
 
 		VK_ASSERT(vkCreateRenderPass(Context::Device->GetHandle(), &renderPassInfo, nullptr, &m_Renderpass),
-				  "Failed to create Renderpass")
+				  "Mixture::Vulkan::Renderpass::Renderpass() - Creation failed!")
 	}
 
 	Renderpass::~Renderpass()

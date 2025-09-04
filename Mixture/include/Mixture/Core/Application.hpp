@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Mixture/Assets/AssetManager.hpp"
 
 #include "Mixture/Core/Window.hpp"
 #include "Mixture/Core/LayerStack.hpp"
+#include "Mixture/Core/AssetManager.hpp"
 
 #include "Mixture/ImGui/ImGuiLayer.hpp"
 

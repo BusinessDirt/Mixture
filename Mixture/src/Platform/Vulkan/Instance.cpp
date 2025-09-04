@@ -77,7 +77,7 @@ namespace Mixture::Vulkan
 
         // Create Vulkan Instance
         VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &m_Instance),
-                  "Failed to create Vulkan instance!")
+                  "Mixture::Vulkan::Instance::Instance() - Creation failed!")
     }
 
     Instance::~Instance()
