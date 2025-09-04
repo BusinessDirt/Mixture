@@ -3,9 +3,9 @@
 #include <string>
 #include <functional>
 
-//#define GLM_FORCE_RADIANS
-//#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-//#include <glm/glm.hpp>
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#include <glm/glm.hpp>
 
 #include "Mixture/Core/Base.hpp"
 

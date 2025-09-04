@@ -10,5 +10,6 @@
 #include "Mixture/Renderer/RendererInfo.hpp"
 #include "Mixture/Renderer/Buffer.hpp"
 #include "Mixture/Renderer/Pipeline.hpp"
+#include "Mixture/Renderer/Texture.hpp"
 
 #include "Mixture/ImGui/ImGuiWidgets.hpp"

@@ -10,11 +10,12 @@ namespace Mixture::Vulkan
     public:
 
         DeviceMemory(const DeviceMemory&) = delete;
-        DeviceMemory& operator = (const DeviceMemory&) = delete;
-        DeviceMemory& operator = (DeviceMemory&&) = delete;
+        DeviceMemory& operator=(const DeviceMemory&) = delete;
+
+        DeviceMemory(DeviceMemory&& other) noexcept;
+        DeviceMemory& operator=(DeviceMemory&& other) noexcept;
 
         DeviceMemory(size_t size, uint32_t memoryTypeBits, VkMemoryAllocateFlags allocateFLags, VkMemoryPropertyFlags propertyFlags);
-        DeviceMemory(DeviceMemory&& other) noexcept;
         ~DeviceMemory();
 
 

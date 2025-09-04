@@ -13,6 +13,7 @@ namespace Mixture
 		~AssetManager() = default;
 
 		OPAL_NODISCARD std::filesystem::path GetShaderPath() const;
+		OPAL_NODISCARD std::filesystem::path GetTexturePath() const;
 
 	private:
 		std::filesystem::path m_AssetsPath;

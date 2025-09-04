@@ -164,6 +164,16 @@ namespace Mixture::Vulkan
             // Define the global set to be set=0
             m_GlobalSet = CreateScope<DescriptorSet>(Context::DescriptorPool->AllocateGlobalSet(m_SetLayouts[0]));
         }
+
+        if (m_SetLayouts.size() >= 2)
+        {
+            // Define the instance set to be set=1
+            m_InstanceSets.resize(Swapchain::MAX_FRAMES_IN_FLIGHT);
+            for (uint32_t i = 0; i < m_InstanceSets.size(); i++)
+            {
+                m_InstanceSets[i] = CreateScope<DescriptorSet>(Context::DescriptorPool->AllocateFrameSet(m_SetLayouts[1], i));
+            }
+        }
     }
 
     GraphicsPipeline::~GraphicsPipeline()
@@ -185,7 +195,7 @@ namespace Mixture::Vulkan
     {
         vkCmdBindPipeline(Context::CurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 
-        const std::array sets = { m_GlobalSet->GetHandle() };
+        const std::array sets = { m_GlobalSet->GetHandle(), m_InstanceSets[Context::Swapchain->GetCurrentFrameIndex()]->GetHandle() };
         vkCmdBindDescriptorSets(Context::CurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0,
                                 sets.size(), sets.data(), 0, nullptr);
     }
@@ -215,4 +225,16 @@ namespace Mixture::Vulkan
         m_GlobalSet->UpdateBuffer(0, static_cast<const VkDescriptorBufferInfo*>(bufferInfo));
     }
 
+    void GraphicsPipeline::UpdateInstanceTexture(const void* imageInfo) const
+    {
+        const DescriptorSet& currentSet = *m_InstanceSets.at(Context::Swapchain->GetCurrentFrameIndex());
+        if (!currentSet.GetHandle())
+        {
+            OPAL_CORE_ERROR("Instance descriptor set not initialized!");
+            return;
+        }
+
+        // Binding 0 is inferred here
+        currentSet.UpdateImage(0, static_cast<const VkDescriptorImageInfo*>(imageInfo));
+    }
 }

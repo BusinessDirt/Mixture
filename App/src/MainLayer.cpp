@@ -2,33 +2,34 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "Platform/Vulkan/Buffer/Uniform.hpp"
-
 namespace Mixture
 {
     void MainLayer::OnAttach()
     {
         const std::vector<Vertex> vertices = {
-            {.Position = { -1.0f, -1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f } },
-            {.Position = {  1.0f, -1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f } },
-            {.Position = {  1.0f,  1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f } },
-            {.Position = { -1.0f,  1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f } }
+            {.Position = { -1.0f, -1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f }, .UV = { 0.0f, 0.0f } },
+            {.Position = {  1.0f, -1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f }, .UV = { 1.0f, 0.0f } },
+            {.Position = {  1.0f,  1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f }, .UV = { 1.0f, 1.0f } },
+            {.Position = { -1.0f,  1.0f, 0.0f }, .Color = { 1.0f, 1.0f, 1.0f, 1.0f }, .UV = { 0.0f, 1.0f } }
         };
 
         const std::vector<uint32_t> indices = {
             0, 1, 2, 0, 2, 3
         };
         
-        m_GraphicsPipeline = GraphicsPipeline::Create("MixtureBuiltin.Object");
+        m_GraphicsPipeline = GraphicsPipeline::Create("MixtureBuiltin.Material");
         m_VertexBuffer = VertexBuffer::Create(vertices.data(), sizeof(Vertex), vertices.size());
         m_IndexBuffer = IndexBuffer::Create(indices);
         
         m_UniformBufferObject = {};
         m_UniformBuffer = UniformBuffer::Create(sizeof(UniformBufferObject));
+
+        m_Texture = Texture2D::Create("test.png");
     }
 
     void MainLayer::OnDetach()
     {
+        m_Texture.reset();
         m_GraphicsPipeline.reset();
         m_IndexBuffer.reset();
         m_VertexBuffer.reset();
@@ -42,6 +43,7 @@ namespace Mixture
         
         m_UniformBuffer->SetData(&m_UniformBufferObject);
         m_GraphicsPipeline->UpdateGlobalUniformBuffer(m_UniformBuffer->GetDescriptorInfo());
+        m_GraphicsPipeline->UpdateInstanceTexture(m_Texture->GetDescriptorInfo());
     }
 
     void MainLayer::OnRender(FrameInfo& frameInfo)

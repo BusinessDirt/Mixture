@@ -28,6 +28,22 @@ namespace Mixture::Vulkan
         other.m_Memory = nullptr;
     }
 
+    DeviceMemory& DeviceMemory::operator=(DeviceMemory&& other) noexcept
+    {
+        if (this != &other)
+        {
+            if (m_Memory)
+            {
+                vkFreeMemory(Context::Device->GetHandle(), m_Memory, nullptr);
+                m_Memory = nullptr;
+            }
+            
+            m_Memory = other.m_Memory;
+            other.m_Memory = VK_NULL_HANDLE;
+        }
+        return *this;
+    }
+
     DeviceMemory::~DeviceMemory()
     {
         if (m_Memory)

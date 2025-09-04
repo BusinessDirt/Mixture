@@ -31,4 +31,9 @@ namespace Mixture
 	{
 		return m_AssetsPath / "shaders";
 	}
+
+	std::filesystem::path AssetManager::GetTexturePath() const
+	{
+		return m_AssetsPath / "textures";
+	}
 }

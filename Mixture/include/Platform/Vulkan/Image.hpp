@@ -22,6 +22,7 @@ namespace Mixture::Vulkan
         OPAL_NODISCARD VkExtent2D GetExtent() const { return m_Extent; }
         OPAL_NODISCARD VkFormat GetFormat() const { return m_Format; }
         OPAL_NODISCARD uint32_t GetMipLevels() const { return m_MipLevels; }
+        OPAL_NODISCARD VkImageLayout GetLayout() const { return m_ImageLayout; }
 
         OPAL_NODISCARD DeviceMemory AllocateMemory(VkMemoryPropertyFlags properties) const;
         OPAL_NODISCARD VkMemoryRequirements GetMemoryRequirements() const;
@@ -52,5 +53,16 @@ namespace Mixture::Vulkan
 
     private:
         VULKAN_HANDLE(VkImageView, m_ImageView);
+    };
+
+    class ImageSampler final
+    {
+    public:
+        OPAL_NON_COPIABLE(ImageSampler);
+
+        explicit ImageSampler();
+        ~ImageSampler();
+    private:
+        VULKAN_HANDLE(VkSampler, m_Sampler);
     };
 }

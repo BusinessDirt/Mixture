@@ -10,7 +10,6 @@
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Events/ApplicationEvent.hpp"
 
-#include "Mixture/Renderer/RendererInfo.hpp"
 
 int Entrypoint(int argc, char** argv);
 

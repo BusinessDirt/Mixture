@@ -374,4 +374,29 @@ namespace Mixture::Vulkan
             m_ImageView = nullptr;
         }
 	}
+
+    ImageSampler::ImageSampler()
+    {
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.magFilter = VK_FILTER_LINEAR;
+        samplerInfo.minFilter = VK_FILTER_LINEAR;
+        samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerInfo.anisotropyEnable = VK_FALSE;
+        samplerInfo.maxAnisotropy = 16.0f;
+        samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
+        samplerInfo.compareEnable = VK_FALSE;
+        samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+        VK_ASSERT(vkCreateSampler(Context::Device->GetHandle(), &samplerInfo, nullptr, &m_Sampler),
+            "Failed to create image sampler!")
+    }
+
+    ImageSampler::~ImageSampler()
+    {
+        if (m_Sampler) vkDestroySampler(Context::Device->GetHandle(), m_Sampler, nullptr);
+    }
 }

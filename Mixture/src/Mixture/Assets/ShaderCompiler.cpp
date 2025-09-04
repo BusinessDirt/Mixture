@@ -84,9 +84,9 @@ namespace Mixture
             {
                 case Graphics:
                 {
-                    // .vert and .frag
-                    shaderFiles.push_back(shaderPath / (shaderName + ".vert"));
-                    shaderFiles.push_back(shaderPath / (shaderName + ".frag"));
+                    // .vert.glsl and .frag.glsl
+                    shaderFiles.push_back(shaderPath / (shaderName + ".vert.glsl"));
+                    shaderFiles.push_back(shaderPath / (shaderName + ".frag.glsl"));
                 }
             }
 
