@@ -14,6 +14,8 @@ namespace Mixture
 		AssetManager();
 		~AssetManager() = default;
 
+		void CreateDefaults();
+
 		OPAL_NODISCARD const Jasper::SPVShader& GetShader(const char* shaderName) const;
 
 		template<typename T>
@@ -30,16 +32,27 @@ namespace Mixture
 			return m_TextureManager->Create<T>(specification, global);
 		}
 
+		template<typename T>
+		OPAL_NODISCARD Jasper::TextureHandle CreateDefaultTexture() const
+		{
+			const Jasper::TextureSpecification specification{};
+			return CreateTexture<T>(specification, true);
+		}
+		
 		OPAL_NODISCARD std::weak_ptr<Jasper::Texture> GetTexture(Jasper::TextureHandle textureHandle) const;
 		void UnloadTexture(Jasper::TextureHandle textureHandle) const;
 		void UnloadSceneTextures() const;
 		void UnloadGlobalTextures() const;
 		void UnloadAllTextures() const;
 
+		OPAL_NODISCARD Jasper::TextureHandle GetDefaultTexture2D() const { return m_DefaultTexture2DHandle; }
+
 	private:
 		std::filesystem::path m_AssetsPath;
 		
 		Scope<Jasper::ShaderManager> m_ShaderManager;
 		Scope<Jasper::TextureManager> m_TextureManager;
+
+		Jasper::TextureHandle m_DefaultTexture2DHandle = 0;
 	};
 }

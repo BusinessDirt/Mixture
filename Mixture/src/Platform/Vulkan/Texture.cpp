@@ -15,7 +15,7 @@ namespace Mixture::Vulkan
     {
         namespace
         {
-            VkFormat MixtureImageFormatToVkFormat(const Jasper::ImageFormat format)
+            VkFormat JasperImageFormatToVkFormat(const Jasper::ImageFormat format)
             {
                 switch (format)
                 {
@@ -29,16 +29,16 @@ namespace Mixture::Vulkan
                 OPAL_CORE_ASSERT(false)
                 return VK_FORMAT_UNDEFINED;
             }
-		
-            uint32_t MixtureImageFormatToByteSize(const Jasper::ImageFormat format)
+
+            uint32_t JasperImageFormatToByteSize(const Jasper::ImageFormat format)
             {
                 switch (format)
                 {
-                    case Jasper::ImageFormat::None: return 0;
-                    case Jasper::ImageFormat::RGB8:  return 3;
-                    case Jasper::ImageFormat::RGBA8: return 4;
-                    case Jasper::ImageFormat::R8: return 1;
-                    case Jasper::ImageFormat::RGBA32F: return 16;
+                case Jasper::ImageFormat::None: return 0;
+                case Jasper::ImageFormat::RGB8:  return 3;
+                case Jasper::ImageFormat::RGBA8: return 4;
+                case Jasper::ImageFormat::R8: return 1;
+                case Jasper::ImageFormat::RGBA32F: return 16;
                 }
 
                 OPAL_CORE_ASSERT(false)
@@ -51,7 +51,7 @@ namespace Mixture::Vulkan
         : m_Specification(std::move(specification))
     {
         VkExtent2D extent{ m_Specification.Width, m_Specification.Height };
-        VkFormat format = Util::MixtureImageFormatToVkFormat(m_Specification.Format);
+        VkFormat format = Util::JasperImageFormatToVkFormat(m_Specification.Format);
         
         m_Image = CreateScope<Image>(extent, format, VK_IMAGE_TILING_OPTIMAL,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, m_Specification.MipLevels);
@@ -87,7 +87,7 @@ namespace Mixture::Vulkan
         stagingBuffer.Unmap();
         stbi_image_free(pixels);
 
-        VkFormat format = Util::MixtureImageFormatToVkFormat(m_Specification.Format);
+        VkFormat format = Util::JasperImageFormatToVkFormat(m_Specification.Format);
         m_Image = CreateScope<Image>(extent, format, VK_IMAGE_TILING_OPTIMAL,
                                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                                      m_Specification.MipLevels);
@@ -111,7 +111,7 @@ namespace Mixture::Vulkan
 
     void Texture2D::SetData(const void* data, const uint32_t size)
     {
-        OPAL_CORE_ASSERT(size == m_Specification.Width * m_Specification.Height * Util::MixtureImageFormatToByteSize(m_Specification.Format),
+        OPAL_CORE_ASSERT(size == m_Specification.Width * m_Specification.Height * Util::JasperImageFormatToByteSize(m_Specification.Format),
                          "Mixture::Vulkan::Texture2D::SetData() - SetData() requires full texture data!")
 
         Buffer stagingBuffer(size, 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

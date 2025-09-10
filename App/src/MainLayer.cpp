@@ -23,7 +23,7 @@ namespace Mixture
         
         m_UniformBufferObject = {};
         m_UniformBuffer = UniformBuffer::Create(sizeof(UniformBufferObject));
-
+        
         m_Texture = Application::Get().GetAssetManager().LoadTexture<Texture2D>("test.png");
     }
 
@@ -39,7 +39,7 @@ namespace Mixture
         
         m_UniformBuffer->SetData(&m_UniformBufferObject);
         m_GraphicsPipeline->UpdateGlobalUniformBuffer(m_UniformBuffer->GetDescriptorInfo());
-        m_GraphicsPipeline->UpdateTexture(m_Texture);
+        if (m_UseCustomTexture) m_GraphicsPipeline->UpdateTexture(m_Texture);
     }
 
     void MainLayer::OnRender(FrameInfo& frameInfo)
@@ -59,6 +59,7 @@ namespace Mixture
         ImGui::Text("Frame time: %.3f ms", frameInfo.FrameTime);
         ImGui::Text("Viewport focused: %s", m_ViewportFocused ? "true" : "false");
         ImGui::SliderFloat("Distance", &m_Z, 0.1f, 100.0f);
+        ImGui::Checkbox("Custom Texture", &m_UseCustomTexture);
         ImGui::End();
     }
 

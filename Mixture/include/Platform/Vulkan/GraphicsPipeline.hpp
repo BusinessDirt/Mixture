@@ -31,5 +31,6 @@ namespace Mixture::Vulkan
         
         Scope<DescriptorSet> m_GlobalSet;
         Vector<Scope<DescriptorSet>> m_InstanceSets;
+        mutable bool m_TextureBound = false;
     };
 }

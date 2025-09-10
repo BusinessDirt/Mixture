@@ -27,6 +27,8 @@ namespace Mixture
         
         PushOverlay(new ImGuiLayer());
         Renderer::Initialize(name);
+
+        m_AssetManager->CreateDefaults();
     }
 
     Application::~Application()

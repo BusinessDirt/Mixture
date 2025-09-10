@@ -208,6 +208,9 @@ namespace Mixture::Vulkan
 
     void GraphicsPipeline::Bind() const
     {
+        if (!m_TextureBound) UpdateTexture(Application::Get().GetAssetManager().GetDefaultTexture2D());
+        m_TextureBound = false;
+            
         vkCmdBindPipeline(Context::CurrentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 
         const std::array sets = { m_GlobalSet->GetHandle(), m_InstanceSets[Context::Swapchain->GetCurrentFrameIndex()]->GetHandle() };
@@ -259,5 +262,7 @@ namespace Mixture::Vulkan
         {
             currentSet.UpdateImage(0, static_cast<const VkDescriptorImageInfo*>(tex->GetDescriptorInfo()));
         }
+
+        m_TextureBound = true;
     }
 }

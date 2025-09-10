@@ -14,7 +14,7 @@ namespace Mixture
     {
     public:
         OPAL_NON_COPIABLE(MainLayer);
-        MainLayer() : Layer("MainLayer") {}
+        MainLayer() : Layer("MainLayer"), m_Texture(0) {}
         ~MainLayer() override = default;
 
         void OnAttach() override;
@@ -36,6 +36,7 @@ namespace Mixture
         UniformBufferObject m_UniformBufferObject{};
         
         float m_Z = 1.0f;
+        bool m_UseCustomTexture = false;
         
         bool m_ViewportFocused = false;
     };

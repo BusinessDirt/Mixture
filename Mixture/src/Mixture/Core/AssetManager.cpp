@@ -1,6 +1,8 @@
 #include "mxpch.hpp"
 #include "Mixture/Core/AssetManager.hpp"
 
+#include "Mixture/Renderer/Texture.hpp"
+
 namespace Mixture
 {
 	namespace Util
@@ -38,6 +40,14 @@ namespace Mixture
 		textureManagerSettings.AssetDirectory = m_AssetsPath;
 		textureManagerSettings.TextureDirectoryName = "textures";
 		m_TextureManager = CreateScope<Jasper::TextureManager>(textureManagerSettings);
+	}
+
+	void AssetManager::CreateDefaults()
+	{
+		// Default Texture2D
+		m_DefaultTexture2DHandle = m_TextureManager->Create<Texture2D>({});
+		const auto default2D = m_TextureManager->Get(m_DefaultTexture2DHandle);
+		default2D.lock()->SetData(std::array<uint8_t, 4>{ 255, 255, 255, 255 }.data(), 4);
 	}
 
 	const Jasper::SPVShader& AssetManager::GetShader(const char* shaderName) const
