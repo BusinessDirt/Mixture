@@ -24,16 +24,12 @@ namespace Mixture
         m_UniformBufferObject = {};
         m_UniformBuffer = UniformBuffer::Create(sizeof(UniformBufferObject));
 
-        m_Texture = Texture2D::Create("test.png");
+        m_Texture = Application::Get().GetAssetManager().LoadTexture<Texture2D>("test.png");
     }
 
     void MainLayer::OnDetach()
     {
-        m_Texture.reset();
-        m_GraphicsPipeline.reset();
-        m_IndexBuffer.reset();
-        m_VertexBuffer.reset();
-        m_UniformBuffer.reset();
+        
     }
 
     void MainLayer::OnUpdate(FrameInfo& frameInfo)
@@ -43,7 +39,7 @@ namespace Mixture
         
         m_UniformBuffer->SetData(&m_UniformBufferObject);
         m_GraphicsPipeline->UpdateGlobalUniformBuffer(m_UniformBuffer->GetDescriptorInfo());
-        m_GraphicsPipeline->UpdateInstanceTexture(m_Texture->GetDescriptorInfo());
+        m_GraphicsPipeline->UpdateTexture(m_Texture);
     }
 
     void MainLayer::OnRender(FrameInfo& frameInfo)

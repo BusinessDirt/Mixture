@@ -15,30 +15,30 @@ namespace Mixture::Vulkan
     {
         namespace
         {
-            VkFormat MixtureImageFormatToVkFormat(const ImageFormat format)
+            VkFormat MixtureImageFormatToVkFormat(const Jasper::ImageFormat format)
             {
                 switch (format)
                 {
-                    case ImageFormat::None: return VK_FORMAT_UNDEFINED;
-                    case ImageFormat::RGB8:  return VK_FORMAT_R8G8B8_SRGB;
-                    case ImageFormat::RGBA8: return VK_FORMAT_R8G8B8A8_SRGB;
-                    case ImageFormat::R8: return VK_FORMAT_R8_SRGB;
-                    case ImageFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
+                    case Jasper::ImageFormat::None: return VK_FORMAT_UNDEFINED;
+                    case Jasper::ImageFormat::RGB8:  return VK_FORMAT_R8G8B8_SRGB;
+                    case Jasper::ImageFormat::RGBA8: return VK_FORMAT_R8G8B8A8_SRGB;
+                    case Jasper::ImageFormat::R8: return VK_FORMAT_R8_SRGB;
+                    case Jasper::ImageFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
                 }
 
                 OPAL_CORE_ASSERT(false)
                 return VK_FORMAT_UNDEFINED;
             }
 		
-            uint32_t MixtureImageFormatToByteSize(const ImageFormat format)
+            uint32_t MixtureImageFormatToByteSize(const Jasper::ImageFormat format)
             {
                 switch (format)
                 {
-                    case ImageFormat::None: return 0;
-                    case ImageFormat::RGB8:  return 3;
-                    case ImageFormat::RGBA8: return 4;
-                    case ImageFormat::R8: return 1;
-                    case ImageFormat::RGBA32F: return 16;
+                    case Jasper::ImageFormat::None: return 0;
+                    case Jasper::ImageFormat::RGB8:  return 3;
+                    case Jasper::ImageFormat::RGBA8: return 4;
+                    case Jasper::ImageFormat::R8: return 1;
+                    case Jasper::ImageFormat::RGBA32F: return 16;
                 }
 
                 OPAL_CORE_ASSERT(false)
@@ -47,8 +47,8 @@ namespace Mixture::Vulkan
         }
     }
     
-    Texture2D::Texture2D(const TextureSpecification& specification)
-        : m_Specification(specification)
+    Texture2D::Texture2D(Jasper::TextureSpecification specification)
+        : m_Specification(std::move(specification))
     {
         VkExtent2D extent{ m_Specification.Width, m_Specification.Height };
         VkFormat format = Util::MixtureImageFormatToVkFormat(m_Specification.Format);
@@ -68,15 +68,14 @@ namespace Mixture::Vulkan
     Texture2D::Texture2D(const std::string& path)
     {
         int width, height, channels;
-        const std::filesystem::path fullPath = Application::Get().GetAssetManager().GetTexturePath() / path;
-        stbi_uc* pixels = stbi_load(fullPath.string().c_str(), &width, &height, &channels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
         OPAL_ASSERT(pixels, "Mixture::Vulkan::Texture2D::Texture2D() - Failed to load image from disk!")
 
         m_Specification.Width = width;
         m_Specification.Height = height;
         m_Specification.MipLevels = 8;
-        m_Specification.Format = ImageFormat::RGBA8;
-        m_Path = path;
+        m_Specification.Format = Jasper::ImageFormat::RGBA8;
+        m_Specification.Path = path;
 
         VkExtent2D extent{m_Specification.Width, m_Specification.Height};
         const VkDeviceSize imageSize = static_cast<VkDeviceSize>(width) * height * channels;

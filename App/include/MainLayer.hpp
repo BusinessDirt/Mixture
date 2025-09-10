@@ -30,7 +30,7 @@ namespace Mixture
         Ref<GraphicsPipeline> m_GraphicsPipeline;
         Ref<VertexBuffer> m_VertexBuffer;
         Ref<IndexBuffer> m_IndexBuffer;
-        Ref<Texture2D> m_Texture;
+        Jasper::TextureHandle m_Texture;
         
         Ref<UniformBuffer> m_UniformBuffer;
         UniformBufferObject m_UniformBufferObject{};

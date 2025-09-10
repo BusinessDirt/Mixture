@@ -19,7 +19,7 @@ namespace Jasper
         explicit ShaderManager(const Settings& settings);
         ~ShaderManager() = default;
 
-        const SPVShader& GetShader(const char* shaderName) const { return m_Shaders.at(shaderName); }
+        const SPVShader& Get(const char* shaderName) const { return m_Shaders.at(shaderName); }
 
     private:
         void LoadCache(const std::filesystem::path& cacheFile);

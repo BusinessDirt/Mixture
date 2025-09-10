@@ -24,9 +24,8 @@ namespace Jasper
     }
     
     ShaderManager::ShaderManager(const Settings& settings)
+        : m_Settings(settings)
     {
-        m_Settings = settings;
-
         const std::filesystem::path cacheFolder = m_Settings.AssetDirectory / m_Settings.ShaderDirectoryName / m_Settings.ShaderCacheDirectoryName;
         const std::filesystem::path cacheFile = cacheFolder / "Jasper.Shaders.cache";
         std::filesystem::create_directory(cacheFolder);

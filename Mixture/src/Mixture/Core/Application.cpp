@@ -31,6 +31,9 @@ namespace Mixture
 
     Application::~Application()
     {
+        // Unload textures before Renderer
+        m_AssetManager->UnloadAllTextures();
+        
         Renderer::DestroyImGuiContext();
         m_LayerStack.Shutdown(); 
         Renderer::Shutdown();

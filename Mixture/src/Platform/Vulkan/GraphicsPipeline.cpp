@@ -249,7 +249,7 @@ namespace Mixture::Vulkan
         m_GlobalSet->UpdateBuffer(0, static_cast<const VkDescriptorBufferInfo*>(bufferInfo));
     }
 
-    void GraphicsPipeline::UpdateInstanceTexture(const void* imageInfo) const
+    void GraphicsPipeline::UpdateTexture(const uint32_t textureHandle) const
     {
         const DescriptorSet& currentSet = *m_InstanceSets.at(Context::Swapchain->GetCurrentFrameIndex());
         if (!currentSet.GetHandle())
@@ -259,6 +259,14 @@ namespace Mixture::Vulkan
         }
 
         // Binding 0 is inferred here
-        currentSet.UpdateImage(0, static_cast<const VkDescriptorImageInfo*>(imageInfo));
+        if (const std::weak_ptr<Jasper::Texture> weakTexture = Application::Get().GetAssetManager().GetTexture(textureHandle);
+            weakTexture.expired())
+        {
+            OPAL_CORE_ERROR("Mixture::Vulkan::GraphicsPipeline::UpdateInstanceTexture() - Texture is expired!");
+        }
+        else if (const auto tex = weakTexture.lock())
+        {
+            currentSet.UpdateImage(0, static_cast<const VkDescriptorImageInfo*>(tex->GetDescriptorInfo()));
+        }
     }
 }

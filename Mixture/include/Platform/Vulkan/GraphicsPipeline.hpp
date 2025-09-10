@@ -20,7 +20,7 @@ namespace Mixture::Vulkan
         void Bind() const override;
         void PushConstants(const void* pValues) const override;
         void UpdateGlobalUniformBuffer(const void* bufferInfo) const override;
-        void UpdateInstanceTexture(const void* imageInfo) const override; 
+        void UpdateTexture(uint32_t textureHandle) const override; 
 
     private:
         VULKAN_HANDLE(VkPipeline, m_GraphicsPipeline);

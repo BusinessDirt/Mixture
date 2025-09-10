@@ -44,3 +44,7 @@ Scripts/python/generated
 
 # misc
 *.log
+*.cache
+*.spv
+*.sln.DotSettings.user
+imgui.ini

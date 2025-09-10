@@ -6,7 +6,7 @@
 
 namespace Mixture
 {
-    Ref<Texture2D> Texture2D::Create(const TextureSpecification& specification)
+    Ref<Texture2D> Texture2D::Create(const Jasper::TextureSpecification& specification)
     {
         switch (Renderer::GetAPI())
         {
@@ -20,7 +20,7 @@ namespace Mixture
         return nullptr;
     }
     
-    Ref<Texture2D> Texture2D::Create(const std::string& path)
+    Ref<Texture2D> Texture2D::Load(const std::string& path)
     {
         switch (Renderer::GetAPI())
         {
