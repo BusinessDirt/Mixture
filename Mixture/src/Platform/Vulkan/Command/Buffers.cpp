@@ -22,7 +22,7 @@ namespace Mixture::Vulkan
 
     CommandBuffers::~CommandBuffers()
     {
-        vkFreeCommandBuffers(Context::Device->GetHandle(), m_CommandPool, static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
-        m_CommandBuffers.clear();
+        vkFreeCommandBuffers(Context::Device->GetHandle(), m_CommandPool,
+            static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
     }
 }

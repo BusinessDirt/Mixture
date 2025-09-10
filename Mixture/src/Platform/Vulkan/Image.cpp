@@ -39,16 +39,12 @@ namespace Mixture::Vulkan
         : m_MipLevels(0), m_Extent(other.m_Extent), m_Format(other.m_Format), m_ImageLayout(other.m_ImageLayout),
           m_Image(other.m_Image)
     {
-        other.m_Image = nullptr;
+        other.m_Image = VK_NULL_HANDLE;
     }
 
     Image::~Image()
     {
-        if (m_Image)
-        {
-            vkDestroyImage(Context::Device->GetHandle(), m_Image, nullptr);
-            m_Image = nullptr;
-        }
+        vkDestroyImage(Context::Device->GetHandle(), m_Image, nullptr);
     }
 
     DeviceMemory Image::AllocateMemory(const VkMemoryPropertyFlags properties) const
@@ -368,11 +364,7 @@ namespace Mixture::Vulkan
 
 	ImageView::~ImageView()
 	{
-        if (m_ImageView)
-        {
-            vkDestroyImageView(Context::Device->GetHandle(), m_ImageView, nullptr);
-            m_ImageView = nullptr;
-        }
+        vkDestroyImageView(Context::Device->GetHandle(), m_ImageView, nullptr);
 	}
 
     ImageSampler::ImageSampler()
@@ -397,6 +389,6 @@ namespace Mixture::Vulkan
 
     ImageSampler::~ImageSampler()
     {
-        if (m_Sampler) vkDestroySampler(Context::Device->GetHandle(), m_Sampler, nullptr);
+        vkDestroySampler(Context::Device->GetHandle(), m_Sampler, nullptr);
     }
 }

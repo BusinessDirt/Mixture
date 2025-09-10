@@ -17,11 +17,7 @@ namespace Mixture::Vulkan
 
     Fence::~Fence()
     {
-        if (m_Fence)
-        {
-            vkDestroyFence(Context::Device->GetHandle(), m_Fence, nullptr);
-            m_Fence = nullptr;
-        }
+        vkDestroyFence(Context::Device->GetHandle(), m_Fence, nullptr);
     }
 
     Fence::Fence(Fence&& other) noexcept

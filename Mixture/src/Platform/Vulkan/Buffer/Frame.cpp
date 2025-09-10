@@ -29,12 +29,6 @@ namespace Mixture::Vulkan
 
 	FrameBuffer::~FrameBuffer()
 	{
-		if (m_FrameBuffer)
-		{
-			vkDestroyFramebuffer(Context::Device->GetHandle(), m_FrameBuffer, nullptr);
-			m_FrameBuffer = nullptr;
-		}
-
-		m_ImageView = nullptr;
+		vkDestroyFramebuffer(Context::Device->GetHandle(), m_FrameBuffer, nullptr);
 	}
 }

@@ -14,7 +14,7 @@ namespace Mixture::Vulkan
         
         explicit IndexBuffer(const std::vector<uint32_t>& indices);
         IndexBuffer();
-        ~IndexBuffer() override;
+        ~IndexBuffer() override = default;
 
         void SetData(const std::vector<uint32_t>& indices) override;
         

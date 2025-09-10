@@ -27,7 +27,8 @@ namespace Mixture::Vulkan
                   "Mixture::Vulkan::DescriptorSetLayout::DescriptorSetLayout() - Creation failed!")
     }
 
-    DescriptorSetLayout::~DescriptorSetLayout() {
-        if (m_Layout) vkDestroyDescriptorSetLayout(m_Device, m_Layout, nullptr);
+    DescriptorSetLayout::~DescriptorSetLayout()
+    {
+        vkDestroyDescriptorSetLayout(m_Device, m_Layout, nullptr);
     }
 }

@@ -16,11 +16,7 @@ namespace Mixture::Vulkan
 
     Semaphore::~Semaphore()
     {
-        if (m_Semaphore)
-        {
-            vkDestroySemaphore(Context::Device->GetHandle(), m_Semaphore, nullptr);
-            m_Semaphore = nullptr;
-        }
+        vkDestroySemaphore(Context::Device->GetHandle(), m_Semaphore, nullptr);
     }
 
     Semaphore::Semaphore(Semaphore&& other) noexcept

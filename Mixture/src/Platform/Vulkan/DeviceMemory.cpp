@@ -47,11 +47,7 @@ namespace Mixture::Vulkan
 
     DeviceMemory::~DeviceMemory()
     {
-        if (m_Memory)
-        {
-            vkFreeMemory(Context::Device->GetHandle(), m_Memory, nullptr);
-            m_Memory = nullptr;
-        }
+        vkFreeMemory(Context::Device->GetHandle(), m_Memory, nullptr);
     }
 
     void* DeviceMemory::Map(const size_t offset, const size_t size) const

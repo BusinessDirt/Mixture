@@ -82,10 +82,6 @@ namespace Mixture::Vulkan
 
     Instance::~Instance()
     {
-        if (m_Instance)
-        {
-            vkDestroyInstance(m_Instance, nullptr);
-            m_Instance = VK_NULL_HANDLE;
-        }
+        vkDestroyInstance(m_Instance, nullptr);
     }
 }

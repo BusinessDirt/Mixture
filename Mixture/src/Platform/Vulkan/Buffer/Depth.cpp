@@ -41,13 +41,6 @@ namespace Mixture::Vulkan
 		m_Image->TransitionImageLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 	}
 
-	DepthBuffer::~DepthBuffer()
-	{
-		m_ImageView = nullptr;
-		m_Image = nullptr;
-		m_ImageMemory = nullptr;
-	}
-
 	VkFormat DepthBuffer::FindDepthFormat()
 	{
 		return Util::FindSupportedFormat(

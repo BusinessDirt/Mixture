@@ -28,11 +28,7 @@ namespace Mixture::Vulkan
 
 	ShaderModule::~ShaderModule()
 	{
-		if (m_ShaderModule)
-		{
-			vkDestroyShaderModule(Context::Device->GetHandle(), m_ShaderModule, nullptr);
-			m_ShaderModule = nullptr;
-		}
+		vkDestroyShaderModule(Context::Device->GetHandle(), m_ShaderModule, nullptr);
 	}
 
 	VkPipelineShaderStageCreateInfo ShaderModule::CreateInfo()

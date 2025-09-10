@@ -14,7 +14,7 @@ namespace Mixture::Vulkan
         OPAL_NON_COPIABLE(DepthBuffer);
 
         explicit DepthBuffer(VkExtent2D extent);
-        ~DepthBuffer();
+        ~DepthBuffer() = default;
 
         OPAL_NODISCARD VkFormat GetFormat() const { return m_Format; }
         OPAL_NODISCARD const ImageView& GetImageView() const { return *m_ImageView; }

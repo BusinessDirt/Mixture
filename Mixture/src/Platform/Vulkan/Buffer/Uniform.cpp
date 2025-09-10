@@ -10,11 +10,6 @@ namespace Mixture::Vulkan
         m_DescriptorInfo = {};
     }
 
-    UniformBuffer::~UniformBuffer()
-    {
-        m_Buffer.reset();
-    }
-
     void UniformBuffer::SetData(const void* data, const uint32_t index) const
     {
         const uint32_t size = static_cast<uint32_t>(m_Buffer->GetInstanceSize());

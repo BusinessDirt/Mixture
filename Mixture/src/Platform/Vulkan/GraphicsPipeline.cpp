@@ -202,17 +202,8 @@ namespace Mixture::Vulkan
 
     GraphicsPipeline::~GraphicsPipeline()
     {
-        if (m_GraphicsPipeline)
-        {
-            vkDestroyPipeline(Context::Device->GetHandle(), m_GraphicsPipeline, nullptr);
-            m_GraphicsPipeline = nullptr;
-        }
-
-        if (m_PipelineLayout)
-        {
-            vkDestroyPipelineLayout(Context::Device->GetHandle(), m_PipelineLayout, nullptr);
-            m_PipelineLayout = nullptr;
-        }
+        vkDestroyPipeline(Context::Device->GetHandle(), m_GraphicsPipeline, nullptr);
+        vkDestroyPipelineLayout(Context::Device->GetHandle(), m_PipelineLayout, nullptr);
     }
 
     void GraphicsPipeline::Bind() const

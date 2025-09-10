@@ -11,7 +11,7 @@ namespace  Mixture::Vulkan
     public:
         explicit Texture2D(Jasper::TextureSpecification specification);
         explicit Texture2D(const std::string& path);
-        ~Texture2D() override;
+        ~Texture2D() override = default;
 
         
         void SetData(const void* data, uint32_t size) override;

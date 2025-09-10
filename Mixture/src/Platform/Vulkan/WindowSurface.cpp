@@ -15,10 +15,6 @@ namespace Mixture::Vulkan
 
     WindowSurface::~WindowSurface()
     {
-        if (m_Surface)
-        {
-            vkDestroySurfaceKHR(Context::Instance->GetHandle(), m_Surface, nullptr);
-            m_Surface = VK_NULL_HANDLE;
-        }
+        vkDestroySurfaceKHR(Context::Instance->GetHandle(), m_Surface, nullptr);
     }
 }

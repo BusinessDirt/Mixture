@@ -120,24 +120,7 @@ namespace Mixture::Vulkan
 
     Swapchain::~Swapchain()
     {
-        for (auto& fb : m_FrameBuffers) fb = nullptr;
-        for (auto& db : m_DepthBuffers) db = nullptr;
-
-        if (m_Swapchain)
-        {
-            vkDestroySwapchainKHR(Context::Device->GetHandle(), m_Swapchain, nullptr);
-            m_Swapchain = VK_NULL_HANDLE;
-        }
-
-        m_Renderpass.reset();
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            m_ImageAvailableSemaphores[i].~Semaphore();
-            m_RenderFinishedSemaphores[i].~Semaphore();
-            m_InFlightFences[i].~Fence();
-            m_ImagesInFlight[i] = nullptr;
-        }
+        vkDestroySwapchainKHR(Context::Device->GetHandle(), m_Swapchain, nullptr);
     }
 
     VkResult Swapchain::AcquireNextImage() const

@@ -20,10 +20,6 @@ namespace Mixture::Vulkan
 
     CommandPool::~CommandPool()
     {
-        if (m_CommandPool)
-        {
-            vkDestroyCommandPool(Context::Device->GetHandle(), m_CommandPool, nullptr);
-            m_CommandPool = nullptr;
-        }
+        vkDestroyCommandPool(Context::Device->GetHandle(), m_CommandPool, nullptr);
     }
 }

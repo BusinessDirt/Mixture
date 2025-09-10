@@ -49,11 +49,7 @@ namespace Mixture::Vulkan
 
     Device::~Device()
     {
-        if (m_Device)
-        {
-            vkDestroyDevice(m_Device, nullptr);
-            m_Device = VK_NULL_HANDLE;
-        }
+        vkDestroyDevice(m_Device, nullptr);
     }
 
     VkFormat Device::FindSupportedFormat(const std::vector<VkFormat>& candidates, const VkImageTiling tiling, const VkFormatFeatureFlags features)

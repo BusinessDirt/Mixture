@@ -11,11 +11,6 @@ namespace Mixture::Vulkan
         if (count != 0) VertexBuffer::SetData(data, size, count);
     }
 
-    VertexBuffer::~VertexBuffer()
-    {
-        m_VertexBuffer = nullptr;
-    }
-
     void VertexBuffer::SetData(const void* data, const uint32_t size, const uint32_t count)
     {
         const bool validCommandBuffer = Context::CurrentCommandBuffer != VK_NULL_HANDLE;

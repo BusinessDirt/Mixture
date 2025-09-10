@@ -13,7 +13,7 @@ namespace Mixture::Vulkan
         OPAL_NON_COPIABLE(UniformBuffer);
         
         explicit UniformBuffer(size_t instanceSize, uint32_t instanceCount);
-        ~UniformBuffer() override;
+        ~UniformBuffer() override = default;
 
         void SetData(const void* data, uint32_t index) const override;
         const void* GetDescriptorInfo(uint32_t index) override;

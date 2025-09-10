@@ -11,7 +11,7 @@ namespace Mixture::Vulkan
         OPAL_NON_COPIABLE(VertexBuffer);
 
         explicit VertexBuffer(const void* data, uint32_t size, uint32_t count);
-        ~VertexBuffer() override;
+        ~VertexBuffer() override = default;
 
         void SetData(const void* data, uint32_t size, uint32_t count) override;
             

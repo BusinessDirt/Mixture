@@ -12,11 +12,6 @@ namespace Mixture::Vulkan
 
     IndexBuffer::IndexBuffer() : m_IndexBuffer(VK_NULL_HANDLE) {}
 
-    IndexBuffer::~IndexBuffer()
-    {
-        m_IndexBuffer = nullptr;
-    }
-
     void IndexBuffer::SetData(const std::vector<uint32_t>& indices)
     {
         const bool validCommandBuffer = Context::CurrentCommandBuffer != VK_NULL_HANDLE;

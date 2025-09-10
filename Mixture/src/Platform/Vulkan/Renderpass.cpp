@@ -82,10 +82,6 @@ namespace Mixture::Vulkan
 
 	Renderpass::~Renderpass()
 	{
-		if (m_Renderpass)
-		{
-			vkDestroyRenderPass(Context::Device->GetHandle(), m_Renderpass, nullptr);
-			m_Renderpass = nullptr;
-		}
+		vkDestroyRenderPass(Context::Device->GetHandle(), m_Renderpass, nullptr);
 	}
 }

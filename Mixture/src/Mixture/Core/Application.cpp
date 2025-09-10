@@ -31,15 +31,11 @@ namespace Mixture
 
     Application::~Application()
     {
-        // Unload textures before Renderer
         m_AssetManager->UnloadAllTextures();
         
         Renderer::DestroyImGuiContext();
         m_LayerStack.Shutdown(); 
         Renderer::Shutdown();
-        
-        m_AssetManager.reset();
-        m_Window.reset();
     }
 
     void Application::Close()

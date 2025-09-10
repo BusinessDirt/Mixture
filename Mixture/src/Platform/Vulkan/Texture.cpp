@@ -109,8 +109,6 @@ namespace Mixture::Vulkan
         m_Loaded = true;
     }
 
-    Texture2D::~Texture2D() = default;
-
     void Texture2D::SetData(const void* data, const uint32_t size)
     {
         OPAL_CORE_ASSERT(size == m_Specification.Width * m_Specification.Height * Util::MixtureImageFormatToByteSize(m_Specification.Format),
