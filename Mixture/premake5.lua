@@ -15,7 +15,6 @@ project "Mixture"
 
     externalincludedirs {
         "../Opal/include",
-        "../Jasper/include",
 
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.imgui}",

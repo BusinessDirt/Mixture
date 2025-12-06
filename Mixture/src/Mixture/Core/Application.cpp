@@ -1,7 +1,6 @@
 #include "mxpch.hpp"
 #include "Mixture/Core/Application.hpp"
 
-#include "Mixture/Renderer/Renderer.hpp"
 #include "Mixture/Core/Time.hpp"
 
 #include <Opal/Base.hpp>
@@ -22,22 +21,11 @@ namespace Mixture
         
         m_Window = CreateScope<Window>(props);
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
-
-        m_AssetManager = CreateScope<AssetManager>();
-        
-        PushOverlay(new ImGuiLayer());
-        Renderer::Initialize(name);
-
-        m_AssetManager->CreateDefaults();
     }
 
     Application::~Application()
     {
-        m_AssetManager->UnloadAllTextures();
-        
-        Renderer::DestroyImGuiContext();
-        m_LayerStack.Shutdown(); 
-        Renderer::Shutdown();
+        m_LayerStack.Shutdown();
     }
 
     void Application::Close()
@@ -48,35 +36,10 @@ namespace Mixture
     void Application::Run() const
     {
         Timer frameTimer{};
-        FrameInfo frameInfo{};
         
         while (m_Running)
         {
             m_Window->OnUpdate();
-            
-            // Update information about current frame
-            frameInfo.FrameTime = frameTimer.Tick();
-            
-            // Update Layers
-            for (Layer* layer : m_LayerStack) layer->OnUpdate(frameInfo);
-
-            // Draw to ImGui
-            Renderer::BeginImGuiImpl();
-            ImGuiLayer::Begin();
-            for (Layer* layer : m_LayerStack) layer->OnRenderImGui(frameInfo);
-            ImGuiLayer::End();
-            
-            Renderer::BeginFrame();
-            {
-                // Draw Scene
-                Renderer::BeginSceneRenderpass();
-                for (Layer* layer : m_LayerStack) layer->OnRender(frameInfo);
-                Renderer::EndSceneRenderpass();
-
-                // Draw UI
-                Renderer::RenderImGui();
-            }
-            Renderer::EndFrame();
         }
     }
 
@@ -101,7 +64,6 @@ namespace Mixture
 
     bool Application::OnFramebufferResize(const FramebufferResizeEvent& e)
     {
-        Renderer::OnFramebufferResize(e.GetWidth(), e.GetHeight());
         return false;
     }
 }

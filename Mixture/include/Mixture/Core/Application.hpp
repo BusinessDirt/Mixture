@@ -1,11 +1,7 @@
 #pragma once
 
-
 #include "Mixture/Core/Window.hpp"
 #include "Mixture/Core/LayerStack.hpp"
-#include "Mixture/Core/AssetManager.hpp"
-
-#include "Mixture/ImGui/ImGuiLayer.hpp"
 
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Events/ApplicationEvent.hpp"
@@ -41,7 +37,6 @@ namespace Mixture
 
         static Application& Get() { return *s_Instance; }
         OPAL_NODISCARD const Window& GetWindow() const { return *m_Window; }
-        OPAL_NODISCARD const AssetManager& GetAssetManager() const { return *m_AssetManager; }
         
         void PushLayer(Layer* layer) { m_LayerStack.PushLayer(layer); }
         void PushOverlay(Layer* layer) { m_LayerStack.PushOverlay(layer); }
@@ -55,7 +50,6 @@ namespace Mixture
         bool m_Running = true;
         LayerStack m_LayerStack;
         Scope<Window> m_Window;
-        Scope<AssetManager> m_AssetManager;
         
     private:
         static Application* s_Instance;
