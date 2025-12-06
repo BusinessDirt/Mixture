@@ -69,7 +69,7 @@ namespace Mixture::Vulkan
                 return format;
             }
         }
-        OPAL_CORE_ERROR("Mixture::Vulkan::Device::FindSupportedFormat() - Failed!");
+        OPAL_ERROR("Core", "Mixture::Vulkan::Device::FindSupportedFormat() - Failed!");
         return VK_FORMAT_UNDEFINED;
     }
 
@@ -85,7 +85,7 @@ namespace Mixture::Vulkan
             }
         }
 
-        OPAL_CORE_ERROR("Mixture::Vulkan::Device::FindMemoryType() - Failed!");
+        OPAL_ERROR("Core", "Mixture::Vulkan::Device::FindMemoryType() - Failed!");
         return 0;
     }
 

@@ -10,9 +10,9 @@ namespace Mixture::Vulkan
 	{
 		if (!shader.Data.contains(stage))
 		{
-			OPAL_CORE_ERROR("Mixture::Vulkan::ShaderModule::ShaderModule() - SPVShader doesn't contain code for stage '{}'",
+			OPAL_ERROR("Core", "Mixture::Vulkan::ShaderModule::ShaderModule() - SPVShader doesn't contain code for stage '{}'",
 				Jasper::Util::ShaderStageToString(stage));
-			OPAL_CORE_ASSERT(false)
+			OPAL_ASSERT("Core", false)
 		}
 
 		const std::vector<uint32_t>& code = shader.Data.at(stage);

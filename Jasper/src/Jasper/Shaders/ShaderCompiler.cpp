@@ -27,7 +27,7 @@ namespace Jasper
                 {
                     it->StageFlags |= stage;
                     
-                    if (debug) OPAL_CORE_INFO(" [=] Jasper::ShaderCompiler::ReflectSPV() - Updated DescriptorSetLayoutBinding ({}): stage={}, set={}, binding={}",
+                    if (debug) OPAL_INFO("Core", " [=] Jasper::ShaderCompiler::ReflectSPV() - Updated DescriptorSetLayoutBinding ({}): stage={}, set={}, binding={}",
                         Util::DescriptorTypeToString(it->Type), Util::ShaderStageToString(stage), set, binding);
                 }
                 else
@@ -39,7 +39,7 @@ namespace Jasper
                     layoutBinding.StageFlags |= stage;
                     shader.DescriptorSetLayoutBindings[set].push_back(layoutBinding);
                     
-                    if (debug) OPAL_CORE_INFO(" [+] Jasper::ShaderCompiler::ReflectSPV() - Found DescriptorSetLayoutBinding ({}): stage={}, set={}, binding={}",
+                    if (debug) OPAL_INFO("Core", " [+] Jasper::ShaderCompiler::ReflectSPV() - Found DescriptorSetLayoutBinding ({}): stage={}, set={}, binding={}",
                         Util::DescriptorTypeToString(descriptorType), Util::ShaderStageToString(stage), set, binding);
                 }
             }
@@ -61,7 +61,7 @@ namespace Jasper
             case OpenGL: options.SetTargetEnvironment(shaderc_target_env_opengl, shaderc_env_version_opengl_4_5); break;
             case DirectX:
             case None:
-                OPAL_CORE_ERROR("Jasper::ShaderCompiler::CompileSPV() - Target Environment not supported yet!");
+                OPAL_ERROR("Core", "Jasper::ShaderCompiler::CompileSPV() - Target Environment not supported yet!");
                 break;
         }
         
@@ -73,11 +73,11 @@ namespace Jasper
 
         if (compiled.GetCompilationStatus() != shaderc_compilation_status_success)
         {
-            OPAL_CORE_ERROR(compiled.GetErrorMessage());
-            OPAL_CORE_ASSERT(false)
+            OPAL_ERROR("Core", compiled.GetErrorMessage());
+            OPAL_ASSERT("Core", false)
         }
 
-        if (m_Flags.Debug) OPAL_CORE_INFO("Jasper::ShaderCompiler::CompileSPV() - Compiled {} Shader: {}", Util::ShaderStageToString(stage), path.string().c_str());
+        if (m_Flags.Debug) OPAL_INFO("Core", "Jasper::ShaderCompiler::CompileSPV() - Compiled {} Shader: {}", Util::ShaderStageToString(stage), path.string().c_str());
 
         return { compiled.cbegin(), compiled.cend() };
     }
@@ -121,7 +121,7 @@ namespace Jasper
                 if (name.empty()) name = stageCompiler.get_fallback_name(resource.id);
                 shader.VertexAttributeNames.push_back(name);
 
-                if (m_Flags.Debug) OPAL_CORE_INFO(" [+] Jasper::ShaderCompiler::ReflectSPV() - Found VertexInputAttribute: layout(location = {}, binding = {}, offset = {}) in {} {};",
+                if (m_Flags.Debug) OPAL_INFO("Core", " [+] Jasper::ShaderCompiler::ReflectSPV() - Found VertexInputAttribute: layout(location = {}, binding = {}, offset = {}) in {} {};",
                     location, binding, attributeDescription.Offset, Util::FormatToString(format), name);
 
                 bindingStrides[binding] += size;
@@ -148,7 +148,7 @@ namespace Jasper
                 shader.PushConstant.Size = static_cast<uint32_t>(stageCompiler.get_declared_struct_size(bufferType));
                 stageCompiler.get_binary_offset_for_decoration(pushConstantBuffer.id, spv::DecorationBinding, shader.PushConstant.Offset);
 
-                if (m_Flags.Debug) OPAL_CORE_INFO(" [+] Jasper::ShaderCompiler::ReflectSPV() - Found PushConstant: stage={}, size={}, offset={}",
+                if (m_Flags.Debug) OPAL_INFO("Core", " [+] Jasper::ShaderCompiler::ReflectSPV() - Found PushConstant: stage={}, size={}, offset={}",
                     Util::ShaderStageToString(stage), shader.PushConstant.Size, shader.PushConstant.Offset);
             }
         }

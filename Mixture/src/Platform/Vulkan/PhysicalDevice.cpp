@@ -31,7 +31,7 @@ namespace Mixture::Vulkan
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(Context::Instance->GetHandle(), &deviceCount, nullptr);
         
-        OPAL_CORE_ASSERT(deviceCount > 0, "Mixture::Vulkan::PhysicalDevice::PhysicalDevice() - Failed to find GPU with Vulkan support!")
+        OPAL_ASSERT("Core", deviceCount > 0, "Mixture::Vulkan::PhysicalDevice::PhysicalDevice() - Failed to find GPU with Vulkan support!")
         
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(Context::Instance->GetHandle(), &deviceCount, devices.data());
@@ -54,7 +54,7 @@ namespace Mixture::Vulkan
             Util::PrintDebugAvailability(Util::GetAvailableExtensions(m_PhysicalDevice), requiredExtensions, [](const VkExtensionProperties& extension) { return extension.extensionName; }, "Device Extensions");
         }
         
-        OPAL_CORE_ASSERT(m_PhysicalDevice != VK_NULL_HANDLE,
+        OPAL_ASSERT("Core", m_PhysicalDevice != VK_NULL_HANDLE,
                          "Mixture::Vulkan::PhysicalDevice::PhysicalDevice() - Failed to find suitable GPU!")
         
         // Debug Information

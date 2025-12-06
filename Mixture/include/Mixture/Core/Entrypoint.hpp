@@ -7,7 +7,11 @@ extern Mixture::Application* Mixture::CreateApplication(ApplicationCommandLineAr
 
 inline int Entrypoint(const int argc, char** argv)
 {
-    Opal::Log::Init();
+    Opal::LogBuilder builder;
+    builder.UseConsoleSink()
+           .UseFileSink("logs/latest.log");
+
+    Opal::LogRegistry::Get().Initialize(builder.Build());
 
     const Mixture::Application* app = Mixture::CreateApplication({.Count = argc, .Args = argv });
     app->Run();

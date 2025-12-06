@@ -18,10 +18,10 @@ namespace Jasper::Util
                 in.seekg(0, std::ios::beg);
                 in.read(result.data(), static_cast<std::streamsize>(size));
             }
-            else OPAL_CORE_ERROR("Could not read from file '{0}'", filepath.string().c_str());
+            else OPAL_ERROR("Core", "Could not read from file '{0}'", filepath.string().c_str());
 
         }
-        else OPAL_CORE_ERROR("Could not open file '{0}'", filepath.string().c_str());
+        else OPAL_ERROR("Core", "Could not open file '{0}'", filepath.string().c_str());
 
         return result;
     }

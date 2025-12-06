@@ -5,10 +5,10 @@
 #define LIST_ITEM_BLANK " [-] "
 
 #define INFO_HORIZONTAL_BAR "=========================="
-#define INFO_BEGIN(title, ...) OPAL_CORE_INFO(""); OPAL_CORE_INFO(std::string(title) + ":", __VA_ARGS__); OPAL_CORE_INFO(INFO_HORIZONTAL_BAR)
-#define INFO_LIST(text, tabs, ...) OPAL_CORE_INFO(fmt::runtime(std::string(static_cast<size_t>(tabs) * 2, ' ') + std::string(LIST_ITEM_BLANK) + (text)), __VA_ARGS__)
-#define INFO_LIST_HEADER(text, tabs) OPAL_CORE_INFO(fmt::runtime(std::string(static_cast<size_t>(tabs) * 2, ' ') + std::string(LIST_ITEM_BLANK) + (text)))
-#define INFO_END() OPAL_CORE_INFO(INFO_HORIZONTAL_BAR)
+#define INFO_BEGIN(title, ...) OPAL_INFO("Core", ""); OPAL_INFO("Core", "{}:", title, __VA_ARGS__); OPAL_INFO("Core", INFO_HORIZONTAL_BAR)
+#define INFO_LIST(text, tabs, ...) OPAL_INFO("Core", fmt::runtime(std::string(static_cast<size_t>(tabs) * 2, ' ') + std::string(LIST_ITEM_BLANK) + (text)), __VA_ARGS__)
+#define INFO_LIST_HEADER(text, tabs) OPAL_INFO("Core", fmt::runtime(std::string(static_cast<size_t>(tabs) * 2, ' ') + std::string(LIST_ITEM_BLANK) + (text)))
+#define INFO_END() OPAL_INFO("Core", INFO_HORIZONTAL_BAR)
 
 namespace Jasper::Util
 {

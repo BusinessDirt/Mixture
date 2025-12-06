@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Jasper/Shaders/ShaderCompiler.hpp"
 
@@ -10,7 +10,7 @@ namespace Jasper
         struct Settings
         {
             bool Debug = true;
-            ShaderCompiler::TargetEnvironment Environment = ShaderCompiler::TargetEnvironment::Vulkan;
+            TargetEnvironment Environment = TargetEnvironment::Vulkan;
             std::filesystem::path AssetDirectory = "assets";
             std::string ShaderDirectoryName = "shaders";
             std::string ShaderCacheDirectoryName = "cache";

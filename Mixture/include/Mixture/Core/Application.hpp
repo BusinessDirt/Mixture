@@ -22,7 +22,7 @@ namespace Mixture
 
         const char* operator[](const int index) const
         {
-            OPAL_CORE_ASSERT(index < Count)
+            OPAL_ASSERT("Core", index < Count)
             return Args[index];
         }
     };

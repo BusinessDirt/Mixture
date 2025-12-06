@@ -29,7 +29,7 @@ namespace Jasper
                 m_PathToTextureHandle.erase(pit);
             }
 
-            OPAL_CORE_INFO("Jasper::TextureManager::Unload() - Unloading global texture!");
+            OPAL_INFO("Core", "Jasper::TextureManager::Unload() - Unloading global texture!");
             m_GlobalTextures.erase(it);
             return;
         }
@@ -43,32 +43,32 @@ namespace Jasper
                 m_PathToTextureHandle.erase(pit);
             }
 
-            OPAL_CORE_INFO("Jasper::TextureManager::Unload() - Unloading global texture!");
+            OPAL_INFO("Core", "Jasper::TextureManager::Unload() - Unloading global texture!");
             m_SceneTextures.erase(it);
             return;
         }
 
-        OPAL_CORE_INFO("Jasper::TextureManager::Unload() - Texture not found: {}", handle);
+        OPAL_INFO("Core", "Jasper::TextureManager::Unload() - Texture not found: {}", handle);
     }
 
     void TextureManager::UnloadScene()
     {
         std::lock_guard lock(m_Mutex);
-        OPAL_CORE_INFO("Jasper::TextureManager::UnloadScene() - Unloading all scene textures!");
+        OPAL_INFO("Core", "Jasper::TextureManager::UnloadScene() - Unloading all scene textures!");
         m_SceneTextures.clear();
     }
 
     void TextureManager::UnloadGlobal()
     {
         std::lock_guard lock(m_Mutex);
-        OPAL_CORE_INFO("Jasper::TextureManager::UnloadGlobal() - Unloading all global textures!");
+        OPAL_INFO("Core", "Jasper::TextureManager::UnloadGlobal() - Unloading all global textures!");
         m_GlobalTextures.clear();
     }
 
     void TextureManager::UnloadAll()
     {
         std::lock_guard lock(m_Mutex);
-        OPAL_CORE_INFO("Jasper::TextureManager::UnloadAll() - Unloading all textures!");
+        OPAL_INFO("Core", "Jasper::TextureManager::UnloadAll() - Unloading all textures!");
         m_GlobalTextures.clear();
         m_SceneTextures.clear();
     }

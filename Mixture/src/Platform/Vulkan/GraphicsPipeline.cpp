@@ -227,7 +227,7 @@ namespace Mixture::Vulkan
         }
         else
         {
-            OPAL_CORE_ERROR("Mixture::Vulkan::GraphicsPipeline::PushConstants() - Shader doesn't use push constant!");
+            OPAL_ERROR("Core", "Mixture::Vulkan::GraphicsPipeline::PushConstants() - Shader doesn't use push constant!");
         } 
     }
 
@@ -235,7 +235,7 @@ namespace Mixture::Vulkan
     {
         if (!m_GlobalSet->GetHandle())
         {
-            OPAL_CORE_ERROR("Mixture::Vulkan::GraphicsPipeline::UpdateGlobalUniformBuffer() - Global descriptor set not initialized!");
+            OPAL_ERROR("Core", "Mixture::Vulkan::GraphicsPipeline::UpdateGlobalUniformBuffer() - Global descriptor set not initialized!");
             return;
         }
         
@@ -248,7 +248,7 @@ namespace Mixture::Vulkan
         const DescriptorSet& currentSet = *m_InstanceSets.at(Context::Swapchain->GetCurrentFrameIndex());
         if (!currentSet.GetHandle())
         {
-            OPAL_CORE_ERROR("Mixture::Vulkan::GraphicsPipeline::UpdateInstanceTexture() - Instance descriptor set not initialized!");
+            OPAL_ERROR("Core", "Mixture::Vulkan::GraphicsPipeline::UpdateInstanceTexture() - Instance descriptor set not initialized!");
             return;
         }
 
@@ -256,7 +256,7 @@ namespace Mixture::Vulkan
         if (const std::weak_ptr<Jasper::Texture> weakTexture = Application::Get().GetAssetManager().GetTexture(textureHandle);
             weakTexture.expired())
         {
-            OPAL_CORE_ERROR("Mixture::Vulkan::GraphicsPipeline::UpdateInstanceTexture() - Texture is expired!");
+            OPAL_ERROR("Core", "Mixture::Vulkan::GraphicsPipeline::UpdateInstanceTexture() - Texture is expired!");
         }
         else if (const auto tex = weakTexture.lock())
         {

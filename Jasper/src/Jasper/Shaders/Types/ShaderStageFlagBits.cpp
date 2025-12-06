@@ -28,7 +28,7 @@ namespace Jasper::Util
         if (filename.ends_with(".rint"))  return Intersection;
         if (filename.ends_with(".rcall")) return Callable;
 
-        OPAL_CORE_ERROR("Invalid shader file extension: {}", filename.c_str());
+        OPAL_ERROR("Core", "Invalid shader file extension: {}", filename.c_str());
         return Vertex;
     }
 

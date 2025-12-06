@@ -48,7 +48,7 @@ namespace Mixture::Vulkan
      */
     VkResult Buffer::Map(const VkDeviceSize size, const VkDeviceSize offset)
     {
-        OPAL_CORE_ASSERT(m_Buffer && m_Memory, "Called map on buffer before create")
+        OPAL_ASSERT("Core", m_Buffer && m_Memory, "Called map on buffer before create")
         return vkMapMemory(Context::Device->GetHandle(), m_Memory, offset, size, 0, &m_Mapped);
     }
 
@@ -77,7 +77,7 @@ namespace Mixture::Vulkan
      */
     void Buffer::WriteToBuffer(const void* data, const VkDeviceSize size, const VkDeviceSize offset) const
     {
-        OPAL_CORE_ASSERT(m_Mapped, "Mixture::Vulkan::Buffer::WriteToBuffer() - Cannot copy to unmapped buffer")
+        OPAL_ASSERT("Core", m_Mapped, "Mixture::Vulkan::Buffer::WriteToBuffer() - Cannot copy to unmapped buffer")
 
         if (size == VK_WHOLE_SIZE)
         {

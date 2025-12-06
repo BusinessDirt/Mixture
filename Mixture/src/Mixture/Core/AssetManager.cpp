@@ -30,7 +30,7 @@ namespace Mixture
 
 		Jasper::ShaderManager::Settings shaderManagerSettings;
 		shaderManagerSettings.Debug = true;
-		shaderManagerSettings.Environment = Jasper::ShaderCompiler::TargetEnvironment::Vulkan;
+		shaderManagerSettings.Environment = Jasper::TargetEnvironment::Vulkan;
 		shaderManagerSettings.AssetDirectory = m_AssetsPath;
 		shaderManagerSettings.ShaderDirectoryName = "shaders";
 		shaderManagerSettings.ShaderCacheDirectoryName = "cache";

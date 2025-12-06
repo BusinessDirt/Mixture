@@ -42,7 +42,7 @@ namespace Mixture::Vulkan
 
         OPAL_NODISCARD VkCommandBuffer GetCurrentCommandBuffer() const
         {
-            OPAL_CORE_ASSERT(m_IsFrameStarted, "Cannot get command buffer when frame is not in progress!")
+            OPAL_ASSERT("Core", m_IsFrameStarted, "Cannot get command buffer when frame is not in progress!")
             return Context::CommandBuffers->Get(Context::Swapchain->GetCurrentFrameIndex());
         }
 

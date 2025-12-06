@@ -18,22 +18,22 @@ namespace Mixture::Vulkan
             {
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
                 {
-                    OPAL_CORE_ERROR(pCallbackData->pMessage);
+                    OPAL_ERROR("Core", pCallbackData->pMessage);
                     break;
                 }
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
                 {
-                    OPAL_CORE_WARN(pCallbackData->pMessage);
+                    OPAL_WARN("Core", pCallbackData->pMessage);
                     break;
                 }
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
                 {
-                    OPAL_CORE_TRACE(pCallbackData->pMessage);
+                    OPAL_TRACE("Core", pCallbackData->pMessage);
                     break;
                 }
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
                 {
-                    OPAL_CORE_INFO(pCallbackData->pMessage);
+                    OPAL_INFO("Core", pCallbackData->pMessage);
                     break;
                 }
                 case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
@@ -59,7 +59,7 @@ namespace Mixture::Vulkan
         }
         else
         {
-            OPAL_CORE_ERROR("Mixture::Vulkan::DebugMessenger::DebugMessenger() - Creation failed!");
+            OPAL_ERROR("Core", "Mixture::Vulkan::DebugMessenger::DebugMessenger() - Creation failed!");
         }
     }
 

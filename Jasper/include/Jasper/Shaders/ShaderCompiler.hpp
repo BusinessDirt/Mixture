@@ -7,19 +7,19 @@
 
 namespace Jasper
 {
+    enum TargetEnvironment : uint8_t
+    {
+        None = 0, Vulkan, OpenGL, DirectX
+    };
+
+    struct Flags
+    {
+        bool Debug = true;
+        TargetEnvironment Environment = None;
+    };
+
     class ShaderCompiler
     {
-    public:
-        enum TargetEnvironment : uint8_t
-        {
-            None = 0, Vulkan, OpenGL, DirectX
-        };
-        struct Flags
-        {
-            bool Debug = true;
-            TargetEnvironment Environment = None;
-        };
-        
     public:
         explicit ShaderCompiler(const Flags& flags = {});
         ~ShaderCompiler() = default;

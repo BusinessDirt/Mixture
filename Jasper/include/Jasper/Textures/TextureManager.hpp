@@ -45,7 +45,7 @@ namespace Jasper
     TextureHandle TextureManager::Load(const std::string& path, const bool global)
     {
         std::lock_guard lock(m_Mutex);
-        OPAL_CORE_INFO("Jasper::TextureManager::Load() - Loading Texture: path={}", path.c_str());
+        OPAL_INFO("Core", "Jasper::TextureManager::Load() - Loading Texture: path={}", path.c_str());
 
         if (const auto pit = m_PathToTextureHandle.find(path);
             pit != m_PathToTextureHandle.end())
@@ -69,7 +69,7 @@ namespace Jasper
     TextureHandle TextureManager::Create(const TextureSpecification& specification, const bool global)
     {
         std::lock_guard lock(m_Mutex);
-        OPAL_CORE_INFO("Jasper::TextureManager::Create() - Creating Texture: width={}, height={}, mipLevels={}, format={}",
+        OPAL_INFO("Core", "Jasper::TextureManager::Create() - Creating Texture: width={}, height={}, mipLevels={}, format={}",
             specification.Width, specification.Height, specification.MipLevels, Util::ImageFormatToString(specification.Format));
 
         TextureHandle handle = m_NextHandle++;

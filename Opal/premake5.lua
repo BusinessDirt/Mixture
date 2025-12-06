@@ -12,7 +12,9 @@ project "Opal"
     }
 
     externalincludedirs {
-        "%{IncludeDir.spdlog}"
+        "%{IncludeDir.spdlog}",
+        "%{IncludeDir.Vulkan}",
+        "%{IncludeDir.glm}",
     }
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")

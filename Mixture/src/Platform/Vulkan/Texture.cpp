@@ -1,4 +1,4 @@
-﻿#include "mxpch.hpp"
+#include "mxpch.hpp"
 #include "Platform/Vulkan/Texture.hpp"
 
 #include "Mixture/Renderer/Texture.hpp"
@@ -26,7 +26,7 @@ namespace Mixture::Vulkan
                     case Jasper::ImageFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
                 }
 
-                OPAL_CORE_ASSERT(false)
+                OPAL_ASSERT("Core", false)
                 return VK_FORMAT_UNDEFINED;
             }
 
@@ -41,7 +41,7 @@ namespace Mixture::Vulkan
                 case Jasper::ImageFormat::RGBA32F: return 16;
                 }
 
-                OPAL_CORE_ASSERT(false)
+                OPAL_ASSERT("Core", false)
                 return 0;
             }
         }
@@ -69,7 +69,7 @@ namespace Mixture::Vulkan
     {
         int width, height, channels;
         stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, STBI_rgb_alpha);
-        OPAL_ASSERT(pixels, "Mixture::Vulkan::Texture2D::Texture2D() - Failed to load image from disk!")
+        OPAL_ASSERT("Core", pixels, "Mixture::Vulkan::Texture2D::Texture2D() - Failed to load image from disk!")
 
         m_Specification.Width = width;
         m_Specification.Height = height;
@@ -111,7 +111,7 @@ namespace Mixture::Vulkan
 
     void Texture2D::SetData(const void* data, const uint32_t size)
     {
-        OPAL_CORE_ASSERT(size == m_Specification.Width * m_Specification.Height * Util::JasperImageFormatToByteSize(m_Specification.Format),
+        OPAL_ASSERT("Core", size == m_Specification.Width * m_Specification.Height * Util::JasperImageFormatToByteSize(m_Specification.Format),
                          "Mixture::Vulkan::Texture2D::SetData() - SetData() requires full texture data!")
 
         Buffer stagingBuffer(size, 1, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

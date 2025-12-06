@@ -133,7 +133,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_UNDEFINED)");
+                OPAL_ERROR("Core", "Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_UNDEFINED)");
             }
 
         }
@@ -149,7 +149,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)");
+                OPAL_ERROR("Core", "Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)");
             }
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
@@ -172,7 +172,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)");
+                OPAL_ERROR("Core", "Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)");
             }
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
@@ -187,7 +187,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)");
+                OPAL_ERROR("Core", "Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)");
             }
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
@@ -202,7 +202,7 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)");
+                OPAL_ERROR("Core", "Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)");
             }
         }
         else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
@@ -217,12 +217,12 @@ namespace Mixture::Vulkan
             }
             else
             {
-                OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)");
+                OPAL_ERROR("Core", "Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition! (from VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)");
             }
         }
         else
         {
-            OPAL_CORE_ERROR("Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition!");
+            OPAL_ERROR("Core", "Mixture::Vulkan::Image::TransitionImageLayout() - Unsupported layout transition!");
         }
 
         vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
@@ -252,7 +252,7 @@ namespace Mixture::Vulkan
         VkFormatProperties formatProperties;
         vkGetPhysicalDeviceFormatProperties(Context::PhysicalDevice->GetHandle(), imageFormat, &formatProperties);
 
-        OPAL_CORE_ASSERT(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT, 
+        OPAL_ASSERT("Core", formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT, 
                          "Mixture::Vulkan::Image::GenerateMipMaps() - Texture image format does not support linear blitting!")
 
         SingleTimeCommand::Submit([&](const VkCommandBuffer commandBuffer)

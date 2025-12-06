@@ -11,7 +11,7 @@
 
 #include "Mixture/Util/ToString.hpp"
 
-#define VK_ASSERT(arg, err) { VkResult res = arg; OPAL_CORE_ASSERT(res == VK_SUCCESS, err); }
+#define VK_ASSERT(arg, err) { VkResult res = arg; OPAL_ASSERT("Core", res == VK_SUCCESS, err); }
 
 #define VULKAN_HANDLE(VulkanHandleType, name) \
     public: VulkanHandleType GetHandle() const { return name; } \
@@ -36,10 +36,10 @@
 #define LIST_ITEM_BLANK " [-] "
 
 #define VULKAN_INFO_HORIZONTAL_BAR "=========================="
-#define VULKAN_INFO_BEGIN(title) OPAL_CORE_INFO(""); OPAL_CORE_INFO(std::string(title) + ":"); OPAL_CORE_INFO(VULKAN_INFO_HORIZONTAL_BAR)
-#define VULKAN_INFO_LIST(text, tabs, ...) OPAL_CORE_INFO(fmt::runtime(std::string(static_cast<size_t>(tabs) * 2, ' ') + std::string(LIST_ITEM_BLANK) + (text)), __VA_ARGS__)
-#define VULKAN_INFO_LIST_HEADER(text, tabs) OPAL_CORE_INFO(fmt::runtime(std::string(static_cast<size_t>(tabs) * 2, ' ') + std::string(LIST_ITEM_BLANK) + (text)))
-#define VULKAN_INFO_END() OPAL_CORE_INFO(VULKAN_INFO_HORIZONTAL_BAR)
+#define VULKAN_INFO_BEGIN(title) OPAL_INFO("Core", ""); OPAL_INFO("Core", std::string(title) + ":"); OPAL_INFO("Core", VULKAN_INFO_HORIZONTAL_BAR)
+#define VULKAN_INFO_LIST(text, tabs, ...) OPAL_INFO("Core", fmt::runtime(std::string(static_cast<size_t>(tabs) * 2, ' ') + std::string(LIST_ITEM_BLANK) + (text)), __VA_ARGS__)
+#define VULKAN_INFO_LIST_HEADER(text, tabs) OPAL_INFO("Core", fmt::runtime(std::string(static_cast<size_t>(tabs) * 2, ' ') + std::string(LIST_ITEM_BLANK) + (text)))
+#define VULKAN_INFO_END() OPAL_INFO("Core", VULKAN_INFO_HORIZONTAL_BAR)
 
 namespace Mixture::Vulkan::Util
 {
@@ -59,7 +59,7 @@ namespace Mixture::Vulkan::Util
         for (const auto& item : availableItems)
         {
             const char* itemName = getName(item);
-            OPAL_CORE_INFO("{}{}{}", IsRequired(itemName, requiredItems) ? LIST_ITEM_CHECK : LIST_ITEM, itemName, ANSI_RESET);
+            OPAL_INFO("Core", "{}{}{}", IsRequired(itemName, requiredItems) ? LIST_ITEM_CHECK : LIST_ITEM, itemName, ANSI_RESET);
         }
 
         // Check for required items that are not available
@@ -71,7 +71,7 @@ namespace Mixture::Vulkan::Util
                                                return strcmp(getName(item), requiredItem) == 0;
                                            });
 
-            if (!isAvailable) OPAL_CORE_INFO("{}{}{}", LIST_ITEM_CROSS, requiredItem, ANSI_RESET);
+            if (!isAvailable) OPAL_INFO("Core", "{}{}{}", LIST_ITEM_CROSS, requiredItem, ANSI_RESET);
         }
 
         VULKAN_INFO_END();

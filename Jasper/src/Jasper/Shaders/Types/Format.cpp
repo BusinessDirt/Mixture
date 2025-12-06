@@ -246,7 +246,7 @@ namespace Jasper::Util
                 return Undefined;
         }
 
-        OPAL_CORE_ERROR("Unsupported Format");
+        OPAL_ERROR("Core", "Unsupported Format");
         return Undefined;
     }
 }

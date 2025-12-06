@@ -13,7 +13,7 @@ namespace Mixture
 
     Application::Application(const std::string& name, ApplicationCommandLineArgs args)
     {
-        OPAL_CORE_ASSERT(!s_Instance, "Mixture::Application::Application() - Application already exists!")
+        OPAL_ASSERT("Core", !s_Instance, "Mixture::Application::Application() - Application already exists!")
         
         s_Instance = this;
 
