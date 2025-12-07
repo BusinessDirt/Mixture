@@ -48,3 +48,4 @@ Scripts/python/generated
 *.spv
 *.sln.DotSettings.user
 imgui.ini
+docs/
