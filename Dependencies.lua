@@ -1,7 +1,7 @@
 -- Dependencies
 IncludeDir = {}
 IncludeDir["spdlog"] = "%{wks.location}/vendor/spdlog/include"
-IncludeDir["Vulkan"] = os.getenv("VULKAN_SDK") .. "/Include"
+IncludeDir["Vulkan"] = os.getenv("VULKAN_SDK") .. "/include"
 IncludeDir["glm"] = "%{wks.location}/vendor/glm"
 IncludeDir["glfw"] = "%{wks.location}/vendor/glfw/include"
 IncludeDir["stb_image"] = "%{wks.location}/vendor/stb_image"
@@ -9,7 +9,7 @@ IncludeDir["imgui"] = "%{wks.location}/vendor/imgui"
 IncludeDir["googletest"] = "%{wks.location}/vendor/googletest"
 
 LibraryDir = {}
-LibraryDir["Vulkan"] = os.getenv("VULKAN_SDK") .. "/Lib"
+LibraryDir["Vulkan"] = os.getenv("VULKAN_SDK") .. "/lib"
 
 Library = {}
 Library["Vulkan"] = "vulkan-1"
@@ -31,6 +31,14 @@ elseif os.istarget("macosx") then
 
     Library["ShaderC_Release"] = "shaderc_shared"
     Library["SPIRV_Cross_Release"] = "spirv-cross-glsl"
+    Library["SPIRV_Cross_GLSL_Release"] = "spirv-cross-glsl"
+elseif os.istarget("linux") then
+    Library["ShaderC_Debug"] = "shaderc_shared"
+    Library["SPIRV_Cross_Debug"] = "spirv-cross-core"
+    Library["SPIRV_Cross_GLSL_Debug"] = "spirv-cross-glsl"
+
+    Library["ShaderC_Release"] = "shaderc_shared"
+    Library["SPIRV_Cross_Release"] = "spirv-cross-core"
     Library["SPIRV_Cross_GLSL_Release"] = "spirv-cross-glsl"
 end
 

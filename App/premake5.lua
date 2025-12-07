@@ -66,6 +66,10 @@ project "App"
         links { "%{Library.Vulkan}" }
         buildoptions { "/utf-8" }
 
+    -- linux specific settings
+    filter "system:linux"
+        links { "vulkan" }
+
     -- mac specific settings
     filter "action:xcode4"
         local vulkanFW = os.getenv("VULKAN_SDK") .. "/Frameworks"

@@ -23,7 +23,7 @@ project "Tests"
     postbuildcommands {
         "{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Tests", -- Move binary if needed
         --On Windows, might want to run it:
-        -- "%{cfg.buildtarget.relpath}" 
+        -- "%{cfg.buildtarget.relpath}"
     }
 
     filter "configurations:Debug"
