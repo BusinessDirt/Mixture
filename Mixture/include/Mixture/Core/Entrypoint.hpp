@@ -5,6 +5,15 @@
 
 extern Mixture::Application* Mixture::CreateApplication(ApplicationCommandLineArgs args);  // NOLINT(readability-redundant-declaration)
 
+/**
+ * @brief Entry point function for the application.
+ * 
+ * Initializes the log registry and runs the application.
+ * 
+ * @param argc Argument count.
+ * @param argv Argument values.
+ * @return int Exit code.
+ */
 inline int Entrypoint(const int argc, char** argv)
 {
     Opal::LogBuilder builder;

@@ -9,6 +9,11 @@ namespace Mixture
 
 	namespace Key 
 	{
+        /**
+         * @brief Key codes for keyboard input.
+         * 
+         * Based on GLFW key codes.
+         */
 		enum : KeyCode 
 		{
 			// From glfw3.h

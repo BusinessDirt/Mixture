@@ -2,6 +2,11 @@
 
 namespace Opal {
 
+    /**
+     * @brief Custom Spdlog flag formatter for colored markers.
+     * 
+     * Parses the logger name and adds a colored suffix based on the name.
+     */
     class ColorMarkerFlag : public spdlog::custom_flag_formatter
     {
     public:
@@ -24,7 +29,11 @@ namespace Opal {
         }
     };
 
-    
+    /**
+     * @brief Custom Spdlog flag formatter for clean (non-colored) markers.
+     * 
+     * Parses the logger name and adds a suffix based on the name, without ANSI colors.
+     */
     class CleanMarkerFlag : public spdlog::custom_flag_formatter
     {
     public:
