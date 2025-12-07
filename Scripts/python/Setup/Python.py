@@ -1,4 +1,5 @@
 import sys
+import os
 import platform
 import subprocess
 import importlib.util as importlib_util
@@ -34,6 +35,9 @@ class PythonConfiguration:
     def __install_package__(cls, package_name: str) -> bool:
         permission_granted: bool = False
         while not permission_granted:
+            if os.getenv("CI"):
+                permission_granted = True
+                break
             user_input: str = input(f"Would you like to install Python package '{package_name}'? [Y/N]: ").lower().strip()
             if (user_input == 'n'):
                 return False

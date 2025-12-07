@@ -1,3 +1,3 @@
 pushd ../python
-py Setup.py
+python3 Setup.py
 popd
