@@ -9,6 +9,11 @@ namespace Mixture
 
 	namespace Mouse 
 	{
+        /**
+         * @brief Mouse button codes.
+         * 
+         * Based on GLFW mouse codes.
+         */
 		enum : MouseCode 
 		{
 			// From glfw3.h

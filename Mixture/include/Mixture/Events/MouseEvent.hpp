@@ -6,6 +6,9 @@
 namespace Mixture 
 {
 
+    /**
+     * @brief Event triggered when the mouse moves.
+     */
 	class MouseMovedEvent final : public Event 
 	{
 	public:
@@ -27,6 +30,9 @@ namespace Mixture
 		float m_MouseX, m_MouseY;
 	};
 
+    /**
+     * @brief Event triggered when the mouse is scrolled.
+     */
 	class MouseScrolledEvent final : public Event 
 	{
 	public:
@@ -48,6 +54,9 @@ namespace Mixture
 		float m_XOffset, m_YOffset;
 	};
 
+    /**
+     * @brief Base class for mouse button events.
+     */
 	class MouseButtonEvent : public Event 
 	{
 	public:
@@ -60,6 +69,9 @@ namespace Mixture
 		MouseCode m_Button;
 	};
 
+    /**
+     * @brief Event triggered when a mouse button is pressed.
+     */
 	class MouseButtonPressedEvent final : public MouseButtonEvent 
 	{
 	public:
@@ -75,6 +87,9 @@ namespace Mixture
 		EVENT_CLASS_TYPE(MouseButtonPressed)
 	};
 
+    /**
+     * @brief Event triggered when a mouse button is released.
+     */
 	class MouseButtonReleasedEvent final : public MouseButtonEvent 
 	{
 	public:

@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file mxpch.hpp
+ * @brief Precompiled header file for Mixture.
+ */
+
 #include <string>
 #include <functional>
 #include <filesystem>

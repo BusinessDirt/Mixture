@@ -4,6 +4,9 @@
 
 namespace Mixture 
 {
+    /**
+     * @brief Event triggered when the framebuffer is resized.
+     */
     class FramebufferResizeEvent final : public Event
     {
     public:
@@ -26,6 +29,9 @@ namespace Mixture
         unsigned int m_Width, m_Height;
     };
 
+    /**
+     * @brief Event triggered when the window is resized.
+     */
 	class WindowResizeEvent final : public Event
     {
 	public:
@@ -48,6 +54,9 @@ namespace Mixture
 		unsigned int m_Width, m_Height;
 	};
 
+    /**
+     * @brief Event triggered when the window is closed.
+     */
 	class WindowCloseEvent final : public Event 
 	{
 	public:
@@ -57,6 +66,9 @@ namespace Mixture
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
+    /**
+     * @brief Event triggered every application tick.
+     */
 	class AppTickEvent final : public Event 
 	{
 	public:
@@ -66,6 +78,9 @@ namespace Mixture
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
+    /**
+     * @brief Event triggered every application update.
+     */
 	class AppUpdateEvent final : public Event 
 	{
 		AppUpdateEvent() = default;
@@ -74,6 +89,9 @@ namespace Mixture
 		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 	};
 
+    /**
+     * @brief Event triggered every application render.
+     */
 	class AppRenderEvent final : public Event 
 	{
 		AppRenderEvent() = default;

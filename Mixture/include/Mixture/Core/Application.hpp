@@ -11,11 +11,20 @@ int Entrypoint(int argc, char** argv);
 
 namespace Mixture
 {
+    /**
+     * @brief Structure to hold command line arguments passed to the application.
+     */
     struct ApplicationCommandLineArgs
     {
         int Count = 0;
         char** Args = nullptr;
 
+        /**
+         * @brief Operator to access arguments by index.
+         * 
+         * @param index The index of the argument.
+         * @return const char* The argument string.
+         */
         const char* operator[](const int index) const
         {
             OPAL_ASSERT("Core", index < Count)
@@ -23,22 +32,63 @@ namespace Mixture
         }
     };
 
+    /**
+     * @brief The main application class.
+     * 
+     * Manages the main run loop, window, layer stack, and events.
+     */
     class Application
     {
     public:
         OPAL_NON_COPIABLE(Application);
         
+        /**
+         * @brief Constructor.
+         * 
+         * @param name The name of the application.
+         * @param args Command line arguments.
+         */
         explicit Application(const std::string& name = "Mixture App", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
         virtual ~Application();
 
+        /**
+         * @brief Closes the application.
+         */
         void Close();
         
+        /**
+         * @brief Handles events.
+         * 
+         * @param event The event to handle.
+         */
         void OnEvent(Event& event);
 
+        /**
+         * @brief Gets the singleton application instance.
+         * 
+         * @return Application& Reference to the application instance.
+         */
         static Application& Get() { return *s_Instance; }
+
+        /**
+         * @brief Gets the application window.
+         * 
+         * @return const Window& Reference to the window.
+         */
         OPAL_NODISCARD const Window& GetWindow() const { return *m_Window; }
         
+        /**
+         * @brief Pushes a layer onto the layer stack.
+         * 
+         * @param layer The layer to push.
+         */
         void PushLayer(Layer* layer) { m_LayerStack.PushLayer(layer); }
+
+        /**
+         * @brief Pushes an overlay onto the layer stack.
+         * 
+         * @param layer The overlay to push.
+         */
         void PushOverlay(Layer* layer) { m_LayerStack.PushOverlay(layer); }
 
     private:
@@ -56,5 +106,13 @@ namespace Mixture
         friend int ::Entrypoint(int argc, char** argv);
     };
 
+    /**
+     * @brief Factory function to create the application instance.
+     * 
+     * Must be implemented by the client application.
+     * 
+     * @param args Command line arguments.
+     * @return Application* Pointer to the created application.
+     */
     Application* CreateApplication(ApplicationCommandLineArgs args);
 }

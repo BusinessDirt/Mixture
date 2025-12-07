@@ -35,10 +35,25 @@
     // The Main Macro
     //     Usage: OPAL_ASSERT(myLogger, x > 5);
     //     Usage: OPAL_ASSERT(myLogger, x > 5, "Value was {}", x);
+    /**
+     * @brief Asserts that a condition is true.
+     * 
+     * If the condition is false, logs an error using the specified logger and triggers a debug break.
+     * Can be used with or without a custom message.
+     * 
+     * @param logger The logger name (string) to use for reporting the failure.
+     * @param check The boolean condition to check.
+     * @param ... Optional message and format arguments.
+     */
     #define OPAL_ASSERT(...) OPAL_INTERNAL_ASSERT_GET_MACRO(__VA_ARGS__)(__VA_ARGS__)
 
 #else
 
+    /**
+     * @brief Asserts that a condition is true (Disabled in Release).
+     * 
+     * @param ... Arguments are ignored when asserts are disabled.
+     */
     #define OPAL_ASSERT(...)
 
 #endif
