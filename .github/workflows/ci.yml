@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      VULKAN_SDK: /usr
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgl1-mesa-dev xorg-dev xvfb wget gnupg ca-certificates clang
+
+    - name: Setup Vulkan SDK
+      run: |
+        wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
+        sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list https://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
+        sudo apt-get update
+        sudo apt-get install -y vulkan-sdk
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Python Requests
+      run: pip install requests
+
+    - name: Run Project Setup
+      run: |
+        chmod +x Scripts/linux/Setup.sh
+        chmod +x Scripts/linux/Linux-GenProjects.sh
+        # Run the setup script (which runs Setup.py and then Linux-GenProjects.sh)
+        # Note: We modified Setup.sh to use python3
+        bash Scripts/linux/Setup.sh
+
+    - name: Build
+      run: |
+        # Build using the generated makefiles
+        # Premake generates a Makefile in the root or where specified.
+        # Default config is usually Debug x64 if not specified, but best to be explicit.
+        make config=debug_x64
+
+    - name: Run Tests
+      run: |
+        # Find the test binary recursively in bin/
+        TEST_BIN=$(find bin -name Tests -type f -executable | head -n 1)
+        if [ -z "$TEST_BIN" ]; then
+          echo "Test binary not found!"
+          exit 1
+        fi
+        echo "Found test binary: $TEST_BIN"
+        
+        # Run tests with xvfb in case they require a display context (GLFW)
+        xvfb-run --auto-servernum "$TEST_BIN"

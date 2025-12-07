@@ -42,6 +42,9 @@ class PremakeConfiguration:
     def InstallPremake(cls, distribution):
         permissionGranted = False
         while not permissionGranted:
+            if os.getenv("CI"):
+                permissionGranted = True
+                break
             reply = input("Premake not found. Would you like to download Premake {0:s}? [Y/N]: ".format(cls.premakeVersion)).lower().strip()
             if reply == 'n':
                 return False
