@@ -5,3 +5,4 @@
 #include "Mixture/Render/RHI/ResourceStates.hpp"
 
 #include "Mixture/Render/RHI/ITexture.hpp"
+#include "Mixture/Render/RHI/IBuffer.hpp"
