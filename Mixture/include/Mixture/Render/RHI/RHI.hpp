@@ -7,3 +7,5 @@
 #include "Mixture/Render/RHI/ITexture.hpp"
 #include "Mixture/Render/RHI/IBuffer.hpp"
 #include "Mixture/Render/RHI/IPipeline.hpp"
+
+#include "Mixture/Render/RHI/IGraphicsDevice.hpp"
