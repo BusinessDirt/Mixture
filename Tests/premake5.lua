@@ -7,7 +7,14 @@ project "Tests"
     includedirs { "include" }
 
     externalincludedirs {
+        "../Opal/include",
         "../Mixture/include",
+
+        "%{IncludeDir.spdlog}",
+        "%{IncludeDir.imgui}",
+        "%{IncludeDir.Vulkan}",
+        "%{IncludeDir.glm}",
+        "%{IncludeDir.stb_image}",
         "%{IncludeDir.googletest}"
     }
 

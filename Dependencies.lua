@@ -6,7 +6,7 @@ IncludeDir["glm"] = "%{wks.location}/vendor/glm"
 IncludeDir["glfw"] = "%{wks.location}/vendor/glfw/include"
 IncludeDir["stb_image"] = "%{wks.location}/vendor/stb_image"
 IncludeDir["imgui"] = "%{wks.location}/vendor/imgui"
-IncludeDir["googletest"] = "%{wks.location}/vendor/googletest"
+IncludeDir["googletest"] = "%{wks.location}/vendor/googletest/googletest/include"
 
 LibraryDir = {}
 LibraryDir["Vulkan"] = os.getenv("VULKAN_SDK") .. "/lib"
