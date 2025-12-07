@@ -18,11 +18,16 @@ group "Dependencies"
    include "vendor/premake"
    include "vendor/glfw"
    include "vendor/imgui"
+   include "vendor/googletest"
 group ""
 
 group "Core"
    include "Opal/premake5.lua"
 	include "Mixture/premake5.lua"
+group ""
+
+group "Test"
+   include "Tests/premake5.lua"
 group ""
 
 include "App/premake5.lua"
