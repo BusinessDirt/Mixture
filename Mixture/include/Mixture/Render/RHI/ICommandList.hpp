@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Mixture/Core/Base.hpp"
+
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
+#include "Mixture/Render/RHI/ResourceStates.hpp"
 
 #include <vector>
 
@@ -19,12 +22,12 @@ namespace Mixture::RHI
         /**
          * Clear or Load existing?
          */
-        LoadOp LoadOp = LoadOp::Clear;
+        RHI::LoadOp LoadOp = LoadOp::Clear;
 
         /**
          * Store operation.
          */
-        StoreOp StoreOp = StoreOp::Store;
+        RHI::StoreOp StoreOp = StoreOp::Store;
 
         /**
          * Clear color.
