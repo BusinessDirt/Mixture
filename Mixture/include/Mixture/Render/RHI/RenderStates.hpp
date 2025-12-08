@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Mixture/Core/Base.hpp"
+
 #include <cstdint>
 
 namespace Mixture::RHI
@@ -225,6 +227,53 @@ namespace Mixture::RHI
          * @brief Take the maximum of source and destination components. 
          */
         Max
+    };
+
+    /**
+     * @brief Specifies the loading operation to be performed.
+     */
+    enum class LoadOp : uint8_t
+    {
+        /**
+         * @brief
+         */
+        Load = 0,
+
+        /**
+         * @brief
+         */
+        Clear,
+
+        /**
+         * @brief
+         */
+        DontCare,
+
+        /**
+         * @brief
+         */
+        None
+    };
+
+    /**
+     * @brief Specifies the storing operation to be performed.
+     */
+    enum class StoreOp : uint8_t
+    {
+        /**
+         * @brief
+         */
+        Store = 0,
+
+        /**
+         * @brief
+         */
+        DontCare,
+
+        /**
+         * @brief
+         */
+        None,
     };
 
     /**
