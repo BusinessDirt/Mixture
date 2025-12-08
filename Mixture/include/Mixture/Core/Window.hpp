@@ -3,7 +3,6 @@
 #include "Mixture/Events/Event.hpp"
 
 #include <string>
-#include <vulkan/vulkan.h>
 
 struct GLFWwindow;
 
@@ -60,15 +59,6 @@ namespace Mixture
          */
         void GetFramebufferSize(int* width, int* height) const;
 
-        /**
-         * @brief Creates a Vulkan surface for this window.
-         * 
-         * @param instance Vulkan instance.
-         * @param allocator Allocation callbacks.
-         * @param surface Pointer to store the created surface.
-         */
-        void CreateVulkanSurface(VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const;
-        
         /**
          * @brief Sets the event callback function.
          * 
