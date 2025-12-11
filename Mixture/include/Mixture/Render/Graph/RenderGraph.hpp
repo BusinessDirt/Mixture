@@ -29,7 +29,7 @@ namespace Mixture
             pass.Name = name;
 
             // Allocate the Data Packet for this pass
-            // (In a real engine, use a linear allocator here to keep memory tight)
+            // TODO: use a linear allocator here to keep memory tight
             auto dataPtr = new DataT(); // Simplified for now
             
             // Run Setup Phase (User declares Read/Writes)
@@ -38,9 +38,10 @@ namespace Mixture
 
             // Store the Execute Lambda
             // We wrap the user's typed lambda into a generic one
-            pass.Execute = [=](RenderGraphRegistry& registry, RHI::ICommandList* cmdList) {
-                execute(registry, *dataPtr, cmdList);
-            };
+            pass.Execute = [=](RenderGraphRegistry& registry, RHI::ICommandList* cmdList) 
+                {
+                    execute(registry, *dataPtr, cmdList);
+                };
 
             return *dataPtr;
         }
@@ -49,8 +50,12 @@ namespace Mixture
         void Compile();
         void Execute(RHI::ICommandList* cmdList);
 
-        // Internal getters for the Builder
+        // Import an external resource (like the Swapchain Backbuffer)
+        // Returns a handle that passes can use to Write() to it.
+        RGResourceHandle ImportResource(const std::string& name, Ref<RHI::ITexture> resource);
         RGResourceHandle CreateResource(const std::string& name, const RHI::TextureDesc& desc);
+
+        // Internal getters for the Builder
         RGPassNode& GetCurrentPass() { return m_Passes.back(); }
 
     private:
@@ -60,6 +65,7 @@ namespace Mixture
     private:
         Vector<RGPassNode> m_Passes;
         Vector<RGTextureNode> m_Resources;
-        RenderGraphRegistry m_Registry; // Maps Handles -> Real Vulkan Objects
+
+        RenderGraphRegistry m_Registry;
     };
 }

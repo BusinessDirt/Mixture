@@ -3,6 +3,15 @@
 
 namespace Mixture
 {
+
+    void RenderGraph::Clear()
+    {
+        m_Passes.clear();
+        m_Resources.clear();
+
+        m_Registry.Clear();
+    }
+
     void RenderGraph::Compile()
     {
         // Re-order passes so dependencies are met
@@ -20,26 +29,61 @@ namespace Mixture
 
     void RenderGraph::Execute(RHI::ICommandList* cmdList)
     {
-        // ... (Normally allocate the resources into the registry using Device here) ...
+        // Realize Resources (Allocation Phase)
+        for (const auto& node : m_Resources) 
+        {
+            if (!node.IsImported) 
+            {
+                // TODO: call Device->CreateTexture(node.Desc)
+                // For now, we skip internal allocation as we don't have a Device yet.
+            }
 
+            // Imported resources are already in m_Registry via ImportResource()
+        }
+
+        // Execute Passes
         for (const auto& pass : m_Passes) 
         {
-            // Submit Barriers before the pass starts
+            
+            // Execute Barriers
             for (const auto& barrier : pass.Barriers) 
             {
-                RHI::ITexture* tex = m_Registry.GetTexture(barrier.Resource);
-                if (tex) cmdList->PipelineBarrier(
-                    tex, 
-                    barrier.Before, 
-                    barrier.After
-                );
+                 cmdList->PipelineBarrier(
+                     m_Registry.GetTexture(barrier.Resource), // Look up in member registry
+                     barrier.Before, 
+                     barrier.After
+                 );
             }
 
+            // Run Logic
             if (pass.Execute) 
             {
-                pass.Execute(m_Registry, cmdList); 
+                pass.Execute(m_Registry, cmdList);
             }
         }
+    }
+
+    RGResourceHandle RenderGraph::ImportResource(const std::string& name, Ref<RHI::ITexture> resource)
+    {
+        // Create a handle/node just like a normal resource
+        RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
+        RGResourceHandle handle = { id };
+
+        RGTextureNode node;
+        node.Handle = handle;
+        node.Name = name;
+        node.Desc.Width = resource->GetWidth();   // Extract info from the real object
+        node.Desc.Height = resource->GetHeight();
+        node.Desc.Format = resource->GetFormat();
+        node.IsImported = true;
+        node.ExternalTexture = resource; // Keep it safe
+
+        m_Resources.push_back(node);
+
+        // Immediately register it so it's available for execution
+        m_Registry.ImportTexture(handle, resource);
+
+        return handle;
     }
 
     RGResourceHandle RenderGraph::CreateResource(const std::string& name, const RHI::TextureDesc& desc)

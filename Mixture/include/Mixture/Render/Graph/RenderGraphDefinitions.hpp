@@ -35,7 +35,11 @@ namespace Mixture
         RGResourceHandle Handle;
         std::string Name;
         RHI::TextureDesc Desc;
-        // bool IsImported = false; // Is this the Backbuffer?
+        
+        // Flag to prevent the graph from trying to free this memory
+        // For imports, we might hold the pointer directly here temporarily
+        bool IsImported = false; 
+        std::shared_ptr<RHI::ITexture> ExternalTexture = nullptr;
     };
 
     // -------------------------------------------------------------------------
