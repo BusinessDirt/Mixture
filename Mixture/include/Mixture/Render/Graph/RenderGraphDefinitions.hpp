@@ -19,6 +19,13 @@ namespace Mixture
 
     class RenderGraphRegistry; // Forward Declaration
     
+    struct RGBarrier 
+    {
+        RGResourceHandle Resource;
+        RHI::ResourceState Before;
+        RHI::ResourceState After;
+        // Flags like "Flush L2 Cache" or "Memory Access" can be added here
+    };
 
     // -------------------------------------------------------------------------
     // Resource Nodes (The "Data")
@@ -41,6 +48,8 @@ namespace Mixture
         // Dependencies (Built during Setup phase)
         Vector<RGResourceHandle> Reads;
         Vector<RGResourceHandle> Writes;
+
+        std::vector<RGBarrier> Barriers;
         
         // The actual execution logic (Recorded lambda)
         // We pass the Registry so you can look up the REAL texture later

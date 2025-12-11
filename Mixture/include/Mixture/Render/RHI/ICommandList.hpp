@@ -165,6 +165,15 @@ namespace Mixture::RHI
          */
         virtual void BindIndexBuffer(IBuffer* buffer) = 0;
 
+        /**
+         * Creates a pipeline image barrier for the specified texture.
+         * 
+         * @param texture the texture to create the barrier for
+         * @param oldState the old state of the layout
+         * @param newState the new state of the layout
+         */
+        virtual void PipelineBarrier(ITexture* texture, ResourceState oldState, ResourceState newState) = 0;
+
         // ---------------------------------------------------------------------
         // Push Constants (Fast, small data upload)
         // ---------------------------------------------------------------------

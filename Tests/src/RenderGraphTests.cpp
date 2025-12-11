@@ -24,6 +24,7 @@ namespace Mixture::RHI
         void SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) override {}
         void SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height) override {}
         void BindPipeline(IPipeline* pipeline) override {}
+        void PipelineBarrier(ITexture* texture, ResourceState oldState, ResourceState newState) override {}
         void BindVertexBuffer(IBuffer* buffer, uint32_t binding) override {}
         void BindIndexBuffer(IBuffer* buffer) override {}
         void PushConstants(IPipeline* pipeline, ShaderStage stage, const void* data, uint32_t size) override {}
