@@ -4,12 +4,12 @@
 
 namespace Mixture
 {
-    class MainLayer final : public Layer
+    class UILayer final : public Layer
     {
     public:
-        OPAL_NON_COPIABLE(MainLayer);
-        MainLayer() : Layer("MainLayer") {}
-        ~MainLayer() override = default;
+        OPAL_NON_COPIABLE(UILayer);
+        UILayer() : Layer("UILayer") {}
+        ~UILayer() override = default;
 
         void OnAttach() override;
         void OnDetach() override;

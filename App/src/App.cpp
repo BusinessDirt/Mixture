@@ -2,6 +2,7 @@
 #include <Mixture/Core/Entrypoint.hpp>
 
 #include "MainLayer.hpp"
+#include "UILayer.hpp"
 
 namespace Mixture
 {
@@ -12,6 +13,7 @@ namespace Mixture
             : Application("App", args)
         {
             PushLayer(new MainLayer());
+            PushOverlay(new UILayer());
         }
     };
 
