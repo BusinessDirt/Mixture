@@ -14,10 +14,8 @@ namespace Mixture
 
     void RenderGraph::Compile()
     {
-        // Re-order passes so dependencies are met
         SortPasses();
-
-        // Insert barriers between passes
+        CalculateLifetimes();
         CalculateBarriers();
         
         // Simple sanity check loop
@@ -170,6 +168,61 @@ namespace Mixture
         }
         
         m_Passes = std::move(sortedPasses);
+    }
+
+    void RenderGraph::CalculateLifetimes()
+    {
+        // Reset all lifetimes
+        for (auto& node : m_Resources) 
+        {
+            node.FirstPassIndex = -1;
+            node.LastPassIndex = -1;
+        }
+
+        // Iterate through passes in execution order
+        for (int32_t passIndex = 0; passIndex < static_cast<int32_t>(m_Passes.size()); ++passIndex) 
+        {
+            const auto& pass = m_Passes[passIndex];
+
+            // Helper lambda to update a single resource
+            auto UpdateResource = [&](RGResourceHandle handle) 
+            {
+                if (!handle.IsValid()) return;
+                
+                auto& node = m_Resources[handle.ID];
+
+                // If this is the first time we've seen it, mark start
+                if (node.FirstPassIndex == -1) 
+                {
+                    node.FirstPassIndex = passIndex;
+                }
+
+                // Always update the end to the current pass
+                node.LastPassIndex = passIndex;
+            };
+
+            // Check Reads
+            for (auto handle : pass.Reads) 
+            {
+                UpdateResource(handle);
+            }
+
+            // Check Writes
+            for (auto handle : pass.Writes) 
+            {
+                UpdateResource(handle);
+            }
+        }
+
+        // Debug Logging
+        for (const auto& node : m_Resources) 
+        {
+            if (node.FirstPassIndex != -1) 
+            {
+                OPAL_LOG_DEBUG("Core_RenderGraph", "Resource [{}] Life: {} -> {}", 
+                    node.Name, node.FirstPassIndex, node.LastPassIndex);
+            }
+        }
     }
 
     void RenderGraph::CalculateBarriers()

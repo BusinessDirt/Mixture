@@ -40,6 +40,11 @@ namespace Mixture
         // For imports, we might hold the pointer directly here temporarily
         bool IsImported = false; 
         std::shared_ptr<RHI::ITexture> ExternalTexture = nullptr;
+
+        // --- Lifetime Metadata ---
+        // Initialize to -1 to indicate "Not Used"
+        int32_t FirstPassIndex = -1; 
+        int32_t LastPassIndex = -1;
     };
 
     // -------------------------------------------------------------------------

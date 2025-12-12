@@ -46,6 +46,9 @@ namespace Mixture
         OPAL_NODISCARD float GetAspectRatio() const { return m_Data.AspectRatio; }
         OPAL_NODISCARD void* GetNativeWindow() const { return m_WindowHandle; }
 
+        // TODO: 
+        OPAL_NODISCARD void* GetSwapchain() const { return nullptr; }
+
         /**
          * @brief Updates the window (polls events, swaps buffers).
          */

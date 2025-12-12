@@ -112,6 +112,19 @@ namespace Opal
      */
     #define OPAL_TRACE(logger, ...) ::Opal::LogRegistry::Get().GetLogger(logger)->trace(__VA_ARGS__)
 
+    #ifdef OPAL_DEBUG
+
+        /** 
+         * @brief Logs a debug message. 
+         */
+        #define OPAL_LOG_DEBUG(logger, ...) ::Opal::LogRegistry::Get().GetLogger(logger)->debug(__VA_ARGS__)
+
+    #else
+
+        #define OPAL_LOG_DEBUG(...)
+
+    #endif
+
     /** 
      * @brief Logs an info message. 
      */

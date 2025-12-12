@@ -60,6 +60,7 @@ namespace Mixture
 
     private:
         void SortPasses();
+        void CalculateLifetimes();
         void CalculateBarriers();
 
     private:
