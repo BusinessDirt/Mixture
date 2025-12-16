@@ -1,6 +1,9 @@
 #pragma once
 
+#include "Mixture/Core/Base.hpp"
+
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
+#include "Mixture/Render/RHI/ResourceStates.hpp"
 
 #include <vector>
 
@@ -19,12 +22,12 @@ namespace Mixture::RHI
         /**
          * Clear or Load existing?
          */
-        LoadOp LoadOp = LoadOp::Clear;
+        RHI::LoadOp LoadOp = LoadOp::Clear;
 
         /**
          * Store operation.
          */
-        StoreOp StoreOp = StoreOp::Store;
+        RHI::StoreOp StoreOp = StoreOp::Store;
 
         /**
          * Clear color.
@@ -161,6 +164,15 @@ namespace Mixture::RHI
          * @param buffer The buffer to bind.
          */
         virtual void BindIndexBuffer(IBuffer* buffer) = 0;
+
+        /**
+         * Creates a pipeline image barrier for the specified texture.
+         * 
+         * @param texture the texture to create the barrier for
+         * @param oldState the old state of the layout
+         * @param newState the new state of the layout
+         */
+        virtual void PipelineBarrier(ITexture* texture, ResourceState oldState, ResourceState newState) = 0;
 
         // ---------------------------------------------------------------------
         // Push Constants (Fast, small data upload)

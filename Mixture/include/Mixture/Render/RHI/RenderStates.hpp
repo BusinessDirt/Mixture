@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Mixture/Core/Base.hpp"
+
 #include <cstdint>
 
 namespace Mixture::RHI
@@ -225,6 +227,53 @@ namespace Mixture::RHI
          * @brief Take the maximum of source and destination components. 
          */
         Max
+    };
+
+    /**
+     * @brief Specifies the loading operation to be performed.
+     */
+    enum class LoadOp : uint8_t
+    {
+        /**
+         * @brief The existing contents of the attachment will be loaded.
+         */
+        Load = 0,
+
+        /**
+         * @brief The attachment will be cleared to a clear color/depth value.
+         */
+        Clear,
+
+        /**
+         * @brief The contents of the attachment prior to rendering are undefined.
+         */
+        DontCare,
+
+        /**
+         * @brief No load operation specified.
+         */
+        None
+    };
+
+    /**
+     * @brief Specifies the storing operation to be performed.
+     */
+    enum class StoreOp : uint8_t
+    {
+        /**
+         * @brief The rendered contents of the attachment will be stored.
+         */
+        Store = 0,
+
+        /**
+         * @brief The contents of the attachment after rendering are undefined.
+         */
+        DontCare,
+
+        /**
+         * @brief No store operation specified.
+         */
+        None,
     };
 
     /**

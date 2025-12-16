@@ -24,7 +24,7 @@ namespace Opal
 
         // Apply Custom Formatter
         auto formatter = std::make_unique<spdlog::pattern_formatter>();
-        formatter->add_flag<ColorMarkerFlag>('*').set_pattern("[%T] [Thread %t at %^%l%$] (%n%*): %v");
+        formatter->add_flag<ColorMarkerFlag>('*').set_pattern("[%T] [Thread %t at %^%l%$] (%*): %v");
         
         sink->set_formatter(std::move(formatter));
         sink->set_level(level);
@@ -37,7 +37,7 @@ namespace Opal
     {
         auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(filepath, 1024 * 1024 * 10, 10);
         auto formatter = std::make_unique<spdlog::pattern_formatter>();
-        formatter->add_flag<CleanMarkerFlag>('*').set_pattern("[%T] [Thread %t at %l] (%n%*): %v");
+        formatter->add_flag<CleanMarkerFlag>('*').set_pattern("[%T] [Thread %t at %l] (%*): %v");
 
         sink->set_formatter(std::move(formatter));
         sink->set_level(level);

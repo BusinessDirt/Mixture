@@ -107,25 +107,48 @@ namespace Opal
 
 #ifndef OPAL_DIST
 
-// Core log macros
-/** @brief Logs a trace message. */
-#define OPAL_TRACE(logger, ...)     ::Opal::LogRegistry::Get().GetLogger(logger)->trace(__VA_ARGS__)
-/** @brief Logs an info message. */
-#define OPAL_INFO(logger, ...)      ::Opal::LogRegistry::Get().GetLogger(logger)->info(__VA_ARGS__)
-/** @brief Logs a warning message. */
-#define OPAL_WARN(logger, ...)      ::Opal::LogRegistry::Get().GetLogger(logger)->warn(__VA_ARGS__)
-/** @brief Logs an error message. */
-#define OPAL_ERROR(logger, ...)     ::Opal::LogRegistry::Get().GetLogger(logger)->error(__VA_ARGS__)
-/** @brief Logs a critical message. */
-#define OPAL_CRITICAL(logger, ...)     ::Opal::LogRegistry::Get().GetLogger(logger)->critical(__VA_ARGS__)
+    /** 
+     * @brief Logs a trace message. 
+     */
+    #define OPAL_TRACE(logger, ...) ::Opal::LogRegistry::Get().GetLogger(logger)->trace(__VA_ARGS__)
+
+    #ifdef OPAL_DEBUG
+
+        /** 
+         * @brief Logs a debug message. 
+         */
+        #define OPAL_LOG_DEBUG(logger, ...) ::Opal::LogRegistry::Get().GetLogger(logger)->debug(__VA_ARGS__)
+
+    #else
+
+        #define OPAL_LOG_DEBUG(...)
+
+    #endif
+
+    /** 
+     * @brief Logs an info message. 
+     */
+    #define OPAL_INFO(logger, ...) ::Opal::LogRegistry::Get().GetLogger(logger)->info(__VA_ARGS__)
+
+    /** 
+     * @brief Logs a warning message. 
+     */
+    #define OPAL_WARN(logger, ...) ::Opal::LogRegistry::Get().GetLogger(logger)->warn(__VA_ARGS__)
+
+    /** 
+     * @brief Logs an error message. 
+     */
+    #define OPAL_ERROR(logger, ...) ::Opal::LogRegistry::Get().GetLogger(logger)->error(__VA_ARGS__)
+
+    /** 
+     * @brief Logs a critical message. 
+     */
+    #define OPAL_CRITICAL(logger, ...) ::Opal::LogRegistry::Get().GetLogger(logger)->critical(__VA_ARGS__)
 
 #else // strip logging in dist build
-
-// Core log macros
-#define OPAL_TRACE(...)
-#define OPAL_INFO(...)
-#define OPAL_WARN(...)
-#define OPAL_ERROR(...)
-#define OPAL_FATAL(...)
-
+    #define OPAL_TRACE(...)
+    #define OPAL_INFO(...)
+    #define OPAL_WARN(...)
+    #define OPAL_ERROR(...)
+    #define OPAL_FATAL(...)
 #endif

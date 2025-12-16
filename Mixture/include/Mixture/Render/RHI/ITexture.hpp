@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Mixture/Core/Base.hpp"
+
 #include "Mixture/Render/RHI/RenderFormats.hpp"
 
 namespace Mixture::RHI

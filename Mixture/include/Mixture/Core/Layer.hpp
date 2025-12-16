@@ -4,6 +4,8 @@
 
 namespace Mixture
 {
+    class RenderGraph;
+
     /**
      * @brief Abstract base class for application layers.
      * 
@@ -25,19 +27,23 @@ namespace Mixture
         /**
          * @brief Called when the layer is attached to the layer stack.
          */
-        virtual void OnAttach() = 0;
+        virtual void OnAttach() {};
 
         /**
          * @brief Called when the layer is detached from the layer stack.
          */
-        virtual void OnDetach() = 0;
+        virtual void OnDetach() {};
         
         /**
          * @brief Called when an event is dispatched to this layer.
          * 
          * @param event The event to handle.
          */
-        virtual void OnEvent(Event& event) = 0;
+        virtual void OnEvent(Event& event) {};
+
+        virtual void OnUpdate(float dt) {};
+
+        virtual void OnRender(RenderGraph& graph) {};
 
         /**
          * @brief Gets the debug name of the layer.

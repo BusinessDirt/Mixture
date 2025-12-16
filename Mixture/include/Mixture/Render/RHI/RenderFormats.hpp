@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Mixture/Core/Base.hpp"
+
 #include <cstdint>
 
 namespace Mixture::RHI 

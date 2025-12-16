@@ -21,6 +21,8 @@ namespace Mixture
         
         m_Window = CreateScope<Window>(props);
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
+
+        m_RenderGraph = CreateScope<RenderGraph>();
     }
 
     Application::~Application()
@@ -40,6 +42,32 @@ namespace Mixture
         while (m_Running)
         {
             m_Window->OnUpdate();
+
+            // CPU Logic
+            for (Layer* layer : m_LayerStack) layer->OnUpdate(timestep);
+
+            // Render Setup
+            m_RenderGraph->Clear();
+
+            // IMPORT: Get the raw Swapchain image for this frame
+            auto swapchainImg = m_Window->GetSwapchain()->GetCurrentImage();
+            m_RenderGraph->ImportResource("Backbuffer", swapchainImg);
+
+            // Graph Building (Layers declare their passes)
+            for (Layer* layer : m_LayerStack) {
+                layer->OnRender(*m_RenderGraph);
+            }
+
+            // Compile & Execute
+            m_RenderGraph->Compile();
+            
+            ICommandList* cmd = m_GraphicsDevice->GetCommandList();
+            cmd->Begin();
+            m_RenderGraph->Execute(cmd);
+            cmd->End();
+            
+            // Present
+            m_Window->GetSwapchain()->Present();
         }
     }
 

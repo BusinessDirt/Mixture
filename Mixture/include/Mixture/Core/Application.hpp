@@ -3,6 +3,8 @@
 #include "Mixture/Core/Window.hpp"
 #include "Mixture/Core/LayerStack.hpp"
 
+#include "Mixture/Render/Graph/RenderGraph.hpp"
+
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Events/ApplicationEvent.hpp"
 
@@ -99,7 +101,9 @@ namespace Mixture
     private:
         bool m_Running = true;
         LayerStack m_LayerStack;
+
         Scope<Window> m_Window;
+        Scope<RenderGraph> m_RenderGraph;
         
     private:
         static Application* s_Instance;

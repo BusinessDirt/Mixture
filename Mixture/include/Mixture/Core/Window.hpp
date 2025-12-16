@@ -3,7 +3,6 @@
 #include "Mixture/Events/Event.hpp"
 
 #include <string>
-#include <vulkan/vulkan.h>
 
 struct GLFWwindow;
 
@@ -24,19 +23,19 @@ namespace Mixture
 
     /**
      * @brief Abstract representation of a desktop window.
-     * 
+     *
      * Uses GLFW internally.
      */
-    class Window 
+    class Window
     {
     public:
         using EventCallbackFn = std::function<void(Event&)>;
 
         OPAL_NON_COPIABLE(Window);
-        
+
         /**
          * @brief Creates a new window.
-         * 
+         *
          * @param props Window properties.
          */
         explicit Window(const WindowProps& props);
@@ -47,6 +46,9 @@ namespace Mixture
         OPAL_NODISCARD float GetAspectRatio() const { return m_Data.AspectRatio; }
         OPAL_NODISCARD void* GetNativeWindow() const { return m_WindowHandle; }
 
+        // TODO:
+        OPAL_NODISCARD void* GetSwapchain() const { return nullptr; }
+
         /**
          * @brief Updates the window (polls events, swaps buffers).
          */
@@ -54,24 +56,15 @@ namespace Mixture
 
         /**
          * @brief Retrieves the framebuffer size.
-         * 
+         *
          * @param width Pointer to store width.
          * @param height Pointer to store height.
          */
         void GetFramebufferSize(int* width, int* height) const;
 
         /**
-         * @brief Creates a Vulkan surface for this window.
-         * 
-         * @param instance Vulkan instance.
-         * @param allocator Allocation callbacks.
-         * @param surface Pointer to store the created surface.
-         */
-        void CreateVulkanSurface(VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const;
-        
-        /**
          * @brief Sets the event callback function.
-         * 
+         *
          * @param callback The function to call when an event occurs.
          */
         void SetEventCallback(const EventCallbackFn& callback) { m_Data.EventCallback = callback; }

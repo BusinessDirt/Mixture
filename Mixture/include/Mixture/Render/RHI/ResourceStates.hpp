@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Mixture/Core/Base.hpp"
+
 #include <cstdint>
 
 namespace Mixture::RHI 
@@ -65,13 +67,7 @@ namespace Mixture::RHI
         /** 
          * @brief Resource is ready for presentation to the display via a swapchain. 
          */
-        Present,
-        
-        /** 
-         * @brief A general state, often used for resources that are accessed 
-         * by multiple pipeline stages without strict ordering requirements. 
-         */
-        Common = General
+        Present
     };
 
     /**
