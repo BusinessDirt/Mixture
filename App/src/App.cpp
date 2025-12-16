@@ -9,8 +9,8 @@ namespace Mixture
     class ExampleApp final : public Application
     {
     public:
-        explicit ExampleApp(ApplicationCommandLineArgs args)
-            : Application("App", args)
+        explicit ExampleApp(const ApplicationDescription& appDescription)
+            : Application(appDescription)
         {
             PushLayer(new MainLayer());
             PushOverlay(new UILayer());
@@ -19,7 +19,13 @@ namespace Mixture
 
     Application* CreateApplication(ApplicationCommandLineArgs args)
     {
-        const auto app = new ExampleApp(args);
+        ApplicationDescription desc = ApplicationDescription();
+        desc.name = "ExampleApp";
+        desc.version = "1.0.0";
+        desc.api = RHI::GraphicsAPI::Vulkan;
+        desc.args = args;
+
+        const auto app = new ExampleApp(desc);
         return app;
     }
 }

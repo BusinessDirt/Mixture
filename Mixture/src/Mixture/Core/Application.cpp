@@ -10,18 +10,20 @@ namespace Mixture
 {
     Application* Application::s_Instance = nullptr;
 
-    Application::Application(const std::string& name, ApplicationCommandLineArgs args)
+    Application::Application(const ApplicationDescription& appDescription)
+        : m_AppDescription(appDescription)
     {
         OPAL_ASSERT("Core", !s_Instance, "Mixture::Application::Application() - Application already exists!")
-        
+
         s_Instance = this;
 
         auto props = WindowProps();
-        props.Title = name;
-        
+        props.Title = appDescription.name;
+
         m_Window = CreateScope<Window>(props);
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
+        m_Context = RHI::IGraphicsContext::Create(appDescription);
         m_RenderGraph = CreateScope<RenderGraph>();
     }
 
@@ -38,9 +40,10 @@ namespace Mixture
     void Application::Run() const
     {
         Timer frameTimer{};
-        
+
         while (m_Running)
         {
+            float timestep = frameTimer.Tick();
             m_Window->OnUpdate();
 
             // CPU Logic
@@ -50,6 +53,7 @@ namespace Mixture
             m_RenderGraph->Clear();
 
             // IMPORT: Get the raw Swapchain image for this frame
+            /*
             auto swapchainImg = m_Window->GetSwapchain()->GetCurrentImage();
             m_RenderGraph->ImportResource("Backbuffer", swapchainImg);
 
@@ -60,14 +64,15 @@ namespace Mixture
 
             // Compile & Execute
             m_RenderGraph->Compile();
-            
-            ICommandList* cmd = m_GraphicsDevice->GetCommandList();
+
+            RHI::ICommandList* cmd = m_GraphicsDevice->GetCommandList();
             cmd->Begin();
             m_RenderGraph->Execute(cmd);
             cmd->End();
-            
+
             // Present
             m_Window->GetSwapchain()->Present();
+             */
         }
     }
 

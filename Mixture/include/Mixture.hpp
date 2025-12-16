@@ -7,10 +7,10 @@
  * Includes core components like Application, Layer, and LayerStack.
  */
 
+#include "Mixture/Render/Graph/RenderGraph.hpp"
+#include "Mixture/Render/RHI/RHI.hpp"
+
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Core/Application.hpp"
 #include "Mixture/Core/Layer.hpp"
 #include "Mixture/Core/LayerStack.hpp"
-
-#include "Mixture/Render/Graph/RenderGraph.hpp"
-#include "Mixture/Render/RHI/RHI.hpp"

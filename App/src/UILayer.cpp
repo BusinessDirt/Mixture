@@ -33,6 +33,7 @@ namespace Mixture
             [&](RenderGraphBuilder& builder, UIPassData& data) 
             {
                 // Look for "SceneColor" created by GameLayer
+                /*
                 RGResourceHandle sceneHandle = graph.GetResource("SceneColor");
                 if (sceneHandle.IsValid()) {
                     data.SceneInput = builder.Read(sceneHandle);
@@ -41,8 +42,9 @@ namespace Mixture
                 // Look for "Backbuffer" imported by Application
                 RGResourceHandle backbufferHandle = graph.GetResource("Backbuffer");
                 data.Backbuffer = builder.Write(backbufferHandle);
+                */
             },
-            [&](RenderGraphRegistry& registry, UIPassData& data, ICommandList* cmd) 
+            [&](RenderGraphRegistry& registry, UIPassData& data, RHI::ICommandList* cmd)
             {
                 // EXECUTE: Draw ImGui
                 // Because we declared a Read on SceneInput, the Graph AUTOMATICALLY
