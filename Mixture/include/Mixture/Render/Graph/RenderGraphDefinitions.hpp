@@ -19,6 +19,9 @@ namespace Mixture
 
     class RenderGraphRegistry; // Forward Declaration
     
+    /**
+     * @brief Represents a resource barrier to transition resource states between passes.
+     */
     struct RGBarrier 
     {
         RGResourceHandle Resource;
@@ -27,29 +30,33 @@ namespace Mixture
         // Flags like "Flush L2 Cache" or "Memory Access" can be added here
     };
 
-    // -------------------------------------------------------------------------
-    // Resource Nodes (The "Data")
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Represents a texture resource node in the render graph (The "Data").
+     */
     struct RGTextureNode 
     {
         RGResourceHandle Handle;
         std::string Name;
         RHI::TextureDesc Desc;
         
-        // Flag to prevent the graph from trying to free this memory
-        // For imports, we might hold the pointer directly here temporarily
+        /**
+         * @brief Flag to prevent the graph from trying to free this memory.
+         * For imports, we might hold the pointer directly here temporarily.
+         */
         bool IsImported = false; 
         std::shared_ptr<RHI::ITexture> ExternalTexture = nullptr;
 
         // --- Lifetime Metadata ---
-        // Initialize to -1 to indicate "Not Used"
+        
+        /** @brief Index of the first pass that uses this resource. Initialize to -1 to indicate "Not Used". */
         int32_t FirstPassIndex = -1; 
+        /** @brief Index of the last pass that uses this resource. */
         int32_t LastPassIndex = -1;
     };
 
-    // -------------------------------------------------------------------------
-    // Pass Nodes (The "Logic")
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Represents a pass node in the render graph (The "Logic").
+     */
     struct RGPassNode 
     {
         std::string Name;
@@ -60,8 +67,10 @@ namespace Mixture
 
         std::vector<RGBarrier> Barriers;
         
-        // The actual execution logic (Recorded lambda)
-        // We pass the Registry so you can look up the REAL texture later
+        /**
+         * @brief The actual execution logic (Recorded lambda).
+         * We pass the Registry so you can look up the REAL texture later.
+         */
         std::function<void(RenderGraphRegistry&, RHI::ICommandList*)> Execute;
     };
 }

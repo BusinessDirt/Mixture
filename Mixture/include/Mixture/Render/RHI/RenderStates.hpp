@@ -235,22 +235,22 @@ namespace Mixture::RHI
     enum class LoadOp : uint8_t
     {
         /**
-         * @brief
+         * @brief The existing contents of the attachment will be loaded.
          */
         Load = 0,
 
         /**
-         * @brief
+         * @brief The attachment will be cleared to a clear color/depth value.
          */
         Clear,
 
         /**
-         * @brief
+         * @brief The contents of the attachment prior to rendering are undefined.
          */
         DontCare,
 
         /**
-         * @brief
+         * @brief No load operation specified.
          */
         None
     };
@@ -261,17 +261,17 @@ namespace Mixture::RHI
     enum class StoreOp : uint8_t
     {
         /**
-         * @brief
+         * @brief The rendered contents of the attachment will be stored.
          */
         Store = 0,
 
         /**
-         * @brief
+         * @brief The contents of the attachment after rendering are undefined.
          */
         DontCare,
 
         /**
-         * @brief
+         * @brief No store operation specified.
          */
         None,
     };

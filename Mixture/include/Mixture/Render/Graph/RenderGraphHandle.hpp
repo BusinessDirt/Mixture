@@ -8,7 +8,9 @@
 namespace Mixture
 {
 
-    // A lightweight handle to a resource in the graph (just an index)
+    /**
+     * @brief A lightweight handle to a resource in the graph (just an index).
+     */
     struct RGResourceHandle 
     {
         using IDType = uint16_t;
