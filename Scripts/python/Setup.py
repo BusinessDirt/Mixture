@@ -43,25 +43,20 @@ update_submodules(project_root)
 if premake_installed:
     system = platform.system()
     scripts_path = project_root / "Scripts"
+    premake_binary_path = project_root / "vendor" / "premake" / "bin"
 
     try:
         if system == "Windows":
             logger.info("Running premake (Windows)...")
-            script_path = scripts_path / "windows" / "Win-GenProjects.ps1"
-            # PowerShell execution might need 'powershell' command prefix if not default shell,
-            # but usually usually subprocess handles .ps1 if associated or via shell=True/powershell cmd.
-            # The original code used os.path.abspath, so we keep that intent but call powershell explicitly for safety.
-            subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", str(script_path), get_premake_target(), "nopause"], check=True)
+            subprocess.run([premake_binary_path / "premake5.exe", get_premake_target()], check=True)
 
         elif system == "Linux":
             logger.info("Running premake (Linux)...")
-            script_path = scripts_path / "linux" / "Linux-GenProjects.sh"
-            subprocess.run(["sh", str(script_path)], check=True)
+            subprocess.run([premake_binary_path / "premake5", "--cc=clang", "gmake2"], check=True)
 
         elif system == "Darwin":
             logger.info("Running premake (MacOS)...")
-            script_path = scripts_path / "macosx" / "MacOSX-GenProjects.sh"
-            subprocess.run(["sh", str(script_path)], check=True)
+            subprocess.run([premake_binary_path / "premake5", "--cc=clang", "xcode4"], check=True)
 
         logger.info("Setup completed!")
 
