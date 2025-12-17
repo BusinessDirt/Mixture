@@ -28,7 +28,7 @@ namespace Mixture
         m_Indices = FindQueueFamilies(m_PhysicalDevice);
         
         auto selectedProps = m_PhysicalDevice.getProperties();
-        OPAL_INFO("Core/Vulkan", "Selected GPU: {} ({})", GetDeviceName(), selectedProps.deviceType);
+        OPAL_INFO("Core/Vulkan", "Selected GPU: {} ({})", std::string_view(selectedProps.deviceName), selectedProps.deviceType);
         OPAL_INFO("Core/Vulkan", " - API Version: {}", VulkanVersionToString(selectedProps.apiVersion));
         OPAL_INFO("Core/Vulkan", " - Driver Version: {}", VulkanVersionToString(selectedProps.driverVersion));
     }

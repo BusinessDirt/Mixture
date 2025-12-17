@@ -1,4 +1,5 @@
 #include "Opal/Log.hpp"
+#include "Opal/Colors.hpp"
 
 namespace Opal {
 
@@ -39,7 +40,7 @@ namespace Opal {
     public:
         void format(const spdlog::details::log_msg &msg, const std::tm &, spdlog::memory_buf_t &dest) override
         {
-            AppendMarkerToBuffer(msg, dest, ANSI_MAGENTA_BOLD, ANSI_RESET);
+            AppendMarkerToBuffer(msg, dest, Colors::magenta_bold.data(), Colors::reset.data());
         }
 
         std::unique_ptr<custom_flag_formatter> clone() const override
