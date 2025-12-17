@@ -12,7 +12,7 @@ class PythonConfiguration:
             return False
 
         # Check for required packages
-        required_packages = ["requests", "tqdm"]
+        required_packages = ["requests"]
         for package_name in required_packages:
             if not cls._validate_package(package_name):
                 return False
@@ -24,7 +24,7 @@ class PythonConfiguration:
         if sys.version_info < (version_major, version_minor):
             logger.error(f"Python version too low, expected version {version_major}.{version_minor} or higher.")
             return False
-        
+
         logger.info(f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} detected")
         return True
 
@@ -37,7 +37,7 @@ class PythonConfiguration:
     @classmethod
     def _install_package(cls, package_name: str) -> bool:
         logger.info(f"Installing {package_name} module...")
-        
+
         # Determine if we can prompt the user
         # In a real CLI app, we might want to just ask, or check for a -y flag in args (omitted here for simplicity)
         permission_granted = False

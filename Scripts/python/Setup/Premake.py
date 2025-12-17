@@ -52,18 +52,15 @@ class PremakeConfiguration:
             permission_granted = (reply == 'y')
 
         premake_path = cls.premake_directory / f"premake-{cls.premake_version}-{distribution}"
-        logger.info(f"Downloading to {premake_path}")
 
         try:
             Utils.download_file(f"{cls.premake_zip_url}{distribution}", premake_path)
-            logger.info(f"Extracting {premake_path}")
             Utils.unzip_file(premake_path, delete_zip_file=True)
             logger.info(f"Premake {cls.premake_version} has been downloaded to '{cls.premake_directory}'")
 
             premake_license_path = cls.premake_directory / "LICENSE.txt"
-            logger.info(f"Downloading {cls.premake_license_url} to {premake_license_path}")
             Utils.download_file(cls.premake_license_url, premake_license_path)
-            logger.info(f"Premake License file has been downloaded to '{cls.premake_directory}'")
+            logger.info(f"Premake License has been downloaded to '{cls.premake_directory}'")
 
             return True
         except Exception as e:

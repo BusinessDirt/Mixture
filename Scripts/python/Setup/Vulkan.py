@@ -19,9 +19,8 @@ class VulkanConfiguration:
 
         if not cls.check_vulkan_sdk_debug_libs():
             logger.warning("No Vulkan SDK debug libs found. Install Vulkan SDK with debug libs.")
-            logger.warning("Debug configuration disabled.")
             # Not returning False here, as we might still want to proceed without debug libs
-        
+
         return True
 
     @classmethod
@@ -32,7 +31,7 @@ class VulkanConfiguration:
             return False
 
         vulkan_path = Path(vulkan_sdk_env)
-        logger.info(f"Located Vulkan SDK at {vulkan_path}")
+        logger.info(f"Valid Vulkan SDK located at {vulkan_path}")
 
         # Try to parse version from path name (common convention) or other means if necessary
         # Usually VULKAN_SDK points to something like C:\VulkanSDK\1.3.216.0
@@ -47,10 +46,9 @@ class VulkanConfiguration:
             )
 
             if found_version < cls.required_vulkan_version:
-                logger.error(f"You don't have the correct Vulkan SDK version! (Minimum {cls.required_vulkan_version} is required)")
+                logger.error(f"You don't have a valid Vulkan SDK version! (Minimum {cls.required_vulkan_version} is required)")
                 return False
 
-        logger.info(f"Correct Vulkan SDK located at {vulkan_path}")
         return True
 
     @classmethod
@@ -70,10 +68,11 @@ class VulkanConfiguration:
             shaderc_lib = vulkan_path / "lib" / "libshaderc_shared.dylib"
         elif system == "Linux":
             shaderc_lib = vulkan_path / "lib" / "libshaderc_shared.so"
-        
+
         if shaderc_lib and shaderc_lib.exists():
+            logger.info(f"Vulkan SDK is installed with debug libs.")
             return True
-            
+
         return False
 
 if __name__ == "__main__":
