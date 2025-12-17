@@ -49,3 +49,10 @@ Scripts/python/generated
 *.sln.DotSettings.user
 imgui.ini
 docs/
+
+/vendor/glfw
+/vendor/glm
+/vendor/googletest
+/vendor/imgui
+/vendor/spdlog
+/vendor/stb_image
