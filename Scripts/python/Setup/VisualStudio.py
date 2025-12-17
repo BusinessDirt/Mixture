@@ -25,10 +25,12 @@ def get_premake_target() -> str:
     # Run vswhere command
     cmd = [
         str(vswhere_path),
+        "-all", "-prerelease",
         "-latest",
         "-products", "*",
         "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-        "-format", "json"
+        "-format", "json",
+        "-utf8"
     ]
 
     try:
@@ -47,7 +49,7 @@ def get_premake_target() -> str:
         major_version = int(full_version.split('.')[0])
 
         if major_version == 18:
-            return "vs2026" # Future-proofing
+            return "vs2026"
         elif major_version == 17:
             return "vs2022"
         elif major_version == 16:
