@@ -1,6 +1,8 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Instance.hpp"
 
+#include "Mixture/Core/Application.hpp"
+
 #include <GLFW/glfw3.h>
 
 #ifdef OPAL_DEBUG
@@ -11,9 +13,9 @@
 
 namespace Mixture
 {
-    Instance::Instance()
+    Instance::Instance(const ApplicationDescription& appDescription)
     {
-        CreateInstance();
+        CreateInstance(appDescription);
         SetupDebugMessenger();
     }
 
@@ -36,10 +38,10 @@ namespace Mixture
         m_Handle.destroy();
     }
 
-    void Instance::CreateInstance()
+    void Instance::CreateInstance(const ApplicationDescription& appDescription)
     {
         vk::ApplicationInfo appInfo(
-            "Mixture App",            // App Name
+            appDescription.name.data(),            // App Name
             VK_MAKE_VERSION(1, 0, 0), // App Version
             "Mixture Engine",         // Engine Name
             VK_MAKE_VERSION(1, 0, 0), // Engine Version

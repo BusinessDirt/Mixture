@@ -17,12 +17,15 @@ namespace Mixture {
     {
         s_Instance = this;
 
-        m_Instance = CreateRef<Instance>();
+        m_Instance = CreateRef<Instance>(appDescription);
         m_PhysicalDevice = CreateRef<PhysicalDevice>(m_Instance->GetHandle());
+        m_Device = CreateRef<Device>(m_PhysicalDevice);
     }
 
     VulkanContext::~VulkanContext()
     {
-
+        m_Device.reset();
+        m_PhysicalDevice.reset();
+        m_Instance.reset();
     }
 }

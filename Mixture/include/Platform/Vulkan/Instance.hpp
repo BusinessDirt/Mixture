@@ -3,16 +3,21 @@
 
 namespace Mixture
 {
+    struct ApplicationDescription;
+}
+
+namespace Mixture
+{
     class Instance
     {
     public:
-        Instance();
+        Instance(const ApplicationDescription& appDescription);
         ~Instance();
 
         vk::Instance GetHandle() const { return m_Handle; }
 
     private:
-        void CreateInstance();
+        void CreateInstance(const ApplicationDescription& appDescription);
         bool CheckValidationLayerSupport();
         void SetupDebugMessenger();
 
