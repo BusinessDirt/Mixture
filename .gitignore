@@ -7,6 +7,7 @@ Intermediates/
 .vs/
 .vscode/
 **.sln
+**.slnx
 **.vcxproj
 **.vcxproj.filters
 **.vcxproj.user
