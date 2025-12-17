@@ -45,24 +45,33 @@ if premake_installed:
     scripts_path = project_root / "Scripts"
     premake_binary_path = project_root / "vendor" / "premake" / "bin"
 
-    try:
-        if system == "Windows":
-            logger.info("Running premake (Windows)...")
-            subprocess.run([premake_binary_path / "premake5.exe", get_premake_target()], check=True)
+    logger.info(f"Running premake ({system})...")
 
-        elif system == "Linux":
-            logger.info("Running premake (Linux)...")
-            subprocess.run([premake_binary_path / "premake5", "--cc=clang", "gmake2"], check=True)
+    match system:
+        case "Windows":
+            binary, args = "premake5.exe", [get_premake_target()]
+        case "Linux":
+            binary, args = "premake5", ["--cc=clang", "gmake2"]
+        case "Darwin":
+            binary, args = "premake5", ["--cc=clang", "xcode4"]
+        case _:
+            logger.error(f"Unsupported system: {system}")
+            sys.exit(-1)
 
-        elif system == "Darwin":
-            logger.info("Running premake (MacOS)...")
-            subprocess.run([premake_binary_path / "premake5", "--cc=clang", "xcode4"], check=True)
+    cmd = [premake_binary_path / binary] + args
 
-        logger.info("Setup completed!")
+    # Use Popen to stream output
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1) as process:
+        for line in process.stdout:
+            if ("Error: " in line):
+                logger.error(line.replace("Error: ", "").strip())
+            else:
+                logger.info(line.strip())
 
-    except subprocess.CalledProcessError as e:
-        logger.error(f"Error during project generation: {e}")
-        sys.exit(1)
+    if process.returncode != 0:
+        logger.error(f"Premake failed with return code {process.returncode}")
+        sys.exit(process.returncode)
+
 else:
     logger.error("Project requires Premake to generate project files.")
 
