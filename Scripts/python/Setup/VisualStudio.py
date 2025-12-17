@@ -13,7 +13,7 @@ def get_premake_target() -> str:
     """
 
     # Locate vswhere.exe (Standard location)
-    program_files = os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")
+    program_files = os.environ.get("ProgramFiles(x86)", "C:/Program Files (x86)")
     vswhere_path = Path(program_files) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
 
     if not vswhere_path.exists():
@@ -63,3 +63,6 @@ def get_premake_target() -> str:
         return "vs2022"
 
 
+if __name__ == "__main__":
+    target = get_premake_target()
+    logger.info(target)

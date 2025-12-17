@@ -35,14 +35,10 @@ if not VulkanRequirements.validate():
     sys.exit(1)
 
 from Setup.VisualStudio import get_premake_target
+from Setup.Git import update_submodules
 
 # submodules and build files
-logger.info("Updating submodules...")
-try:
-    subprocess.run(["git", "submodule", "update", "--init", "--recursive"], check=True)
-except subprocess.CalledProcessError as e:
-    logger.warning(f"Failed to update submodules: {e}")
-    # Proceeding as it might not be fatal if already updated, or user can fix git issues manually
+update_submodules(project_root)
 
 if premake_installed:
     system = platform.system()

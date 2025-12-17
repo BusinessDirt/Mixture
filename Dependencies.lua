@@ -4,7 +4,7 @@ IncludeDir["spdlog"] = "%{wks.location}/vendor/spdlog/include"
 IncludeDir["Vulkan"] = os.getenv("VULKAN_SDK") .. "/include"
 IncludeDir["glm"] = "%{wks.location}/vendor/glm"
 IncludeDir["glfw"] = "%{wks.location}/vendor/glfw/include"
-IncludeDir["stb_image"] = "%{wks.location}/vendor/stb_image"
+IncludeDir["stb_image"] = "%{wks.location}/vendor/stb"
 IncludeDir["imgui"] = "%{wks.location}/vendor/imgui"
 IncludeDir["googletest"] = "%{wks.location}/vendor/googletest/googletest/include"
 

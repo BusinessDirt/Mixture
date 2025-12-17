@@ -1,19 +1,25 @@
 [submodule "vendor/spdlog"]
 	path = vendor/spdlog
 	url = https://github.com/gabime/spdlog.git
+    ignore = dirty
 [submodule "vendor/glm"]
 	path = vendor/glm
 	url = https://github.com/g-truc/glm
-[submodule "vendor/stb_image"]
-	path = vendor/stb_image
+    ignore = dirty
+[submodule "vendor/stb"]
+	path = vendor/stb
 	url = https://github.com/nothings/stb
+    ignore = dirty
 [submodule "vendor/glfw"]
 	path = vendor/glfw
 	url = https://github.com/BusinessDirt/glfw.git
+    ignore = dirty
 [submodule "vendor/imgui"]
 	path = vendor/imgui
 	url = https://github.com/BusinessDirt/imgui.git
 	branch = docking
+    ignore = dirty
 [submodule "vendor/googletest"]
 	path = vendor/googletest
 	url = https://github.com/BusinessDirt/googletest.git
+    ignore = dirty
