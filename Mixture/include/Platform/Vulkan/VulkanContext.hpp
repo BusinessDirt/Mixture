@@ -3,6 +3,10 @@
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/RHI.hpp"
 
+#include "Platform/Vulkan/VulkanDefinitions.hpp"
+#include "Platform/Vulkan/Instance.hpp"
+#include "Platform/Vulkan/PhysicalDevice.hpp"
+
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <iostream>
@@ -10,20 +14,6 @@
 
 namespace Mixture
 {
-    struct QueueFamilyIndices
-    {
-        std::optional<uint32_t> Graphics;
-        std::optional<uint32_t> Present;
-        std::optional<uint32_t> Compute;
-
-        bool IsComplete()
-        {
-            return Graphics.has_value()
-                //&& Present.has_value()
-                && Compute.has_value();
-        }
-    };
-
     class VulkanContext : public RHI::IGraphicsContext
     {
     public:
@@ -32,38 +22,13 @@ namespace Mixture
 
         RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
 
-        vk::Instance GetInstance() const { return m_Instance; }
-        vk::PhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
+        Ref<Instance> GetInstance() const { return m_Instance; }
+        Ref<PhysicalDevice> GetPhysicalDevice() const { return m_PhysicalDevice; }
 
+        static VulkanContext& Get();
     private:
-        void CreateInstance();
-        bool CheckValidationLayerSupport();
-
-        // The actual callback function Vulkan will call
-        static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-            vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-            vk::DebugUtilsMessageTypeFlagsEXT messageType,
-            const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
-            void* pUserData
-        );
-
-        // Helpers to look up the extension functions
-        void SetupDebugMessenger();
-
-        void SelectPhysicalDevice();
-        bool IsDeviceSuitable(vk::PhysicalDevice device);
-        QueueFamilyIndices FindQueueFamilies(vk::PhysicalDevice device);
-
-
-    private:
-        vk::Instance m_Instance;
-        vk::DebugUtilsMessengerEXT m_DebugMessenger;
-        vk::PhysicalDevice m_PhysicalDevice;
-
-        const std::vector<const char*> m_ValidationLayers =
-        {
-            "VK_LAYER_KHRONOS_validation"
-        };
+        Ref<Instance> m_Instance;
+        Ref<PhysicalDevice> m_PhysicalDevice;
     };
 
 }
