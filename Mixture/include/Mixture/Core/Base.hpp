@@ -13,7 +13,7 @@ namespace Mixture
 
     /**
      * @brief Creates a scoped pointer.
-     * 
+     *
      * @tparam T Type of the object.
      * @tparam Args Argument types for the constructor.
      * @param args Arguments for the constructor.
@@ -33,7 +33,7 @@ namespace Mixture
 
     /**
      * @brief Creates a shared pointer.
-     * 
+     *
      * @tparam T Type of the object.
      * @tparam Args Argument types for the constructor.
      * @param args Arguments for the constructor.

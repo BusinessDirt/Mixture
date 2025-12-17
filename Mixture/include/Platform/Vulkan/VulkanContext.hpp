@@ -6,9 +6,23 @@
 #include <vulkan/vulkan.hpp>
 #include <vector>
 #include <iostream>
+#include <optional>
 
 namespace Mixture
 {
+    struct QueueFamilyIndices
+    {
+        std::optional<uint32_t> Graphics;
+        std::optional<uint32_t> Present;
+        std::optional<uint32_t> Compute;
+
+        bool IsComplete()
+        {
+            return Graphics.has_value()
+                //&& Present.has_value()
+                && Compute.has_value();
+        }
+    };
 
     class VulkanContext : public RHI::IGraphicsContext
     {
@@ -19,6 +33,7 @@ namespace Mixture
         RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
 
         vk::Instance GetInstance() const { return m_Instance; }
+        vk::PhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
 
     private:
         void CreateInstance();
@@ -35,9 +50,15 @@ namespace Mixture
         // Helpers to look up the extension functions
         void SetupDebugMessenger();
 
+        void SelectPhysicalDevice();
+        bool IsDeviceSuitable(vk::PhysicalDevice device);
+        QueueFamilyIndices FindQueueFamilies(vk::PhysicalDevice device);
+
+
     private:
         vk::Instance m_Instance;
         vk::DebugUtilsMessengerEXT m_DebugMessenger;
+        vk::PhysicalDevice m_PhysicalDevice;
 
         const std::vector<const char*> m_ValidationLayers =
         {

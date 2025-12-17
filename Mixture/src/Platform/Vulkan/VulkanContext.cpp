@@ -1,3 +1,4 @@
+#include "mxpch.hpp"
 #include "Platform/Vulkan/VulkanContext.hpp"
 
 #include <GLFW/glfw3.h>
@@ -17,11 +18,13 @@ namespace Mixture {
         {
             CreateInstance();
             SetupDebugMessenger();
-            OPAL_INFO("Core_Vulkan", "Vulkan Initialized Successfully!");
+            SelectPhysicalDevice();
+
+            OPAL_INFO("Core/Vulkan", "Vulkan Initialized Successfully!");
         }
         catch (vk::SystemError& err)
         {
-            OPAL_ERROR("Core_Vulkan", "vk::SystemError: {}", err.what());
+            OPAL_CRITICAL("Core/Vulkan", "vk::SystemError: {}", err.what());
             exit(-1);
         }
     }
@@ -64,7 +67,8 @@ namespace Mixture {
         {
             if (!CheckValidationLayerSupport())
             {
-                throw std::runtime_error("Validation layers requested, but not available!");
+                OPAL_ERROR("Core/Vulkan", "Validation layers requested, but not available!");
+                return;
             }
 
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -126,8 +130,9 @@ namespace Mixture {
         // Filter out noisy "INFO" messages if you want, or keep them all
         if (messageSeverity >= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning)
         {
-            OPAL_ERROR("Core_Vulkan", "[Validation Layer]: {}", pCallbackData->pMessage);
+            OPAL_ERROR("Core/Vulkan", "[Validation Layer]: {}", pCallbackData->pMessage);
         }
+
         return VK_FALSE; // Should almost always return VK_FALSE
     }
 
@@ -165,13 +170,117 @@ namespace Mixture {
 
             if (func(m_Instance, &vkCreateInfo, nullptr, &vkMessenger) != VK_SUCCESS)
             {
-                throw std::runtime_error("Failed to set up debug messenger!");
+                OPAL_ERROR("Core/Vulkan", "Failed to set up debug messenger!");
+                return;
             }
+
             m_DebugMessenger = vkMessenger;
         }
         else
         {
-            OPAL_ERROR("Core_Vulkan", "vkCreateDebugUtilsMessengerEXT not found!");
+            OPAL_ERROR("Core/Vulkan", "vkCreateDebugUtilsMessengerEXT not found!");
         }
+    }
+
+    std::string VulkanVersionToString(uint32_t version)
+    {
+        std::stringstream ss;
+        ss << VK_API_VERSION_MAJOR(version) << "."
+            << VK_API_VERSION_MINOR(version) << "."
+            << VK_API_VERSION_PATCH(version);
+        return ss.str();
+    }
+
+    void VulkanContext::SelectPhysicalDevice()
+    {
+        // 1. Enumerate all devices
+        std::vector<vk::PhysicalDevice> devices = m_Instance.enumeratePhysicalDevices();
+        if (devices.empty())
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to find GPUs with Vulkan support!");
+            exit(-1);
+        }
+
+        // 2. Score them
+        vk::PhysicalDevice bestDevice = nullptr;
+        int bestScore = -1;
+
+        for (const auto& device : devices)
+        {
+            int score = 0;
+
+            if (!IsDeviceSuitable(device)) continue;
+
+            auto props = device.getProperties();
+            auto features = device.getFeatures();
+
+            // Big Score for Discrete GPU (Dedicated Card)
+            if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
+            {
+                score += 1000;
+            }
+
+            // Bonus for higher max texture size (e.g. 4096 vs 16384)
+            score += props.limits.maxImageDimension2D;
+
+            OPAL_INFO("Core/Vulkan", "Found GPU: {} (Score: {})", std::string_view(props.deviceName), score);
+
+            if (score > bestScore)
+            {
+                bestDevice = device;
+                bestScore = score;
+            }
+        }
+
+        if (!bestDevice)
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to find a suitable GPU!");
+            exit(-1);
+        }
+
+        m_PhysicalDevice = bestDevice;
+        auto selectedProps = m_PhysicalDevice.getProperties();
+        OPAL_INFO("Core/Vulkan", "Selected GPU: {} ({})", std::string_view(selectedProps.deviceName), selectedProps.deviceType);
+        OPAL_INFO("Core/Vulkan", " - API Version: {}", VulkanVersionToString(selectedProps.apiVersion));
+        OPAL_INFO("Core/Vulkan", " - Driver Version: {}", VulkanVersionToString(selectedProps.driverVersion));
+    }
+
+    bool VulkanContext::IsDeviceSuitable(vk::PhysicalDevice device)
+    {
+        QueueFamilyIndices indices = FindQueueFamilies(device);
+        if (!indices.IsComplete()) return false;
+
+        // Check for Vulkan 1.3 Support (Dynamic Rendering Requirement)
+        auto props = device.getProperties();
+        if (props.apiVersion < VK_API_VERSION_1_3)
+        {
+            OPAL_WARN("Core/Vulkan", "[Skipped] {} does not support Vulkan 1.3");
+            return false;
+        }
+
+        // Check for Anisotropy support
+        auto features = device.getFeatures();
+        if (!features.samplerAnisotropy) return false;
+
+        return true;
+    }
+
+    QueueFamilyIndices VulkanContext::FindQueueFamilies(vk::PhysicalDevice device)
+    {
+        QueueFamilyIndices indices;
+        std::vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();
+
+        int i = 0;
+        for (const auto& queueFamily : queueFamilies)
+        {
+            if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) indices.Graphics = i;
+            //if (queueFamily.queueFlags & vk::QueueFlagBits::ePresent) indices.Present = i;
+            if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute) indices.Compute = i;
+
+            if (indices.IsComplete()) break;
+            i++;
+        }
+
+        return indices;
     }
 }
