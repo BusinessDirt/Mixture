@@ -1,7 +1,3 @@
-param (
-    [switch]$NoPause
-)
-
 # Navigate to ..\python relative to where this script is saved
 $PythonDir = Join-Path $PSScriptRoot ".\python"
 Push-Location $PythonDir
@@ -16,9 +12,3 @@ else
 }
 
 Pop-Location
-
-if (-not $NoPause)
-{
-    Write-Host "`nPress any key to continue..." -NoNewline
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
-}
