@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Platform/Vulkan/VulkanDefinitions.hpp"
+#include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 
 #include <memory>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
 	class Device
 	{

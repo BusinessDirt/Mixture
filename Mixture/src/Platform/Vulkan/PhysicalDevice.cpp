@@ -1,7 +1,7 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
     namespace
     {

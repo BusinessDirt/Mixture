@@ -1,9 +1,9 @@
 #pragma once
 #include "Mixture/Core/Base.hpp"
 
-#include "Platform/Vulkan/VulkanDefinitions.hpp"
+#include "Platform/Vulkan/Definitions.hpp"
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
     class PhysicalDevice
     {

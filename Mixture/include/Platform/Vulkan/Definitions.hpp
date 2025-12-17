@@ -4,7 +4,7 @@
 #include <vulkan/vulkan.hpp>
 #include <optional>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
     struct QueueFamilyIndices
     {

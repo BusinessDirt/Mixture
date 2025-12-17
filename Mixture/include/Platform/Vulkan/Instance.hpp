@@ -1,12 +1,12 @@
 #pragma once
-#include "Platform/Vulkan/VulkanDefinitions.hpp"
+#include "Platform/Vulkan/Definitions.hpp"
 
 namespace Mixture
 {
     struct ApplicationDescription;
 }
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
     class Instance
     {
@@ -28,10 +28,11 @@ namespace Mixture
             const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData
         );
+
     private:
         vk::Instance m_Handle;
         vk::DebugUtilsMessengerEXT m_DebugMessenger;
 
-        const std::vector<const char*> m_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
+        const Vector<const char*> m_ValidationLayers = { "VK_LAYER_KHRONOS_validation" };
     };
 }

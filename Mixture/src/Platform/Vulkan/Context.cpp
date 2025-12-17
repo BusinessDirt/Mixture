@@ -1,18 +1,19 @@
 #include "mxpch.hpp"
-#include "Platform/Vulkan/VulkanContext.hpp"
+#include "Platform/Vulkan/Context.hpp"
 
 #include <GLFW/glfw3.h>
 
-namespace Mixture {
+namespace Mixture::Vulkan 
+{
 
-    static VulkanContext* s_Instance = nullptr;
+    static Context* s_Instance = nullptr;
 
-    VulkanContext& VulkanContext::Get()
+    Context& Context::Get()
     {
         return *s_Instance;
     }
 
-    VulkanContext::VulkanContext(const ApplicationDescription& appDescription)
+    Context::Context(const ApplicationDescription& appDescription)
         : RHI::IGraphicsContext(appDescription)
     {
         s_Instance = this;
@@ -22,7 +23,7 @@ namespace Mixture {
         m_Device = CreateRef<Device>(m_PhysicalDevice);
     }
 
-    VulkanContext::~VulkanContext()
+    Context::~Context()
     {
         m_Device.reset();
         m_PhysicalDevice.reset();

@@ -3,7 +3,7 @@
 
 #include "Mixture/Core/Application.hpp"
 
-#include "Platform/Vulkan/VulkanContext.hpp"
+#include "Platform/Vulkan/Context.hpp"
 
 namespace Mixture::RHI
 {
@@ -15,7 +15,7 @@ namespace Mixture::RHI
                 return nullptr;
 
             case GraphicsAPI::Vulkan:
-                return CreateScope<VulkanContext>(appDescription);
+                return CreateScope<Vulkan::Context>(appDescription);
 
             case GraphicsAPI::D3D12:
                 OPAL_ERROR("Core", "D3D12 not supported yet!");

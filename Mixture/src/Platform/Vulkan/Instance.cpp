@@ -11,7 +11,7 @@
     const bool g_EnableValidationLayers = true;
 #endif
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
     Instance::Instance(const ApplicationDescription& appDescription)
     {

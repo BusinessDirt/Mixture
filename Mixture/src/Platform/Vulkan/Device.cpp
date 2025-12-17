@@ -4,7 +4,7 @@
 #include <vector>
 #include <set>
 
-namespace Mixture
+namespace Mixture::Vulkan
 {
 	Device::Device(Ref<PhysicalDevice> physicalDevice)
 		: m_PhysicalDevice(physicalDevice)
