@@ -34,6 +34,7 @@ namespace Opal::Colors
 
     constexpr std::string_view yellow_bold = "";
     constexpr std::string_view red_bold = "";
+    constexpr std::string_view magenta_bold = "";
     constexpr std::string_view bold_on_red = "";
 #else
     // Text Attributes

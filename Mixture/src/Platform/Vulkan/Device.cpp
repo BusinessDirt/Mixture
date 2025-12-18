@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <set>
+#include "Device.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -26,9 +27,9 @@ namespace Mixture::Vulkan
         std::vector<vk::ExtensionProperties> availableExtensions =
             m_PhysicalDevice->GetHandle().enumerateDeviceExtensionProperties();
 
-        for (const auto& ext : availableExtensions) 
+        for (const auto& ext : availableExtensions)
         {
-            if (strcmp(ext.extensionName, "VK_KHR_portability_subset") == 0) 
+            if (strcmp(ext.extensionName, "VK_KHR_portability_subset") == 0)
             {
                 deviceExtensions.push_back("VK_KHR_portability_subset");
                 break;
@@ -50,11 +51,11 @@ namespace Mixture::Vulkan
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
         createInfo.enabledLayerCount = 0;
 
-        try 
+        try
         {
             m_Device = m_PhysicalDevice->GetHandle().createDevice(createInfo);
         }
-        catch (vk::SystemError& err) 
+        catch (vk::SystemError& err)
         {
             OPAL_CRITICAL("Core/Vulkan", "Failed to create logical device!");
             exit(-1);
@@ -68,4 +69,24 @@ namespace Mixture::Vulkan
         m_Device.waitIdle();
         m_Device.destroy();
 	}
+
+    Ref<RHI::IShader> Device::CreateShader(const std::string &filepath, RHI::ShaderStage stage)
+    {
+        return nullptr;
+    }
+
+    Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc)
+    {
+        return nullptr;
+    }
+
+    Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc)
+    {
+        return nullptr;
+    }
+
+    Ref<RHI::IPipeline> Device::CreatePipeline(const RHI::PipelineDesc& desc)
+    {
+        return nullptr;
+    }
 }

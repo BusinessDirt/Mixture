@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mixture/Core/Base.hpp"
+#include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
 namespace Mixture
 {
@@ -25,6 +26,7 @@ namespace Mixture::RHI
         virtual ~IGraphicsContext() = default;
 
         virtual GraphicsAPI GetAPI() const = 0;
+        virtual Ref<IGraphicsDevice> GetDevice() const = 0;
 
         static Scope<IGraphicsContext> Create(const ApplicationDescription& appDescription);
     };

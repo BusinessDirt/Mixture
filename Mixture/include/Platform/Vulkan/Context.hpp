@@ -22,10 +22,11 @@ namespace Mixture::Vulkan
         ~Context();
 
         RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
+        Ref<RHI::IGraphicsDevice> GetDevice() const override { return m_Device; }
 
         Ref<Instance> GetInstance() const { return m_Instance; }
         Ref<PhysicalDevice> GetPhysicalDevice() const { return m_PhysicalDevice; }
-        Ref<Device> GetDevice() const { return m_Device; }
+        Ref<Device> GetLogicalDevice() const { return m_Device; }
 
         static Context& Get();
     private:
