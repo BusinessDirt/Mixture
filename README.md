@@ -45,16 +45,16 @@ git clone --recursive [https://github.com/YOUR_USERNAME/Mixture.git](https://git
 ### 2. Setup Dependencies
 
 Run the platform-specific setup script to download Premake and generate project files.
+If executed in VS Code this will also generate '.vscode/c_cpp_properties.json' for syntax highlighting.
 
 **Windows**:
 ```PowerShell
-./Scripts/windows/Setup.bat
+./Scripts/Setup-Windows.ps1
 ```
 
-**Linux**:
-```Bash
-chmod +x Scripts/linux/Setup.sh
-./Scripts/linux/Setup.sh
+**Unix**:
+```bash
+sh ./Scripts/Setup-Unix.sh
 ```
 
 ### 3. Build & Run

@@ -1,4 +1,5 @@
 -- premake5.lua
+include "./vendor/premake/customizations/vscode.lua"
 include "./vendor/premake/customizations/solution_items.lua"
 include "Dependencies.lua"
 

@@ -1,5 +1,4 @@
 import os
-import subprocess
 import platform
 import sys
 from pathlib import Path
@@ -26,6 +25,7 @@ if not PythonRequirements.validate():
 
 # premake setup
 from Setup.Premake import PremakeConfiguration as PremakeRequirements
+from Setup.Premake import run_premake
 premake_installed = PremakeRequirements.validate()
 
 # other requirements
@@ -49,28 +49,19 @@ if premake_installed:
 
     match system:
         case "Windows":
-            binary, args = "premake5.exe", [get_premake_target()]
+            binary, args = premake_binary_path / "premake5.exe", [get_premake_target()]
         case "Linux":
-            binary, args = "premake5", ["--cc=clang", "gmake2"]
+            binary, args = premake_binary_path / "premake5", ["--cc=clang", "gmake2"]
         case "Darwin":
-            binary, args = "premake5", ["--cc=clang", "xcode4"]
+            binary, args = premake_binary_path / "premake5", ["--cc=clang", "xcode4"]
         case _:
             logger.error(f"Unsupported system: {system}")
             sys.exit(-1)
 
-    cmd = [premake_binary_path / binary] + args
+    run_premake(binary, args)
 
-    # Use Popen to stream output
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1) as process:
-        for line in process.stdout:
-            if ("Error: " in line):
-                logger.error(line.replace("Error: ", "").strip())
-            else:
-                logger.info(line.strip())
-
-    if process.returncode != 0:
-        logger.error(f"Premake failed with return code {process.returncode}")
-        sys.exit(process.returncode)
+    if os.environ.get("TERM_PROGRAM") == "vscode":
+        run_premake(binary, "vscode")
 
 else:
     logger.error("Project requires Premake to generate project files.")
