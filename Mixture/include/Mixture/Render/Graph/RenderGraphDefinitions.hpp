@@ -69,13 +69,12 @@ namespace Mixture
         // Dependencies (Built during Setup phase)
         Vector<RGResourceHandle> Reads;
         Vector<RGResourceHandle> Writes;
-
-        std::vector<RGBarrier> Barriers;
+        Vector<RGBarrier> Barriers;
         
         /**
          * @brief The actual execution logic (Recorded lambda).
          * We pass the Registry so you can look up the REAL texture later.
          */
-        std::function<void(RenderGraphRegistry&, RHI::ICommandList*)> Execute;
+        std::function<void(RenderGraphRegistry&, Ref<RHI::ICommandList>)> Execute;
     };
 }

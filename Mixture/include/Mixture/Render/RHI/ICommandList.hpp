@@ -12,12 +12,12 @@
 
 #include <vector>
 
-namespace Mixture::RHI 
+namespace Mixture::RHI
 {
     /**
      * Helper struct for Dynamic Rendering (Vulkan 1.3).
      */
-    struct RenderingAttachment 
+    struct RenderingAttachment
     {
         /**
          * The texture to write to.
@@ -48,18 +48,18 @@ namespace Mixture::RHI
     /**
      * Structure describing rendering information.
      */
-    struct RenderingInfo 
+    struct RenderingInfo
     {
         /**
          * List of color attachments.
          */
-        std::vector<RenderingAttachment> ColorAttachments;
+        Vector<RenderingAttachment> ColorAttachments;
 
         /**
          * Pointer to the depth attachment.
          */
         RenderingAttachment* DepthAttachment = nullptr;
-        
+
         /**
          * Render Area X coordinate.
          */
@@ -84,7 +84,7 @@ namespace Mixture::RHI
     /**
      * Interface for a command list.
      */
-    class ICommandList 
+    class ICommandList
     {
     public:
         /**
@@ -108,7 +108,7 @@ namespace Mixture::RHI
 
         /**
          * Starts a Dynamic Rendering block (replaces VkRenderPass).
-         * 
+         *
          * @param info The rendering information.
          */
         virtual void BeginRendering(const RenderingInfo& info) = 0;
@@ -124,7 +124,7 @@ namespace Mixture::RHI
 
         /**
          * Sets the viewport.
-         * 
+         *
          * @param x The X coordinate.
          * @param y The Y coordinate.
          * @param width The width.
@@ -136,7 +136,7 @@ namespace Mixture::RHI
 
         /**
          * Sets the scissor rectangle.
-         * 
+         *
          * @param x The X coordinate.
          * @param y The Y coordinate.
          * @param width The width.
@@ -150,14 +150,14 @@ namespace Mixture::RHI
 
         /**
          * Binds a pipeline.
-         * 
+         *
          * @param pipeline The pipeline to bind.
          */
         virtual void BindPipeline(IPipeline* pipeline) = 0;
 
         /**
          * Binds a vertex buffer.
-         * 
+         *
          * @param buffer The buffer to bind.
          * @param binding The binding index.
          */
@@ -165,14 +165,14 @@ namespace Mixture::RHI
 
         /**
          * Binds an index buffer.
-         * 
+         *
          * @param buffer The buffer to bind.
          */
         virtual void BindIndexBuffer(IBuffer* buffer) = 0;
 
         /**
          * Creates a pipeline image barrier for the specified texture.
-         * 
+         *
          * @param texture the texture to create the barrier for
          * @param oldState the old state of the layout
          * @param newState the new state of the layout
@@ -185,7 +185,7 @@ namespace Mixture::RHI
 
         /**
          * Updates push constants.
-         * 
+         *
          * @param pipeline The pipeline layout compatible with the push constants.
          * @param stage The shader stage flags.
          * @param data Pointer to the data.
@@ -199,7 +199,7 @@ namespace Mixture::RHI
 
         /**
          * Draws primitives.
-         * 
+         *
          * @param vertexCount The number of vertices to draw.
          * @param instanceCount The number of instances to draw.
          * @param firstVertex The index of the first vertex.
@@ -209,7 +209,7 @@ namespace Mixture::RHI
 
         /**
          * Draws indexed primitives.
-         * 
+         *
          * @param indexCount The number of indices to draw.
          * @param instanceCount The number of instances to draw.
          * @param firstIndex The base index within the index buffer.

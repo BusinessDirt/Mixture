@@ -114,7 +114,7 @@ namespace Mixture
     private:
         void Run() const;
         bool OnWindowClose(WindowCloseEvent& e);
-        static bool OnFramebufferResize(const FramebufferResizeEvent& e);
+        bool OnFramebufferResize(const FramebufferResizeEvent& e);
 
     private:
         ApplicationDescription m_AppDescription;

@@ -30,6 +30,8 @@ namespace Mixture::Vulkan
     class Context : public RHI::IGraphicsContext
     {
     public:
+        static const int MAX_FRAMES_IN_FLIGHT = 2;
+
         /**
          * @brief Constructor.
          *
@@ -40,6 +42,11 @@ namespace Mixture::Vulkan
 
         RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
         Ref<RHI::IGraphicsDevice> GetDevice() const override { return m_Device; }
+
+        void OnResize(uint32_t width, uint32_t height) override;
+        Ref<RHI::ITexture> BeginFrame() override;
+        void EndFrame() override;
+        Ref<RHI::ICommandList> GetCommandBuffer() override;
 
         /**
          * @brief Gets the Vulkan instance.
@@ -76,6 +83,8 @@ namespace Mixture::Vulkan
          */
         Ref<Swapchain> GetSwapchain() const { return m_Swapchain; }
 
+        uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
+
         /**
          * @brief Gets the singleton context instance.
          *
@@ -88,5 +97,16 @@ namespace Mixture::Vulkan
         Ref<PhysicalDevice> m_PhysicalDevice;
         Ref<Device> m_Device;
         Ref<Swapchain> m_Swapchain;
+
+        Vector<vk::Semaphore> m_ImageAvailableSemaphores;
+        Vector<vk::Semaphore> m_RenderFinishedSemaphores;
+        Vector<vk::Fence> m_InFlightFences;
+
+        vk::CommandPool m_CommandPool;
+        Vector<vk::CommandBuffer> m_CommandBuffers;
+
+        uint32_t m_CurrentFrame = 0;
+        uint32_t m_ImageIndex = 0;
+        bool m_IsFrameStarted = false;
     };
 }

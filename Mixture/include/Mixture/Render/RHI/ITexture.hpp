@@ -6,8 +6,9 @@
  */
 
 #include "Mixture/Core/Base.hpp"
-
 #include "Mixture/Render/RHI/RenderFormats.hpp"
+
+#include <string_view>
 
 namespace Mixture::RHI
 {
@@ -15,7 +16,7 @@ namespace Mixture::RHI
     /**
      * @brief Descriptor structure used to create a texture.
      */
-    struct TextureDesc 
+    struct TextureDesc
     {
         /**
          * @brief The width of the texture in pixels.
@@ -35,14 +36,14 @@ namespace Mixture::RHI
         /**
          * @brief Debug name for the texture.
          */
-        const char* DebugName = "Unnamed Texture";
+        std::string_view DebugName = "Unnamed Texture";
         // MipLevels, IsRenderTarget, etc. can be added later
     };
 
     /**
      * @brief Interface representing a GPU texture.
      */
-    class ITexture 
+    class ITexture
     {
     public:
         /**
@@ -72,7 +73,7 @@ namespace Mixture::RHI
          * @brief Retrieves the debug name of the texture.
          * @return A C-string representing the debug name.
          */
-        virtual const char* GetDebugName() const = 0;
+        virtual std::string_view GetDebugName() const = 0;
     };
 
 }

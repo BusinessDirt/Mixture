@@ -1,6 +1,8 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Swapchain.hpp"
 
+#include "Platform/Vulkan/Resources/Texture.hpp"
+
 namespace Mixture::Vulkan
 {
     Swapchain::Swapchain(Ref<PhysicalDevice> physicalDevice, Ref<Device> device,
@@ -164,6 +166,7 @@ namespace Mixture::Vulkan
     void Swapchain::CreateImageViews()
     {
         m_ImageViews.resize(m_Images.size());
+        m_SwapchainTextures.resize(m_Images.size());
 
         for (size_t i = 0; i < m_Images.size(); i++)
         {
@@ -186,6 +189,11 @@ namespace Mixture::Vulkan
             createInfo.subresourceRange.layerCount = 1;
 
             m_ImageViews[i] = m_Device->GetHandle().createImageView(createInfo);
+
+            m_SwapchainTextures[i] = CreateRef<Vulkan::Texture>(
+                m_Images[i], m_ImageViews[i],
+                m_Extent.width, m_Extent.height
+            );
         }
     }
 

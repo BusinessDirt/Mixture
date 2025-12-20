@@ -61,7 +61,7 @@ if premake_installed:
     run_premake(binary, args)
 
     if os.environ.get("TERM_PROGRAM") == "vscode":
-        run_premake(binary, "vscode")
+        run_premake(binary, ["vscode"])
 
 else:
     logger.error("Project requires Premake to generate project files.")

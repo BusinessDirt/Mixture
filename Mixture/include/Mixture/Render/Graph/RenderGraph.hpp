@@ -75,7 +75,7 @@ namespace Mixture
          * 
          * @param cmdList The command list to record commands into.
          */
-        void Execute(RHI::ICommandList* cmdList);
+        void Execute(Ref<RHI::ICommandList> cmdList);
 
         /**
          * @brief Imports an external resource (e.g., Swapchain Backbuffer) into the graph.

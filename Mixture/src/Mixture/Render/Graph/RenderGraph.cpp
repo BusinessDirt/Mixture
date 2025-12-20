@@ -25,7 +25,7 @@ namespace Mixture
         }
     }
 
-    void RenderGraph::Execute(RHI::ICommandList* cmdList)
+    void RenderGraph::Execute(Ref<RHI::ICommandList> cmdList)
     {
         // Realize Resources (Allocation Phase)
         for (const auto& node : m_Resources)
