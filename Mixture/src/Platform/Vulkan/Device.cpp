@@ -7,7 +7,7 @@
 
 namespace Mixture::Vulkan
 {
-	Device::Device(Ref<PhysicalDevice> physicalDevice)
+	Device::Device(Ref<Instance> instance, Ref<PhysicalDevice> physicalDevice)
 		: m_PhysicalDevice(physicalDevice)
 	{
 		auto indices = m_PhysicalDevice->GetQueueFamilies();
@@ -62,11 +62,32 @@ namespace Mixture::Vulkan
         }
 
         m_GraphicsQueue = m_Device.getQueue(indices.Graphics.value(), 0);
+
+        VmaVulkanFunctions vulkanFunctions = {};
+        vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+        vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+        allocatorInfo.physicalDevice = m_PhysicalDevice->GetHandle();
+        allocatorInfo.device = m_Device;
+        allocatorInfo.instance = instance->GetHandle();
+        allocatorInfo.pVulkanFunctions = &vulkanFunctions;
+        allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
+        if (vmaCreateAllocator(&allocatorInfo, &m_Allocator) != VK_SUCCESS)
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to create VMA Allocator!");
+            exit(-1);
+        }
+
+        OPAL_INFO("Core/Vulkan", "VMA Initialized.");
 	}
 
 	Device::~Device()
 	{
         m_Device.waitIdle();
+        vmaDestroyAllocator(m_Allocator);
         m_Device.destroy();
 	}
 
