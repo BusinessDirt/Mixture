@@ -29,7 +29,7 @@ namespace Mixture::RHI
 
     /**
      * @brief Interface for the graphics context.
-     * 
+     *
      * Handles initialization of the graphics API and creation of the device.
      */
     class IGraphicsContext
@@ -37,32 +37,32 @@ namespace Mixture::RHI
     public:
         /**
          * @brief Constructor.
-         * 
+         *
          * @param appDescription Description of the application.
          */
-        IGraphicsContext(const ApplicationDescription& appDescription) {}
+        IGraphicsContext(const ApplicationDescription& appDescription, void* windowHandle) {}
         virtual ~IGraphicsContext() = default;
 
         /**
          * @brief Gets the current graphics API.
-         * 
+         *
          * @return GraphicsAPI The active API.
          */
         virtual GraphicsAPI GetAPI() const = 0;
 
         /**
          * @brief Gets the graphics device.
-         * 
+         *
          * @return Ref<IGraphicsDevice> Reference to the device.
          */
         virtual Ref<IGraphicsDevice> GetDevice() const = 0;
 
         /**
          * @brief Factory method to create a graphics context.
-         * 
+         *
          * @param appDescription Description of the application.
          * @return Scope<IGraphicsContext> The created context.
          */
-        static Scope<IGraphicsContext> Create(const ApplicationDescription& appDescription);
+        static Scope<IGraphicsContext> Create(const ApplicationDescription& appDescription, void* windowHandle);
     };
 }

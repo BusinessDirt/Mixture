@@ -1,9 +1,24 @@
 import logging
 import platform
+import sys
+import subprocess
 from pathlib import Path
 import Utils
 
 logger = logging.getLogger(__name__)
+
+def run_premake(binary: str, args: list):
+    cmd = [binary] + args
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1) as process:
+        for line in process.stdout:
+            if ("Error: " in line):
+                logger.error(line.replace("Error: ", "").strip())
+            else:
+                logger.info(line.strip())
+
+    if process.returncode != 0:
+        logger.error(f"Failed with return code {process.returncode}")
+        sys.exit(process.returncode)
 
 class PremakeConfiguration:
     premake_version = "5.0.0-beta7"

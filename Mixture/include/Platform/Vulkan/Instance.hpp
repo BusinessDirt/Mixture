@@ -16,7 +16,7 @@ namespace Mixture::Vulkan
 {
     /**
      * @brief Wrapper around a Vulkan instance.
-     * 
+     *
      * Handles instance creation, validation layers, and debug messenger setup.
      */
     class Instance
@@ -24,7 +24,7 @@ namespace Mixture::Vulkan
     public:
         /**
          * @brief Constructor.
-         * 
+         *
          * @param appDescription Description of the application.
          */
         Instance(const ApplicationDescription& appDescription);
@@ -32,7 +32,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Gets the Vulkan instance handle.
-         * 
+         *
          * @return vk::Instance The raw handle.
          */
         vk::Instance GetHandle() const { return m_Handle; }

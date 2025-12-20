@@ -5,7 +5,7 @@
 
 #include <GLFW/glfw3.h>
 
-#ifdef OPAL_DEBUG
+#ifndef OPAL_DEBUG
     const bool g_EnableValidationLayers = false;
 #else
     const bool g_EnableValidationLayers = true;
@@ -41,11 +41,11 @@ namespace Mixture::Vulkan
     void Instance::CreateInstance(const ApplicationDescription& appDescription)
     {
         vk::ApplicationInfo appInfo(
-            appDescription.name.data(),            // App Name
-            VK_MAKE_VERSION(1, 0, 0), // App Version
-            "Mixture Engine",         // Engine Name
-            VK_MAKE_VERSION(1, 0, 0), // Engine Version
-            VK_API_VERSION_1_3        // API Version
+            appDescription.Name.data(), // App Name
+            VK_MAKE_VERSION(1, 0, 0),   // App Version
+            "Mixture Engine",           // Engine Name
+            VK_MAKE_VERSION(1, 0, 0),   // Engine Version
+            VK_API_VERSION_1_3          // API Version
         );
 
         uint32_t glfwExtensionCount = 0;

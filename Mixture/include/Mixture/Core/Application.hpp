@@ -42,11 +42,14 @@ namespace Mixture
 
     struct ApplicationDescription
     {
-        std::string name = "Mixture App";
-        std::string version = "1.0.0";
-        RHI::GraphicsAPI api = RHI::GraphicsAPI::None;
+        std::string Name = "Mixture App";
+        uint32_t Width = 1280;
+        uint32_t Height = 720;
 
-        ApplicationCommandLineArgs args = ApplicationCommandLineArgs();
+        std::string Version = "1.0.0";
+        RHI::GraphicsAPI API = RHI::GraphicsAPI::None;
+
+        ApplicationCommandLineArgs Args = ApplicationCommandLineArgs();
     };
 
     /**

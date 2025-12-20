@@ -7,15 +7,15 @@
 
 namespace Mixture::RHI
 {
-    Scope<IGraphicsContext> IGraphicsContext::Create(const ApplicationDescription& appDescription)
+    Scope<IGraphicsContext> IGraphicsContext::Create(const ApplicationDescription& appDescription, void* windowHandle)
     {
-        switch (appDescription.api)
+        switch (appDescription.API)
         {
             case GraphicsAPI::None:
                 return nullptr;
 
             case GraphicsAPI::Vulkan:
-                return CreateScope<Vulkan::Context>(appDescription);
+                return CreateScope<Vulkan::Context>(appDescription, windowHandle);
 
             case GraphicsAPI::D3D12:
                 OPAL_ERROR("Core", "D3D12 not supported yet!");

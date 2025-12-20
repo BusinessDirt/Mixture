@@ -23,13 +23,13 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Checks if all required queue families are present.
-         * 
+         *
          * @return true If complete.
          */
         bool IsComplete()
         {
             return Graphics.has_value()
-                //&& Present.has_value()
+                && Present.has_value()
                 && Compute.has_value();
         }
     };

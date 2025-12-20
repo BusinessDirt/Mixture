@@ -11,7 +11,7 @@ namespace Mixture
 {
     /**
      * @brief Manages a stack of layers.
-     * 
+     *
      * Layers are stored in a vector, but split into "Layers" and "Overlays".
      * Overlays are always pushed after regular layers.
      */
@@ -19,7 +19,7 @@ namespace Mixture
     {
     public:
         OPAL_NON_COPIABLE(LayerStack);
-        
+
         LayerStack() = default;
         ~LayerStack() = default;
 
@@ -30,32 +30,32 @@ namespace Mixture
 
         /**
          * @brief Pushes a layer onto the stack.
-         * 
+         *
          * It is inserted before the overlays.
-         * 
+         *
          * @param layer The layer to push.
          */
         void PushLayer(Layer* layer);
 
         /**
          * @brief Pushes an overlay onto the stack.
-         * 
+         *
          * It is pushed to the back of the list (rendered last).
-         * 
+         *
          * @param layer The overlay to push.
          */
         void PushOverlay(Layer* layer);
 
         /**
          * @brief Pops a layer from the stack.
-         * 
+         *
          * @param layer The layer to pop.
          */
         void PopLayer(Layer* layer);
 
         /**
          * @brief Pops an overlay from the stack.
-         * 
+         *
          * @param layer The overlay to pop.
          */
         void PopOverlay(Layer* layer);
@@ -71,7 +71,7 @@ namespace Mixture
         OPAL_NODISCARD std::vector<Layer*>::const_reverse_iterator rend() const { return m_Layers.rend(); }
 
     private:
-        std::vector<Layer*> m_Layers;
+        Vector<Layer*> m_Layers;
         unsigned int m_LayerInsertIndex = 0;
     };
 }
