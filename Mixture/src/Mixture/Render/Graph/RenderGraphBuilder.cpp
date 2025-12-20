@@ -3,7 +3,7 @@
 
 #include "Mixture/Render/Graph/RenderGraph.hpp"
 
-namespace Mixture 
+namespace Mixture
 {
     RenderGraphBuilder::RenderGraphBuilder(RenderGraph& graph, RGPassNode& passNode)
         : m_Graph(graph), m_PassNode(passNode)
@@ -14,7 +14,7 @@ namespace Mixture
     {
         if (!handle.IsValid())
         {
-            OPAL_WARN("Core_RenderGraph", "RenderGraphBuilder::Read - RGResourceHandle is invalid");
+            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Read - RGResourceHandle is invalid");
             return handle;
         }
 
@@ -27,7 +27,7 @@ namespace Mixture
     {
         if (!handle.IsValid())
         {
-            OPAL_WARN("Core_RenderGraph", "RenderGraphBuilder::Write - RGResourceHandle is invalid");
+            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Write - RGResourceHandle is invalid");
             return handle;
         }
 

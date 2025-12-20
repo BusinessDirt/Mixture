@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file RenderGraphDefinitions.hpp
+ * @brief Definitions for RenderGraph nodes, resources, and barriers.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/Graph/RenderGraphHandle.hpp"

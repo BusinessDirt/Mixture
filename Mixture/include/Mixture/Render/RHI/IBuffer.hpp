@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file IBuffer.hpp
+ * @brief Interface for GPU buffers.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include <cstdint>

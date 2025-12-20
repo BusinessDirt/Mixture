@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file MouseEvent.hpp
+ * @brief Mouse-related events (move, scroll, button press/release).
+ */
+
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Input/MouseCodes.hpp"
 

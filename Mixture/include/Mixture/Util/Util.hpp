@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file Util.hpp
+ * @brief General utility functions (hashing, string manipulation, file I/O).
+ */
+
 #include <unordered_map>
 #include <filesystem>
 

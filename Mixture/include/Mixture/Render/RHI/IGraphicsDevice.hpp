@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file IGraphicsDevice.hpp
+ * @brief Interface for the graphics device, acting as a factory for resources.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/RHI/IBuffer.hpp"
@@ -8,12 +13,12 @@
 
 #include <string>
 
-namespace Mixture::RHI 
+namespace Mixture::RHI
 {
     /**
      * Interface for the graphics device.
      */
-    class IGraphicsDevice 
+    class IGraphicsDevice
     {
     public:
         /**
@@ -24,10 +29,10 @@ namespace Mixture::RHI
         // ---------------------------------------------------------------------
         // Resource Creation (Factory Methods)
         // ---------------------------------------------------------------------
-        
+
         /**
          * Loads a shader from disk (SPIR-V).
-         * 
+         *
          * @param filepath The path to the shader file.
          * @param stage The shader stage.
          * @return A reference to the created shader.
@@ -36,7 +41,7 @@ namespace Mixture::RHI
 
         /**
          * Creates a buffer (Vertex, Index, Uniform).
-         * 
+         *
          * @param desc The buffer description.
          * @return A reference to the created buffer.
          */
@@ -44,7 +49,7 @@ namespace Mixture::RHI
 
         /**
          * Creates a texture (Empty or from data).
-         * 
+         *
          * @param desc The texture description.
          * @return A reference to the created texture.
          */
@@ -52,7 +57,7 @@ namespace Mixture::RHI
 
         /**
          * Creates the PSO (Pipeline State Object).
-         * 
+         *
          * @param desc The pipeline description.
          * @return A reference to the created pipeline.
          */
@@ -61,7 +66,7 @@ namespace Mixture::RHI
         // ---------------------------------------------------------------------
         // Frame Management
         // ---------------------------------------------------------------------
-        
+
         /**
          * Waits for the GPU to finish all work (useful for resizing/shutdown).
          */

@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file RenderStates.hpp
+ * @brief Definitions for various render states (rasterizer, blend, depth/stencil).
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include <cstdint>

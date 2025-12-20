@@ -1,59 +1,61 @@
+import logging
 import sys
-import os
-import platform
 import subprocess
 import importlib.util as importlib_util
+
+logger = logging.getLogger(__name__)
 
 class PythonConfiguration:
     @classmethod
     def validate(cls) -> bool:
-        if not cls.__validate_python__():
-            return False # cannot validate further
-        
-        for package_name in ["requests"]:
-            if not cls.__validate_package__(package_name):
-                return False # cannot validate further
+        if not cls._validate_python():
+            return False
 
-        return True
-
-    @classmethod
-    def __validate_python__(cls, version_major: int = 3, version_minor: int = 3) -> bool:
-        if sys.version is not None:
-            print(f"Python version {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} detected")
-            if sys.version_info.major < version_major or (sys.version_info.major == version_major and sys.version_info.minor < version_minor):
-                print(f"Python version too low, expected version {version_major}.{version_minor} or higher.")
+        # Check for required packages
+        required_packages = ["requests"]
+        for package_name in required_packages:
+            if not cls._validate_package(package_name):
                 return False
-            return True
-        
-    @classmethod
-    def __validate_package__(cls, package_name: str) -> bool:
-        if importlib_util.find_spec(package_name) is None:
-            return cls.__install_package__(package_name)
+
         return True
-    
+
     @classmethod
-    def __install_package__(cls, package_name: str) -> bool:
-        permission_granted: bool = False
+    def _validate_python(cls, version_major: int = 3, version_minor: int = 3) -> bool:
+        if sys.version_info < (version_major, version_minor):
+            logger.error(f"Python version too low, expected version {version_major}.{version_minor} or higher.")
+            return False
+
+        logger.info(f"Python {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} detected")
+        return True
+
+    @classmethod
+    def _validate_package(cls, package_name: str) -> bool:
+        if importlib_util.find_spec(package_name) is None:
+            return cls._install_package(package_name)
+        return True
+
+    @classmethod
+    def _install_package(cls, package_name: str) -> bool:
+        logger.info(f"Installing {package_name} module...")
+
+        # Determine if we can prompt the user
+        # In a real CLI app, we might want to just ask, or check for a -y flag in args (omitted here for simplicity)
+        permission_granted = False
         while not permission_granted:
-            if os.getenv("CI"):
-                permission_granted = True
-                break
-            user_input: str = input(f"Would you like to install Python package '{package_name}'? [Y/N]: ").lower().strip()
-            if (user_input == 'n'):
+            user_input = input(f"Would you like to install Python package '{package_name}'? [Y/N]: ").lower().strip()
+            if user_input == 'n':
                 return False
             permission_granted = (user_input == 'y')
 
-        print(f"Installing {package_name} module...")
-        subprocess.check_call([cls.os_specific_python_command(), "-m", "pip", "install", package_name])
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
+            return cls._validate_package(package_name)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to install package '{package_name}': {e}")
+            return False
 
-        return cls.__validate_package__(package_name)
-
-    @classmethod
-    def os_specific_python_command(cls) -> str:
-        if platform.system() == "Windows": return "py"
-        if platform.system() == "Linux": return "python"
-        if platform.system() == "Darwin": return "python3"
-    
 if __name__ == "__main__":
-    validated: bool = PythonConfiguration.validate()
-    print(f"Validation successful: {validated}")
+    # Basic logging config if run standalone
+    logging.basicConfig(level=logging.INFO)
+    validated = PythonConfiguration.validate()
+    logger.info(f"Validation successful: {validated}")

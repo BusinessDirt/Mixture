@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file KeyCodes.hpp
+ * @brief Key codes for keyboard input.
+ */
+
 #include <cstdint>
 
 namespace Mixture 

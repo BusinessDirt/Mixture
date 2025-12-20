@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file KeyEvent.hpp
+ * @brief Keyboard-related events (press, release, type).
+ */
+
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Input/KeyCodes.hpp"
 

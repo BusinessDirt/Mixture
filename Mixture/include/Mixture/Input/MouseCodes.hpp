@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file MouseCodes.hpp
+ * @brief Mouse button codes.
+ */
+
 #include <cstdint>
 
 namespace Mixture 

@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file RenderGraphBuilder.hpp
+ * @brief Helper for defining pass resource usage.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/Graph/RenderGraphDefinitions.hpp"

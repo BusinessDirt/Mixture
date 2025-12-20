@@ -3,16 +3,34 @@
 
 #include <filesystem>
 
-#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+
+#ifdef OPAL_PLATFORM_WINDOWS
+    #include <windows.h>
+    #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+        #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+    #endif
+
+    void PlatformEnableANSI() {
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        DWORD dwMode = 0;
+        GetConsoleMode(hOut, &dwMode);
+        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        SetConsoleMode(hOut, dwMode);
+    }
+#endif
 
 namespace Opal
 {
 
     LogBuilder& LogBuilder::UseConsoleSink(spdlog::level::level_enum level)
     {
-        auto sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+#ifdef OPAL_PLATFORM_WINDOWS
+        PlatformEnableANSI();
+#endif
+        auto sink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
         
         // Set standard colors
         sink->set_color(spdlog::level::critical, sink->red_bold);

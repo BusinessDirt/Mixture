@@ -6,7 +6,7 @@ workspace "Mixture"
    architecture "x64"
    configurations { "Debug", "Release", "Dist" }
    startproject "App"
-   flags { "MultiProcessorCompile" }
+   multiprocessorcompile ("on")
 
    -- Workspace-wide build options for MSVC
    filter "system:windows"

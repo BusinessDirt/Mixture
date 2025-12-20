@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Time.hpp
+ * @brief Time management and timer utilities.
+ */
+
 #include <chrono>
 
 namespace Mixture

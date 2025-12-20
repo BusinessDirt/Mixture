@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file ICommandList.hpp
+ * @brief Interface for recording GPU commands.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"

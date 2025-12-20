@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file RenderFormats.hpp
+ * @brief format definitions for textures and buffers.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include <cstdint>

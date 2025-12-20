@@ -9,7 +9,7 @@ project "Mixture"
 
     files { "include/**.hpp", "src/**.cpp", "include/**.h", "src/**.mm" }
 
-    includedirs { 
+    includedirs {
         "include"
     }
 
@@ -50,6 +50,6 @@ project "Mixture"
             compileas "Objective-C++"  -- Compile .mm files as Objective-C++
 
     -- Add the /utf-8 flag
-    filter "action:vs2022" -- Only apply for MSVC toolset
+    filter "system:windows" -- Only apply for MSVC toolset
         buildoptions { "/utf-8" }
         pchheader "mxpch.hpp"
