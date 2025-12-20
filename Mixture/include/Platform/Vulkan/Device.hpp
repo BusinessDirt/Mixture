@@ -45,6 +45,11 @@ namespace Mixture::Vulkan
          */
 		vk::Queue GetGraphicsQueue() const { return m_GraphicsQueue; }
 
+        /**
+         * @brief Gets the handle of the Vulkan Memory Allocator.
+         *
+         * @return VmaAllocator The vulkan handle of the allocator.
+         */
         VmaAllocator GetAllocator() const { return m_Allocator; }
 
         Ref<RHI::IShader> CreateShader(const std::string& filepath, RHI::ShaderStage stage) override;
