@@ -5,13 +5,20 @@
 namespace Mixture::Vulkan
 {
     Swapchain::Swapchain(Ref<Device> device, vk::SurfaceKHR surface, uint32_t width, uint32_t height)
+        : m_Device(device), m_Surface(surface)
     {
-
+        CreateSwapchain(width, height);
+        CreateImageViews();
     }
 
     Swapchain::~Swapchain()
     {
+        for (auto imageView : m_ImageViews)
+        {
+            m_Device->GetHandle().destroyImageView(imageView);
+        }
 
+        m_Device->GetHandle().destroySwapchainKHR(m_Swapchain);
     }
 
     void Swapchain::Recreate(uint32_t width, uint32_t height)
@@ -41,16 +48,49 @@ namespace Mixture::Vulkan
 
     vk::SurfaceFormatKHR Swapchain::ChooseSwapSurfaceFormat(const Vector<vk::SurfaceFormatKHR>& availableFormats)
     {
+        // Prefer SRGB (Standard colors) with BGRA or RGBA
+        for (const auto& availableFormat : availableFormats)
+        {
+            if (availableFormat.format == vk::Format::eB8G8R8A8Srgb &&
+                availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
+            {
+                return availableFormat;
+            }
+        }
 
+        // Fallback: Just return the first one
+        return availableFormats[0];
     }
 
     vk::PresentModeKHR Swapchain::ChooseSwapPresentMode(const Vector<vk::PresentModeKHR>& availablePresentModes)
     {
+        // Prefer Mailbox (Triple Buffering, Low Latency, No Tearing)
+        for (const auto& availablePresentMode : availablePresentModes)
+        {
+            if (availablePresentMode == vk::PresentModeKHR::eMailbox)
+            {
+                return availablePresentMode;
+            }
+        }
 
+        // Fallback: FIFO (VSync) - Guaranteed to be available by spec
+        return vk::PresentModeKHR::eFifo;
     }
 
-    vk::Extent2D Swapchain::ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities, uint32_t width, uint32_t height)
+    vk::Extent2D Swapchain::ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities,
+        uint32_t width, uint32_t height)
     {
-        return vk::Extent2D();
+        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+            return capabilities.currentExtent;
+
+        // Match the window size, clamped to hardware limits
+        vk::Extent2D actualExtent = { width, height };
+
+        actualExtent.width = std::clamp(actualExtent.width,
+            capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height,
+            capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+        return actualExtent;
     }
 }
