@@ -7,10 +7,12 @@
 
 #include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
+#include "Platform/Vulkan/Instance.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
 #include <memory>
+#include <vma/vk_mem_alloc.h>
 
 namespace Mixture::Vulkan
 {
@@ -22,25 +24,33 @@ namespace Mixture::Vulkan
 	public:
         /**
          * @brief Constructor.
-         * 
+         *
+         * @param instance The vulkan instance
          * @param physicalDevice The physical device to create the logical device from.
          */
-		Device(Ref<PhysicalDevice> physicalDevice);
+		Device(Ref<Instance> instance, Ref<PhysicalDevice> physicalDevice);
 		~Device();
 
         /**
          * @brief Gets the Vulkan device handle.
-         * 
+         *
          * @return vk::Device The raw handle.
          */
 		vk::Device GetHandle() const { return m_Device; }
 
         /**
          * @brief Gets the graphics queue.
-         * 
+         *
          * @return vk::Queue The graphics queue.
          */
 		vk::Queue GetGraphicsQueue() const { return m_GraphicsQueue; }
+
+        /**
+         * @brief Gets the handle of the Vulkan Memory Allocator.
+         *
+         * @return VmaAllocator The vulkan handle of the allocator.
+         */
+        VmaAllocator GetAllocator() const { return m_Allocator; }
 
         Ref<RHI::IShader> CreateShader(const std::string& filepath, RHI::ShaderStage stage) override;
         Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc) override;
@@ -54,5 +64,7 @@ namespace Mixture::Vulkan
 		vk::Device m_Device;
 
 		vk::Queue m_GraphicsQueue;
+
+        VmaAllocator m_Allocator;
 	};
 }

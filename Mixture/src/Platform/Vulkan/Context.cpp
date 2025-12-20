@@ -3,7 +3,7 @@
 
 #include <GLFW/glfw3.h>
 
-namespace Mixture::Vulkan 
+namespace Mixture::Vulkan
 {
 
     static Context* s_Instance = nullptr;
@@ -20,7 +20,9 @@ namespace Mixture::Vulkan
 
         m_Instance = CreateRef<Instance>(appDescription);
         m_PhysicalDevice = CreateRef<PhysicalDevice>(m_Instance->GetHandle());
-        m_Device = CreateRef<Device>(m_PhysicalDevice);
+        m_Device = CreateRef<Device>(m_Instance, m_PhysicalDevice);
+
+        OPAL_INFO("Core/Vulkan", "Vulkan Initialized.")
     }
 
     Context::~Context()
