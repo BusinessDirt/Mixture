@@ -43,7 +43,30 @@ namespace Mixture::Vulkan
 
     void Swapchain::CreateImageViews()
     {
+        m_ImageViews.resize(m_Images.size());
 
+        for (size_t i = 0; i < m_Images.size(); i++)
+        {
+            vk::ImageViewCreateInfo createInfo;
+            createInfo.image = m_Images[i];
+            createInfo.viewType = vk::ImageViewType::e2D;
+            createInfo.format = m_ImageFormat;
+
+            // Default Mapping (Identity)
+            createInfo.components.r = vk::ComponentSwizzle::eIdentity;
+            createInfo.components.g = vk::ComponentSwizzle::eIdentity;
+            createInfo.components.b = vk::ComponentSwizzle::eIdentity;
+            createInfo.components.a = vk::ComponentSwizzle::eIdentity;
+
+            // Subresource Range (Which part of image?)
+            createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = 1;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = 1;
+
+            m_ImageViews[i] = m_Device->GetHandle().createImageView(createInfo);
+        }
     }
 
     vk::SurfaceFormatKHR Swapchain::ChooseSwapSurfaceFormat(const Vector<vk::SurfaceFormatKHR>& availableFormats)
