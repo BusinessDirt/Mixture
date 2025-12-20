@@ -47,6 +47,9 @@ namespace Mixture::Vulkan
         Ref<RHI::ITexture> BeginFrame() override;
         void EndFrame() override;
         Ref<RHI::ICommandList> GetCommandBuffer() override;
+        
+        uint32_t GetSwapchainWidth() override { return m_Swapchain->GetExtent().width; }
+        uint32_t GetSwapchainHeight() override { return m_Swapchain->GetExtent().height; }
 
         /**
          * @brief Gets the Vulkan instance.

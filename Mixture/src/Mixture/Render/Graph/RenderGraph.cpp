@@ -1,8 +1,22 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/Graph/RenderGraph.hpp"
+#include "Mixture/Render/RHI/IGraphicsContext.hpp"
+#include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
 namespace Mixture
 {
+    static bool IsDepthFormat(RHI::Format format)
+    {
+        switch (format)
+        {
+            case RHI::Format::D32_FLOAT:
+            case RHI::Format::D24_UNORM_S8_UINT:
+            case RHI::Format::D32_FLOAT_S8_UINT:
+                return true;
+            default:
+                return false;
+        }
+    }
 
     void RenderGraph::Clear()
     {
@@ -25,15 +39,15 @@ namespace Mixture
         }*/
     }
 
-    void RenderGraph::Execute(Ref<RHI::ICommandList> cmdList)
+    void RenderGraph::Execute(Ref<RHI::ICommandList> cmdList, RHI::IGraphicsContext* context)
     {
         // Realize Resources (Allocation Phase)
         for (const auto& node : m_Resources)
         {
             if (!node.IsImported)
             {
-                // TODO: call Device->CreateTexture(node.Desc)
-                // For now, we skip internal allocation as we don't have a Device yet.
+                auto texture = context->GetDevice()->CreateTexture(node.Desc);
+                m_Registry.ImportTexture(node.Handle, texture);
             }
 
             // Imported resources are already in m_Registry via ImportResource()
@@ -56,7 +70,66 @@ namespace Mixture
             // Run Logic
             if (pass.Execute)
             {
-                pass.Execute(m_Registry, cmdList);
+                RHI::RenderingInfo renderingInfo;
+
+                // Setup Render Area
+                // Ideally, get this from the first output texture's dimensions
+                if (!pass.Writes.empty())
+                {
+                    auto firstTex = m_Registry.GetTexture(pass.Writes[0].Handle);
+                    renderingInfo.RenderAreaWidth = firstTex->GetWidth();
+                    renderingInfo.RenderAreaHeight = firstTex->GetHeight();
+                }
+                else
+                {
+                    renderingInfo.RenderAreaWidth = context->GetSwapchainWidth();
+                    renderingInfo.RenderAreaHeight = context->GetSwapchainHeight();
+                }
+
+                // Populate Attachments
+                RHI::RenderingAttachment depthAttachmentTemp;
+                renderingInfo.DepthAttachment = nullptr;
+
+                for (const auto& write : pass.Writes)
+                {
+                    // Look up the actual RHI Texture from the handle
+                    auto texture = m_Registry.GetTexture(write.Handle);
+
+                    // Create the attachment struct
+                    RHI::RenderingAttachment attachment;
+                    attachment.Image = texture;
+                    attachment.LoadOp = write.LoadOp;
+                    attachment.StoreOp = write.StoreOp;
+
+                    // Copy Clear Color
+                    memcpy(attachment.ClearColor, write.ClearColor, sizeof(float) * 4);
+                    attachment.DepthClearValue = write.DepthClearValue;
+
+                    // Sort into Color vs Depth
+                    if (IsDepthFormat(texture->GetFormat()))
+                    {
+                        depthAttachmentTemp = attachment;
+                        renderingInfo.DepthAttachment = &depthAttachmentTemp;
+                    }
+                    else
+                    {
+                        renderingInfo.ColorAttachments.push_back(attachment);
+                    }
+                }
+
+                // Only call BeginRendering if we actually have attachments (Raster Pass)
+                if (!renderingInfo.ColorAttachments.empty() || renderingInfo.DepthAttachment)
+                {
+                    cmdList->BeginRendering(renderingInfo);
+                    pass.Execute(m_Registry, cmdList); // Draw commands happen here
+                    cmdList->EndRendering();
+                }
+                else
+                {
+                    // If no attachments, it might be a Compute Pass or Copy Pass
+                    // Just execute without dynamic rendering scope
+                    pass.Execute(m_Registry, cmdList);
+                }
             }
         }
     }
@@ -102,6 +175,20 @@ namespace Mixture
         return handle;
     }
 
+    RGResourceHandle RenderGraph::GetResource(const std::string& name) const
+    {
+        for (const auto& node : m_Resources)
+        {
+            if (node.Name == name)
+            {
+                return node.Handle;
+            }
+        }
+        
+        OPAL_ERROR("Core/RenderGraph", "Resource not found: {}", name);
+        return RGResourceHandle();
+    }
+
     void RenderGraph::SortPasses()
     {
         size_t passCount = m_Passes.size();
@@ -132,8 +219,8 @@ namespace Mixture
             }
 
             // UPDATE: This pass is now the latest writer for its outputs
-            for (auto& handle : pass.Writes)
-                resourceWriters[handle.ID] = i;
+            for (auto& write : pass.Writes)
+                resourceWriters[write.Handle.ID] = i;
         }
 
         // Kahn's Algorithm (Standard Topological Sort)
@@ -208,9 +295,9 @@ namespace Mixture
             }
 
             // Check Writes
-            for (auto handle : pass.Writes)
+            for (auto write : pass.Writes)
             {
-                UpdateResource(handle);
+                UpdateResource(write.Handle);
             }
         }
 
@@ -250,16 +337,22 @@ namespace Mixture
             }
 
             // Handle Writes (Need RenderTarget or CopyDest state)
-            for (auto& handle : pass.Writes)
+            for (auto& write : pass.Writes)
             {
+                auto& handle = write.Handle;
                 RHI::ResourceState current = resourceStates[handle.ID];
 
-                // Determine target based on usage (TODO: Simplification: assume Color Attachment for now)
-                // TODO: Check if it's a Depth texture or standard Color
-                RHI::ResourceState target = RHI::ResourceState::RenderTarget;
+                // Determine target based on usage
+                // Check if it's a Depth texture or standard Color
+                bool isDepth = IsDepthFormat(m_Resources[handle.ID].Desc.Format);
+                RHI::ResourceState target = isDepth ? RHI::ResourceState::DepthStencilWrite : RHI::ResourceState::RenderTarget;
 
-                // TODO: Optimization: If it's already writable, maybe we don't need a barrier?
-                // (Depends on if a Memory Barrier for Write-after-Write hazard is required)
+                // Optimization: If it's already writable, we might not need a barrier
+                // BUT, Write-After-Write hazards generally need a barrier or at least a memory barrier.
+                // However, if the state is already RenderTarget, it implies the layout is correct.
+                // Vulkan pipeline barriers also handle synchronization.
+                // For safety, we emit a barrier if state differs OR if we want to be safe about WAW.
+                // But simplified logic: only if state differs.
                 if (current != target)
                 {
                     pass.Barriers.push_back({ handle, current, target });

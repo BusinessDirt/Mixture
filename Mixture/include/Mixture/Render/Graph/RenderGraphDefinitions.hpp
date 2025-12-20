@@ -36,6 +36,18 @@ namespace Mixture
     };
 
     /**
+     * @brief Defines how a resource is written to (Attachment Info).
+     */
+    struct RGAttachmentInfo
+    {
+        RGResourceHandle Handle;
+        RHI::LoadOp LoadOp = RHI::LoadOp::Clear;
+        RHI::StoreOp StoreOp = RHI::StoreOp::Store;
+        float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        float DepthClearValue = 1.0f;
+    };
+
+    /**
      * @brief Represents a texture resource node in the render graph (The "Data").
      */
     struct RGTextureNode 
@@ -68,7 +80,7 @@ namespace Mixture
         
         // Dependencies (Built during Setup phase)
         Vector<RGResourceHandle> Reads;
-        Vector<RGResourceHandle> Writes;
+        Vector<RGAttachmentInfo> Writes;
         Vector<RGBarrier> Barriers;
         
         /**

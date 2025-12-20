@@ -190,10 +190,7 @@ namespace Mixture::Vulkan
 
             m_ImageViews[i] = m_Device->GetHandle().createImageView(createInfo);
 
-            m_SwapchainTextures[i] = CreateRef<Vulkan::Texture>(
-                m_Images[i], m_ImageViews[i],
-                m_Extent.width, m_Extent.height
-            );
+            m_SwapchainTextures[i] = CreateRef<Vulkan::Texture>(m_Images[i], m_ImageViews[i], m_Extent.width, m_Extent.height);
         }
     }
 
@@ -202,7 +199,7 @@ namespace Mixture::Vulkan
         // Prefer SRGB (Standard colors) with BGRA or RGBA
         for (const auto& availableFormat : availableFormats)
         {
-            if (availableFormat.format == vk::Format::eB8G8R8A8Srgb &&
+            if (availableFormat.format == vk::Format::eR8G8B8A8Srgb &&
                 availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
             {
                 return availableFormat;

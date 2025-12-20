@@ -62,6 +62,9 @@ namespace Mixture::RHI
         virtual Ref<RHI::ITexture> BeginFrame() = 0;
         virtual void EndFrame() = 0;
         virtual Ref<RHI::ICommandList> GetCommandBuffer() = 0;
+        
+        virtual uint32_t GetSwapchainWidth() = 0;
+        virtual uint32_t GetSwapchainHeight() = 0;
 
         /**
          * @brief Factory method to create a graphics context.

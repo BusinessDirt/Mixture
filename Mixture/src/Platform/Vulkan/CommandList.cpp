@@ -1,6 +1,8 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/CommandList.hpp"
 
+#include "Platform/Vulkan/Resources/Texture.hpp"
+
 namespace Mixture::Vulkan
 {
     namespace
@@ -52,8 +54,7 @@ namespace Mixture::Vulkan
                 cmdbuffer.pipelineBarrier(
                     srcStage, dstStage,
                     vk::DependencyFlags(),
-                    0, nullptr,
-                    0, nullptr,
+                    0, nullptr, 0, nullptr,
                     1, &barrier
                 );
             }
@@ -94,7 +95,11 @@ namespace Mixture::Vulkan
 
     void CommandList::BeginRendering(const RHI::RenderingInfo& info)
     {
-        /*
+        if (info.ColorAttachments.empty())
+        {
+            OPAL_WARN("Core/Vulkan", "BeginRendering called with NO Color Attachments!");
+        }
+        
         Vector<vk::RenderingAttachmentInfo> vkColorAttachments;
         vkColorAttachments.reserve(info.ColorAttachments.size());
 
@@ -103,7 +108,7 @@ namespace Mixture::Vulkan
 
             // Cast abstract ITexture to concrete VulkanTexture to get the view
             // NOTE: Ensure your Vulkan::Texture class has GetImageView()
-            auto* vulkanTexture = static_cast<Vulkan::Texture*>(attachment.Image);
+            auto* vulkanTexture = static_cast<Texture*>(attachment.Image);
 
             vk::RenderingAttachmentInfo vkInfo;
             vkInfo.imageView = vulkanTexture->GetImageView();
@@ -130,7 +135,7 @@ namespace Mixture::Vulkan
         if (hasDepth)
         {
             const auto& attachment = *info.DepthAttachment;
-            auto* vulkanTexture = static_cast<Vulkan::Texture*>(attachment.Image);
+            auto* vulkanTexture = static_cast<Texture*>(attachment.Image);
 
             vkDepthAttachment.imageView = vulkanTexture->GetImageView();
             vkDepthAttachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
@@ -171,7 +176,6 @@ namespace Mixture::Vulkan
         }
 
         m_CommandBuffer.beginRendering(vkInfo);
-        */
     }
 
     void CommandList::EndRendering()

@@ -162,6 +162,11 @@ namespace Mixture::Vulkan
 
         m_ImageIndex = imageIndex;
         vk::Result result = device.resetFences(1, &m_InFlightFences[m_CurrentFrame]);
+        if (result != vk::Result::eSuccess) {
+            OPAL_ERROR("Core/Vulkan", "Failed to reset fences!");
+            return nullptr;
+        }
+
         m_CommandBuffers[m_CurrentFrame].reset();
 
         return m_Swapchain->GetTexture(imageIndex);

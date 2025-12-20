@@ -55,7 +55,7 @@ namespace Mixture
 
             if (Ref<RHI::ITexture> backbufferTex = m_Context->BeginFrame())
             {
-                RGResourceHandle backbufferHandle = m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
+                m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
 
                 for (Layer* layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
 
@@ -64,7 +64,7 @@ namespace Mixture
                 if (auto commandList = m_Context->GetCommandBuffer())
                 {
                     commandList->Begin();
-                    m_RenderGraph->Execute(commandList);
+                    m_RenderGraph->Execute(commandList, m_Context.get());
                     commandList->End();
                 }
 

@@ -32,21 +32,24 @@ namespace Mixture
         graph.AddPass<GamePassData>("GBufferPass",
             [&](RenderGraphBuilder& builder, GamePassData& data)
             {
-                // Create a new texture named "SceneColor"
-                /*RHI::TextureDesc desc;
-                desc.Width = 1280;
-                desc.Height = 720;
-                desc.Format = RHI::Format::R8G8B8A8_UNORM;
+                RGResourceHandle backbuffer = graph.GetResource("Backbuffer");
 
-                data.Output = builder.Create("SceneColor", desc);
-                builder.Write(data.Output);*/
+                RGAttachmentInfo info;
+                info.Handle = backbuffer;
+                info.LoadOp = RHI::LoadOp::Clear;
+                info.ClearColor[0] = 0.1f;
+                info.ClearColor[1] = 0.1f;
+                info.ClearColor[2] = 0.1f;
+                info.ClearColor[3] = 1.0f;
+
+                data.Output = builder.Write(info);
             },
             [&](RenderGraphRegistry& registry, GamePassData& data, Ref<RHI::ICommandList> cmd)
             {
-                // EXECUTE: Draw the scene
-                // cmd->BindPipeline(...);
-                // cmd->Draw(...);
+
             }
         );
+
+
     }
 }

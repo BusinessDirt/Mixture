@@ -74,8 +74,9 @@ namespace Mixture
          * @brief Executes the compiled render graph.
          * 
          * @param cmdList The command list to record commands into.
+         * @param context The graphics context (for resource creation).
          */
-        void Execute(Ref<RHI::ICommandList> cmdList);
+        void Execute(Ref<RHI::ICommandList> cmdList, RHI::IGraphicsContext* context);
 
         /**
          * @brief Imports an external resource (e.g., Swapchain Backbuffer) into the graph.
@@ -103,6 +104,14 @@ namespace Mixture
          * @return RGPassNode& Reference to the current pass node.
          */
         RGPassNode& GetCurrentPass() { return m_Passes.back(); }
+
+        /**
+         * @brief Retrieves an existing resource handle by name.
+         * 
+         * @param name The name of the resource to find.
+         * @return RGResourceHandle The handle if found, or an invalid handle.
+         */
+        RGResourceHandle GetResource(const std::string& name) const;
 
     private:
         void SortPasses();
