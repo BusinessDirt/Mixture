@@ -48,12 +48,57 @@ namespace Mixture::Vulkan
 
     bool Swapchain::AcquireNextImage(uint32_t& outImageIndex, vk::Semaphore semaphore)
     {
-        return false;
+        // Time out: UINT64_MAX (Wait forever)
+        vk::Result result = m_Device->GetHandle().acquireNextImageKHR(
+            m_Swapchain, UINT64_MAX, semaphore,
+            nullptr, &outImageIndex);
+
+        if (result == vk::Result::eErrorOutOfDateKHR)
+        {
+            return false; // Resize required
+        }
+        else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
+        {
+            OPAL_CRITICAL("Failed to acquire swapchain image!");
+            return false;
+        }
+
+        return true;
     }
 
     bool Swapchain::Present(uint32_t imageIndex, vk::Semaphore waitSemaphore)
     {
-        return false;
+        vk::PresentInfoKHR presentInfo;
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = &waitSemaphore;
+
+        vk::SwapchainKHR swapChains[] = { m_Swapchain };
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &imageIndex;
+
+        vk::Result result;
+        try
+        {
+            result = m_Device->GetGraphicsQueue().presentKHR(presentInfo);
+        }
+        catch (vk::SystemError& err)
+        {
+            // catch "Out Of Date" exception thrown by hpp
+            if (err.code() == vk::Result::eErrorOutOfDateKHR)
+            {
+                return false;
+            }
+
+            throw;
+        }
+
+        if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     void Swapchain::CreateSwapchain(uint32_t width, uint32_t height)
