@@ -1,11 +1,11 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Swapchain.hpp"
-#include "Swapchain.hpp"
 
 namespace Mixture::Vulkan
 {
-    Swapchain::Swapchain(Ref<Device> device, vk::SurfaceKHR surface, uint32_t width, uint32_t height)
-        : m_Device(device), m_Surface(surface)
+    Swapchain::Swapchain(Ref<PhysicalDevice> physicalDevice, Ref<Device> device,
+        vk::SurfaceKHR surface, uint32_t width, uint32_t height)
+        : m_PhysicalDevice(physicalDevice), m_Device(device), m_Surface(surface)
     {
         CreateSwapchain(width, height);
         CreateImageViews();
@@ -23,7 +23,27 @@ namespace Mixture::Vulkan
 
     void Swapchain::Recreate(uint32_t width, uint32_t height)
     {
+        m_Device->WaitForIdle(); // Don't touch resources while GPU is using them
 
+        // Cleanup old views
+        for (auto imageView : m_ImageViews) m_Device->GetHandle().destroyImageView(imageView);
+        m_ImageViews.clear();
+        m_Images.clear();
+
+        // CACHING: Store current swapchain as "Old" so the driver
+        //          can copy internal data to the new one.
+        m_OldSwapchain = m_Swapchain;
+
+        // Create new Swapchain and destroy the old one
+        CreateSwapchain(width, height);
+        if (m_OldSwapchain)
+        {
+            m_Device->GetHandle().destroySwapchainKHR(m_OldSwapchain);
+            m_OldSwapchain = nullptr;
+        }
+
+        // Re-create Views for the new images
+        CreateImageViews();
     }
 
     bool Swapchain::AcquireNextImage(uint32_t& outImageIndex, vk::Semaphore semaphore)
@@ -38,7 +58,55 @@ namespace Mixture::Vulkan
 
     void Swapchain::CreateSwapchain(uint32_t width, uint32_t height)
     {
+        auto physicalDevice = m_PhysicalDevice->GetHandle();
 
+        // Query Details
+        vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(m_Surface);
+        std::vector<vk::SurfaceFormatKHR> formats = physicalDevice.getSurfaceFormatsKHR(m_Surface);
+        std::vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(m_Surface);
+
+        // Choose Settings
+        vk::SurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(formats);
+        vk::PresentModeKHR presentMode = ChooseSwapPresentMode(presentModes);
+        vk::Extent2D extent = ChooseSwapExtent(capabilities, width, height);
+
+        // Image Count (Min + 1 is a good rule of thumb for triple buffering)
+        uint32_t imageCount = capabilities.minImageCount + 1;
+        if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+            imageCount = capabilities.maxImageCount;
+
+        // Create Info
+        vk::SwapchainCreateInfoKHR createInfo;
+        createInfo.surface = m_Surface;
+        createInfo.minImageCount = imageCount;
+        createInfo.imageFormat = surfaceFormat.format;
+        createInfo.imageColorSpace = surfaceFormat.colorSpace;
+        createInfo.imageExtent = extent;
+        createInfo.imageArrayLayers = 1; // Always 1 unless VR (stereoscopic)
+        createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment; // We render directly to it
+        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+        createInfo.preTransform = capabilities.currentTransform;
+        createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+        createInfo.presentMode = presentMode;
+        createInfo.clipped = VK_TRUE;
+        createInfo.oldSwapchain = m_OldSwapchain;
+
+        try
+        {
+            m_Swapchain = m_Device->GetHandle().createSwapchainKHR(createInfo);
+        }
+        catch (vk::SystemError& err)
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to create Swapchain!");
+            exit(-1);
+        }
+
+        // Store selected properties
+        m_ImageFormat = surfaceFormat.format;
+        m_Extent = extent;
+
+        // Retrieve Images
+        m_Images = m_Device->GetHandle().getSwapchainImagesKHR(m_Swapchain);
     }
 
     void Swapchain::CreateImageViews()
