@@ -2,6 +2,7 @@
 #include "Mixture/Core/Base.hpp"
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
+#include "Platform/Vulkan/Surface.hpp"
 
 #include <vulkan/vulkan.hpp>
 #include <vector>
@@ -14,7 +15,7 @@ namespace Mixture::Vulkan
     {
     public:
         // We need the Device (to allocate) and the Surface (to connect to window)
-        Swapchain(Ref<PhysicalDevice> physicalDevice, Ref<Device> device, vk::SurfaceKHR surface, uint32_t width, uint32_t height);
+        Swapchain(Ref<PhysicalDevice> physicalDevice, Ref<Device> device, Ref<Surface> surface, uint32_t width, uint32_t height);
         ~Swapchain();
 
         // ---------------------------------------------------------------------
@@ -56,7 +57,7 @@ namespace Mixture::Vulkan
     private:
         Ref<PhysicalDevice> m_PhysicalDevice;
         Ref<Device> m_Device;
-        vk::SurfaceKHR m_Surface;
+        Ref<Surface> m_Surface;
 
         vk::SwapchainKHR m_Swapchain;
         vk::Format m_ImageFormat;

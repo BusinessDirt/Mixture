@@ -4,7 +4,7 @@
 namespace Mixture::Vulkan
 {
     Swapchain::Swapchain(Ref<PhysicalDevice> physicalDevice, Ref<Device> device,
-        vk::SurfaceKHR surface, uint32_t width, uint32_t height)
+        Ref<Surface> surface, uint32_t width, uint32_t height)
         : m_PhysicalDevice(physicalDevice), m_Device(device), m_Surface(surface)
     {
         CreateSwapchain(width, height);
@@ -59,7 +59,7 @@ namespace Mixture::Vulkan
         }
         else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
         {
-            OPAL_CRITICAL("Failed to acquire swapchain image!");
+            OPAL_CRITICAL("Core/Vulkan", "Failed to acquire swapchain image!");
             return false;
         }
 
@@ -106,9 +106,9 @@ namespace Mixture::Vulkan
         auto physicalDevice = m_PhysicalDevice->GetHandle();
 
         // Query Details
-        vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(m_Surface);
-        std::vector<vk::SurfaceFormatKHR> formats = physicalDevice.getSurfaceFormatsKHR(m_Surface);
-        std::vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(m_Surface);
+        vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(m_Surface->GetHandle());
+        Vector<vk::SurfaceFormatKHR> formats = physicalDevice.getSurfaceFormatsKHR(m_Surface->GetHandle());
+        Vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(m_Surface->GetHandle());
 
         // Choose Settings
         vk::SurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(formats);
@@ -122,7 +122,7 @@ namespace Mixture::Vulkan
 
         // Create Info
         vk::SwapchainCreateInfoKHR createInfo;
-        createInfo.surface = m_Surface;
+        createInfo.surface = m_Surface->GetHandle();
         createInfo.minImageCount = imageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;

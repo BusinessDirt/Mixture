@@ -18,12 +18,14 @@ namespace Mixture
         s_Instance = this;
 
         auto props = WindowProps();
-        props.Title = appDescription.name;
+        props.Title = appDescription.Name;
+        props.Width = appDescription.Width;
+        props.Height = appDescription.Height;
 
         m_Window = CreateScope<Window>(props);
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
-        m_Context = RHI::IGraphicsContext::Create(appDescription);
+        m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
         m_RenderGraph = CreateScope<RenderGraph>();
     }
 
