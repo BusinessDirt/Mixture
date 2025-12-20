@@ -14,7 +14,7 @@ namespace Mixture
 
     void MainLayer::OnEvent(Event& event)
     {
-        
+
     }
 
     void MainLayer::OnUpdate(float dt)
@@ -30,18 +30,18 @@ namespace Mixture
         };
 
         graph.AddPass<GamePassData>("GBufferPass",
-            [&](RenderGraphBuilder& builder, GamePassData& data) 
+            [&](RenderGraphBuilder& builder, GamePassData& data)
             {
                 // Create a new texture named "SceneColor"
-                RHI::TextureDesc desc;
+                /*RHI::TextureDesc desc;
                 desc.Width = 1280;
-                desc.Height = 720; 
+                desc.Height = 720;
                 desc.Format = RHI::Format::R8G8B8A8_UNORM;
-                
+
                 data.Output = builder.Create("SceneColor", desc);
-                builder.Write(data.Output);
+                builder.Write(data.Output);*/
             },
-            [&](RenderGraphRegistry& registry, GamePassData& data, RHI::ICommandList* cmd)
+            [&](RenderGraphRegistry& registry, GamePassData& data, Ref<RHI::ICommandList> cmd)
             {
                 // EXECUTE: Draw the scene
                 // cmd->BindPipeline(...);

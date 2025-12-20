@@ -18,11 +18,11 @@ namespace Mixture
         CalculateLifetimes();
         CalculateBarriers();
 
-        // Simple sanity check loop
+        /*// Simple sanity check loop
         for (const auto& pass : m_Passes)
         {
-            OPAL_INFO("Core/RenderGraph", "Compiling Pass: {}", pass.Name);
-        }
+            OPAL_LOG_DEBUG("Core/RenderGraph", "Compiling Pass: {}", pass.Name);
+        }*/
     }
 
     void RenderGraph::Execute(Ref<RHI::ICommandList> cmdList)
@@ -163,7 +163,7 @@ namespace Mixture
         // Cycle Detection: If sorted list is smaller, we have a circular dependency
         if (sortedPasses.size() != passCount)
         {
-            OPAL_CRITICAL("Core/RenderGraph", "Cyclic pass dependency detected.");
+            OPAL_ERROR("Core/RenderGraph", "Cyclic pass dependency detected.");
             return;
         }
 

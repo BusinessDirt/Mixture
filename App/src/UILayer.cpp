@@ -14,7 +14,7 @@ namespace Mixture
 
     void UILayer::OnEvent(Event& event)
     {
-        
+
     }
 
     void UILayer::OnUpdate(float dt)
@@ -30,7 +30,7 @@ namespace Mixture
         };
 
         graph.AddPass<UIPassData>("ImGuiPass",
-            [&](RenderGraphBuilder& builder, UIPassData& data) 
+            [&](RenderGraphBuilder& builder, UIPassData& data)
             {
                 // Look for "SceneColor" created by GameLayer
                 /*
@@ -44,12 +44,12 @@ namespace Mixture
                 data.Backbuffer = builder.Write(backbufferHandle);
                 */
             },
-            [&](RenderGraphRegistry& registry, UIPassData& data, RHI::ICommandList* cmd)
+            [&](RenderGraphRegistry& registry, UIPassData& data, Ref<RHI::ICommandList> cmd)
             {
                 // EXECUTE: Draw ImGui
                 // Because we declared a Read on SceneInput, the Graph AUTOMATICALLY
                 // inserts a barrier here to ensure SceneColor is safe to sample!
-                
+
                 // DrawImGui(registry.GetTexture(data.SceneInput));
             }
         );

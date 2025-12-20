@@ -56,7 +56,7 @@ namespace Mixture
 
             // Store the Execute Lambda
             // We wrap the user's typed lambda into a generic one
-            pass.Execute = [=](RenderGraphRegistry& registry, RHI::ICommandList* cmdList) 
+            pass.Execute = [=](RenderGraphRegistry& registry, Ref<RHI::ICommandList> cmdList) 
                 {
                     execute(registry, *dataPtr, cmdList);
                 };

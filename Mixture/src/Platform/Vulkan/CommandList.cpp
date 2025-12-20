@@ -29,6 +29,34 @@ namespace Mixture::Vulkan
                     default: return vk::AttachmentStoreOp::eStore;
                 }
             }
+
+            void InsertImageBarrier(vk::CommandBuffer cmdbuffer, vk::Image image,
+                vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
+                vk::PipelineStageFlags srcStage, vk::PipelineStageFlags dstStage,
+                vk::AccessFlags srcAccess, vk::AccessFlags dstAccess)
+            {
+                vk::ImageMemoryBarrier barrier;
+                barrier.oldLayout = oldLayout;
+                barrier.newLayout = newLayout;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.image = image;
+                barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+                barrier.subresourceRange.baseMipLevel = 0;
+                barrier.subresourceRange.levelCount = 1;
+                barrier.subresourceRange.baseArrayLayer = 0;
+                barrier.subresourceRange.layerCount = 1;
+                barrier.srcAccessMask = srcAccess;
+                barrier.dstAccessMask = dstAccess;
+
+                cmdbuffer.pipelineBarrier(
+                    srcStage, dstStage,
+                    vk::DependencyFlags(),
+                    0, nullptr,
+                    0, nullptr,
+                    1, &barrier
+                );
+            }
         }
     }
 
@@ -37,10 +65,30 @@ namespace Mixture::Vulkan
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit; // Reset every frame
         m_CommandBuffer.begin(beginInfo);
+
+        Utils::InsertImageBarrier(
+            m_CommandBuffer, m_SwapchainImage,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::PipelineStageFlagBits::eTopOfPipe,
+            vk::PipelineStageFlagBits::eColorAttachmentOutput,
+            vk::AccessFlags(),
+            vk::AccessFlagBits::eColorAttachmentWrite
+        );
     }
 
     void CommandList::End()
     {
+        Utils::InsertImageBarrier(
+            m_CommandBuffer, m_SwapchainImage,
+            vk::ImageLayout::eColorAttachmentOptimal,
+            vk::ImageLayout::ePresentSrcKHR,
+            vk::PipelineStageFlagBits::eColorAttachmentOutput,
+            vk::PipelineStageFlagBits::eBottomOfPipe,
+            vk::AccessFlagBits::eColorAttachmentWrite,
+            vk::AccessFlags() // Presentation reads implicitly
+        );
+
         m_CommandBuffer.end();
     }
 

@@ -28,9 +28,6 @@ namespace Mixture::Vulkan
         // We just act as a handle for the Renderer.
     }
 
-    // -------------------------------------------------------------------------
-    // Lifecycle
-    // -------------------------------------------------------------------------
     Texture::~Texture()
     {
         Release();
@@ -38,8 +35,6 @@ namespace Mixture::Vulkan
 
     void Texture::Release()
     {
-        // ONLY destroy resources if we allocated them.
-        // Swapchain images are owned by the VulkanSwapchain class.
         if (m_OwnsImage)
         {
             auto device = Context::Get().GetLogicalDevice()->GetHandle();
@@ -56,9 +51,6 @@ namespace Mixture::Vulkan
         m_Allocation = nullptr;
     }
 
-    // -------------------------------------------------------------------------
-    // Invalidate (Actually creates the resources for Case 1)
-    // -------------------------------------------------------------------------
     void Texture::Invalidate()
     {
         // If this is a wrapper, we shouldn't be here

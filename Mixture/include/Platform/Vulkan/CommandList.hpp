@@ -8,8 +8,8 @@ namespace Mixture::Vulkan
     class CommandList : public RHI::ICommandList
     {
     public:
-        CommandList(vk::CommandBuffer commandBuffer)
-            : m_CommandBuffer(commandBuffer) {}
+        CommandList(vk::CommandBuffer commandBuffer, vk::Image swapchainImage)
+            : m_CommandBuffer(commandBuffer), m_SwapchainImage(swapchainImage) {}
         ~CommandList() = default;
 
         void Begin() override;
@@ -35,5 +35,6 @@ namespace Mixture::Vulkan
 
     private:
         vk::CommandBuffer m_CommandBuffer;
+        vk::Image m_SwapchainImage;
     };
 }

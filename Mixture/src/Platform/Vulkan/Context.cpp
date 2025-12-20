@@ -31,14 +31,27 @@ namespace Mixture::Vulkan
         m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
+        m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+        // NEW: Resize based on Swapchain Image Count
+        size_t imageCount = m_Swapchain->GetImageCount();
+        m_RenderFinishedSemaphores.resize(imageCount);
+
         vk::SemaphoreCreateInfo semaphoreInfo;
         vk::FenceCreateInfo fenceInfo(vk::FenceCreateFlagBits::eSignaled);
 
+        auto device = m_Device->GetHandle();
+
         for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-            m_ImageAvailableSemaphores[i] = m_Device->GetHandle().createSemaphore(semaphoreInfo);
-            m_RenderFinishedSemaphores[i] = m_Device->GetHandle().createSemaphore(semaphoreInfo);
-            m_InFlightFences[i] = m_Device->GetHandle().createFence(fenceInfo);
+            m_ImageAvailableSemaphores[i] = device.createSemaphore(semaphoreInfo);
+            m_InFlightFences[i] = device.createFence(fenceInfo);
+        }
+
+        for (size_t i = 0; i < imageCount; i++)
+        {
+            m_RenderFinishedSemaphores[i] = device.createSemaphore(semaphoreInfo);
         }
 
         // Create Command Pool
@@ -84,12 +97,13 @@ namespace Mixture::Vulkan
             if (i < m_ImageAvailableSemaphores.size() && m_ImageAvailableSemaphores[i])
                 m_Device->GetHandle().destroySemaphore(m_ImageAvailableSemaphores[i]);
 
-            if (i < m_RenderFinishedSemaphores.size() && m_RenderFinishedSemaphores[i])
-                m_Device->GetHandle().destroySemaphore(m_RenderFinishedSemaphores[i]);
-
             if (i < m_InFlightFences.size() && m_InFlightFences[i])
                 m_Device->GetHandle().destroyFence(m_InFlightFences[i]);
         }
+
+        // Destroy Image-Based Objects (Iterate over the vector, not the constant)
+        for (auto sem : m_RenderFinishedSemaphores)
+            m_Device->GetHandle().destroySemaphore(sem);
 
         // Clear the vectors to remove the handles
         m_ImageAvailableSemaphores.clear();
@@ -109,8 +123,20 @@ namespace Mixture::Vulkan
         {
             // Handle minimization (width=0) by skipping
             if (width == 0 || height == 0) return;
-
             m_Swapchain->Recreate(width, height);
+
+            // Recreate Semaphores (Image count might have changed!)
+            auto device = m_Device->GetHandle();
+            for (auto sem : m_RenderFinishedSemaphores) device.destroySemaphore(sem);
+            m_RenderFinishedSemaphores.clear();
+
+            size_t imageCount = m_Swapchain->GetImageCount();
+            m_RenderFinishedSemaphores.resize(imageCount);
+
+            vk::SemaphoreCreateInfo semaphoreInfo;
+            for (size_t i = 0; i < imageCount; i++)
+                m_RenderFinishedSemaphores[i] = device.createSemaphore(semaphoreInfo);
+
             OPAL_INFO("Core/Vulkan", "Swapchain Resized to {} x {}", width, height);
         }
     }
@@ -143,18 +169,16 @@ namespace Mixture::Vulkan
 
     void Context::EndFrame()
     {
-        vk::SubmitInfo submitInfo;
-
+        vk::Semaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_ImageIndex] };
         vk::Semaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame] };
         vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+
+        vk::SubmitInfo submitInfo;
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
-
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &m_CommandBuffers[m_CurrentFrame];
-
-        vk::Semaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -162,7 +186,7 @@ namespace Mixture::Vulkan
         m_Device->GetGraphicsQueue().submit(submitInfo, m_InFlightFences[m_CurrentFrame]);
 
         // Present
-        bool success = m_Swapchain->Present(m_ImageIndex, m_RenderFinishedSemaphores[m_CurrentFrame]);
+        bool success = m_Swapchain->Present(m_ImageIndex, m_RenderFinishedSemaphores[m_ImageIndex]);
         if (!success)
         {
             // TODO: Handle resize
@@ -174,6 +198,6 @@ namespace Mixture::Vulkan
 
     Ref<RHI::ICommandList> Context::GetCommandBuffer()
     {
-        return CreateRef<CommandList>(m_CommandBuffers[m_CurrentFrame]);
+        return CreateRef<CommandList>(m_CommandBuffers[m_CurrentFrame], m_Swapchain->GetImages()[m_ImageIndex]);
     }
 }
