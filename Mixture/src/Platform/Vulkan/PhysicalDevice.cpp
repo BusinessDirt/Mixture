@@ -1,6 +1,8 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 
+#include "Platform/Vulkan/Context.hpp"
+
 namespace Mixture::Vulkan
 {
     namespace
@@ -26,7 +28,7 @@ namespace Mixture::Vulkan
 
         m_PhysicalDevice = SelectBestDevice(devices);
         m_Indices = FindQueueFamilies(m_PhysicalDevice);
-        
+
         auto selectedProps = m_PhysicalDevice.getProperties();
         OPAL_INFO("Core/Vulkan", "Selected GPU: {} ({})", std::string_view(selectedProps.deviceName), selectedProps.deviceType);
         OPAL_INFO("Core/Vulkan", " - API Version: {}", VulkanVersionToString(selectedProps.apiVersion));
@@ -92,14 +94,15 @@ namespace Mixture::Vulkan
     QueueFamilyIndices PhysicalDevice::FindQueueFamilies(vk::PhysicalDevice device)
     {
         QueueFamilyIndices indices;
-
-        std::vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();
+        Vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();
+        vk::SurfaceKHR surface = Context::Get().GetSurface()->GetHandle();
 
         int i = 0;
         for (const auto& queueFamily : queueFamilies)
         {
             // Check for Graphics capability
             if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) indices.Graphics = i;
+            if (device.getSurfaceSupportKHR(i, surface)) indices.Present = i;
             if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute) indices.Compute = i;
 
             if (indices.IsComplete()) break;

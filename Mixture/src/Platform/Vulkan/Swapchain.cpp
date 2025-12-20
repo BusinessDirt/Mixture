@@ -9,6 +9,11 @@ namespace Mixture::Vulkan
     {
         CreateSwapchain(width, height);
         CreateImageViews();
+
+        OPAL_INFO("Core/Vulkan", "Swapchain Details:");
+        OPAL_INFO("Core/Vulkan", " - Surface Format: {}, {}",  m_ImageFormat, m_ColorSpace);
+        OPAL_INFO("Core/Vulkan", " - Present Mode: {}", m_PresentMode);
+        OPAL_INFO("Core/Vulkan", " - Extent: {} x {}", m_Extent.width, m_Extent.height);
     }
 
     Swapchain::~Swapchain()
@@ -147,7 +152,9 @@ namespace Mixture::Vulkan
         }
 
         // Store selected properties
+        m_PresentMode = presentMode;
         m_ImageFormat = surfaceFormat.format;
+        m_ColorSpace = surfaceFormat.colorSpace;
         m_Extent = extent;
 
         // Retrieve Images
