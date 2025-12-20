@@ -2,6 +2,7 @@
 #include "Platform/Vulkan/CommandList.hpp"
 
 #include "Platform/Vulkan/Resources/Texture.hpp"
+#include "Platform/Vulkan/Resources/Buffer.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -99,7 +100,7 @@ namespace Mixture::Vulkan
         {
             OPAL_WARN("Core/Vulkan", "BeginRendering called with NO Color Attachments!");
         }
-        
+
         Vector<vk::RenderingAttachmentInfo> vkColorAttachments;
         vkColorAttachments.reserve(info.ColorAttachments.size());
 
@@ -203,12 +204,33 @@ namespace Mixture::Vulkan
 
     void CommandList::BindVertexBuffer(RHI::IBuffer* buffer, uint32_t binding)
     {
+        // Safety check (or assert) that usage is correct
+        if (buffer->GetUsage() != RHI::BufferUsage::Vertex)
+        {
+            OPAL_ERROR("Core/Vulkan", "Trying to bind non-vertex buffer as vertex buffer!");
+            return;
+        }
 
+        auto vkBuffer = static_cast<Buffer*>(buffer);
+
+        vk::Buffer buffers[] = { vkBuffer->GetHandle() };
+        vk::DeviceSize offsets[] = { 0 };
+
+        m_CommandBuffer.bindVertexBuffers(binding, 1, buffers, offsets);
     }
 
     void CommandList::BindIndexBuffer(RHI::IBuffer* buffer)
     {
+        if (buffer->GetUsage() != RHI::BufferUsage::Index)
+        {
+            OPAL_ERROR("Core/Vulkan", "Trying to bind non-index buffer as index buffer!");
+            return;
+        }
 
+        auto vkBuffer = static_cast<Buffer*>(buffer);
+
+        // Default to 32-bit indices for simplicity
+        m_CommandBuffer.bindIndexBuffer(vkBuffer->GetHandle(), 0, vk::IndexType::eUint32);
     }
 
     void CommandList::PipelineBarrier(RHI::ITexture* texture, RHI::ResourceState oldState, RHI::ResourceState newState)

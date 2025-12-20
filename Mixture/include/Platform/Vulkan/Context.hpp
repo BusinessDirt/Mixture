@@ -47,7 +47,7 @@ namespace Mixture::Vulkan
         Ref<RHI::ITexture> BeginFrame() override;
         void EndFrame() override;
         Ref<RHI::ICommandList> GetCommandBuffer() override;
-        
+
         uint32_t GetSwapchainWidth() override { return m_Swapchain->GetExtent().width; }
         uint32_t GetSwapchainHeight() override { return m_Swapchain->GetExtent().height; }
 
@@ -85,6 +85,13 @@ namespace Mixture::Vulkan
          * @return Ref<Swapchain> Reference to the swapchain wrapper.
          */
         Ref<Swapchain> GetSwapchain() const { return m_Swapchain; }
+
+        /**
+         * @brief Gets the command pool.
+         *
+         * @return vk::CommandPool the command pool.
+         */
+        vk::CommandPool GetCommandPool() const { return m_CommandPool; }
 
         uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 

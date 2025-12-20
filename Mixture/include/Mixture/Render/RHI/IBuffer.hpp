@@ -16,7 +16,7 @@ namespace Mixture::RHI
     /**
      * @brief Defines how a buffer will be used in the rendering pipeline.
      */
-    enum class BufferUsage : uint8_t 
+    enum class BufferUsage : uint8_t
     {
         /**
          * @brief Buffer containing vertex data.
@@ -52,7 +52,7 @@ namespace Mixture::RHI
     /**
      * @brief Descriptor structure used to create a buffer.
      */
-    struct BufferDesc 
+    struct BufferDesc
     {
         /**
          * @brief The size of the buffer in bytes.
@@ -73,7 +73,7 @@ namespace Mixture::RHI
     /**
      * @brief Interface representing a GPU buffer.
      */
-    class IBuffer 
+    class IBuffer
     {
     public:
         /**

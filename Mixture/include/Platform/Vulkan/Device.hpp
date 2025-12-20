@@ -46,6 +46,13 @@ namespace Mixture::Vulkan
 		vk::Queue GetGraphicsQueue() const { return m_GraphicsQueue; }
 
         /**
+         * @brief Gets the transfer queue.
+         *
+         * @return vk::Queue The transfer queue.
+         */
+		vk::Queue GetTransferQueue() const { return m_TransferQueue; }
+
+        /**
          * @brief Gets the handle of the Vulkan Memory Allocator.
          *
          * @return VmaAllocator The vulkan handle of the allocator.
@@ -64,6 +71,7 @@ namespace Mixture::Vulkan
 		vk::Device m_Device;
 
 		vk::Queue m_GraphicsQueue;
+        vk::Queue m_TransferQueue;
 
         VmaAllocator m_Allocator;
 	};

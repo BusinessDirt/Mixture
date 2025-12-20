@@ -184,7 +184,7 @@ namespace Mixture
                 return node.Handle;
             }
         }
-        
+
         OPAL_ERROR("Core/RenderGraph", "Resource not found: {}", name);
         return RGResourceHandle();
     }

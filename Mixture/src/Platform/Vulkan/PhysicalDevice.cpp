@@ -102,6 +102,7 @@ namespace Mixture::Vulkan
         {
             // Check for Graphics capability
             if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) indices.Graphics = i;
+            if (queueFamily.queueFlags & vk::QueueFlagBits::eTransfer) indices.Transfer = i;
             if (device.getSurfaceSupportKHR(i, surface)) indices.Present = i;
             if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute) indices.Compute = i;
 
