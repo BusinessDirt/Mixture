@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file ApplicationEvent.hpp
+ * @brief Application-specific events (resize, close, etc.).
+ */
+
 #include "Mixture/Events/Event.hpp"
 
 namespace Mixture 

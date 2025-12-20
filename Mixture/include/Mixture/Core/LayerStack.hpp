@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file LayerStack.hpp
+ * @brief Manages the stack of layers and overlays.
+ */
+
 #include "Mixture/Core/Layer.hpp"
 
 namespace Mixture

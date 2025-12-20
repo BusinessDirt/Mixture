@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file RenderGraph.hpp
+ * @brief Main RenderGraph class for managing passes and resources.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/Graph/RenderGraphDefinitions.hpp"

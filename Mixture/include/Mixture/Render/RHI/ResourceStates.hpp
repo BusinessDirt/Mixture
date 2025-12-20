@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file ResourceStates.hpp
+ * @brief Definitions for resource states and transitions.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include <cstdint>

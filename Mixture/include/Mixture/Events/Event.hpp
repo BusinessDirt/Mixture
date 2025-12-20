@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file Event.hpp
+ * @brief Base Event class and event dispatcher.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 namespace Mixture 

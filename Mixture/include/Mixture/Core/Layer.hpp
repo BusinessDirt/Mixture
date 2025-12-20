@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file Layer.hpp
+ * @brief Base class for application layers.
+ */
+
 #include "Mixture/Events/Event.hpp"
 
 namespace Mixture

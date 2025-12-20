@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file RenderGraphHandle.hpp
+ * @brief Lightweight handle for RenderGraph resources.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include <cstdint>

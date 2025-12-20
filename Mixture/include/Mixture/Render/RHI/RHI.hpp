@@ -1,5 +1,12 @@
 #pragma once
 
+/**
+ * @file RHI.hpp
+ * @brief Main header for the Render Hardware Interface (RHI).
+ * 
+ * Includes all RHI interfaces and definitions.
+ */
+
 #include "Mixture/Render/RHI/RenderFormats.hpp"
 #include "Mixture/Render/RHI/RenderStates.hpp"
 #include "Mixture/Render/RHI/ResourceStates.hpp"

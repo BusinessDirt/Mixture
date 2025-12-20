@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file ITexture.hpp
+ * @brief Interface for GPU textures.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/RHI/RenderFormats.hpp"

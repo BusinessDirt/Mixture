@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file Window.hpp
+ * @brief Abstract window interface.
+ */
+
 #include "Mixture/Events/Event.hpp"
 
 #include <string>

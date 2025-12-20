@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Instance.hpp
+ * @brief Vulkan instance wrapper.
+ */
+
 #include "Platform/Vulkan/Definitions.hpp"
 
 namespace Mixture
@@ -8,12 +14,27 @@ namespace Mixture
 
 namespace Mixture::Vulkan
 {
+    /**
+     * @brief Wrapper around a Vulkan instance.
+     * 
+     * Handles instance creation, validation layers, and debug messenger setup.
+     */
     class Instance
     {
     public:
+        /**
+         * @brief Constructor.
+         * 
+         * @param appDescription Description of the application.
+         */
         Instance(const ApplicationDescription& appDescription);
         ~Instance();
 
+        /**
+         * @brief Gets the Vulkan instance handle.
+         * 
+         * @return vk::Instance The raw handle.
+         */
         vk::Instance GetHandle() const { return m_Handle; }
 
     private:

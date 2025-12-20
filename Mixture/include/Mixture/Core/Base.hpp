@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file Base.hpp
+ * @brief Base definitions, types, and macros for the Mixture engine.
+ */
+
 #include <Opal/Base.hpp>
 
 namespace Mixture

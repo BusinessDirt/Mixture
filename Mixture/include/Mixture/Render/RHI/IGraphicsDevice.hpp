@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file IGraphicsDevice.hpp
+ * @brief Interface for the graphics device, acting as a factory for resources.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/RHI/IBuffer.hpp"

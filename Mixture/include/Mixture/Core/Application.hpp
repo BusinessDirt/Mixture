@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file Application.hpp
+ * @brief Defines the Application class and entry point.
+ */
+
 #include "Mixture/Core/Window.hpp"
 #include "Mixture/Core/LayerStack.hpp"
 

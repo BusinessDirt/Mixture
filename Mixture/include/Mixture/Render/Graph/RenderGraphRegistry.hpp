@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file RenderGraphRegistry.hpp
+ * @brief Manages the mapping of virtual handles to physical resources.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/Graph/RenderGraphHandle.hpp"

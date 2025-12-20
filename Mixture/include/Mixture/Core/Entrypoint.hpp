@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file Entrypoint.hpp
+ * @brief Entry point for the application, handling platform-specific main functions.
+ */
+
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Core/Application.hpp"
 

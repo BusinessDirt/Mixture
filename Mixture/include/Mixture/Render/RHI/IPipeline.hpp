@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file IPipeline.hpp
+ * @brief Interface for pipeline state objects and shaders.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/RHI/RenderStates.hpp"
