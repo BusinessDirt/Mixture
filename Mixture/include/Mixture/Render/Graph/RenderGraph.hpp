@@ -6,6 +6,7 @@
  */
 
 #include "Mixture/Core/Base.hpp"
+#include "Mixture/Core/LinearAllocator.hpp"
 
 #include "Mixture/Render/Graph/RenderGraphDefinitions.hpp"
 #include "Mixture/Render/Graph/RenderGraphBuilder.hpp"
@@ -17,11 +18,11 @@ namespace Mixture
     /**
      * @brief Manages the render graph, including pass creation, compilation, and execution.
      */
-    class RenderGraph 
+    class RenderGraph
     {
     public:
-        RenderGraph() = default;
-        
+        RenderGraph() : m_PassAllocator(64 * 1024) {}
+
         /**
          * @brief Resets the render graph, clearing all passes and resources.
          * Should be called at the start of each frame.
@@ -30,38 +31,29 @@ namespace Mixture
 
         /**
          * @brief Adds a new render pass to the graph.
-         * 
+         *
          * @tparam DataT A struct defining the pass data (inputs/outputs).
-         * @tparam SetupFunc Lambda to declare usage -> (Builder&, DataT&).
-         * @tparam ExecFunc Lambda to draw commands -> (Registry&, DataT&, ICommandList*).
          * @param name The name of the pass (for debugging/profiling).
          * @param setup The setup function where resources are declared.
          * @param execute The execution function where commands are recorded.
-         * @return DataT& A reference to the pass data structure.
          */
-        template<typename DataT, typename SetupFunc, typename ExecFunc>
-        DataT& AddPass(const std::string& name, SetupFunc&& setup, ExecFunc&& execute)
+        template<typename PassData>
+        void AddPass(const std::string& name,
+             std::function<void(RenderGraphBuilder&, PassData&)> setup,
+             std::function<void(const RenderGraphRegistry&, const PassData&, Ref<RHI::ICommandList>)> execute)
         {
-            // Create the Pass Node
             auto& pass = m_Passes.emplace_back();
             pass.Name = name;
 
-            // Allocate the Data Packet for this pass
-            // TODO: use a linear allocator here to keep memory tight
-            auto dataPtr = new DataT(); // Simplified for now
-            
-            // Run Setup Phase (User declares Read/Writes)
+            auto data = m_PassAllocator.Alloc<PassData>();
+
             RenderGraphBuilder builder(*this, pass);
-            setup(builder, *dataPtr);
+            setup(builder, *data);
 
-            // Store the Execute Lambda
-            // We wrap the user's typed lambda into a generic one
-            pass.Execute = [=](RenderGraphRegistry& registry, Ref<RHI::ICommandList> cmdList) 
+            pass.Execute = [=](RenderGraphRegistry& registry, Ref<RHI::ICommandList> cmdList)
                 {
-                    execute(registry, *dataPtr, cmdList);
+                    execute(registry, *data, cmdList);
                 };
-
-            return *dataPtr;
         }
 
         /**
@@ -72,7 +64,7 @@ namespace Mixture
 
         /**
          * @brief Executes the compiled render graph.
-         * 
+         *
          * @param cmdList The command list to record commands into.
          * @param context The graphics context (for resource creation).
          */
@@ -81,7 +73,7 @@ namespace Mixture
         /**
          * @brief Imports an external resource (e.g., Swapchain Backbuffer) into the graph.
          * Returns a handle that passes can use to Write() to it.
-         * 
+         *
          * @param name The name of the resource.
          * @param resource The external texture resource.
          * @return RGResourceHandle A handle to the imported resource.
@@ -90,7 +82,7 @@ namespace Mixture
 
         /**
          * @brief Creates a new internal resource (transient) for the graph.
-         * 
+         *
          * @param name The name of the resource.
          * @param desc The description of the texture to create.
          * @return RGResourceHandle A handle to the created resource.
@@ -100,14 +92,14 @@ namespace Mixture
         /**
          * @brief Gets the current pass node being processed.
          * Internal getter for the Builder.
-         * 
+         *
          * @return RGPassNode& Reference to the current pass node.
          */
         RGPassNode& GetCurrentPass() { return m_Passes.back(); }
 
         /**
          * @brief Retrieves an existing resource handle by name.
-         * 
+         *
          * @param name The name of the resource to find.
          * @return RGResourceHandle The handle if found, or an invalid handle.
          */
@@ -119,6 +111,8 @@ namespace Mixture
         void CalculateBarriers();
 
     private:
+        LinearAllocator m_PassAllocator;
+
         Vector<RGPassNode> m_Passes;
         Vector<RGTextureNode> m_Resources;
 

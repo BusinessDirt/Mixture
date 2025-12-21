@@ -20,6 +20,8 @@ namespace Mixture
 
     void RenderGraph::Clear()
     {
+        m_PassAllocator.Reset();
+
         m_Passes.clear();
         m_Resources.clear();
 
@@ -31,12 +33,6 @@ namespace Mixture
         SortPasses();
         CalculateLifetimes();
         CalculateBarriers();
-
-        /*// Simple sanity check loop
-        for (const auto& pass : m_Passes)
-        {
-            OPAL_LOG_DEBUG("Core/RenderGraph", "Compiling Pass: {}", pass.Name);
-        }*/
     }
 
     void RenderGraph::Execute(Ref<RHI::ICommandList> cmdList, RHI::IGraphicsContext* context)
@@ -298,16 +294,6 @@ namespace Mixture
             for (auto write : pass.Writes)
             {
                 UpdateResource(write.Handle);
-            }
-        }
-
-        // Debug Logging
-        for (const auto& node : m_Resources)
-        {
-            if (node.FirstPassIndex != -1)
-            {
-                OPAL_LOG_DEBUG("Core/RenderGraph", "Resource [{}] Life: {} -> {}",
-                    node.Name, node.FirstPassIndex, node.LastPassIndex);
             }
         }
     }

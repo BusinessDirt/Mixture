@@ -44,7 +44,7 @@ namespace Mixture
 
                 data.Output = builder.Write(info);
             },
-            [&](RenderGraphRegistry& registry, GamePassData& data, Ref<RHI::ICommandList> cmd)
+            [&](const RenderGraphRegistry& registry, const GamePassData& data, Ref<RHI::ICommandList> cmd)
             {
 
             }
