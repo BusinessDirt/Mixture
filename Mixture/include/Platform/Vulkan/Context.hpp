@@ -16,6 +16,12 @@
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/Swapchain.hpp"
 
+#include "Platform/Vulkan/Command/Pool.hpp"
+#include "Platform/Vulkan/Command/Buffers.hpp"
+
+#include "Platform/Vulkan/Sync/Semaphores.hpp"
+#include "Platform/Vulkan/Sync/Fences.hpp"
+
 #include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
 #include "Platform/Vulkan/Descriptors/Allocator.hpp"
 
@@ -34,8 +40,6 @@ namespace Mixture::Vulkan
     class Context : public RHI::IGraphicsContext
     {
     public:
-        static const int MAX_FRAMES_IN_FLIGHT = 2;
-
         /**
          * @brief Constructor.
          *
@@ -93,9 +97,9 @@ namespace Mixture::Vulkan
         /**
          * @brief Gets the command pool.
          *
-         * @return vk::CommandPool the command pool.
+         * @return Ref<CommandPool> the command pool.
          */
-        vk::CommandPool GetCommandPool() const { return m_CommandPool; }
+        Ref<CommandPool> GetCommandPool() const { return m_CommandPool; }
 
         uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 
@@ -115,12 +119,12 @@ namespace Mixture::Vulkan
         Ref<Device> m_Device;
         Ref<Swapchain> m_Swapchain;
 
-        Vector<vk::Semaphore> m_ImageAvailableSemaphores;
-        Vector<vk::Semaphore> m_RenderFinishedSemaphores;
-        Vector<vk::Fence> m_InFlightFences;
+        Ref<Semaphores> m_ImageAvailableSemaphores;
+        Ref<Semaphores> m_RenderFinishedSemaphores;
+        Ref<Fences> m_InFlightFences;
 
-        vk::CommandPool m_CommandPool;
-        Vector<vk::CommandBuffer> m_CommandBuffers;
+        Ref<CommandPool> m_CommandPool;
+        Ref<CommandBuffers> m_CommandBuffers;
 
         Vector<Scope<DescriptorAllocator>> m_DescriptorAllocators;
         DescriptorLayoutCache m_DescriptorLayoutCache;

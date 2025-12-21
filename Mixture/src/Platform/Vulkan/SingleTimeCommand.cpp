@@ -9,7 +9,7 @@ namespace Mixture::Vulkan
     {
         vk::CommandBufferAllocateInfo allocInfo;
         allocInfo.level = vk::CommandBufferLevel::ePrimary;
-        allocInfo.commandPool = Context::Get().GetCommandPool();
+        allocInfo.commandPool = Context::Get().GetCommandPool()->GetHandle();
         allocInfo.commandBufferCount = 1;
 
         vk::CommandBuffer commandBuffer = Context::Get().GetLogicalDevice()->GetHandle().allocateCommandBuffers(allocInfo)[0];
@@ -32,7 +32,7 @@ namespace Mixture::Vulkan
 
         device->GetGraphicsQueue().submit(submitInfo, nullptr);
         device->GetHandle().waitIdle();
-        device->GetHandle().freeCommandBuffers(Context::Get().GetCommandPool(), commandBuffer);
+        device->GetHandle().freeCommandBuffers(Context::Get().GetCommandPool()->GetHandle(), commandBuffer);
     }
 
     void SingleTimeCommand::Submit(const std::function<void(vk::CommandBuffer)>& action)

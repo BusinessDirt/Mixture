@@ -1,5 +1,5 @@
 #include "mxpch.hpp"
-#include "Platform/Vulkan/CommandList.hpp"
+#include "Platform/Vulkan/Command/List.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Resources/Texture.hpp"
@@ -106,7 +106,8 @@ namespace Mixture::Vulkan
         Vector<vk::RenderingAttachmentInfo> vkColorAttachments;
         vkColorAttachments.reserve(info.ColorAttachments.size());
 
-        for (const auto& attachment : info.ColorAttachments) {
+        for (const auto& attachment : info.ColorAttachments)
+        {
             if (!attachment.Image) continue;
 
             // Cast abstract ITexture to concrete VulkanTexture to get the view
@@ -122,7 +123,8 @@ namespace Mixture::Vulkan
             vkInfo.storeOp = Utils::ConvertStoreOp(attachment.StoreOp);
 
             // Clear Color (R, G, B, A)
-            vkInfo.clearValue.color = std::array<float, 4>{
+            vkInfo.clearValue.color = std::array<float, 4>
+            {
                 attachment.ClearColor[0],
                 attachment.ClearColor[1],
                 attachment.ClearColor[2],
