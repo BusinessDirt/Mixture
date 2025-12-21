@@ -193,6 +193,10 @@ namespace Mixture::RHI
          */
         virtual void PushConstants(IPipeline* pipeline, ShaderStage stage, const void* data, uint32_t size) = 0;
 
+        virtual void SetUniformBuffer(uint32_t binding, Ref<IBuffer> buffer) = 0;
+
+        virtual void SetTexture(uint32_t binding, Ref<ITexture> texture) = 0;
+
         // ---------------------------------------------------------------------
         // Drawing
         // ---------------------------------------------------------------------

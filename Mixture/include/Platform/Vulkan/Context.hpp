@@ -17,6 +17,7 @@
 #include "Platform/Vulkan/Swapchain.hpp"
 
 #include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
+#include "Platform/Vulkan/Descriptors/Allocator.hpp"
 
 #include <vulkan/vulkan.hpp>
 #include <vector>
@@ -118,6 +119,7 @@ namespace Mixture::Vulkan
         vk::CommandPool m_CommandPool;
         Vector<vk::CommandBuffer> m_CommandBuffers;
 
+        Vector<Scope<DescriptorAllocator>> m_DescriptorAllocators;
         DescriptorLayoutCache m_DescriptorLayoutCache;
 
         uint32_t m_CurrentFrame = 0;

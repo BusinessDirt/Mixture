@@ -23,6 +23,8 @@ namespace Mixture::Vulkan
         // Call this at the start of the frame to wipe all sets (if using frame-based allocation)
         void ResetPools();
 
+        vk::Device GetDevice() const { return m_Device; }
+
     private:
         vk::DescriptorPool GetPool();
         vk::DescriptorPool CreatePool(uint32_t count, vk::DescriptorPoolCreateFlags flags);

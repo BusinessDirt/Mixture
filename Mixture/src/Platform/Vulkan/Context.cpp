@@ -30,8 +30,6 @@ namespace Mixture::Vulkan
         m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-        m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        m_InFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
         // NEW: Resize based on Swapchain Image Count
         size_t imageCount = m_Swapchain->GetImageCount();
@@ -81,6 +79,12 @@ namespace Mixture::Vulkan
         m_CommandBuffers = m_Device->GetHandle().allocateCommandBuffers(allocInfo);
 
         m_DescriptorLayoutCache.Init(m_Device->GetHandle());
+
+        m_DescriptorAllocators.resize(MAX_FRAMES_IN_FLIGHT);
+        for(int i=0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        {
+            m_DescriptorAllocators[i] = CreateScope<DescriptorAllocator>(m_Device->GetHandle());
+        }
 
         OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
     }
@@ -145,6 +149,8 @@ namespace Mixture::Vulkan
 
     Ref<RHI::ITexture> Context::BeginFrame()
     {
+        m_DescriptorAllocators[m_CurrentFrame]->ResetPools();
+
         auto device = m_Device->GetHandle();
 
         // Wait for the PREVIOUS frame (using this index) to finish
