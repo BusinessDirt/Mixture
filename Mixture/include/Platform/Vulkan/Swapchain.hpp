@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Swapchain.hpp
+ * @brief Vulkan Swapchain wrapper.
+ */
+
 #include "Mixture/Core/Base.hpp"
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"

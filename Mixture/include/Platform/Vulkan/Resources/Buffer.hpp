@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Buffer.hpp
+ * @brief Vulkan implementation of the Buffer interface.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/RHI/IBuffer.hpp"
@@ -7,6 +13,11 @@
 
 namespace Mixture::Vulkan
 {
+    /**
+     * @brief Vulkan implementation of a GPU buffer.
+     * 
+     * Manages a VkBuffer and its memory allocation via VMA.
+     */
     class Buffer : public RHI::IBuffer
     {
     public:

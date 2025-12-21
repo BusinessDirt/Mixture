@@ -1,10 +1,21 @@
 #pragma once
+
+/**
+ * @file CommandList.hpp
+ * @brief Vulkan implementation of the CommandList interface.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/RHI/ICommandList.hpp"
 
 namespace Mixture::Vulkan
 {
+    /**
+     * @brief Vulkan implementation of the CommandList.
+     * 
+     * Records commands into a Vulkan Command Buffer.
+     */
     class CommandList : public RHI::ICommandList
     {
     public:

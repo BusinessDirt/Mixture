@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Texture.hpp
+ * @brief Vulkan implementation of the Texture interface.
+ */
+
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/ITexture.hpp"
 
@@ -7,6 +13,11 @@
 
 namespace Mixture::Vulkan
 {
+    /**
+     * @brief Vulkan implementation of a GPU texture.
+     * 
+     * Handles both standard textures (owned memory) and wrapped external textures (e.g. Swapchain images).
+     */
     class Texture : public RHI::ITexture
     {
     public:
