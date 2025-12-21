@@ -2,7 +2,23 @@
 #include "Platform/Vulkan/Context.hpp"
 
 #include "Mixture/Core/Application.hpp"
+
+#include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/Instance.hpp"
+#include "Platform/Vulkan/Surface.hpp"
+#include "Platform/Vulkan/PhysicalDevice.hpp"
+#include "Platform/Vulkan/Device.hpp"
+#include "Platform/Vulkan/Swapchain.hpp"
+
+#include "Platform/Vulkan/Command/Buffers.hpp"
 #include "Platform/Vulkan/Command/List.hpp"
+#include "Platform/Vulkan/Command/Pool.hpp"
+
+#include "Platform/Vulkan/Sync/Fences.hpp"
+#include "Platform/Vulkan/Sync/Semaphores.hpp"
+
+#include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
+#include "Platform/Vulkan/Descriptors/Allocator.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -37,13 +53,8 @@ namespace Mixture::Vulkan
         m_CommandPool = CreateRef<CommandPool>(m_Device->GetHandle(), queueFamilyIndices);
         m_CommandBuffers = CreateRef<CommandBuffers>(m_Device->GetHandle(), m_CommandPool->GetHandle(), MAX_FRAMES_IN_FLIGHT);
 
-        m_DescriptorLayoutCache.Init(m_Device->GetHandle());
-
-        m_DescriptorAllocators.resize(MAX_FRAMES_IN_FLIGHT);
-        for(int i=0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        {
-            m_DescriptorAllocators[i] = CreateScope<DescriptorAllocator>(m_Device->GetHandle());
-        }
+        m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(m_Device->GetHandle());
+        m_DescriptorAllocators = CreateScope<DescriptorAllocators>(m_Device->GetHandle(), MAX_FRAMES_IN_FLIGHT);
 
         OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
     }
@@ -52,8 +63,8 @@ namespace Mixture::Vulkan
     {
         m_Device->WaitForIdle();
 
-        for (auto& allocator : m_DescriptorAllocators) allocator.reset();
-        m_DescriptorLayoutCache.Shutdown();
+        m_DescriptorAllocators.reset();
+        m_DescriptorLayoutCache.reset();
         m_CommandPool.reset();
 
         m_InFlightFences.reset();
@@ -66,6 +77,14 @@ namespace Mixture::Vulkan
         m_Surface.reset();
         m_Instance.reset();
     }
+
+    DescriptorAllocator* Context::GetCurrentDescriptorAllocator() const { return m_DescriptorAllocators->Get(m_CurrentFrame); }
+    DescriptorLayoutCache* Context::GetDescriptorLayoutCache() const { return m_DescriptorLayoutCache.get(); }
+
+    uint32_t Context::GetSwapchainWidth() { return m_Swapchain->GetExtent().width; }
+    uint32_t Context::GetSwapchainHeight() { return m_Swapchain->GetExtent().height; }
+
+    Ref<RHI::IGraphicsDevice> Context::GetDevice() const { return m_Device; }
 
     void Context::OnResize(uint32_t width, uint32_t height)
     {
@@ -86,7 +105,7 @@ namespace Mixture::Vulkan
 
     Ref<RHI::ITexture> Context::BeginFrame()
     {
-        m_DescriptorAllocators[m_CurrentFrame]->ResetPools();
+        m_DescriptorAllocators->Get(m_CurrentFrame)->ResetPools();
 
         auto device = m_Device->GetHandle();
 

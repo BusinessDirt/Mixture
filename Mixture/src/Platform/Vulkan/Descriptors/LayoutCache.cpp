@@ -5,12 +5,11 @@
 
 namespace Mixture::Vulkan
 {
-    void DescriptorLayoutCache::Init(vk::Device device)
-    {
-        m_Device = device;
-    }
+    DescriptorLayoutCache::DescriptorLayoutCache(vk::Device device)
+        : m_Device(device)
+    {}
 
-    void DescriptorLayoutCache::Shutdown()
+    DescriptorLayoutCache::~DescriptorLayoutCache()
     {
         // Destroy all cached layouts
         for (auto& pair : m_LayoutCache)

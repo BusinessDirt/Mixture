@@ -112,4 +112,16 @@ namespace Mixture::Vulkan
             m_CurrentPool = nullptr;
         }
     }
+
+    DescriptorAllocators::DescriptorAllocators(vk::Device device, uint32_t count, uint32_t maxSets, Vector<PoolSizeRatio> poolRatios)
+    {
+        m_Allocators.resize(count);
+        for(int i=0; i < count; i++)
+            m_Allocators[i] = CreateScope<DescriptorAllocator>(device, maxSets, poolRatios);
+    }
+
+    DescriptorAllocators::~DescriptorAllocators()
+    {
+        for (auto& allocator : m_Allocators) allocator.reset();
+    }
 }

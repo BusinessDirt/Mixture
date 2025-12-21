@@ -2,6 +2,7 @@
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Surface.hpp"
 
 namespace Mixture::Vulkan
 {

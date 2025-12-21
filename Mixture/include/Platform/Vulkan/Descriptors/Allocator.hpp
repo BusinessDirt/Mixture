@@ -5,16 +5,16 @@
 
 namespace Mixture::Vulkan
 {
+    struct PoolSizeRatio
+    {
+        vk::DescriptorType Type;
+        float Ratio; // e.g., 2.0 means allocate 2x as many of this type as sets
+    };
+
     class DescriptorAllocator
     {
     public:
-        struct PoolSizeRatio
-        {
-            vk::DescriptorType Type;
-            float Ratio; // e.g., 2.0 means allocate 2x as many of this type as sets
-        };
-
-        DescriptorAllocator(vk::Device device, uint32_t maxSets = 1000, Vector<PoolSizeRatio> poolRatios = {});
+        DescriptorAllocator(vk::Device device, uint32_t maxSets, Vector<PoolSizeRatio> poolRatios);
         ~DescriptorAllocator();
 
         // The main function you call
@@ -38,5 +38,17 @@ namespace Mixture::Vulkan
 
         Vector<PoolSizeRatio> m_Ratios;
         uint32_t m_SetsPerPool;
+    };
+
+    class DescriptorAllocators
+    {
+    public:
+        DescriptorAllocators(vk::Device device, uint32_t count, uint32_t maxSets = 1000, Vector<PoolSizeRatio> poolRatios = {});
+        ~DescriptorAllocators();
+
+        DescriptorAllocator* Get(uint32_t index) const { return m_Allocators[index].get(); }
+
+    private:
+        Vector<Scope<DescriptorAllocator>> m_Allocators;
     };
 }

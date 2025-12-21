@@ -5,33 +5,32 @@
  * @brief Vulkan implementation of the Graphics Context.
  */
 
- // TODO: dont expose vulkan.hpp here
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/RHI.hpp"
 
-#include "Platform/Vulkan/Definitions.hpp"
-#include "Platform/Vulkan/Instance.hpp"
-#include "Platform/Vulkan/Surface.hpp"
-#include "Platform/Vulkan/PhysicalDevice.hpp"
-#include "Platform/Vulkan/Device.hpp"
-#include "Platform/Vulkan/Swapchain.hpp"
-
-#include "Platform/Vulkan/Command/Pool.hpp"
-#include "Platform/Vulkan/Command/Buffers.hpp"
-
-#include "Platform/Vulkan/Sync/Semaphores.hpp"
-#include "Platform/Vulkan/Sync/Fences.hpp"
-
-#include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
-#include "Platform/Vulkan/Descriptors/Allocator.hpp"
-
-#include <vulkan/vulkan.hpp>
 #include <vector>
 #include <iostream>
 #include <optional>
 
 namespace Mixture::Vulkan
 {
+    class Instance;
+    class Surface;
+    class PhysicalDevice;
+    class Device;
+    class Swapchain;
+
+    class CommandBuffers;
+    class CommandList;
+    class CommandPool;
+
+    class Fences;
+    class Semaphores;
+
+    class DescriptorLayoutCache;
+    class DescriptorAllocators;
+    class DescriptorAllocator;
+
     /**
      * @brief Vulkan implementation of the Graphics Context.
      *
@@ -49,15 +48,15 @@ namespace Mixture::Vulkan
         ~Context();
 
         RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
-        Ref<RHI::IGraphicsDevice> GetDevice() const override { return m_Device; }
+        Ref<RHI::IGraphicsDevice> GetDevice() const override;
 
         void OnResize(uint32_t width, uint32_t height) override;
         Ref<RHI::ITexture> BeginFrame() override;
         void EndFrame() override;
         Ref<RHI::ICommandList> GetCommandBuffer() override;
 
-        uint32_t GetSwapchainWidth() override { return m_Swapchain->GetExtent().width; }
-        uint32_t GetSwapchainHeight() override { return m_Swapchain->GetExtent().height; }
+        uint32_t GetSwapchainWidth() override;
+        uint32_t GetSwapchainHeight() override;
 
         /**
          * @brief Gets the Vulkan instance.
@@ -103,8 +102,8 @@ namespace Mixture::Vulkan
 
         uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 
-        DescriptorAllocator* GetCurrentDescriptorAllocator() const { return m_DescriptorAllocators[m_CurrentFrame].get(); }
-        DescriptorLayoutCache* GetDescriptorLayoutCache() { return &m_DescriptorLayoutCache; }
+        DescriptorAllocator* GetCurrentDescriptorAllocator() const;
+        DescriptorLayoutCache* GetDescriptorLayoutCache() const;
 
         /**
          * @brief Gets the singleton context instance.
@@ -126,8 +125,8 @@ namespace Mixture::Vulkan
         Ref<CommandPool> m_CommandPool;
         Ref<CommandBuffers> m_CommandBuffers;
 
-        Vector<Scope<DescriptorAllocator>> m_DescriptorAllocators;
-        DescriptorLayoutCache m_DescriptorLayoutCache;
+        Ref<DescriptorAllocators> m_DescriptorAllocators;
+        Ref<DescriptorLayoutCache> m_DescriptorLayoutCache;
 
         uint32_t m_CurrentFrame = 0;
         uint32_t m_ImageIndex = 0;

@@ -8,8 +8,8 @@ namespace Mixture::Vulkan
     class DescriptorLayoutCache
     {
     public:
-        void Init(vk::Device device);
-        void Shutdown();
+        DescriptorLayoutCache(vk::Device device);
+        ~DescriptorLayoutCache();
 
         // The main function: "I need a layout with these bindings"
         vk::DescriptorSetLayout CreateDescriptorLayout(vk::DescriptorSetLayoutCreateInfo* info);

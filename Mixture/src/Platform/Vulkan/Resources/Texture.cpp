@@ -2,6 +2,7 @@
 #include "Platform/Vulkan/Resources/Texture.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 #include <stb_image.h>

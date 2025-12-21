@@ -3,6 +3,7 @@
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Device.hpp"
 
 namespace Mixture::Vulkan
 {
