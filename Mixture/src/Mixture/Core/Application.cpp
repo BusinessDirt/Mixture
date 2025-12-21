@@ -51,30 +51,25 @@ namespace Mixture
             // CPU Logic
             for (Layer* layer : m_LayerStack) layer->OnUpdate(timestep);
 
-            // Render Setup
             m_RenderGraph->Clear();
 
-            // IMPORT: Get the raw Swapchain image for this frame
-            /*
-            auto swapchainImg = m_Window->GetSwapchain()->GetCurrentImage();
-            m_RenderGraph->ImportResource("Backbuffer", swapchainImg);
+            if (Ref<RHI::ITexture> backbufferTex = m_Context->BeginFrame())
+            {
+                m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
 
-            // Graph Building (Layers declare their passes)
-            for (Layer* layer : m_LayerStack) {
-                layer->OnRender(*m_RenderGraph);
+                for (Layer* layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
+
+                m_RenderGraph->Compile();
+
+                if (auto commandList = m_Context->GetCommandBuffer())
+                {
+                    commandList->Begin();
+                    m_RenderGraph->Execute(commandList, m_Context.get());
+                    commandList->End();
+                }
+
+                m_Context->EndFrame();
             }
-
-            // Compile & Execute
-            m_RenderGraph->Compile();
-
-            RHI::ICommandList* cmd = m_GraphicsDevice->GetCommandList();
-            cmd->Begin();
-            m_RenderGraph->Execute(cmd);
-            cmd->End();
-
-            // Present
-            m_Window->GetSwapchain()->Present();
-             */
         }
     }
 
@@ -99,6 +94,13 @@ namespace Mixture
 
     bool Application::OnFramebufferResize(const FramebufferResizeEvent& e)
     {
+        if (e.GetWidth() == 0 || e.GetHeight() == 0) {
+            // Minimized
+            return false;
+        }
+
+        // Tell the backend to resize
+        if (m_Context) m_Context->OnResize(e.GetWidth(), e.GetHeight());
         return false;
     }
 }

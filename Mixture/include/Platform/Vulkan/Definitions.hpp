@@ -19,6 +19,7 @@ namespace Mixture::Vulkan
     {
         std::optional<uint32_t> Graphics;
         std::optional<uint32_t> Present;
+        std::optional<uint32_t> Transfer;
         std::optional<uint32_t> Compute;
 
         /**
@@ -30,6 +31,7 @@ namespace Mixture::Vulkan
         {
             return Graphics.has_value()
                 && Present.has_value()
+                && Transfer.has_value()
                 && Compute.has_value();
         }
     };

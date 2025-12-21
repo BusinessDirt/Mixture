@@ -13,7 +13,7 @@ namespace Mixture::Vulkan
 {
     /**
      * @brief Wrapper around a Vulkan physical device (GPU).
-     * 
+     *
      * Selects the best available GPU and queries its features/queues.
      */
     class PhysicalDevice
@@ -22,7 +22,7 @@ namespace Mixture::Vulkan
         // Pass the Instance so we can enumerate GPUs
         /**
          * @brief Constructor.
-         * 
+         *
          * @param instance The Vulkan instance.
          */
         PhysicalDevice(vk::Instance instance);
@@ -30,7 +30,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Gets the Vulkan physical device handle.
-         * 
+         *
          * @return vk::PhysicalDevice The raw handle.
          */
         vk::PhysicalDevice GetHandle() const { return m_PhysicalDevice; }
@@ -38,14 +38,21 @@ namespace Mixture::Vulkan
         // Helpers for the Logical Device
         /**
          * @brief Gets the indices of the queue families.
-         * 
+         *
          * @return QueueFamilyIndices The indices.
          */
         QueueFamilyIndices GetQueueFamilies() const { return m_Indices; }
 
         /**
+         * @brief Gets the properties of the physical device.
+         *
+         * @return vk::PhysicalDeviceProperties The properties.
+         */
+        vk::PhysicalDeviceProperties GetProperties() const { return m_Properties; }
+
+        /**
          * @brief Gets the name of the device.
-         * 
+         *
          * @return std::string_view The device name.
          */
         std::string_view GetDeviceName() const;
@@ -57,6 +64,7 @@ namespace Mixture::Vulkan
 
     private:
         vk::PhysicalDevice m_PhysicalDevice;
+        vk::PhysicalDeviceProperties m_Properties;
         QueueFamilyIndices m_Indices;
     };
 }

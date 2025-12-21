@@ -39,6 +39,14 @@ namespace Mixture
         RGResourceHandle Write(RGResourceHandle handle);
 
         /**
+         * @brief Declares that this pass writes to a resource with specific attachment settings.
+         * 
+         * @param info The attachment info (handle, load/store ops, clear color).
+         * @return RGResourceHandle The handle from the info.
+         */
+        RGResourceHandle Write(const RGAttachmentInfo& info);
+
+        /**
          * @brief Creates a new internal transient resource for this pass.
          * 
          * @param name The name of the resource.

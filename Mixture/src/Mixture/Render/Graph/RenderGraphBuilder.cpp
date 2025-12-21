@@ -32,12 +32,26 @@ namespace Mixture
         }
 
         // Record that this pass WRITES to this resource
-        m_PassNode.Writes.push_back(handle);
+        RGAttachmentInfo info;
+        info.Handle = handle;
+        m_PassNode.Writes.push_back(info);
 
         // Future Proofing: If implementing resource versioning (renaming),
         // this is where a NEW handle ID would be returned.
         // For now, we return the same one.
         return handle;
+    }
+
+    RGResourceHandle RenderGraphBuilder::Write(const RGAttachmentInfo& info)
+    {
+        if (!info.Handle.IsValid())
+        {
+            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Write - RGResourceHandle is invalid");
+            return info.Handle;
+        }
+
+        m_PassNode.Writes.push_back(info);
+        return info.Handle;
     }
 
     RGResourceHandle RenderGraphBuilder::Create(const std::string& name, const RHI::TextureDesc& desc)

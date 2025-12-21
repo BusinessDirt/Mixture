@@ -29,10 +29,10 @@ namespace Mixture::Vulkan
         m_PhysicalDevice = SelectBestDevice(devices);
         m_Indices = FindQueueFamilies(m_PhysicalDevice);
 
-        auto selectedProps = m_PhysicalDevice.getProperties();
-        OPAL_INFO("Core/Vulkan", "Selected GPU: {} ({})", std::string_view(selectedProps.deviceName), selectedProps.deviceType);
-        OPAL_INFO("Core/Vulkan", " - API Version: {}", VulkanVersionToString(selectedProps.apiVersion));
-        OPAL_INFO("Core/Vulkan", " - Driver Version: {}", VulkanVersionToString(selectedProps.driverVersion));
+        m_Properties = m_PhysicalDevice.getProperties();
+        OPAL_INFO("Core/Vulkan", "Selected GPU: {} ({})", std::string_view(m_Properties.deviceName), m_Properties.deviceType);
+        OPAL_INFO("Core/Vulkan", " - API Version: {}", VulkanVersionToString(m_Properties.apiVersion));
+        OPAL_INFO("Core/Vulkan", " - Driver Version: {}", VulkanVersionToString(m_Properties.driverVersion));
     }
 
     std::string_view PhysicalDevice::GetDeviceName() const
@@ -102,6 +102,7 @@ namespace Mixture::Vulkan
         {
             // Check for Graphics capability
             if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) indices.Graphics = i;
+            if (queueFamily.queueFlags & vk::QueueFlagBits::eTransfer) indices.Transfer = i;
             if (device.getSurfaceSupportKHR(i, surface)) indices.Present = i;
             if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute) indices.Compute = i;
 

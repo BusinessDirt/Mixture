@@ -1,9 +1,11 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Device.hpp"
 
+#include "Platform/Vulkan/Resources/Texture.hpp"
+#include "Platform/Vulkan/Resources/Buffer.hpp"
+
 #include <vector>
 #include <set>
-#include "Device.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -98,12 +100,12 @@ namespace Mixture::Vulkan
 
     Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc)
     {
-        return nullptr;
+        return CreateRef<Buffer>(desc);
     }
 
     Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc)
     {
-        return nullptr;
+        return CreateRef<Texture>(desc);
     }
 
     Ref<RHI::IPipeline> Device::CreatePipeline(const RHI::PipelineDesc& desc)

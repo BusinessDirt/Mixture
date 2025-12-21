@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Surface.hpp
+ * @brief Vulkan Surface wrapper.
+ */
+
 #include "Mixture/Core/Base.hpp"
 #include "Platform/Vulkan/Instance.hpp"
 

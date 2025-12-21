@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Swapchain.hpp
+ * @brief Vulkan Swapchain wrapper.
+ */
+
 #include "Mixture/Core/Base.hpp"
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
@@ -96,6 +102,8 @@ namespace Mixture::Vulkan
          */
         uint32_t GetImageCount() const { return static_cast<uint32_t>(m_Images.size()); }
 
+        Ref<RHI::ITexture> GetTexture(uint32_t index) const { return m_SwapchainTextures[index]; }
+
     private:
         void CreateSwapchain(uint32_t width, uint32_t height);
         void CreateImageViews();
@@ -115,6 +123,7 @@ namespace Mixture::Vulkan
         vk::ColorSpaceKHR m_ColorSpace;
         vk::Extent2D m_Extent;
 
+        Vector<Ref<RHI::ITexture>> m_SwapchainTextures;
         Vector<vk::Image> m_Images;
         Vector<vk::ImageView> m_ImageViews;
 

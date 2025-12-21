@@ -13,7 +13,7 @@ namespace Mixture
             : Application(appDescription)
         {
             PushLayer(new MainLayer());
-            PushOverlay(new UILayer());
+            //PushOverlay(new UILayer());
         }
     };
 
