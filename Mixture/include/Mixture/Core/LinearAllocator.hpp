@@ -40,8 +40,6 @@ namespace Mixture
         template<typename T, typename... Args>
         T* Alloc(Args&&... args)
         {
-            static_assert(std::is_trivially_destructible<PassData>::value, "RenderGraph PassData must be trivially destructible (POD). Do not use std::vector or std::string inside PassData!");
-
             // Calculate required alignment
             size_t size = sizeof(T);
             size_t alignment = alignof(T);

@@ -39,9 +39,8 @@ namespace Mixture::RHI
         /**
          * @brief Constructor.
          *
-         * @param appDescription Description of the application.
          */
-        IGraphicsContext(const ApplicationDescription& appDescription, void* windowHandle) {}
+        IGraphicsContext() = default;
         virtual ~IGraphicsContext() = default;
 
         /**

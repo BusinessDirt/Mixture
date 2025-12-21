@@ -42,6 +42,8 @@ namespace Mixture
              std::function<void(RenderGraphBuilder&, PassData&)> setup,
              std::function<void(const RenderGraphRegistry&, const PassData&, Ref<RHI::ICommandList>)> execute)
         {
+            static_assert(std::is_trivially_destructible<PassData>::value, "RenderGraph PassData must be trivially destructible (POD). Do not use std::vector or std::string inside PassData!");
+            
             auto& pass = m_Passes.emplace_back();
             pass.Name = name;
 

@@ -17,7 +17,6 @@ namespace Mixture::Vulkan
     }
 
     Context::Context(const ApplicationDescription& appDescription, void* windowHandle)
-        : RHI::IGraphicsContext(appDescription, windowHandle)
     {
         s_Instance = this;
 
