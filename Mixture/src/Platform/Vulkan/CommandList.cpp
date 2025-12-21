@@ -1,6 +1,7 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/CommandList.hpp"
 
+#include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Resources/Texture.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
 #include "Platform/Vulkan/Descriptors/Builder.hpp"
@@ -278,7 +279,7 @@ namespace Mixture::Vulkan
     {
         if (!m_DescriptorsDirty || m_Bindings.empty()) return;
 
-        auto& context = VulkanContext::Get();
+        auto& context = Context::Get();
 
         // Get the Allocator for the CURRENT frame
         // (Assuming you added a getter to Context for the current frame's allocator)
@@ -304,7 +305,8 @@ namespace Mixture::Vulkan
             else if (state.Texture)
             {
                 auto vkTex = std::static_pointer_cast<Texture>(state.Texture); // Assuming Texture class exists
-                builder.BindImage(binding, &vkTex->GetDescriptorInfo(), state.Type, vk::ShaderStageFlagBits::eFragment);
+                auto vkTexInfo = vkTex->GetDescriptorInfo();
+                builder.BindImage(binding, &vkTexInfo, state.Type, vk::ShaderStageFlagBits::eFragment);
             }
         }
 
@@ -319,8 +321,8 @@ namespace Mixture::Vulkan
             // Set 0 is usually Global (Camera/Scene), bound elsewhere.
             const uint32_t DYNAMIC_SET_INDEX = 1;
 
-            // Note: You need the current Pipeline Layout here.
-            // Ensure you capture it in BindPipeline()!
+            // TODO: Current Pipeline Layout required here.
+            //       Capture it in BindPipeline()!
             m_CommandBuffer.bindDescriptorSets(
                 vk::PipelineBindPoint::eGraphics,
                 m_CurrentPipelineLayout,

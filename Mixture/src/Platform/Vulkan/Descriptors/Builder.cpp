@@ -3,9 +3,9 @@
 
 namespace Mixture::Vulkan
 {
-    DescriptorBuilder DescriptorBuilder::Begin(DescriptorAllocator* allocator)
+    DescriptorBuilder DescriptorBuilder::Begin(DescriptorAllocator* allocator, DescriptorLayoutCache* cache)
     {
-        return DescriptorBuilder(allocator);
+        return DescriptorBuilder(allocator, cache);
     }
 
     DescriptorBuilder& DescriptorBuilder::BindBuffer(uint32_t binding, vk::DescriptorBufferInfo* bufferInfo, vk::DescriptorType type, vk::ShaderStageFlags stageFlags)

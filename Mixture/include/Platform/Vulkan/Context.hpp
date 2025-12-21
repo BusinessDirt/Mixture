@@ -99,6 +99,9 @@ namespace Mixture::Vulkan
 
         uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 
+        DescriptorAllocator* GetCurrentDescriptorAllocator() const { return m_DescriptorAllocators[m_CurrentFrame].get(); }
+        DescriptorLayoutCache* GetDescriptorLayoutCache() { return &m_DescriptorLayoutCache; }
+
         /**
          * @brief Gets the singleton context instance.
          *
