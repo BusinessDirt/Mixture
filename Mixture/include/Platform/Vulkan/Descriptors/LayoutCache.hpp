@@ -1,0 +1,38 @@
+#pragma once
+#include "Mixture/Core/Base.hpp"
+
+#include <vulkan/vulkan.hpp>
+
+namespace Mixture::Vulkan
+{
+    class DescriptorLayoutCache
+    {
+    public:
+        void Init(vk::Device device);
+        void Shutdown();
+
+        // The main function: "I need a layout with these bindings"
+        vk::DescriptorSetLayout CreateDescriptorLayout(vk::DescriptorSetLayoutCreateInfo* info);
+
+        // Helper struct to use as a Key in the map
+        struct DescriptorLayoutInfo
+        {
+            Vector<vk::DescriptorSetLayoutBinding> Bindings;
+
+            bool operator==(const DescriptorLayoutInfo& other) const;
+            size_t Hash() const;
+        };
+
+    private:
+        struct DescriptorLayoutHash
+        {
+            std::size_t operator()(const DescriptorLayoutInfo& k) const
+            {
+                return k.Hash();
+            }
+        };
+
+        std::unordered_map<DescriptorLayoutInfo, vk::DescriptorSetLayout, DescriptorLayoutHash> m_LayoutCache;
+        vk::Device m_Device;
+    };
+}

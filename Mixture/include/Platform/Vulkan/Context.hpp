@@ -5,6 +5,7 @@
  * @brief Vulkan implementation of the Graphics Context.
  */
 
+ // TODO: dont expose vulkan.hpp here
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/RHI.hpp"
 
@@ -14,6 +15,8 @@
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/Swapchain.hpp"
+
+#include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
 
 #include <vulkan/vulkan.hpp>
 #include <vector>
@@ -114,6 +117,8 @@ namespace Mixture::Vulkan
 
         vk::CommandPool m_CommandPool;
         Vector<vk::CommandBuffer> m_CommandBuffers;
+
+        DescriptorLayoutCache m_DescriptorLayoutCache;
 
         uint32_t m_CurrentFrame = 0;
         uint32_t m_ImageIndex = 0;

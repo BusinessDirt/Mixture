@@ -80,6 +80,8 @@ namespace Mixture::Vulkan
 
         m_CommandBuffers = m_Device->GetHandle().allocateCommandBuffers(allocInfo);
 
+        m_DescriptorLayoutCache.Init(m_Device->GetHandle());
+
         OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
     }
 
@@ -87,6 +89,7 @@ namespace Mixture::Vulkan
     {
         m_Device->WaitForIdle();
 
+        m_DescriptorLayoutCache.Shutdown();
         m_Device->GetHandle().destroyCommandPool(m_CommandPool);
 
         // Destroy Synchronization Primitives
