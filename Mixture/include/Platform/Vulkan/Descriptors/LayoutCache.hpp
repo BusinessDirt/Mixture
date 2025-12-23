@@ -1,14 +1,14 @@
 #pragma once
-#include "Mixture/Core/Base.hpp"
 
-#include <vulkan/vulkan.hpp>
+#include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/Device.hpp"
 
 namespace Mixture::Vulkan
 {
     class DescriptorLayoutCache
     {
     public:
-        DescriptorLayoutCache(vk::Device device);
+        DescriptorLayoutCache(Device& device);
         ~DescriptorLayoutCache();
 
         // The main function: "I need a layout with these bindings"
@@ -33,6 +33,6 @@ namespace Mixture::Vulkan
         };
 
         std::unordered_map<DescriptorLayoutInfo, vk::DescriptorSetLayout, DescriptorLayoutHash> m_LayoutCache;
-        vk::Device m_Device;
+        Device* m_Device;
     };
 }

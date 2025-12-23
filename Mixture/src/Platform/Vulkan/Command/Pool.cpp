@@ -3,8 +3,8 @@
 
 namespace Mixture::Vulkan
 {
-    CommandPool::CommandPool(vk::Device device, const QueueFamilyIndices& indices)
-        : m_Device(device)
+    CommandPool::CommandPool(Device& device, const QueueFamilyIndices& indices)
+        : m_Device(&device)
     {
         vk::CommandPoolCreateInfo poolInfo;
         poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer; // Allow resetting individual buffers
@@ -12,7 +12,7 @@ namespace Mixture::Vulkan
 
         try
         {
-            m_Handle = m_Device.createCommandPool(poolInfo);
+            m_Handle = m_Device->GetHandle().createCommandPool(poolInfo);
         }
         catch (vk::SystemError& err)
         {
@@ -23,6 +23,6 @@ namespace Mixture::Vulkan
 
     CommandPool::~CommandPool()
     {
-        m_Device.destroyCommandPool(m_Handle);
+        m_Device->GetHandle().destroyCommandPool(m_Handle);
     }
 }

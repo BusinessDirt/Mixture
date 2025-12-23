@@ -9,7 +9,6 @@
 #include "Mixture/Render/RHI/RHI.hpp"
 
 #include <vector>
-#include <iostream>
 #include <optional>
 
 namespace Mixture::Vulkan
@@ -48,11 +47,13 @@ namespace Mixture::Vulkan
         ~Context();
 
         RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
-        Ref<RHI::IGraphicsDevice> GetDevice() const override;
+        RHI::IGraphicsDevice& GetDevice() const override;
 
         void OnResize(uint32_t width, uint32_t height) override;
+
         Ref<RHI::ITexture> BeginFrame() override;
         void EndFrame() override;
+
         Ref<RHI::ICommandList> GetCommandBuffer() override;
 
         uint32_t GetSwapchainWidth() override;
@@ -63,42 +64,42 @@ namespace Mixture::Vulkan
          *
          * @return Ref<Instance> Reference to the instance wrapper.
          */
-        Ref<Instance> GetInstance() const { return m_Instance; }
+        Instance& GetInstance() const { return *m_Instance; }
 
         /**
          * @brief Gets the Vulkan Window Surface.
          *
          * @return Ref<Surface> Reference to the window surface wrapper.
          */
-        Ref<Surface> GetSurface() const { return m_Surface; }
+        Surface& GetSurface() const { return *m_Surface; }
 
         /**
          * @brief Gets the Vulkan physical device.
          *
          * @return Ref<PhysicalDevice> Reference to the physical device wrapper.
          */
-        Ref<PhysicalDevice> GetPhysicalDevice() const { return m_PhysicalDevice; }
+        PhysicalDevice& GetPhysicalDevice() const { return *m_PhysicalDevice; }
 
         /**
          * @brief Gets the Vulkan logical device.
          *
          * @return Ref<Device> Reference to the device wrapper.
          */
-        Ref<Device> GetLogicalDevice() const { return m_Device; }
+        Device& GetLogicalDevice() const { return *m_Device; }
 
         /**
          * @brief Gets the Vulkan swapchain.
          *
          * @return Ref<Swapchain> Reference to the swapchain wrapper.
          */
-        Ref<Swapchain> GetSwapchain() const { return m_Swapchain; }
+        Swapchain& GetSwapchain() const { return *m_Swapchain; }
 
         /**
          * @brief Gets the command pool.
          *
          * @return Ref<CommandPool> the command pool.
          */
-        Ref<CommandPool> GetCommandPool() const { return m_CommandPool; }
+        CommandPool& GetCommandPool() const { return *m_CommandPool; }
 
         uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 
@@ -112,21 +113,21 @@ namespace Mixture::Vulkan
          */
         static Context& Get();
     private:
-        Ref<Instance> m_Instance;
-        Ref<Surface> m_Surface;
-        Ref<PhysicalDevice> m_PhysicalDevice;
-        Ref<Device> m_Device;
-        Ref<Swapchain> m_Swapchain;
+        Scope<Instance> m_Instance;
+        Scope<Surface> m_Surface;
+        Scope<PhysicalDevice> m_PhysicalDevice;
+        Scope<Device> m_Device;
+        Scope<Swapchain> m_Swapchain;
 
-        Ref<Semaphores> m_ImageAvailableSemaphores;
-        Ref<Semaphores> m_RenderFinishedSemaphores;
-        Ref<Fences> m_InFlightFences;
+        Scope<Semaphores> m_ImageAvailableSemaphores;
+        Scope<Semaphores> m_RenderFinishedSemaphores;
+        Scope<Fences> m_InFlightFences;
 
-        Ref<CommandPool> m_CommandPool;
-        Ref<CommandBuffers> m_CommandBuffers;
+        Scope<CommandPool> m_CommandPool;
+        Scope<CommandBuffers> m_CommandBuffers;
 
-        Ref<DescriptorAllocators> m_DescriptorAllocators;
-        Ref<DescriptorLayoutCache> m_DescriptorLayoutCache;
+        Scope<DescriptorAllocators> m_DescriptorAllocators;
+        Scope<DescriptorLayoutCache> m_DescriptorLayoutCache;
 
         uint32_t m_CurrentFrame = 0;
         uint32_t m_ImageIndex = 0;

@@ -11,10 +11,10 @@ namespace Mixture::Vulkan
     {
         vk::CommandBufferAllocateInfo allocInfo;
         allocInfo.level = vk::CommandBufferLevel::ePrimary;
-        allocInfo.commandPool = Context::Get().GetCommandPool()->GetHandle();
+        allocInfo.commandPool = Context::Get().GetCommandPool().GetHandle();
         allocInfo.commandBufferCount = 1;
 
-        vk::CommandBuffer commandBuffer = Context::Get().GetLogicalDevice()->GetHandle().allocateCommandBuffers(allocInfo)[0];
+        vk::CommandBuffer commandBuffer = Context::Get().GetLogicalDevice().GetHandle().allocateCommandBuffers(allocInfo)[0];
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
         commandBuffer.begin(beginInfo);
@@ -32,9 +32,9 @@ namespace Mixture::Vulkan
 
         auto device = Context::Get().GetLogicalDevice();
 
-        device->GetGraphicsQueue().submit(submitInfo, nullptr);
-        device->GetHandle().waitIdle();
-        device->GetHandle().freeCommandBuffers(Context::Get().GetCommandPool()->GetHandle(), commandBuffer);
+        device.GetGraphicsQueue().submit(submitInfo, nullptr);
+        device.GetHandle().waitIdle();
+        device.GetHandle().freeCommandBuffers(Context::Get().GetCommandPool().GetHandle(), commandBuffer);
     }
 
     void SingleTimeCommand::Submit(const std::function<void(vk::CommandBuffer)>& action)

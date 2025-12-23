@@ -5,8 +5,8 @@
 
 namespace Mixture::Vulkan
 {
-    Surface::Surface(Ref<Instance> instance, void* windowHandle)
-        : m_Instance(instance)
+    Surface::Surface(Instance& instance, void* windowHandle)
+        : m_Instance(&instance)
     {
         GLFWwindow* window = static_cast<GLFWwindow*>(windowHandle);
 

@@ -3,8 +3,8 @@
 
 namespace Mixture::Vulkan
 {
-    DescriptorAllocator::DescriptorAllocator(vk::Device device, uint32_t maxSets, Vector<PoolSizeRatio> poolRatios)
-        : m_Device(device), m_SetsPerPool(maxSets), m_Ratios(poolRatios)
+    DescriptorAllocator::DescriptorAllocator(Device& device, uint32_t maxSets, Vector<PoolSizeRatio> poolRatios)
+        : m_Device(&device), m_SetsPerPool(maxSets), m_Ratios(poolRatios)
     {
         // Default ratios if none provided (Standard engine usage)
         if (m_Ratios.empty())
@@ -29,9 +29,9 @@ namespace Mixture::Vulkan
     DescriptorAllocator::~DescriptorAllocator()
     {
         // Destroy all pools
-        for (auto p : m_FreePools) m_Device.destroyDescriptorPool(p);
-        for (auto p : m_UsedPools) m_Device.destroyDescriptorPool(p);
-        if (m_CurrentPool) m_Device.destroyDescriptorPool(m_CurrentPool);
+        for (auto p : m_FreePools) m_Device->GetHandle().destroyDescriptorPool(p);
+        for (auto p : m_UsedPools) m_Device->GetHandle().destroyDescriptorPool(p);
+        if (m_CurrentPool) m_Device->GetHandle().destroyDescriptorPool(m_CurrentPool);
     }
 
     vk::DescriptorPool DescriptorAllocator::CreatePool(uint32_t count, vk::DescriptorPoolCreateFlags flags)
@@ -48,7 +48,7 @@ namespace Mixture::Vulkan
         poolInfo.poolSizeCount = (uint32_t)sizes.size();
         poolInfo.pPoolSizes = sizes.data();
 
-        return m_Device.createDescriptorPool(poolInfo);
+        return m_Device->GetHandle().createDescriptorPool(poolInfo);
     }
 
     vk::DescriptorPool DescriptorAllocator::GetPool()
@@ -75,7 +75,7 @@ namespace Mixture::Vulkan
         allocInfo.pSetLayouts = &layout;
 
         // Try to allocate
-        vk::Result result = m_Device.allocateDescriptorSets(&allocInfo, &outSet);
+        vk::Result result = m_Device->GetHandle().allocateDescriptorSets(&allocInfo, &outSet);
         if (result == vk::Result::eSuccess) return true;
 
         // If failed (OOM or Pool Fragmented), move current pool to "Used" and get a new one
@@ -86,7 +86,7 @@ namespace Mixture::Vulkan
 
             // Retry allocation with new pool
             allocInfo.descriptorPool = m_CurrentPool;
-            result = m_Device.allocateDescriptorSets(&allocInfo, &outSet);
+            result = m_Device->GetHandle().allocateDescriptorSets(&allocInfo, &outSet);
 
             return (result == vk::Result::eSuccess);
         }
@@ -99,7 +99,7 @@ namespace Mixture::Vulkan
         // Reset every pool and move them to "Free"
         for (auto p : m_UsedPools)
         {
-            m_Device.resetDescriptorPool(p);
+            m_Device->GetHandle().resetDescriptorPool(p);
             m_FreePools.push_back(p);
         }
 
@@ -107,13 +107,13 @@ namespace Mixture::Vulkan
 
         if (m_CurrentPool)
         {
-            m_Device.resetDescriptorPool(m_CurrentPool);
+            m_Device->GetHandle().resetDescriptorPool(m_CurrentPool);
             m_FreePools.push_back(m_CurrentPool);
             m_CurrentPool = nullptr;
         }
     }
 
-    DescriptorAllocators::DescriptorAllocators(vk::Device device, uint32_t count, uint32_t maxSets, Vector<PoolSizeRatio> poolRatios)
+    DescriptorAllocators::DescriptorAllocators(Device& device, uint32_t count, uint32_t maxSets, Vector<PoolSizeRatio> poolRatios)
     {
         m_Allocators.resize(count);
         for(int i=0; i < count; i++)

@@ -5,14 +5,10 @@
  * @brief Vulkan Swapchain wrapper.
  */
 
-#include "Mixture/Core/Base.hpp"
-#include "Platform/Vulkan/Device.hpp"
+#include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
+#include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/Surface.hpp"
-
-#include <vulkan/vulkan.hpp>
-#include <vector>
-#include <memory>
 
 namespace Mixture::Vulkan
 {
@@ -35,7 +31,7 @@ namespace Mixture::Vulkan
          * @param width Initial width of the swapchain.
          * @param height Initial height of the swapchain.
          */
-        Swapchain(Ref<PhysicalDevice> physicalDevice, Ref<Device> device, Ref<Surface> surface, uint32_t width, uint32_t height);
+        Swapchain(PhysicalDevice& physicalDevice, Device& device, Surface& surface, uint32_t width, uint32_t height);
 
         /**
          * @brief Destroys the Swapchain and cleans up associated resources (image views, etc.).
@@ -113,9 +109,9 @@ namespace Mixture::Vulkan
         vk::Extent2D ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
     private:
-        Ref<PhysicalDevice> m_PhysicalDevice;
-        Ref<Device> m_Device;
-        Ref<Surface> m_Surface;
+        PhysicalDevice* m_PhysicalDevice;
+        Device* m_Device;
+        Surface* m_Surface;
 
         vk::PresentModeKHR m_PresentMode;
         vk::SwapchainKHR m_Swapchain;

@@ -5,9 +5,9 @@
 
 namespace Mixture::Vulkan
 {
-    Swapchain::Swapchain(Ref<PhysicalDevice> physicalDevice, Ref<Device> device,
-        Ref<Surface> surface, uint32_t width, uint32_t height)
-        : m_PhysicalDevice(physicalDevice), m_Device(device), m_Surface(surface)
+    Swapchain::Swapchain(PhysicalDevice& physicalDevice, Device& device,
+        Surface& surface, uint32_t width, uint32_t height)
+        : m_PhysicalDevice(&physicalDevice), m_Device(&device), m_Surface(&surface)
     {
         CreateSwapchain(width, height);
         CreateImageViews();

@@ -8,6 +8,7 @@
 #include "Mixture/Core/Base.hpp"
 
 #include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/Instance.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -25,7 +26,7 @@ namespace Mixture::Vulkan
          *
          * @param instance The Vulkan instance.
          */
-        PhysicalDevice(vk::Instance instance);
+        PhysicalDevice(Instance& instance);
         ~PhysicalDevice() = default;
 
         /**

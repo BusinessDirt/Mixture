@@ -1,7 +1,7 @@
 #pragma once
-#include "Mixture/Core/Base.hpp"
 
-#include <vulkan/vulkan.hpp>
+#include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/Device.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -14,7 +14,7 @@ namespace Mixture::Vulkan
     class DescriptorAllocator
     {
     public:
-        DescriptorAllocator(vk::Device device, uint32_t maxSets, Vector<PoolSizeRatio> poolRatios);
+        DescriptorAllocator(Device& device, uint32_t maxSets, Vector<PoolSizeRatio> poolRatios);
         ~DescriptorAllocator();
 
         // The main function you call
@@ -23,14 +23,14 @@ namespace Mixture::Vulkan
         // Call this at the start of the frame to wipe all sets (if using frame-based allocation)
         void ResetPools();
 
-        vk::Device GetDevice() const { return m_Device; }
+        Device* GetDevice() { return m_Device; }
 
     private:
         vk::DescriptorPool GetPool();
         vk::DescriptorPool CreatePool(uint32_t count, vk::DescriptorPoolCreateFlags flags);
 
     private:
-        vk::Device m_Device;
+        Device* m_Device;
 
         vk::DescriptorPool m_CurrentPool = nullptr; // The active pool
         Vector<vk::DescriptorPool> m_UsedPools; // Full pools
@@ -43,7 +43,7 @@ namespace Mixture::Vulkan
     class DescriptorAllocators
     {
     public:
-        DescriptorAllocators(vk::Device device, uint32_t count, uint32_t maxSets = 1000, Vector<PoolSizeRatio> poolRatios = {});
+        DescriptorAllocators(Device& device, uint32_t count, uint32_t maxSets = 1000, Vector<PoolSizeRatio> poolRatios = {});
         ~DescriptorAllocators();
 
         DescriptorAllocator* Get(uint32_t index) const { return m_Allocators[index].get(); }

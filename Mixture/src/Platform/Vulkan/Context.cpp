@@ -37,24 +37,24 @@ namespace Mixture::Vulkan
     {
         s_Instance = this;
 
-        m_Instance = CreateRef<Instance>(appDescription);
-        m_Surface = CreateRef<Surface>(m_Instance, windowHandle);
-        m_PhysicalDevice = CreateRef<PhysicalDevice>(m_Instance->GetHandle());
-        m_Device = CreateRef<Device>(m_Instance, m_PhysicalDevice);
-        m_Swapchain = CreateRef<Swapchain>(m_PhysicalDevice, m_Device, m_Surface, appDescription.Width, appDescription.Height);
+        m_Instance = CreateScope<Instance>(appDescription);
+        m_Surface = CreateScope<Surface>(*m_Instance, windowHandle);
+        m_PhysicalDevice = CreateScope<PhysicalDevice>(*m_Instance);
+        m_Device = CreateScope<Device>(*m_Instance, *m_PhysicalDevice);
+        m_Swapchain = CreateScope<Swapchain>(*m_PhysicalDevice, *m_Device, *m_Surface, appDescription.Width, appDescription.Height);
 
         size_t imageCount = m_Swapchain->GetImageCount();
-        m_ImageAvailableSemaphores = CreateRef<Semaphores>(m_Device->GetHandle(), MAX_FRAMES_IN_FLIGHT);
-        m_RenderFinishedSemaphores = CreateRef<Semaphores>(m_Device->GetHandle(), imageCount);
-        m_InFlightFences = CreateRef<Fences>(m_Device->GetHandle(), MAX_FRAMES_IN_FLIGHT, true);
+        m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
+        m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imageCount);
+        m_InFlightFences = CreateScope<Fences>(*m_Device, MAX_FRAMES_IN_FLIGHT, true);
 
         // Create Command Pool
         QueueFamilyIndices queueFamilyIndices = m_PhysicalDevice->GetQueueFamilies();
-        m_CommandPool = CreateRef<CommandPool>(m_Device->GetHandle(), queueFamilyIndices);
-        m_CommandBuffers = CreateRef<CommandBuffers>(m_Device->GetHandle(), m_CommandPool->GetHandle(), MAX_FRAMES_IN_FLIGHT);
+        m_CommandPool = CreateScope<CommandPool>(*m_Device, queueFamilyIndices);
+        m_CommandBuffers = CreateScope<CommandBuffers>(*m_Device, *m_CommandPool, MAX_FRAMES_IN_FLIGHT);
 
-        m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(m_Device->GetHandle());
-        m_DescriptorAllocators = CreateScope<DescriptorAllocators>(m_Device->GetHandle(), MAX_FRAMES_IN_FLIGHT);
+        m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(*m_Device);
+        m_DescriptorAllocators = CreateScope<DescriptorAllocators>(*m_Device, MAX_FRAMES_IN_FLIGHT);
 
         OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
     }
@@ -62,20 +62,7 @@ namespace Mixture::Vulkan
     Context::~Context()
     {
         m_Device->WaitForIdle();
-
-        m_DescriptorAllocators.reset();
-        m_DescriptorLayoutCache.reset();
-        m_CommandPool.reset();
-
-        m_InFlightFences.reset();
-        m_RenderFinishedSemaphores.reset();
-        m_ImageAvailableSemaphores.reset();
-
-        m_Swapchain.reset();
-        m_Device.reset();
-        m_PhysicalDevice.reset();
-        m_Surface.reset();
-        m_Instance.reset();
+        s_Instance = nullptr;
     }
 
     DescriptorAllocator* Context::GetCurrentDescriptorAllocator() const { return m_DescriptorAllocators->Get(m_CurrentFrame); }
@@ -84,7 +71,7 @@ namespace Mixture::Vulkan
     uint32_t Context::GetSwapchainWidth() { return m_Swapchain->GetExtent().width; }
     uint32_t Context::GetSwapchainHeight() { return m_Swapchain->GetExtent().height; }
 
-    Ref<RHI::IGraphicsDevice> Context::GetDevice() const { return m_Device; }
+    RHI::IGraphicsDevice& Context::GetDevice() const { return *m_Device; }
 
     void Context::OnResize(uint32_t width, uint32_t height)
     {
@@ -92,12 +79,15 @@ namespace Mixture::Vulkan
         {
             // Handle minimization (width=0) by skipping
             if (width == 0 || height == 0) return;
+
+            m_Device->WaitForIdle();
+
             m_Swapchain->Recreate(width, height);
 
             // Recreate Semaphores (Image count might have changed!)
             size_t imageCount = m_Swapchain->GetImageCount();
             m_RenderFinishedSemaphores.reset();
-            m_RenderFinishedSemaphores = CreateRef<Semaphores>(m_Device->GetHandle(), imageCount);
+            m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imageCount);
 
             OPAL_INFO("Core/Vulkan", "Swapchain Resized to {} x {}", width, height);
         }
@@ -105,7 +95,11 @@ namespace Mixture::Vulkan
 
     Ref<RHI::ITexture> Context::BeginFrame()
     {
-        m_DescriptorAllocators->Get(m_CurrentFrame)->ResetPools();
+        if (m_IsFrameStarted)
+        {
+            OPAL_ERROR("Core/Vulkan", "BeginFrame called but frame already started!");
+            return nullptr;
+        }
 
         auto device = m_Device->GetHandle();
 
@@ -115,6 +109,8 @@ namespace Mixture::Vulkan
             OPAL_ERROR("Core/Vulkan", "Wait for fences failed!");
             return nullptr;
         }
+
+        m_DescriptorAllocators->Get(m_CurrentFrame)->ResetPools();
 
         uint32_t imageIndex;
         bool acquired = m_Swapchain->AcquireNextImage(imageIndex, m_ImageAvailableSemaphores->Get(m_CurrentFrame));
@@ -133,11 +129,19 @@ namespace Mixture::Vulkan
 
         m_CommandBuffers->Reset(m_CurrentFrame);
 
+        m_IsFrameStarted = true;
+
         return m_Swapchain->GetTexture(imageIndex);
     }
 
     void Context::EndFrame()
     {
+        if (!m_IsFrameStarted)
+        {
+            OPAL_ERROR("Core/Vulkan", "EndFrame called but frame not started!");
+            return;
+        }
+
         vk::Semaphore signalSemaphores[] = { m_RenderFinishedSemaphores->Get(m_ImageIndex) };
         vk::Semaphore waitSemaphores[] = { m_ImageAvailableSemaphores->Get(m_CurrentFrame) };
         vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
@@ -163,6 +167,7 @@ namespace Mixture::Vulkan
 
         // ADVANCE FRAME: 0 -> 1 -> 0 -> 1
         m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        m_IsFrameStarted = false;
     }
 
     Ref<RHI::ICommandList> Context::GetCommandBuffer()

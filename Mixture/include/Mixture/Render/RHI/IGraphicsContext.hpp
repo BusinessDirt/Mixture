@@ -55,13 +55,13 @@ namespace Mixture::RHI
          *
          * @return Ref<IGraphicsDevice> Reference to the device.
          */
-        virtual Ref<IGraphicsDevice> GetDevice() const = 0;
+        virtual IGraphicsDevice& GetDevice() const = 0;
 
         virtual void OnResize(uint32_t width, uint32_t height) = 0;
         virtual Ref<RHI::ITexture> BeginFrame() = 0;
         virtual void EndFrame() = 0;
         virtual Ref<RHI::ICommandList> GetCommandBuffer() = 0;
-        
+
         virtual uint32_t GetSwapchainWidth() = 0;
         virtual uint32_t GetSwapchainHeight() = 0;
 

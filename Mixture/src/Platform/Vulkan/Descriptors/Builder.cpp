@@ -61,7 +61,7 @@ namespace Mixture::Vulkan
         if (!success) return false;
 
         for (auto& w : m_Writes) w.dstSet = outSet;
-        m_Allocator->GetDevice().updateDescriptorSets(m_Writes, {});
+        m_Allocator->GetDevice()->GetHandle().updateDescriptorSets(m_Writes, {});
 
         return true;
     }

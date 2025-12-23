@@ -1,9 +1,8 @@
 #pragma once
-#include "Mixture/Core/Base.hpp"
 
-#include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
+#include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/Descriptors/Allocator.hpp"
-#include <vulkan/vulkan.hpp>
+#include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
 
 namespace Mixture::Vulkan
 {

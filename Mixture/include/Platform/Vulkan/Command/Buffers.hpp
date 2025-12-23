@@ -1,14 +1,15 @@
 #pragma once
-#include "Mixture/Core/Base.hpp"
 
 #include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/Device.hpp"
+#include "Platform/Vulkan/Command/Pool.hpp"
 
 namespace Mixture::Vulkan
 {
     class CommandBuffers
     {
     public:
-        CommandBuffers(vk::Device device, vk::CommandPool commandPool, uint32_t count);
+        CommandBuffers(Device& device, CommandPool& commandPool, uint32_t count);
         ~CommandBuffers() = default;
 
         vk::CommandBuffer Get(uint32_t index) const { return m_Handles[index]; }
@@ -17,8 +18,8 @@ namespace Mixture::Vulkan
         void Reset(uint32_t index);
 
     private:
-        vk::Device m_Device;
-        vk::CommandPool m_CommandPool;
+        Device* m_Device;
+        CommandPool* m_CommandPool;
 
         Vector<vk::CommandBuffer> m_Handles;
     };

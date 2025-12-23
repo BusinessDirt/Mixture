@@ -5,15 +5,15 @@
 
 namespace Mixture::Vulkan
 {
-    DescriptorLayoutCache::DescriptorLayoutCache(vk::Device device)
-        : m_Device(device)
+    DescriptorLayoutCache::DescriptorLayoutCache(Device& device)
+        : m_Device(&device)
     {}
 
     DescriptorLayoutCache::~DescriptorLayoutCache()
     {
         // Destroy all cached layouts
         for (auto& pair : m_LayoutCache)
-            m_Device.destroyDescriptorSetLayout(pair.second);
+            m_Device->GetHandle().destroyDescriptorSetLayout(pair.second);
 
         m_LayoutCache.clear();
     }
@@ -66,7 +66,7 @@ namespace Mixture::Vulkan
         vk::DescriptorSetLayout layout;
         try
         {
-            layout = m_Device.createDescriptorSetLayout(newInfo);
+            layout = m_Device->GetHandle().createDescriptorSetLayout(newInfo);
         }
         catch (vk::SystemError& err)
         {

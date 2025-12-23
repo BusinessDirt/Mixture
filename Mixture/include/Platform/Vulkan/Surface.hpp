@@ -5,10 +5,8 @@
  * @brief Vulkan Surface wrapper.
  */
 
-#include "Mixture/Core/Base.hpp"
+#include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/Instance.hpp"
-
-#include <vulkan/vulkan.hpp>
 
 namespace Mixture::Vulkan
 {
@@ -24,7 +22,7 @@ namespace Mixture::Vulkan
          * @param instance A reference to the Vulkan Instance.
          * @param windowHandle The raw platform-specific window handle (e.g., HWND on Windows, NSWindow* on macOS).
          */
-        Surface(Ref<Instance> instance, void* windowHandle);
+        Surface(Instance& instance, void* windowHandle);
 
         /**
          * @brief Destroys the Surface.
@@ -38,7 +36,7 @@ namespace Mixture::Vulkan
         vk::SurfaceKHR GetHandle() const { return m_Handle; }
 
     private:
-        Ref<Instance> m_Instance;
+        Instance* m_Instance;
         vk::SurfaceKHR m_Handle;
     };
 }

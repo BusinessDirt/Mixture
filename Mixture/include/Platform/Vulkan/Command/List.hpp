@@ -5,8 +5,7 @@
  * @brief Vulkan implementation of the CommandList interface.
  */
 
-#include "Mixture/Core/Base.hpp"
-
+#include "Platform/Vulkan/Definitions.hpp"
 #include "Mixture/Render/RHI/ICommandList.hpp"
 
 namespace Mixture::Vulkan
