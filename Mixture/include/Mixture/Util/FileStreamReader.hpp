@@ -13,7 +13,7 @@ namespace Mixture
     public:
         FileStreamReader(const std::filesystem::path& path);
 
-        bool IsValid() const { return m_Stream.is_open(); }
+        bool IsOpen() const { return m_Stream.is_open(); }
 
         // Read bytes into a buffer
         void ReadBuffer(Vector<char>& buffer);
