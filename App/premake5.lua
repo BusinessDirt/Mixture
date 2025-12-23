@@ -35,7 +35,7 @@ project "App"
         runtime "Debug"
         symbols "On"
         links {
-            "%{Library.ShaderC_Debug}",
+            "%{Library.DXC_Debug}",
             "%{Library.SPIRV_Cross_Debug}"
         }
 
@@ -46,7 +46,7 @@ project "App"
         optimize "On"
         symbols "On"
         links {
-            "%{Library.ShaderC_Release}",
+            "%{Library.DXC_Release}",
             "%{Library.SPIRV_Cross_Release}"
         }
 
@@ -57,9 +57,9 @@ project "App"
         optimize "On"
         symbols "Off"
         links {
-            "%{Library.ShaderC_Release}",
+            "%{Library.DXC_Release}",
             "%{Library.SPIRV_Cross_Release}"
-        }   
+        }
 
     -- windows specific settings
     filter "system:windows"
@@ -84,7 +84,7 @@ project "App"
             "AppKit.framework"
         }
 
-        frameworkdirs { 
+        frameworkdirs {
             vulkanFW,
             "/System/Library/Frameworks",
             "%{LibraryDir.Vulkan}"
