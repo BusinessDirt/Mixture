@@ -13,7 +13,7 @@ namespace Mixture::Vulkan
 {
     /**
      * @brief Wrapper around a collection of Vulkan Command Buffers.
-     * 
+     *
      * Manages allocation and lifecycle of multiple command buffers from a single pool.
      */
     class CommandBuffers
@@ -21,7 +21,7 @@ namespace Mixture::Vulkan
     public:
         /**
          * @brief Constructor.
-         * 
+         *
          * @param device Reference to the logical device.
          * @param commandPool Reference to the command pool to allocate from.
          * @param count Number of command buffers to allocate.
@@ -31,7 +31,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Gets a command buffer at the specified index.
-         * 
+         *
          * @param index Index of the command buffer.
          * @return vk::CommandBuffer The command buffer handle.
          */
@@ -39,7 +39,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Gets a pointer to a command buffer at the specified index.
-         * 
+         *
          * @param index Index of the command buffer.
          * @return vk::CommandBuffer* Pointer to the command buffer handle.
          */
@@ -47,7 +47,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Resets the command buffer at the specified index.
-         * 
+         *
          * @param index Index of the command buffer to reset.
          */
         void Reset(uint32_t index);

@@ -2,7 +2,6 @@
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Util/UUID.hpp"
-#include "Mixture/Assets/AssetManager.hpp"
 
 namespace Mixture
 {
@@ -27,7 +26,6 @@ namespace Mixture
         //bool IsMemoryOnly = false;
     };
 
-    template<typename T>
     struct AssetHandle
     {
         UUID ID;
@@ -50,7 +48,7 @@ namespace Mixture
 
     namespace Utils
     {
-        const char* AssetTypeToString(AssetType type)
+        inline const char* AssetTypeToString(AssetType type)
         {
             switch (type)
             {

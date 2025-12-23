@@ -21,7 +21,7 @@ namespace Mixture::Vulkan
 
     /**
      * @brief Manages a growing pool of descriptors.
-     * 
+     *
      * Handles allocation of descriptor sets, automatically creating new pools as needed.
      */
     class DescriptorAllocator
@@ -29,7 +29,7 @@ namespace Mixture::Vulkan
     public:
         /**
          * @brief Constructor.
-         * 
+         *
          * @param device Reference to the logical device.
          * @param maxSets Initial maximum number of sets per pool.
          * @param poolRatios Ratios of descriptor types to allocate.
@@ -39,7 +39,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Allocates a descriptor set from the current pool.
-         * 
+         *
          * @param layout The descriptor set layout to allocate.
          * @param[out] outSet The allocated descriptor set.
          * @return true If allocation succeeded.
@@ -49,14 +49,14 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Resets all pools, making all allocated sets invalid.
-         * 
+         *
          * Useful for frame-based allocation where all sets are discarded at the end of a frame.
          */
         void ResetPools();
 
         /**
          * @brief Gets the associated device.
-         * 
+         *
          * @return Device* Pointer to the device.
          */
         Device* GetDevice() { return m_Device; }
@@ -84,7 +84,7 @@ namespace Mixture::Vulkan
     public:
         /**
          * @brief Constructor.
-         * 
+         *
          * @param device Reference to the logical device.
          * @param count Number of allocators to create (usually matches frames in flight).
          * @param maxSets Maximum sets per allocator pool.
@@ -95,7 +95,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Gets the allocator at the specified index.
-         * 
+         *
          * @param index Index of the allocator.
          * @return DescriptorAllocator* Pointer to the allocator.
          */

@@ -147,6 +147,7 @@ namespace Opal
 
 #else // strip logging in dist build
     #define OPAL_TRACE(...)
+    #define OPAL_LOG_DEBUG(...)
     #define OPAL_INFO(...)
     #define OPAL_WARN(...)
     #define OPAL_ERROR(...)
