@@ -2,6 +2,7 @@
 #include "Platform/Vulkan/Resources/Texture.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 #include <stb_image.h>
@@ -63,7 +64,7 @@ namespace Mixture::Vulkan
         VkDeviceSize imageSize = width * height * 4;
 
         auto device = Context::Get().GetLogicalDevice();
-        auto allocator = device->GetAllocator();
+        auto allocator = device.GetAllocator();
 
         // Staging Buffer
         VkBufferCreateInfo bufferInfo = {};
@@ -163,8 +164,8 @@ namespace Mixture::Vulkan
     {
         if (m_OwnsImage)
         {
-            auto device = Context::Get().GetLogicalDevice()->GetHandle();
-            auto allocator = Context::Get().GetLogicalDevice()->GetAllocator();
+            auto device = Context::Get().GetLogicalDevice().GetHandle();
+            auto allocator = Context::Get().GetLogicalDevice().GetAllocator();
 
             if (m_ImageView) device.destroyImageView(m_ImageView);
             if (m_Sampler) device.destroySampler(m_Sampler);
@@ -186,7 +187,7 @@ namespace Mixture::Vulkan
         Release();
 
         auto device = Context::Get().GetLogicalDevice();
-        auto allocator = device->GetAllocator();
+        auto allocator = device.GetAllocator();
 
         // Image Info
         VkImageCreateInfo imageInfo = {};
@@ -229,7 +230,7 @@ namespace Mixture::Vulkan
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        m_ImageView = device->GetHandle().createImageView(viewInfo);
+        m_ImageView = device.GetHandle().createImageView(viewInfo);
 
         // Create Sampler (Optional, but usually needed for textures)
         vk::SamplerCreateInfo samplerInfo;
@@ -239,13 +240,13 @@ namespace Mixture::Vulkan
         samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
         samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
         samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = Context::Get().GetPhysicalDevice()->GetProperties().limits.maxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = Context::Get().GetPhysicalDevice().GetProperties().limits.maxSamplerAnisotropy;
         samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
         samplerInfo.compareEnable = VK_FALSE;
         samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
 
-        m_Sampler = device->GetHandle().createSampler(samplerInfo);
+        m_Sampler = device.GetHandle().createSampler(samplerInfo);
     }
 
     vk::DescriptorImageInfo Texture::GetDescriptorInfo() const

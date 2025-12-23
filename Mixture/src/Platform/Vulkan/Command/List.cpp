@@ -1,8 +1,10 @@
 #include "mxpch.hpp"
-#include "Platform/Vulkan/CommandList.hpp"
+#include "Platform/Vulkan/Command/List.hpp"
 
+#include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Resources/Texture.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
+#include "Platform/Vulkan/Descriptors/Builder.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -104,7 +106,8 @@ namespace Mixture::Vulkan
         Vector<vk::RenderingAttachmentInfo> vkColorAttachments;
         vkColorAttachments.reserve(info.ColorAttachments.size());
 
-        for (const auto& attachment : info.ColorAttachments) {
+        for (const auto& attachment : info.ColorAttachments)
+        {
             if (!attachment.Image) continue;
 
             // Cast abstract ITexture to concrete VulkanTexture to get the view
@@ -120,7 +123,8 @@ namespace Mixture::Vulkan
             vkInfo.storeOp = Utils::ConvertStoreOp(attachment.StoreOp);
 
             // Clear Color (R, G, B, A)
-            vkInfo.clearValue.color = std::array<float, 4>{
+            vkInfo.clearValue.color = std::array<float, 4>
+            {
                 attachment.ClearColor[0],
                 attachment.ClearColor[1],
                 attachment.ClearColor[2],
@@ -243,13 +247,94 @@ namespace Mixture::Vulkan
 
     }
 
+    void CommandList::SetUniformBuffer(uint32_t binding, Ref<RHI::IBuffer> buffer)
+    {
+        m_Bindings[binding].Buffer = buffer;
+        m_Bindings[binding].Texture = nullptr;
+        m_Bindings[binding].Type = vk::DescriptorType::eUniformBuffer;
+
+        m_DescriptorsDirty = true;
+    }
+
+    void CommandList::SetTexture(uint32_t binding, Ref<RHI::ITexture> texture)
+    {
+        m_Bindings[binding].Buffer = nullptr;
+        m_Bindings[binding].Texture = texture;
+        m_Bindings[binding].Type = vk::DescriptorType::eCombinedImageSampler;
+
+        m_DescriptorsDirty = true;
+    }
+
     void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
     {
+        FlushDescriptors();
         m_CommandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
     void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
+        FlushDescriptors();
         m_CommandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+    }
+
+    void CommandList::FlushDescriptors()
+    {
+        if (!m_DescriptorsDirty || m_Bindings.empty()) return;
+
+        auto& context = Context::Get();
+
+        // Get the Allocator for the CURRENT frame
+        // (Assuming you added a getter to Context for the current frame's allocator)
+        auto* allocator = context.GetCurrentDescriptorAllocator();
+        auto* cache = context.GetDescriptorLayoutCache();
+
+        // Start Building
+        auto builder = DescriptorBuilder::Begin(allocator, cache);
+
+        // Iterate over our saved bindings and feed the builder
+        for (auto& [binding, state] : m_Bindings)
+        {
+            if (state.Buffer)
+            {
+                auto vkBuf = std::static_pointer_cast<Buffer>(state.Buffer);
+                vk::DescriptorBufferInfo info{};
+                info.buffer = vkBuf->GetHandle();
+                info.offset = 0;
+                info.range = vkBuf->GetSize();
+
+                builder.BindBuffer(binding, &info, state.Type, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+            }
+            else if (state.Texture)
+            {
+                auto vkTex = std::static_pointer_cast<Texture>(state.Texture); // Assuming Texture class exists
+                auto vkTexInfo = vkTex->GetDescriptorInfo();
+                builder.BindImage(binding, &vkTexInfo, state.Type, vk::ShaderStageFlagBits::eFragment);
+            }
+        }
+
+        // Build the Set!
+        vk::DescriptorSet newSet;
+        vk::DescriptorSetLayout newLayout;
+
+        if (builder.Build(newSet, newLayout))
+        {
+            // Bind it immediately
+            // We assume Set 1 is for dynamic material data.
+            // Set 0 is usually Global (Camera/Scene), bound elsewhere.
+            const uint32_t DYNAMIC_SET_INDEX = 1;
+
+            // TODO: Current Pipeline Layout required here.
+            //       Capture it in BindPipeline()!
+            m_CommandBuffer.bindDescriptorSets(
+                vk::PipelineBindPoint::eGraphics,
+                m_CurrentPipelineLayout,
+                DYNAMIC_SET_INDEX,
+                1, &newSet,
+                0, nullptr
+            );
+        }
+
+        // Reset dirty flag so we don't rebuild if nothing changed next draw
+        m_DescriptorsDirty = false;
     }
 }

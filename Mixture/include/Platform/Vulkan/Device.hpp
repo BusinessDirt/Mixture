@@ -6,12 +6,11 @@
  */
 
 #include "Platform/Vulkan/Definitions.hpp"
-#include "Platform/Vulkan/PhysicalDevice.hpp"
 #include "Platform/Vulkan/Instance.hpp"
+#include "Platform/Vulkan/PhysicalDevice.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
-#include <memory>
 #include <vma/vk_mem_alloc.h>
 
 namespace Mixture::Vulkan
@@ -28,7 +27,7 @@ namespace Mixture::Vulkan
          * @param instance The vulkan instance
          * @param physicalDevice The physical device to create the logical device from.
          */
-		Device(Ref<Instance> instance, Ref<PhysicalDevice> physicalDevice);
+		Device(Instance& instance, PhysicalDevice& physicalDevice);
 		~Device();
 
         /**
@@ -67,7 +66,7 @@ namespace Mixture::Vulkan
 		void WaitForIdle() override { m_Device.waitIdle(); }
 
 	private:
-		Ref<PhysicalDevice> m_PhysicalDevice;
+		PhysicalDevice* m_PhysicalDevice;
 		vk::Device m_Device;
 
 		vk::Queue m_GraphicsQueue;

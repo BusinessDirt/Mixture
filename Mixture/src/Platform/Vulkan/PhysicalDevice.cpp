@@ -2,6 +2,7 @@
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Surface.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -17,9 +18,9 @@ namespace Mixture::Vulkan
         }
     }
 
-    PhysicalDevice::PhysicalDevice(vk::Instance instance)
+    PhysicalDevice::PhysicalDevice(Instance& instance)
     {
-        auto devices = instance.enumeratePhysicalDevices();
+        auto devices = instance.GetHandle().enumeratePhysicalDevices();
         if (devices.empty())
         {
             OPAL_CRITICAL("Core/Vulkan", "Failed to find GPUs with Vulkan support!");
@@ -95,7 +96,7 @@ namespace Mixture::Vulkan
     {
         QueueFamilyIndices indices;
         Vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();
-        vk::SurfaceKHR surface = Context::Get().GetSurface()->GetHandle();
+        vk::SurfaceKHR surface = Context::Get().GetSurface().GetHandle();
 
         int i = 0;
         for (const auto& queueFamily : queueFamilies)

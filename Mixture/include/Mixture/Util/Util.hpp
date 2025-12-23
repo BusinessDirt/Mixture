@@ -12,7 +12,7 @@ namespace Mixture::Util
 {
     /**
      * @brief Combines a hash with a new value.
-     * 
+     *
      * @tparam T Type of the value to combine.
      * @tparam Rest Remaining types.
      * @param seed The current hash seed.
@@ -28,7 +28,7 @@ namespace Mixture::Util
 
     /**
      * @brief Checks if a string contains a substring.
-     * 
+     *
      * @param str The string to search in.
      * @param substr The substring to search for.
      * @return true If str contains substr.
@@ -37,7 +37,7 @@ namespace Mixture::Util
 
     /**
      * @brief Reads a file into a string.
-     * 
+     *
      * @param filepath The path to the file.
      * @return std::string The content of the file.
      */

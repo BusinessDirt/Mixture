@@ -42,7 +42,7 @@ namespace Mixture
         {
             if (!node.IsImported)
             {
-                auto texture = context->GetDevice()->CreateTexture(node.Desc);
+                auto texture = context->GetDevice().CreateTexture(node.Desc);
                 m_Registry.ImportTexture(node.Handle, texture);
             }
 

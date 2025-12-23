@@ -3,6 +3,7 @@
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Device.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -31,7 +32,7 @@ namespace Mixture::Vulkan
     Buffer::Buffer(const RHI::BufferDesc& desc, const void* initialData)
         : m_Desc(desc)
     {
-        auto allocator = Context::Get().GetLogicalDevice()->GetAllocator();
+        auto allocator = Context::Get().GetLogicalDevice().GetAllocator();
 
         // Create the GPU Buffer
         // We generally allocate GPU_ONLY for best performance.
@@ -43,7 +44,7 @@ namespace Mixture::Vulkan
         VmaAllocationCreateInfo allocInfo = {};
         allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
         allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
-        // TODO: For frequent CPU updates (Uniforms), you might want VMA_MEMORY_USAGE_CPU_TO_GPU
+        // TODO: For frequent CPU updates (Uniforms), we might want VMA_MEMORY_USAGE_CPU_TO_GPU
         // and avoid staging, but for Vertex/Index, this is best.
 
         VkBuffer rawBuffer;
@@ -91,7 +92,7 @@ namespace Mixture::Vulkan
     Buffer::~Buffer()
     {
         if (m_Buffer) {
-            vmaDestroyBuffer(Context::Get().GetLogicalDevice()->GetAllocator(), m_Buffer, m_Allocation);
+            vmaDestroyBuffer(Context::Get().GetLogicalDevice().GetAllocator(), m_Buffer, m_Allocation);
         }
     }
 }

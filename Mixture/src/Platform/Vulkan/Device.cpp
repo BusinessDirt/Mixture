@@ -9,8 +9,8 @@
 
 namespace Mixture::Vulkan
 {
-	Device::Device(Ref<Instance> instance, Ref<PhysicalDevice> physicalDevice)
-		: m_PhysicalDevice(physicalDevice)
+	Device::Device(Instance& instance, PhysicalDevice& physicalDevice)
+		: m_PhysicalDevice(&physicalDevice)
 	{
 		auto indices = m_PhysicalDevice->GetQueueFamilies();
 
@@ -73,7 +73,7 @@ namespace Mixture::Vulkan
         allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
         allocatorInfo.physicalDevice = m_PhysicalDevice->GetHandle();
         allocatorInfo.device = m_Device;
-        allocatorInfo.instance = instance->GetHandle();
+        allocatorInfo.instance = instance.GetHandle();
         allocatorInfo.pVulkanFunctions = &vulkanFunctions;
         allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
