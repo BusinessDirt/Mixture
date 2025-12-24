@@ -4,6 +4,8 @@
 #include "Mixture/Assets/IAsset.hpp"
 #include "Mixture/Assets/IAssetLoader.hpp"
 
+#include "Mixture/Render/RHI/IGraphicsContext.hpp"
+
 #include <array>
 
 namespace Mixture
@@ -15,6 +17,8 @@ namespace Mixture
 
         void Init();
         void SetAssetRoot(const std::filesystem::path& rootPath);
+        void SetGraphicsAPI(RHI::GraphicsAPI api) { m_GraphicsAPI = api; }
+        RHI::GraphicsAPI GetGraphicsAPI() const { return m_GraphicsAPI; }
 
         AssetHandle GetAsset(AssetType type, const std::filesystem::path& path);
 
@@ -29,7 +33,7 @@ namespace Mixture
             {
                 return std::static_pointer_cast<T>(it->second);
             }
-            
+
             return nullptr;
         }
 
@@ -38,6 +42,8 @@ namespace Mixture
 
     private:
         std::filesystem::path m_RootDirectory;
+        RHI::GraphicsAPI m_GraphicsAPI;
+
         std::unordered_map<UUID, Ref<IAsset>> m_Assets;
         std::unordered_map<AssetType, Scope<IAssetLoader>> m_Loaders;
     };

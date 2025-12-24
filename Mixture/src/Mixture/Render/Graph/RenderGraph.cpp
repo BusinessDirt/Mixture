@@ -347,4 +347,10 @@ namespace Mixture
             }
         }
     }
+
+    const RHI::TextureDesc& RenderGraph::GetResourceDesc(RGResourceHandle handle) const
+    {
+        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
+        return m_Resources[handle.ID].Desc;
+    }
 }

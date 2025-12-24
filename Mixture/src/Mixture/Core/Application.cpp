@@ -3,6 +3,7 @@
 
 #include "Mixture/Core/Time.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
+#include "Mixture/Render/PipelineCache.hpp"
 
 #include <Opal/Base.hpp>
 #include <ranges>
@@ -27,15 +28,20 @@ namespace Mixture
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
         m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
+        
+        PipelineCache::Init(m_Context->GetDevice());
+        
         m_RenderGraph = CreateScope<RenderGraph>();
 
         AssetManager::Get().Init();
         AssetManager::Get().SetAssetRoot("Assets");
+        AssetManager::Get().SetGraphicsAPI(appDescription.API);
         AssetManager::Get().GetAsset(AssetType::Shader, "Triangle.hlsl");
     }
 
     Application::~Application()
     {
+        PipelineCache::Shutdown();
         m_LayerStack.Shutdown();
     }
 

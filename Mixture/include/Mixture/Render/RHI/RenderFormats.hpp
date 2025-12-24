@@ -175,4 +175,17 @@ namespace Mixture::RHI
             default: return 0;
         }
     }
+
+    inline bool IsDepthFormat(Format format)
+    {
+        switch (format)
+        {
+            case Format::D32_FLOAT:
+            case Format::D24_UNORM_S8_UINT:
+            case Format::D32_FLOAT_S8_UINT:
+                return true;
+            default:
+                return false;
+        }
+    }
 }

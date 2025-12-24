@@ -106,6 +106,18 @@ namespace Mixture::RHI
          * @brief Debug name for the pipeline.
          */
         const char* DebugName = "Unnamed Pipeline";
+
+        bool operator==(const PipelineDesc& other) const
+        {
+            return VertexShader == other.VertexShader &&
+                   FragmentShader == other.FragmentShader &&
+                   Rasterizer == other.Rasterizer &&
+                   DepthStencil == other.DepthStencil &&
+                   Blend == other.Blend &&
+                   Topology == other.Topology &&
+                   ColorAttachmentFormats == other.ColorAttachmentFormats &&
+                   DepthAttachmentFormat == other.DepthAttachmentFormat;
+        }
     };
 
     /**

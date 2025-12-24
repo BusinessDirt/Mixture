@@ -107,6 +107,14 @@ namespace Mixture
          */
         RGResourceHandle GetResource(const std::string& name) const;
 
+        /**
+         * @brief Retrieves the description of a resource by handle.
+         *
+         * @param handle The handle of the resource.
+         * @return const RHI::TextureDesc& The description of the resource.
+         */
+        const RHI::TextureDesc& GetResourceDesc(RGResourceHandle handle) const;
+
     private:
         void SortPasses();
         void CalculateLifetimes();

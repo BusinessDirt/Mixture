@@ -336,6 +336,14 @@ namespace Mixture::RHI
          * @brief The width of lines when `polygonMode` is `Line`. Defaults to `1.0f`. 
          */
         float lineWidth = 1.0f;
+
+        bool operator==(const RasterizerState& other) const
+        {
+            return polygonMode == other.polygonMode &&
+                   cullMode == other.cullMode &&
+                   frontFace == other.frontFace &&
+                   lineWidth == other.lineWidth;
+        }
     };
 
     /**

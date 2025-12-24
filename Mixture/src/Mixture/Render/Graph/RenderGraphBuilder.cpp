@@ -2,13 +2,13 @@
 #include "Mixture/Render/Graph/RenderGraphBuilder.hpp"
 
 #include "Mixture/Render/Graph/RenderGraph.hpp"
+#include "Mixture/Render/PipelineCache.hpp"
 
 namespace Mixture
 {
     RenderGraphBuilder::RenderGraphBuilder(RenderGraph& graph, RGPassNode& passNode)
         : m_Graph(graph), m_PassNode(passNode)
-    {
-    }
+    {}
 
     RGResourceHandle RenderGraphBuilder::Read(RGResourceHandle handle)
     {
@@ -36,7 +36,7 @@ namespace Mixture
         info.Handle = handle;
         m_PassNode.Writes.push_back(info);
 
-        // Future Proofing: If implementing resource versioning (renaming),
+        // TODO: Future Proofing: If implementing resource versioning (renaming),
         // this is where a NEW handle ID would be returned.
         // For now, we return the same one.
         return handle;
@@ -54,9 +54,31 @@ namespace Mixture
         return info.Handle;
     }
 
-    RGResourceHandle RenderGraphBuilder::Create(const std::string& name, const RHI::TextureDesc& desc)
+    RGResourceHandle RenderGraphBuilder::CreateTexture(const std::string& name, const RHI::TextureDesc& desc)
     {
         // Delegate the actual allocation logic to the main graph
         return m_Graph.CreateResource(name, desc);
+    }
+
+    Ref<RHI::IPipeline> RenderGraphBuilder::CreatePipeline(RHI::PipelineDesc& desc)
+    {
+        desc.ColorAttachmentFormats.clear();
+        desc.DepthAttachmentFormat = RHI::Format::Undefined;
+
+        for (const auto& write : m_PassNode.Writes)
+        {
+            const auto& texDesc = m_Graph.GetResourceDesc(write.Handle);
+
+            if (RHI::IsDepthFormat(texDesc.Format))
+            {
+                desc.DepthAttachmentFormat = texDesc.Format;
+            }
+            else
+            {
+                desc.ColorAttachmentFormats.push_back(texDesc.Format);
+            }
+        }
+
+        return PipelineCache::GetPipeline(desc);
     }
 }

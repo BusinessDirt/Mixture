@@ -24,7 +24,6 @@ namespace Mixture::RHI
         None = 0,
         Vulkan,
         D3D12,
-        OpenGL,
         Metal
     };
 

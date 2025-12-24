@@ -203,7 +203,9 @@ namespace Mixture::Vulkan
 
     void CommandList::BindPipeline(RHI::IPipeline* pipeline)
     {
-
+        // auto* vkPipeline = static_cast<Pipeline*>(pipeline);
+        // m_CurrentPipelineLayout = vkPipeline->GetLayout();
+        // m_CommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline->GetHandle());
     }
 
     void CommandList::BindVertexBuffer(RHI::IBuffer* buffer, uint32_t binding)
@@ -247,7 +249,7 @@ namespace Mixture::Vulkan
 
     }
 
-    void CommandList::SetUniformBuffer(uint32_t binding, Ref<RHI::IBuffer> buffer)
+    void CommandList::SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer)
     {
         m_Bindings[binding].Buffer = buffer;
         m_Bindings[binding].Texture = nullptr;
@@ -256,7 +258,7 @@ namespace Mixture::Vulkan
         m_DescriptorsDirty = true;
     }
 
-    void CommandList::SetTexture(uint32_t binding, Ref<RHI::ITexture> texture)
+    void CommandList::SetTexture(uint32_t binding, RHI::ITexture* texture)
     {
         m_Bindings[binding].Buffer = nullptr;
         m_Bindings[binding].Texture = texture;
@@ -296,7 +298,7 @@ namespace Mixture::Vulkan
         {
             if (state.Buffer)
             {
-                auto vkBuf = std::static_pointer_cast<Buffer>(state.Buffer);
+                auto* vkBuf = static_cast<Buffer*>(state.Buffer);
                 vk::DescriptorBufferInfo info{};
                 info.buffer = vkBuf->GetHandle();
                 info.offset = 0;
@@ -306,7 +308,7 @@ namespace Mixture::Vulkan
             }
             else if (state.Texture)
             {
-                auto vkTex = std::static_pointer_cast<Texture>(state.Texture); // Assuming Texture class exists
+                auto* vkTex = static_cast<Texture*>(state.Texture); // Assuming Texture class exists
                 auto vkTexInfo = vkTex->GetDescriptorInfo();
                 builder.BindImage(binding, &vkTexInfo, state.Type, vk::ShaderStageFlagBits::eFragment);
             }
@@ -323,8 +325,6 @@ namespace Mixture::Vulkan
             // Set 0 is usually Global (Camera/Scene), bound elsewhere.
             const uint32_t DYNAMIC_SET_INDEX = 1;
 
-            // TODO: Current Pipeline Layout required here.
-            //       Capture it in BindPipeline()!
             m_CommandBuffer.bindDescriptorSets(
                 vk::PipelineBindPoint::eGraphics,
                 m_CurrentPipelineLayout,
