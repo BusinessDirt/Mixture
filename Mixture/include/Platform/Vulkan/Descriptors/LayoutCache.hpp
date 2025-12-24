@@ -12,7 +12,7 @@ namespace Mixture::Vulkan
 {
     /**
      * @brief Caches Descriptor Set Layouts to prevent redundant creation.
-     * 
+     *
      * Stores created layouts in a hash map and returns existing ones if requested again.
      */
     class DescriptorLayoutCache
@@ -20,7 +20,7 @@ namespace Mixture::Vulkan
     public:
         /**
          * @brief Constructor.
-         * 
+         *
          * @param device Reference to the logical device.
          */
         DescriptorLayoutCache(Device& device);
@@ -28,7 +28,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Creates or retrieves a descriptor set layout.
-         * 
+         *
          * @param info Creation info for the descriptor set layout.
          * @return vk::DescriptorSetLayout The created or cached layout.
          */

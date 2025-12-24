@@ -4,31 +4,35 @@ include "./vendor/premake/customizations/solution_items.lua"
 include "Dependencies.lua"
 
 workspace "Mixture"
-   architecture "x64"
-   configurations { "Debug", "Release", "Dist" }
-   startproject "App"
-   multiprocessorcompile ("on")
+    architecture "x64"
+    configurations { "Debug", "Release", "Dist" }
+    startproject "App"
+    multiprocessorcompile ("on")
 
-   -- Workspace-wide build options for MSVC
-   filter "system:windows"
-      buildoptions { "/EHsc", "/Zc:preprocessor", "/Zc:__cplusplus" }
+    postbuildcommands {
+        "{COPY} %{wks.location}/Assets %{cfg.targetdir}"
+    }
+
+    -- Workspace-wide build options for MSVC
+    filter "system:windows"
+        buildoptions { "/EHsc", "/Zc:preprocessor", "/Zc:__cplusplus" }
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Dependencies"
-   include "vendor/premake"
-   include "vendor/glfw"
-   include "vendor/imgui"
-   include "vendor/googletest"
+    include "vendor/premake"
+    include "vendor/glfw"
+    include "vendor/imgui"
+    include "vendor/googletest"
 group ""
 
 group "Core"
-   include "Opal/premake5.lua"
+    include "Opal/premake5.lua"
 	include "Mixture/premake5.lua"
 group ""
 
 group "Test"
-   include "Tests/premake5.lua"
+    include "Tests/premake5.lua"
 group ""
 
 include "App/premake5.lua"

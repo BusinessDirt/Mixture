@@ -2,6 +2,7 @@
 #include "Mixture/Core/Application.hpp"
 
 #include "Mixture/Core/Time.hpp"
+#include "Mixture/Assets/AssetManager.hpp"
 
 #include <Opal/Base.hpp>
 #include <ranges>
@@ -27,6 +28,10 @@ namespace Mixture
 
         m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
         m_RenderGraph = CreateScope<RenderGraph>();
+
+        AssetManager::Get().Init();
+        AssetManager::Get().SetAssetRoot("Assets");
+        AssetManager::Get().GetAsset(AssetType::Shader, "Triangle.hlsl");
     }
 
     Application::~Application()
