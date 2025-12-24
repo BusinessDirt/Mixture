@@ -57,11 +57,20 @@ namespace Mixture
         RGResourceHandle CreateTexture(const std::string& name, const RHI::TextureDesc& desc);
 
         /**
+         * @brief Loads a shader (or retrieves it from cache) using the AssetSystem.
+         * 
+         * @param path Relative path to the shader source file (e.g. "Assets/Shader/Triangle.hlsl")
+         * @param stage The shader stage (Vertex, Fragment, etc.)
+         * @return RHI::IShader* Pointer to the loaded shader.
+         */
+        RHI::IShader* LoadShader(const std::string& path, RHI::ShaderStage stage);
+
+        /**
          * @brief Creates (or retrieves from cache) a pipeline state object.
          * Automatically fills in the Color/Depth attachment formats based on the pass Writes.
          *
          * @param desc The pipeline description (Shaders, State). Formats can be left empty.
-         * @return Ref<RHI::IPipeline> The created pipeline.
+         * @return RHI::IPipeline* The created pipeline.
          */
         RHI::IPipeline* CreatePipeline(RHI::PipelineDesc& desc);
 

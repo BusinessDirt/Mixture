@@ -3,6 +3,8 @@
 
 #include "Mixture/Render/Graph/RenderGraph.hpp"
 #include "Mixture/Render/PipelineCache.hpp"
+#include "Mixture/Render/ShaderLibrary.hpp"
+#include "Mixture/Assets/AssetManager.hpp"
 
 namespace Mixture
 {
@@ -58,6 +60,13 @@ namespace Mixture
     {
         // Delegate the actual allocation logic to the main graph
         return m_Graph.CreateResource(name, desc);
+    }
+
+    RHI::IShader* RenderGraphBuilder::LoadShader(const std::string& path, RHI::ShaderStage stage)
+    {
+        AssetHandle handle = AssetManager::Get().GetAsset(AssetType::Shader, path);
+        RHI::IShader* shader = ShaderLibrary::GetShader(handle, stage);
+        return shader;
     }
 
     RHI::IPipeline* RenderGraphBuilder::CreatePipeline(RHI::PipelineDesc& desc)

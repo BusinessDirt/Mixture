@@ -47,9 +47,8 @@ namespace Mixture
 
                 // Define Pipeline Requirements (Shaders + State)
                 RHI::PipelineDesc desc;
-                // Assume you have handles or pointers to shaders
-                //desc.VertexShader = myVertexShader.get();
-                //desc.FragmentShader = myPixelShader.get();
+                desc.VertexShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Vertex);
+                desc.FragmentShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Fragment);
                 desc.Rasterizer.cullMode = RHI::CullMode::Back;
                 // NO need to set ColorAttachmentFormats/DepthAttachmentFormat manually!
 
@@ -61,7 +60,7 @@ namespace Mixture
             {
                 // Bind Pipeline and Draw
                 cmd->BindPipeline(data.Pipeline);
-                cmd->Draw(3, 1, 0, 0);
+                //cmd->Draw(3, 1, 0, 0);
             }
         );
     }

@@ -21,13 +21,13 @@ namespace Mixture {
     {
         auto it = s_Cache.find(desc);
         if (it != s_Cache.end())
-            return it->second;
+            return it->second.get();
 
-        OPAL_ASSERT("Renderer", s_Device, "PipelineCache not initialized!");
+        OPAL_ASSERT("Core/Assets", s_Device, "PipelineCache not initialized!");
 
         Ref<RHI::IPipeline> pipeline = s_Device->CreatePipeline(desc);
         s_Cache[desc] = pipeline;
-        return pipeline;
+        return pipeline.get();
     }
 
     void PipelineCache::Clear()

@@ -93,7 +93,7 @@ namespace Mixture::Vulkan
         m_Device.destroy();
 	}
 
-    Ref<RHI::IShader> Device::CreateShader(const std::string &filepath, RHI::ShaderStage stage)
+    Ref<RHI::IShader> Device::CreateShader(const void* data, size_t size, RHI::ShaderStage stage)
     {
         return nullptr;
     }

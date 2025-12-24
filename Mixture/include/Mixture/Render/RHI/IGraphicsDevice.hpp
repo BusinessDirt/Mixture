@@ -31,13 +31,14 @@ namespace Mixture::RHI
         // ---------------------------------------------------------------------
 
         /**
-         * Loads a shader from disk (SPIR-V).
+         * Creates a shader from a binary blob (SPIR-V / DXIL).
          *
-         * @param filepath The path to the shader file.
+         * @param data Pointer to the shader bytecode.
+         * @param size Size of the bytecode in bytes.
          * @param stage The shader stage.
          * @return A reference to the created shader.
          */
-        virtual Ref<IShader> CreateShader(const std::string& filepath, ShaderStage stage) = 0;
+        virtual Ref<IShader> CreateShader(const void* data, size_t size, ShaderStage stage) = 0;
 
         /**
          * Creates a buffer (Vertex, Index, Uniform).
