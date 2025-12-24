@@ -2,6 +2,7 @@
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
+#include "Mixture/Util/Util.hpp"
 #include <unordered_map>
 
 namespace Mixture {
@@ -12,7 +13,7 @@ namespace Mixture {
         static void Init(RHI::IGraphicsDevice& device);
         static void Shutdown();
 
-        static Ref<RHI::IPipeline> GetPipeline(const RHI::PipelineDesc& desc);
+        static RHI::IPipeline* GetPipeline(const RHI::PipelineDesc& desc);
         static void Clear();
 
     private:
@@ -20,48 +21,38 @@ namespace Mixture {
         {
             std::size_t operator()(const RHI::PipelineDesc& desc) const
             {
-                std::size_t h = 0;
-                auto hashCombine = [](std::size_t& seed, std::size_t val) {
-                    seed ^= val + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-                };
+                std::size_t seed = 0;
 
-                hashCombine(h, std::hash<void*>{}(desc.VertexShader));
-                hashCombine(h, std::hash<void*>{}(desc.FragmentShader));
+                Util::HashCombine(seed, desc.VertexShader, desc.FragmentShader);
 
                 // Rasterizer
-                hashCombine(h, (size_t)desc.Rasterizer.polygonMode);
-                hashCombine(h, (size_t)desc.Rasterizer.cullMode);
-                hashCombine(h, (size_t)desc.Rasterizer.frontFace);
-                // Hash float as int representation for stability? Or just cast.
-                // Assuming standard IEEE 754, bit_cast or reinterpret_cast is okay for hashing equality.
-                // But let's just use the value if it's typical 1.0f. 
-                // A safer way for floats in hash:
-                // hashCombine(h, std::hash<float>{}(desc.Rasterizer.lineWidth)); 
+                Util::HashCombine(seed, desc.Rasterizer.polygonMode,
+                                        desc.Rasterizer.cullMode,
+                                        desc.Rasterizer.frontFace,
+                                        desc.Rasterizer.lineWidth);
 
                 // DepthStencil
-                hashCombine(h, desc.DepthStencil.depthTest);
-                hashCombine(h, desc.DepthStencil.depthWrite);
-                hashCombine(h, (size_t)desc.DepthStencil.depthCompareOp);
+                Util::HashCombine(seed, desc.DepthStencil.depthTest,
+                                        desc.DepthStencil.depthWrite,
+                                        desc.DepthStencil.depthCompareOp);
 
                 // Blend
-                hashCombine(h, desc.Blend.enabled);
-                hashCombine(h, (size_t)desc.Blend.srcColor);
-                hashCombine(h, (size_t)desc.Blend.dstColor);
-                hashCombine(h, (size_t)desc.Blend.colorOp);
-                hashCombine(h, (size_t)desc.Blend.srcAlpha);
-                hashCombine(h, (size_t)desc.Blend.dstAlpha);
-                hashCombine(h, (size_t)desc.Blend.alphaOp);
+                Util::HashCombine(seed, desc.Blend.enabled,
+                                        desc.Blend.srcColor,
+                                        desc.Blend.dstColor,
+                                        desc.Blend.colorOp,
+                                        desc.Blend.srcAlpha,
+                                        desc.Blend.dstAlpha,
+                                        desc.Blend.alphaOp);
 
                 // Topology
-                hashCombine(h, (size_t)desc.Topology);
+                Util::HashCombine(seed, desc.Topology);
 
                 // Formats
-                for (auto f : desc.ColorAttachmentFormats)
-                    hashCombine(h, (size_t)f);
-                
-                hashCombine(h, (size_t)desc.DepthAttachmentFormat);
+                for (auto f : desc.ColorAttachmentFormats) Util::HashCombine(seed, f);
+                Util::HashCombine(seed, desc.DepthAttachmentFormat);
 
-                return h;
+                return seed;
             }
         };
 

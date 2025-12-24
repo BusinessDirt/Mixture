@@ -60,7 +60,7 @@ namespace Mixture
         return m_Graph.CreateResource(name, desc);
     }
 
-    Ref<RHI::IPipeline> RenderGraphBuilder::CreatePipeline(RHI::PipelineDesc& desc)
+    RHI::IPipeline* RenderGraphBuilder::CreatePipeline(RHI::PipelineDesc& desc)
     {
         desc.ColorAttachmentFormats.clear();
         desc.DepthAttachmentFormat = RHI::Format::Undefined;

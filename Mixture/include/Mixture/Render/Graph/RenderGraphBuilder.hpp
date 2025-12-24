@@ -63,7 +63,7 @@ namespace Mixture
          * @param desc The pipeline description (Shaders, State). Formats can be left empty.
          * @return Ref<RHI::IPipeline> The created pipeline.
          */
-        Ref<RHI::IPipeline> CreatePipeline(RHI::PipelineDesc& desc);
+        RHI::IPipeline* CreatePipeline(RHI::PipelineDesc& desc);
 
     private:
         RenderGraph& m_Graph;
