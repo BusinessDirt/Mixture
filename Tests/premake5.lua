@@ -15,6 +15,7 @@ project "Tests"
         "%{IncludeDir.Vulkan}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.stb_image}",
+        "%{IncludeDir.spirv_reflect}",
         "%{IncludeDir.googletest}"
     }
 
@@ -23,6 +24,7 @@ project "Tests"
         "Opal",
         "Mixture",
         "ImGui",
+        "SPIRV-Reflect",
         "GoogleTest"
     }
 

@@ -21,6 +21,7 @@ project "Mixture"
         "%{IncludeDir.Vulkan}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glm}",
+        "%{IncludeDir.spirv_reflect}",
         "%{IncludeDir.stb_image}"
     }
 

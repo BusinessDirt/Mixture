@@ -7,5 +7,6 @@ namespace Mixture
     {
     public:
         static Vector<uint8_t> Compile(const std::string& source);
+        static Vector<uint8_t> ConvertToMSL(const Vector<uint8_t>& spv);
     };
 }

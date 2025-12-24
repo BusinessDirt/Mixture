@@ -4,6 +4,9 @@
 #include "Platform/Vulkan/Resources/Texture.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
 
+#include "Platform/Vulkan/Pipeline/Pipeline.hpp"
+#include "Platform/Vulkan/Pipeline/Shader.hpp"
+
 #include <vector>
 #include <set>
 
@@ -95,7 +98,7 @@ namespace Mixture::Vulkan
 
     Ref<RHI::IShader> Device::CreateShader(const void* data, size_t size, RHI::ShaderStage stage)
     {
-        return nullptr;
+        return CreateRef<Shader>(data, size, stage);
     }
 
     Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc)
@@ -110,6 +113,6 @@ namespace Mixture::Vulkan
 
     Ref<RHI::IPipeline> Device::CreatePipeline(const RHI::PipelineDesc& desc)
     {
-        return nullptr;
+        return CreateRef<Pipeline>(desc);
     }
 }

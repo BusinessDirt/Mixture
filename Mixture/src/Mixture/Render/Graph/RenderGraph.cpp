@@ -5,19 +5,6 @@
 
 namespace Mixture
 {
-    static bool IsDepthFormat(RHI::Format format)
-    {
-        switch (format)
-        {
-            case RHI::Format::D32_FLOAT:
-            case RHI::Format::D24_UNORM_S8_UINT:
-            case RHI::Format::D32_FLOAT_S8_UINT:
-                return true;
-            default:
-                return false;
-        }
-    }
-
     void RenderGraph::Clear()
     {
         m_PassAllocator.Reset();
