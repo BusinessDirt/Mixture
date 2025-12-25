@@ -9,33 +9,6 @@
 
 namespace Mixture::Vulkan
 {
-    namespace
-    {
-        namespace Utils
-        {
-            static VkFormat RHIFormatToVulkanFormat(RHI::Format format)
-            {
-                switch (format)
-                {
-                    case RHI::Format::R8_UNORM:           return VK_FORMAT_R8_UNORM;
-                    case RHI::Format::R8G8_UNORM:         return VK_FORMAT_R8G8_UNORM;
-                    case RHI::Format::R8G8B8_UNORM:       return VK_FORMAT_R8G8B8_UNORM;
-                    case RHI::Format::R8G8B8A8_UNORM:     return VK_FORMAT_R8G8B8A8_UNORM;
-                    case RHI::Format::B8G8R8A8_UNORM:     return VK_FORMAT_B8G8R8A8_UNORM;
-                    case RHI::Format::R16_FLOAT:          return VK_FORMAT_R16_SFLOAT;
-                    case RHI::Format::R16G16_FLOAT:       return VK_FORMAT_R16G16_SFLOAT;
-                    case RHI::Format::R16G16B16_FLOAT:    return VK_FORMAT_R16G16B16_SFLOAT;
-                    case RHI::Format::R16G16B16A16_FLOAT: return VK_FORMAT_R16G16B16A16_SFLOAT;
-                    case RHI::Format::R32_FLOAT:          return VK_FORMAT_R32_SFLOAT;
-                    case RHI::Format::R32G32_FLOAT:       return VK_FORMAT_R32G32_SFLOAT;
-                    case RHI::Format::R32G32B32_FLOAT:    return VK_FORMAT_R32G32B32_SFLOAT;
-                    case RHI::Format::R32G32B32A32_FLOAT: return VK_FORMAT_R32G32B32A32_SFLOAT;
-                    default: return VK_FORMAT_UNDEFINED;
-                }
-            }
-        }
-    }
-
     Texture::Texture(const RHI::TextureDesc& spec)
         : m_Width(spec.Width), m_Height(spec.Height), m_Format(spec.Format),
           m_DebugName(spec.DebugName), m_OwnsImage(true)
@@ -193,7 +166,7 @@ namespace Mixture::Vulkan
         VkImageCreateInfo imageInfo = {};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
-        imageInfo.format = Utils::RHIFormatToVulkanFormat(m_Format);
+        imageInfo.format = static_cast<VkFormat>(EnumMapper::MapFormat(m_Format));
         imageInfo.extent.width = m_Width;
         imageInfo.extent.height = m_Height;
         imageInfo.extent.depth = 1;

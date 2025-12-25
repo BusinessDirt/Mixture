@@ -2,6 +2,7 @@
 #include "Platform/Vulkan/Definitions.hpp"
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
+#include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -13,7 +14,11 @@ namespace Mixture::Vulkan
 
         RHI::ShaderStage GetStage() const override { return m_Stage; }
 
+        vk::PipelineShaderStageCreateInfo CreateInfo();
+
     private:
         RHI::ShaderStage m_Stage;
+        ShaderReflectionData m_ReflectionData;
+        vk::ShaderModule m_Handle;
     };
 }

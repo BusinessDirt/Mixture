@@ -6,6 +6,7 @@
  */
 
 #include "Mixture/Core/Base.hpp"
+#include "Platform/Vulkan/EnumMapper.hpp"
 
 #include <vulkan/vulkan.hpp>
 #include <optional>
