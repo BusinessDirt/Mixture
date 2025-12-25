@@ -5,6 +5,7 @@
 #include "Platform/Vulkan/Resources/Texture.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
 #include "Platform/Vulkan/Descriptors/Builder.hpp"
+#include "Platform/Vulkan/Pipeline/Pipeline.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -203,9 +204,9 @@ namespace Mixture::Vulkan
 
     void CommandList::BindPipeline(RHI::IPipeline* pipeline)
     {
-        // auto* vkPipeline = static_cast<Pipeline*>(pipeline);
-        // m_CurrentPipelineLayout = vkPipeline->GetLayout();
-        // m_CommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline->GetHandle());
+        auto* vkPipeline = static_cast<Pipeline*>(pipeline);
+        m_CurrentPipelineLayout = vkPipeline->GetLayout();
+        m_CommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline->GetHandle());
     }
 
     void CommandList::BindVertexBuffer(RHI::IBuffer* buffer, uint32_t binding)

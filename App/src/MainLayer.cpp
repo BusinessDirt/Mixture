@@ -49,18 +49,14 @@ namespace Mixture
                 RHI::PipelineDesc desc;
                 desc.VertexShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Vertex);
                 desc.FragmentShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Fragment);
-                desc.Rasterizer.cullMode = RHI::CullMode::Back;
-                // NO need to set ColorAttachmentFormats/DepthAttachmentFormat manually!
-
-                // Create (or Retrieve) the Pipeline
-                // The builder will fill in the formats based on 'data.Output' above.
+                desc.Rasterizer.cullMode = RHI::CullMode::Front;
                 data.Pipeline = builder.CreatePipeline(desc);
             },
-            [&](const RenderGraphRegistry& registry, const GamePassData& data, Ref<RHI::ICommandList> cmd)
+            [&](const RenderGraphRegistry& registry, const GamePassData& data, RHI::ICommandList* cmd)
             {
                 // Bind Pipeline and Draw
                 cmd->BindPipeline(data.Pipeline);
-                //cmd->Draw(3, 1, 0, 0);
+                cmd->Draw(3, 1, 0, 0);
             }
         );
     }

@@ -1,5 +1,7 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/Graph/RenderGraph.hpp"
+
+#include "Mixture/Core/Application.hpp"
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
@@ -22,7 +24,7 @@ namespace Mixture
         CalculateBarriers();
     }
 
-    void RenderGraph::Execute(Ref<RHI::ICommandList> cmdList, RHI::IGraphicsContext* context)
+    void RenderGraph::Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context)
     {
         // Realize Resources (Allocation Phase)
         for (const auto& node : m_Resources)
@@ -30,7 +32,7 @@ namespace Mixture
             if (!node.IsImported)
             {
                 auto texture = context->GetDevice().CreateTexture(node.Desc);
-                m_Registry.ImportTexture(node.Handle, texture);
+                m_Registry.ImportTexture(node.Handle, texture.get());
             }
 
             // Imported resources are already in m_Registry via ImportResource()
@@ -103,7 +105,11 @@ namespace Mixture
                 // Only call BeginRendering if we actually have attachments (Raster Pass)
                 if (!renderingInfo.ColorAttachments.empty() || renderingInfo.DepthAttachment)
                 {
+                    uint32_t width = Application::Get().GetContext().GetSwapchainWidth();
+                    uint32_t height = Application::Get().GetContext().GetSwapchainHeight();
                     cmdList->BeginRendering(renderingInfo);
+                    cmdList->SetViewport(0, 0, width, height);
+                    cmdList->SetScissor(0, 0, width, height);
                     pass.Execute(m_Registry, cmdList); // Draw commands happen here
                     cmdList->EndRendering();
                 }
@@ -117,7 +123,7 @@ namespace Mixture
         }
     }
 
-    RGResourceHandle RenderGraph::ImportResource(const std::string& name, Ref<RHI::ITexture> resource)
+    RGResourceHandle RenderGraph::ImportResource(const std::string& name, RHI::ITexture* resource)
     {
         // Create a handle/node just like a normal resource
         RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
@@ -129,6 +135,7 @@ namespace Mixture
         node.Desc.Width = resource->GetWidth();   // Extract info from the real object
         node.Desc.Height = resource->GetHeight();
         node.Desc.Format = resource->GetFormat();
+        node.Desc.InitialState = RHI::ResourceState::Undefined;
         node.IsImported = true;
         node.ExternalTexture = resource; // Keep it safe
 
@@ -177,8 +184,8 @@ namespace Mixture
         size_t passCount = m_Passes.size();
 
         // Build Adjacency List
-        std::vector<std::vector<size_t>> adjacencyList(passCount);
-        std::vector<int> inDegree(passCount, 0);
+        Vector<Vector<size_t>> adjacencyList(passCount);
+        Vector<int> inDegree(passCount, 0);
 
         // Track who wrote to a resource last (ResourceID -> PassIndex)
         std::unordered_map<uint32_t, size_t> resourceWriters;
@@ -207,11 +214,11 @@ namespace Mixture
         }
 
         // Kahn's Algorithm (Standard Topological Sort)
-        std::vector<size_t> queue; // Passes with 0 dependencies
+        Vector<size_t> queue; // Passes with 0 dependencies
         for (size_t i = 0; i < passCount; ++i)
             if (inDegree[i] == 0) queue.push_back(i);
 
-        std::vector<RGPassNode> sortedPasses;
+        Vector<RGPassNode> sortedPasses;
         sortedPasses.reserve(passCount);
 
         while (!queue.empty())
@@ -287,50 +294,75 @@ namespace Mixture
 
     void RenderGraph::CalculateBarriers()
     {
-        // Track current state of every resource (Index = ResourceID)
-        // Default state is usually "Undefined" or "ShaderResource" depending on implementation
-        std::vector<RHI::ResourceState> resourceStates(m_Resources.size(), RHI::ResourceState::Undefined);
+        Vector<RHI::ResourceState> currentStates(m_Resources.size());
+        Vector<bool> wasLastWrite(m_Resources.size(), false);
+
+        for (size_t i = 0; i < m_Resources.size(); ++i)
+        {
+            // For internal resources, 'Undefined' is fine.
+            // For imported ones, use their real state.
+            currentStates[i] = m_Resources[i].Desc.InitialState;
+        }
 
         for (auto& pass : m_Passes)
         {
             pass.Barriers.clear();
 
-            // Handle Reads (Need ShaderResource state)
+            // --- Helper Lambda to Inject Barrier ---
+            auto TransitionResource = [&](RGResourceHandle handle, RHI::ResourceState targetState, bool isWrite)
+            {
+                uint32_t id = handle.ID;
+                RHI::ResourceState current = currentStates[id];
+                bool previousWasWrite = wasLastWrite[id];
+
+                // We need a barrier if:
+                // 1. The Layout/State needs to change (e.g. SRV -> RTV)
+                // 2. OR: The previous access was a Write (Hazard: RAW or WAW)
+                // 3. OR: The current access is a Write AND previous was Read (Hazard: WAR)
+                //    (Note: WAR is often handled implicitly by subpass deps, but explicit barriers are safer)
+
+                bool layoutChanged = (current != targetState);
+                bool hazardExists = previousWasWrite || (isWrite && current != RHI::ResourceState::Undefined);
+
+                // Optimization: Read-after-Read (RAR) usually needs no barrier.
+                if (!isWrite && !previousWasWrite && !layoutChanged)
+                {
+                    return;
+                }
+
+                if (layoutChanged || hazardExists)
+                {
+                    RGBarrier barrier;
+                    barrier.Resource = handle;
+                    barrier.Before = current;
+                    barrier.After = targetState;
+
+                    // Add to the pass
+                    pass.Barriers.push_back(barrier);
+
+                    // Update tracking
+                    currentStates[id] = targetState;
+                }
+
+                wasLastWrite[id] = isWrite;
+            };
+
+            // --- 1. Process Reads ---
             for (auto& handle : pass.Reads)
             {
-                RHI::ResourceState current = resourceStates[handle.ID];
-                RHI::ResourceState target = RHI::ResourceState::ShaderResource;
-
-                if (current != target)
-                {
-                    // Insert Barrier: Current -> Target
-                    pass.Barriers.push_back({ handle, current, target });
-                    resourceStates[handle.ID] = target;
-                }
+                TransitionResource(handle, RHI::ResourceState::ShaderResource, false);
             }
 
-            // Handle Writes (Need RenderTarget or CopyDest state)
-            for (auto& write : pass.Writes)
+            // --- 2. Process Writes ---
+            for (auto& info : pass.Writes)
             {
-                auto& handle = write.Handle;
-                RHI::ResourceState current = resourceStates[handle.ID];
+                RGResourceHandle handle = info.Handle;
 
-                // Determine target based on usage
-                // Check if it's a Depth texture or standard Color
+                // Determine Target State
                 bool isDepth = IsDepthFormat(m_Resources[handle.ID].Desc.Format);
                 RHI::ResourceState target = isDepth ? RHI::ResourceState::DepthStencilWrite : RHI::ResourceState::RenderTarget;
 
-                // Optimization: If it's already writable, we might not need a barrier
-                // BUT, Write-After-Write hazards generally need a barrier or at least a memory barrier.
-                // However, if the state is already RenderTarget, it implies the layout is correct.
-                // Vulkan pipeline barriers also handle synchronization.
-                // For safety, we emit a barrier if state differs OR if we want to be safe about WAW.
-                // But simplified logic: only if state differs.
-                if (current != target)
-                {
-                    pass.Barriers.push_back({ handle, current, target });
-                    resourceStates[handle.ID] = target;
-                }
+                TransitionResource(handle, target, true);
             }
         }
     }

@@ -29,10 +29,6 @@ namespace Mixture
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
         m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
-
-        PipelineCache::Init(m_Context->GetDevice());
-        ShaderLibrary::Init(m_Context->GetDevice());
-
         m_RenderGraph = CreateScope<RenderGraph>();
 
         AssetManager::Get().Init();
@@ -42,8 +38,8 @@ namespace Mixture
 
     Application::~Application()
     {
-        PipelineCache::Shutdown();
         m_LayerStack.Shutdown();
+        m_Context.reset();
     }
 
     void Application::Close()
@@ -65,7 +61,7 @@ namespace Mixture
 
             m_RenderGraph->Clear();
 
-            if (Ref<RHI::ITexture> backbufferTex = m_Context->BeginFrame())
+            if (RHI::ITexture* backbufferTex = m_Context->BeginFrame())
             {
                 m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
 
@@ -76,7 +72,7 @@ namespace Mixture
                 if (auto commandList = m_Context->GetCommandBuffer())
                 {
                     commandList->Begin();
-                    m_RenderGraph->Execute(commandList, m_Context.get());
+                    m_RenderGraph->Execute(commandList.get(), m_Context.get());
                     commandList->End();
                 }
 

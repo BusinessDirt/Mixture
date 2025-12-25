@@ -5,7 +5,7 @@
 namespace Mixture
 {
     RHI::IGraphicsDevice* ShaderLibrary::s_Device = nullptr;
-    std::unordered_map<UUID, Ref<RHI::IShader>> ShaderLibrary::s_Cache;
+    std::unordered_map<ShaderCacheKey, Ref<RHI::IShader>, ShaderCacheKeyHash> ShaderLibrary::s_Cache;
 
     void ShaderLibrary::Init(RHI::IGraphicsDevice& device)
     {
@@ -22,18 +22,18 @@ namespace Mixture
     {
         if (!handle.ID.IsValid()) return nullptr;
 
-        auto it = s_Cache.find(handle.ID);
+        ShaderCacheKey key = { handle.ID, stage };
+
+        auto it = s_Cache.find(key);
         if (it != s_Cache.end())
-        {
             return it->second.get();
-        }
 
         // Load and Create
         auto shaderAsset = AssetManager::Get().GetResource<ShaderAsset>(handle);
         if (shaderAsset && shaderAsset->IsValid())
         {
             auto shader = s_Device->CreateShader(shaderAsset->GetBufferPointer(), shaderAsset->GetBufferSize(), stage);
-            s_Cache[handle.ID] = shader;
+            s_Cache[key] = shader;
             return shader.get();
         }
 
@@ -45,9 +45,21 @@ namespace Mixture
     {
         if (!handle.ID.IsValid()) return;
 
-        // Removing from cache will force GetShader to recreate it next time it's requested
-        // assuming the AssetManager has already reloaded the ShaderAsset data.
-        s_Cache.erase(handle.ID);
+        // Iterate through the cache and remove ALL entries matching this Asset ID
+        for (auto it = s_Cache.begin(); it != s_Cache.end(); )
+        {
+            if (it->first.AssetID == handle.ID)
+            {
+                // Erase returns the iterator to the next element
+                it = s_Cache.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        OPAL_INFO("Core/Assets", "Reloaded Shader Asset: {}", (uint64_t)handle.ID);
     }
 
     void ShaderLibrary::Clear()

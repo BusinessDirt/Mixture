@@ -36,20 +36,11 @@ namespace Mixture
             uint32_t ShaderStage;
         };
 
-        enum class AttributeFormat
-        {
-            Float, Vec2, Vec3, Vec4,
-            Int, IVec2, IVec3, IVec4,
-            UInt, UVec2, UVec3, UVec4,
-            Mat3, Mat4,
-            Unknown
-        };
-
         struct VertexAttribute
         {
             std::string Name;
             uint32_t Location;
-            AttributeFormat Format;
+            RHI::Format Format;
             uint32_t Size;
             uint32_t Offset;
         };

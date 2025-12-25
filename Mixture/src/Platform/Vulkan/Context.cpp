@@ -2,6 +2,8 @@
 #include "Platform/Vulkan/Context.hpp"
 
 #include "Mixture/Core/Application.hpp"
+#include "Mixture/Render/PipelineCache.hpp"
+#include "Mixture/Render/ShaderLibrary.hpp"
 
 #include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/Instance.hpp"
@@ -43,9 +45,9 @@ namespace Mixture::Vulkan
         m_Device = CreateScope<Device>(*m_Instance, *m_PhysicalDevice);
         m_Swapchain = CreateScope<Swapchain>(*m_PhysicalDevice, *m_Device, *m_Surface, appDescription.Width, appDescription.Height);
 
-        size_t imageCount = m_Swapchain->GetImageCount();
+        uint32_t imagecount = m_Swapchain->GetImageCount();
         m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
-        m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imageCount);
+        m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imagecount);
         m_InFlightFences = CreateScope<Fences>(*m_Device, MAX_FRAMES_IN_FLIGHT, true);
 
         // Create Command Pool
@@ -56,20 +58,25 @@ namespace Mixture::Vulkan
         m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(*m_Device);
         m_DescriptorAllocators = CreateScope<DescriptorAllocators>(*m_Device, MAX_FRAMES_IN_FLIGHT);
 
+        PipelineCache::Init(*m_Device);
+        ShaderLibrary::Init(*m_Device);
+
         OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
     }
 
     Context::~Context()
     {
         m_Device->WaitForIdle();
+        PipelineCache::Shutdown();
+        ShaderLibrary::Shutdown();
         s_Instance = nullptr;
     }
 
     DescriptorAllocator* Context::GetCurrentDescriptorAllocator() const { return m_DescriptorAllocators->Get(m_CurrentFrame); }
     DescriptorLayoutCache* Context::GetDescriptorLayoutCache() const { return m_DescriptorLayoutCache.get(); }
 
-    uint32_t Context::GetSwapchainWidth() { return m_Swapchain->GetExtent().width; }
-    uint32_t Context::GetSwapchainHeight() { return m_Swapchain->GetExtent().height; }
+    uint32_t Context::GetSwapchainWidth() const { return m_Swapchain->GetExtent().width; }
+    uint32_t Context::GetSwapchainHeight() const { return m_Swapchain->GetExtent().height; }
 
     RHI::IGraphicsDevice& Context::GetDevice() const { return *m_Device; }
 
@@ -81,19 +88,17 @@ namespace Mixture::Vulkan
             if (width == 0 || height == 0) return;
 
             m_Device->WaitForIdle();
-
             m_Swapchain->Recreate(width, height);
 
-            // Recreate Semaphores (Image count might have changed!)
-            size_t imageCount = m_Swapchain->GetImageCount();
+            uint32_t imagecount = m_Swapchain->GetImageCount();
             m_RenderFinishedSemaphores.reset();
-            m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imageCount);
+            m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imagecount);
 
             OPAL_INFO("Core/Vulkan", "Swapchain Resized to {} x {}", width, height);
         }
     }
 
-    Ref<RHI::ITexture> Context::BeginFrame()
+    RHI::ITexture* Context::BeginFrame()
     {
         if (m_IsFrameStarted)
         {
@@ -113,10 +118,11 @@ namespace Mixture::Vulkan
         m_DescriptorAllocators->Get(m_CurrentFrame)->ResetPools();
 
         uint32_t imageIndex;
-        bool acquired = m_Swapchain->AcquireNextImage(imageIndex, m_ImageAvailableSemaphores->Get(m_CurrentFrame));
-
-        if (!acquired) {
+        bool acquired = m_Swapchain->AcquireNextImage(&imageIndex, m_ImageAvailableSemaphores->Get(m_CurrentFrame));
+        if (!acquired)
+        {
             // TODO: Handle resize...
+            OPAL_LOG_DEBUG("Core/Vulkan", "Failed to acquire swapchain image");
             return nullptr;
         }
 
@@ -156,7 +162,14 @@ namespace Mixture::Vulkan
         submitInfo.pSignalSemaphores = signalSemaphores;
 
         // Signal the fence for THIS frame
-        m_Device->GetGraphicsQueue().submit(submitInfo, m_InFlightFences->Get(m_CurrentFrame));
+        try
+        {
+            m_Device->GetGraphicsQueue().submit(submitInfo, m_InFlightFences->Get(m_CurrentFrame));
+        }
+        catch (vk::SystemError& err)
+        {
+            OPAL_CRITICAL("Submit Failed: {}", err.what());
+        }
 
         // Present
         bool success = m_Swapchain->Present(m_ImageIndex, m_RenderFinishedSemaphores->Get(m_ImageIndex));
@@ -170,8 +183,8 @@ namespace Mixture::Vulkan
         m_IsFrameStarted = false;
     }
 
-    Ref<RHI::ICommandList> Context::GetCommandBuffer()
+    Scope<RHI::ICommandList> Context::GetCommandBuffer()
     {
-        return CreateRef<CommandList>(m_CommandBuffers->Get(m_CurrentFrame), m_Swapchain->GetImages()[m_ImageIndex]);
+        return CreateScope<CommandList>(m_CommandBuffers->Get(m_CurrentFrame), m_Swapchain->GetImages()[m_ImageIndex]);
     }
 }

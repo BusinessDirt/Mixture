@@ -15,16 +15,16 @@ namespace Mixture
         namespace Util
         {
             // Helper to convert SPIRV-Reflect formats to our clean enum
-            ShaderReflectionData::AttributeFormat ConvertFormat(SpvReflectFormat fmt)
+            RHI::Format ConvertFormat(SpvReflectFormat fmt)
             {
                 switch (fmt) {
-                    case SPV_REFLECT_FORMAT_R32_SFLOAT:          return ShaderReflectionData::AttributeFormat::Float;
-                    case SPV_REFLECT_FORMAT_R32G32_SFLOAT:       return ShaderReflectionData::AttributeFormat::Vec2;
-                    case SPV_REFLECT_FORMAT_R32G32B32_SFLOAT:    return ShaderReflectionData::AttributeFormat::Vec3;
-                    case SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT: return ShaderReflectionData::AttributeFormat::Vec4;
-                    case SPV_REFLECT_FORMAT_R32_SINT:            return ShaderReflectionData::AttributeFormat::Int;
-                    case SPV_REFLECT_FORMAT_R32G32B32A32_SINT:   return ShaderReflectionData::AttributeFormat::IVec4;
-                    default:                                     return ShaderReflectionData::AttributeFormat::Unknown;
+                    case SPV_REFLECT_FORMAT_R32_SFLOAT:          return RHI::Format::R32_FLOAT;
+                    case SPV_REFLECT_FORMAT_R32G32_SFLOAT:       return RHI::Format::R32G32_FLOAT;
+                    case SPV_REFLECT_FORMAT_R32G32B32_SFLOAT:    return RHI::Format::R32G32B32_FLOAT;
+                    case SPV_REFLECT_FORMAT_R32G32B32A32_SFLOAT: return RHI::Format::R32G32B32A32_FLOAT;
+                    case SPV_REFLECT_FORMAT_R32_SINT:            return RHI::Format::R32_INT;
+                    case SPV_REFLECT_FORMAT_R32G32B32A32_SINT:   return RHI::Format::R32G32B32A32_INT;
+                    default:                                     return RHI::Format::Undefined;
                 }
             }
         }
@@ -262,14 +262,7 @@ namespace Mixture
                 attr.Name = input->name ? input->name : "";
                 attr.Location = input->location;
                 attr.Format = Util::ConvertFormat(input->format);
-
-                // Calculate size based on format (Simplified)
-                // TODO: implement a full lookup table
-                if (attr.Format == ShaderReflectionData::AttributeFormat::Vec3) attr.Size = 12;
-                else if (attr.Format == ShaderReflectionData::AttributeFormat::Vec4) attr.Size = 16;
-                else if (attr.Format == ShaderReflectionData::AttributeFormat::Vec2) attr.Size = 8;
-                else attr.Size = 4;
-
+                attr.Size = GetFormatStride(attr.Format);
                 data.InputAttributes.push_back(attr);
             }
         }

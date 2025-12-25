@@ -121,12 +121,11 @@ namespace Mixture::Vulkan
         vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
     }
 
-    Texture::Texture(vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height)
-        : m_Image(image), m_ImageView(imageView), m_Width(width), m_Height(height), m_OwnsImage(false)
-    {
-        // We do not create samplers or allocate memory here.
-        // We just act as a handle for the Renderer.
-    }
+    Texture::Texture(vk::Format format, vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height)
+        : m_Format(EnumMapper::MapFormat(format)), m_Image(image)
+        , m_ImageView(imageView), m_Width(width), m_Height(height)
+        , m_OwnsImage(false)
+    {}
 
     Texture::~Texture()
     {

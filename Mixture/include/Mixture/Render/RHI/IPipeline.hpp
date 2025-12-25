@@ -13,13 +13,13 @@
 #include <vector>
 #include <string>
 
-namespace Mixture::RHI 
+namespace Mixture::RHI
 {
 
     /**
      * @brief Defines the programmable stage of the rendering pipeline that a shader belongs to.
      */
-    enum class ShaderStage : uint8_t 
+    enum class ShaderStage : uint8_t
     {
         /**
          * @brief The vertex shader stage, processing individual vertices.
@@ -40,7 +40,7 @@ namespace Mixture::RHI
     /**
      * @brief Interface representing a compiled shader module.
      */
-    class IShader 
+    class IShader
     {
     public:
         /**
@@ -59,7 +59,7 @@ namespace Mixture::RHI
     /**
      * @brief Descriptor structure used to create a pipeline state object.
      */
-    struct PipelineDesc 
+    struct PipelineDesc
     {
         /**
          * @brief Pointer to the vertex shader.
@@ -67,7 +67,7 @@ namespace Mixture::RHI
         IShader* VertexShader = nullptr;
 
         /**
-         * @brief Pointer to the fragment shader. 
+         * @brief Pointer to the fragment shader.
          * Can be nullptr for depth-only passes.
          */
         IShader* FragmentShader = nullptr;
@@ -95,13 +95,13 @@ namespace Mixture::RHI
         /**
          * @brief List of formats for the color attachments.
          */
-        std::vector<Format> ColorAttachmentFormats;
+        Vector<Format> ColorAttachmentFormats;
 
         /**
          * @brief Format of the depth attachment.
          */
         Format DepthAttachmentFormat = Format::Undefined;
-        
+
         /**
          * @brief Debug name for the pipeline.
          */
@@ -123,15 +123,15 @@ namespace Mixture::RHI
     /**
      * @brief Interface representing a graphics pipeline state object.
      */
-    class IPipeline 
+    class IPipeline
     {
     public:
         /**
          * @brief Virtual destructor.
          */
         virtual ~IPipeline() = default;
-        
-        // Later add methods here to get the "Layout" 
+
+        // Later add methods here to get the "Layout"
         // (i.e., what descriptors does this pipeline need?)
     };
 }

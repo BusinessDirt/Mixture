@@ -52,6 +52,20 @@ namespace Mixture::Vulkan
 		vk::Queue GetTransferQueue() const { return m_TransferQueue; }
 
         /**
+         * @brief Gets the present queue.
+         *
+         * @return vk::Queue The present queue.
+         */
+		vk::Queue GetPresentQueue() const { return m_PresentQueue; }
+
+        /**
+         * @brief Gets the compute queue.
+         *
+         * @return vk::Queue The compute queue.
+         */
+		vk::Queue GetComputeQueue() const { return m_ComputeQueue; }
+
+        /**
          * @brief Gets the handle of the Vulkan Memory Allocator.
          *
          * @return VmaAllocator The vulkan handle of the allocator.
@@ -71,6 +85,8 @@ namespace Mixture::Vulkan
 
 		vk::Queue m_GraphicsQueue;
         vk::Queue m_TransferQueue;
+		vk::Queue m_PresentQueue;
+		vk::Queue m_ComputeQueue;
 
         VmaAllocator m_Allocator;
 	};

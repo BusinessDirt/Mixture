@@ -6,8 +6,7 @@ namespace Mixture::Vulkan
     Fences::Fences(Device& device, uint32_t count, bool signaled)
         : m_Device(&device)
     {
-        vk::FenceCreateFlags flags;
-        if (signaled) flags = vk::FenceCreateFlagBits::eSignaled;
+        vk::FenceCreateFlags flags = signaled ? vk::FenceCreateFlagBits::eSignaled : vk::FenceCreateFlags();
         vk::FenceCreateInfo fenceInfo(flags);
 
         m_Handles.resize(count);

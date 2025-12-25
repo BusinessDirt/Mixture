@@ -58,7 +58,7 @@ namespace Mixture
 
         /**
          * @brief Loads a shader (or retrieves it from cache) using the AssetSystem.
-         * 
+         *
          * @param path Relative path to the shader source file (e.g. "Assets/Shader/Triangle.hlsl")
          * @param stage The shader stage (Vertex, Fragment, etc.)
          * @return RHI::IShader* Pointer to the loaded shader.
@@ -77,5 +77,8 @@ namespace Mixture
     private:
         RenderGraph& m_Graph;
         RGPassNode& m_PassNode;
+
+        Vector<RHI::Format> m_CurrentColorFormats;
+        RHI::Format m_CurrentDepthFormat = RHI::Format::Undefined;
     };
 }

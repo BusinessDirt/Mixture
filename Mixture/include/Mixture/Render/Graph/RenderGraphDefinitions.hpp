@@ -14,7 +14,7 @@
 #include <vector>
 #include <functional>
 
-namespace Mixture 
+namespace Mixture
 {
 
     namespace RHI
@@ -23,11 +23,11 @@ namespace Mixture
     }
 
     class RenderGraphRegistry; // Forward Declaration
-    
+
     /**
      * @brief Represents a resource barrier to transition resource states between passes.
      */
-    struct RGBarrier 
+    struct RGBarrier
     {
         RGResourceHandle Resource;
         RHI::ResourceState Before;
@@ -50,23 +50,23 @@ namespace Mixture
     /**
      * @brief Represents a texture resource node in the render graph (The "Data").
      */
-    struct RGTextureNode 
+    struct RGTextureNode
     {
         RGResourceHandle Handle;
         std::string Name;
         RHI::TextureDesc Desc;
-        
+
         /**
          * @brief Flag to prevent the graph from trying to free this memory.
          * For imports, we might hold the pointer directly here temporarily.
          */
-        bool IsImported = false; 
-        std::shared_ptr<RHI::ITexture> ExternalTexture = nullptr;
+        bool IsImported = false;
+        RHI::ITexture* ExternalTexture = nullptr;
 
         // --- Lifetime Metadata ---
-        
+
         /** @brief Index of the first pass that uses this resource. Initialize to -1 to indicate "Not Used". */
-        int32_t FirstPassIndex = -1; 
+        int32_t FirstPassIndex = -1;
         /** @brief Index of the last pass that uses this resource. */
         int32_t LastPassIndex = -1;
     };
@@ -74,19 +74,19 @@ namespace Mixture
     /**
      * @brief Represents a pass node in the render graph (The "Logic").
      */
-    struct RGPassNode 
+    struct RGPassNode
     {
         std::string Name;
-        
+
         // Dependencies (Built during Setup phase)
         Vector<RGResourceHandle> Reads;
         Vector<RGAttachmentInfo> Writes;
         Vector<RGBarrier> Barriers;
-        
+
         /**
          * @brief The actual execution logic (Recorded lambda).
          * We pass the Registry so you can look up the REAL texture later.
          */
-        std::function<void(RenderGraphRegistry&, Ref<RHI::ICommandList>)> Execute;
+        std::function<void(RenderGraphRegistry&, RHI::ICommandList*)> Execute;
     };
 }

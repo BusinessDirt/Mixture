@@ -15,6 +15,7 @@ namespace Mixture::Vulkan
         RHI::ShaderStage GetStage() const override { return m_Stage; }
 
         vk::PipelineShaderStageCreateInfo CreateInfo();
+        const ShaderReflectionData& GetReflectionData() const { return m_ReflectionData; }
 
     private:
         RHI::ShaderStage m_Stage;

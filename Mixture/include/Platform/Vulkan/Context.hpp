@@ -51,13 +51,13 @@ namespace Mixture::Vulkan
 
         void OnResize(uint32_t width, uint32_t height) override;
 
-        Ref<RHI::ITexture> BeginFrame() override;
+        RHI::ITexture* BeginFrame() override;
         void EndFrame() override;
 
-        Ref<RHI::ICommandList> GetCommandBuffer() override;
+        Scope<RHI::ICommandList> GetCommandBuffer() override;
 
-        uint32_t GetSwapchainWidth() override;
-        uint32_t GetSwapchainHeight() override;
+        uint32_t GetSwapchainWidth() const override;
+        uint32_t GetSwapchainHeight() const override;
 
         /**
          * @brief Gets the Vulkan instance.

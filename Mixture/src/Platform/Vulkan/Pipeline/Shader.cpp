@@ -25,6 +25,8 @@ namespace Mixture::Vulkan
             OPAL_ERROR("Core/Vulkan", "Shader creation failed: {}", e.what());
             OPAL_ASSERT("Core", false);
         }
+
+        OPAL_LOG_DEBUG("Core/Vulkan", "Created Shader: stage='{}' size={}", EnumMapper::MapShaderStage(m_Stage), size);
     }
 
     Shader::~Shader()

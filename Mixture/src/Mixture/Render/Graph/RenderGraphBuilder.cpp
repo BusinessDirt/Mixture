@@ -27,23 +27,14 @@ namespace Mixture
 
     RGResourceHandle RenderGraphBuilder::Write(RGResourceHandle handle)
     {
-        if (!handle.IsValid())
-        {
-            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Write - RGResourceHandle is invalid");
-            return handle;
-        }
-
-        // Record that this pass WRITES to this resource
         RGAttachmentInfo info;
         info.Handle = handle;
-        m_PassNode.Writes.push_back(info);
-
-        // TODO: Future Proofing: If implementing resource versioning (renaming),
-        // this is where a NEW handle ID would be returned.
-        // For now, we return the same one.
-        return handle;
+        return Write(info);
     }
 
+    // TODO: Future Proofing: If implementing resource versioning (renaming),
+    // this is where a NEW handle ID would be returned.
+    // For now, we return the same one.
     RGResourceHandle RenderGraphBuilder::Write(const RGAttachmentInfo& info)
     {
         if (!info.Handle.IsValid())
@@ -53,6 +44,17 @@ namespace Mixture
         }
 
         m_PassNode.Writes.push_back(info);
+        const RHI::TextureDesc& desc = m_Graph.GetResourceDesc(info.Handle);
+
+        if (RHI::IsDepthFormat(desc.Format))
+        {
+            m_CurrentDepthFormat = desc.Format;
+        }
+        else
+        {
+            m_CurrentColorFormats.push_back(desc.Format);
+        }
+
         return info.Handle;
     }
 
@@ -71,21 +73,12 @@ namespace Mixture
 
     RHI::IPipeline* RenderGraphBuilder::CreatePipeline(RHI::PipelineDesc& desc)
     {
-        desc.ColorAttachmentFormats.clear();
-        desc.DepthAttachmentFormat = RHI::Format::Undefined;
+        desc.ColorAttachmentFormats = m_CurrentColorFormats;
+        desc.DepthAttachmentFormat = m_CurrentDepthFormat;
 
-        for (const auto& write : m_PassNode.Writes)
+        if (desc.ColorAttachmentFormats.empty() && desc.DepthAttachmentFormat == RHI::Format::Undefined)
         {
-            const auto& texDesc = m_Graph.GetResourceDesc(write.Handle);
-
-            if (RHI::IsDepthFormat(texDesc.Format))
-            {
-                desc.DepthAttachmentFormat = texDesc.Format;
-            }
-            else
-            {
-                desc.ColorAttachmentFormats.push_back(texDesc.Format);
-            }
+            OPAL_WARN("Core/RenderGraph", "Creating a pipeline with no output attachments defined in this pass!");
         }
 
         return PipelineCache::GetPipeline(desc);

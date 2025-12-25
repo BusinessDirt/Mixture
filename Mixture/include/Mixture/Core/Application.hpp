@@ -98,6 +98,13 @@ namespace Mixture
         OPAL_NODISCARD const Window& GetWindow() const { return *m_Window; }
 
         /**
+         * @brief Gets the applications graphics context.
+         *
+         * @return const RHI::IGraphicsContext& Reference to the graphics context.
+         */
+        OPAL_NODISCARD const RHI::IGraphicsContext& GetContext() const { return *m_Context; }
+
+        /**
          * @brief Pushes a layer onto the layer stack.
          *
          * @param layer The layer to push.

@@ -53,12 +53,12 @@ namespace Mixture::Vulkan
         CreateImageViews();
     }
 
-    bool Swapchain::AcquireNextImage(uint32_t& outImageIndex, vk::Semaphore semaphore)
+    bool Swapchain::AcquireNextImage(uint32_t* outImageIndex, vk::Semaphore semaphore)
     {
         // Time out: UINT64_MAX (Wait forever)
         vk::Result result = m_Device->GetHandle().acquireNextImageKHR(
             m_Swapchain, UINT64_MAX, semaphore,
-            nullptr, &outImageIndex);
+            nullptr, outImageIndex);
 
         if (result == vk::Result::eErrorOutOfDateKHR)
         {
@@ -87,10 +87,11 @@ namespace Mixture::Vulkan
         vk::Result result;
         try
         {
-            result = m_Device->GetGraphicsQueue().presentKHR(presentInfo);
+            result = m_Device->GetPresentQueue().presentKHR(presentInfo);
         }
         catch (vk::SystemError& err)
         {
+            OPAL_LOG_DEBUG("Core/Vulkan", "Presenting Swapchain resulted in error: {}", err.what());
             // catch "Out Of Date" exception thrown by hpp
             if (err.code() == vk::Result::eErrorOutOfDateKHR)
             {
@@ -190,7 +191,7 @@ namespace Mixture::Vulkan
 
             m_ImageViews[i] = m_Device->GetHandle().createImageView(createInfo);
 
-            m_SwapchainTextures[i] = CreateRef<Vulkan::Texture>(m_Images[i], m_ImageViews[i], m_Extent.width, m_Extent.height);
+            m_SwapchainTextures[i] = CreateScope<Texture>(m_ImageFormat, m_Images[i], m_ImageViews[i], m_Extent.width, m_Extent.height);
         }
     }
 
