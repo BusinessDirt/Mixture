@@ -8,6 +8,10 @@ project "App"
     includedirs { "include" }
     libdirs { "%{LibraryDir.vulkan}" }
 
+    postbuildcommands {
+        "{COPY} %{wks.location}/Assets %{cfg.targetdir}"
+    }
+
     externalincludedirs {
         "../Opal/include",
         "../Mixture/include",

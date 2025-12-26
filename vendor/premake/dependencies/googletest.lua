@@ -14,7 +14,9 @@ project "GoogleTest"
 
       includedirs {
          "%{wks.location}/vendor/googletest/googletest/include",
-         "%{wks.location}/vendor/googletest/googlemock/include"
+         "%{wks.location}/vendor/googletest/googlemock/include",
+         "%{wks.location}/vendor/googletest/googletest",
+         "%{wks.location}/vendor/googletest/googlemock/"
       }
 
       files {

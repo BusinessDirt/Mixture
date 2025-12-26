@@ -59,8 +59,12 @@ namespace Mixture
             return nullptr;
         }
             
+        // Reset Scratch Arena for this load operation
+        // Note: If loading becomes multi-threaded, this needs to be thread-local or locked.
+        m_LoadingArena.Reset();
+
         IAssetLoader& loader = *m_Loaders[type];
-        Ref<IAsset> asset = loader.LoadSync(stream, metadata);
+        Ref<IAsset> asset = loader.LoadSync(stream, metadata, &m_LoadingArena);
         OPAL_LOG_DEBUG("Core/Assets", "Loaded {} from '{}' with id={}",
             typeString, path.string(), (uint64_t)id);
 

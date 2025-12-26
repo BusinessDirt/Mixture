@@ -25,6 +25,12 @@ namespace Mixture
 
         // Read bytes into a buffer
         void ReadBuffer(Vector<char>& buffer);
+        
+        // Read bytes into a raw pointer
+        bool ReadRaw(void* dest, size_t size);
+        
+        // Get the size of the file
+        size_t GetFileSize();
 
         // TODO: Add specific read methods (ReadInt, ReadString) as needed
         // ...

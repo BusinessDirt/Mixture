@@ -6,6 +6,7 @@
  */
 
 #include "Mixture/Core/Base.hpp"
+#include "Mixture/Core/Memory/ArenaAllocator.hpp"
 
 #include "Mixture/Util/FileStreamReader.hpp"
 #include "Mixture/Assets/IAsset.hpp"
@@ -25,8 +26,9 @@ namespace Mixture
          * 
          * @param stream The file stream to read from.
          * @param metadata Metadata about the asset being loaded.
+         * @param allocator Optional arena allocator for temporary scratch memory.
          * @return Ref<IAsset> The loaded asset.
          */
-        virtual Ref<IAsset> LoadSync(FileStreamReader& stream, const AssetMetadata& metadata) = 0;
+        virtual Ref<IAsset> LoadSync(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator = nullptr) = 0;
     };
 }

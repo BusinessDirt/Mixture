@@ -38,6 +38,7 @@ namespace Mixture
 
     Application::~Application()
     {
+        m_Context->GetDevice().WaitForIdle();
         m_LayerStack.Shutdown();
         m_RenderGraph.reset();
         m_Context.reset();

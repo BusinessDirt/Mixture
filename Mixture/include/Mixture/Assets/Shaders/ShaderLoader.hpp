@@ -19,6 +19,6 @@ namespace Mixture
     public:
         virtual ~ShaderLoader() = default;
 
-        Ref<IAsset> LoadSync(FileStreamReader& stream, const AssetMetadata& metadata) override;
+        Ref<IAsset> LoadSync(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator = nullptr) override;
     };
 }

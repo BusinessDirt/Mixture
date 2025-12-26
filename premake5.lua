@@ -9,10 +9,6 @@ workspace "Mixture"
     startproject "App"
     multiprocessorcompile ("on")
 
-    postbuildcommands {
-        "{COPY} %{wks.location}/Assets %{cfg.targetdir}"
-    }
-
     -- Workspace-wide build options for MSVC
     filter "system:windows"
         buildoptions { "/EHsc", "/Zc:preprocessor", "/Zc:__cplusplus" }

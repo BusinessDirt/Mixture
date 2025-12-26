@@ -3,6 +3,8 @@
 #include "Mixture/Core/Time.hpp"
 #include "Mixture/Core/LayerStack.hpp"
 #include "Mixture/Core/Application.hpp"
+#include "Mixture/Core/Memory/ArenaAllocator.hpp"
+#include "Mixture/Core/Memory/PoolAllocator.hpp"
 #include <thread>
 
 namespace Mixture::Tests {
@@ -22,6 +24,61 @@ namespace Mixture::Tests {
         EXPECT_EQ(ref.use_count(), 1);
         auto ref2 = ref;
         EXPECT_EQ(ref.use_count(), 2);
+    }
+
+    // --- Allocator Tests ---
+
+    TEST(CoreTests, ArenaAllocatorBasic) {
+        ArenaAllocator arena(1024);
+        
+        int* val1 = arena.Alloc<int>(10);
+        EXPECT_NE(val1, nullptr);
+        EXPECT_EQ(*val1, 10);
+        
+        float* val2 = arena.Alloc<float>(20.5f);
+        EXPECT_NE(val2, nullptr);
+        EXPECT_FLOAT_EQ(*val2, 20.5f);
+        
+        EXPECT_GT(arena.GetUsedMemory(), 0);
+        
+        arena.Reset();
+        EXPECT_EQ(arena.GetUsedMemory(), 0);
+        
+        // Re-alloc after reset
+        int* val3 = arena.Alloc<int>(99);
+        EXPECT_NE(val3, nullptr);
+        EXPECT_EQ(*val3, 99);
+        // Should reuse start
+        EXPECT_EQ((void*)val3, (void*)val1);
+    }
+    
+    struct TestObject {
+        int x, y;
+        TestObject(int a, int b) : x(a), y(b) {}
+    };
+
+    TEST(CoreTests, PoolAllocatorBasic) {
+        PoolAllocator pool(sizeof(TestObject), alignof(TestObject), 5);
+        
+        TestObject* obj1 = pool.Create<TestObject>(1, 2);
+        EXPECT_NE(obj1, nullptr);
+        EXPECT_EQ(obj1->x, 1);
+        
+        TestObject* obj2 = pool.Create<TestObject>(3, 4);
+        EXPECT_NE(obj2, nullptr);
+        
+        EXPECT_EQ(pool.GetUsedCount(), 2);
+        
+        pool.Destroy(obj1);
+        EXPECT_EQ(pool.GetUsedCount(), 1);
+        
+        // Next alloc should likely reuse obj1's slot (LIFO free list)
+        TestObject* obj3 = pool.Create<TestObject>(5, 6);
+        EXPECT_EQ(obj3, obj1); 
+        EXPECT_EQ(pool.GetUsedCount(), 2);
+        
+        pool.Reset();
+        EXPECT_EQ(pool.GetUsedCount(), 0);
     }
 
     // --- Time.hpp Tests ---

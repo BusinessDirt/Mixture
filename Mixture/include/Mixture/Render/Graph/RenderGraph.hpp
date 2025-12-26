@@ -6,7 +6,7 @@
  */
 
 #include "Mixture/Core/Base.hpp"
-#include "Mixture/Core/LinearAllocator.hpp"
+#include "Mixture/Core/Memory/ArenaAllocator.hpp"
 
 #include "Mixture/Render/Graph/RenderGraphDefinitions.hpp"
 #include "Mixture/Render/Graph/RenderGraphBuilder.hpp"
@@ -153,7 +153,7 @@ namespace Mixture
         void DumpGraphToJSON();
 
     private:
-        LinearAllocator m_PassAllocator;
+        ArenaAllocator m_PassAllocator;
 
         Vector<RGPassNode> m_Passes;
         Vector<RGResourceNode> m_Resources;

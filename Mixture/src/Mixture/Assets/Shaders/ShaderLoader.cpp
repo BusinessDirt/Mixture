@@ -6,23 +6,43 @@
 
 namespace Mixture
 {
-    Ref<IAsset> ShaderLoader::LoadSync(FileStreamReader& stream, const AssetMetadata& metadata)
+    Ref<IAsset> ShaderLoader::LoadSync(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator)
     {
-        std::vector<char> rawData;
-        stream.ReadBuffer(rawData);
+        size_t fileSize = stream.GetFileSize();
+        if (fileSize == 0) return nullptr;
 
-        if (rawData.empty()) return nullptr;
+        void* rawBuffer = nullptr;
+        std::vector<char> heapBuffer;
+
+        // Optimization: Use Arena for temporary file read buffer if available
+        if (allocator)
+        {
+            rawBuffer = allocator->AllocRaw(fileSize + 1); // +1 for null terminator safety
+            ((char*)rawBuffer)[fileSize] = '\0';
+        }
+        else
+        {
+            heapBuffer.resize(fileSize + 1);
+            rawBuffer = heapBuffer.data();
+            heapBuffer[fileSize] = '\0';
+        }
+
+        if (!rawBuffer) return nullptr;
+
+        if (!stream.ReadRaw(rawBuffer, fileSize))
+        {
+            OPAL_ERROR("Core/Assets", "Failed to read shader file: {}", metadata.FilePath.string());
+            return nullptr;
+        }
 
         std::vector<uint8_t> compiledBlob;
-
-        // Check Extension to decide: Compile or Just Load?
         std::string ext = metadata.FilePath.extension().string();
+
         if (ext == ".hlsl")
         {
             // --- PATH: COMPILE SOURCE ---
-
-            // Convert char buffer to string
-            std::string sourceCode(rawData.begin(), rawData.end());
+            // rawBuffer is essentially a string now
+            std::string sourceCode((char*)rawBuffer, fileSize);
 
             compiledBlob = ShaderCompiler::Compile(sourceCode);
 
@@ -36,8 +56,8 @@ namespace Mixture
         {
             // --- PATH: LOAD BINARY ---
             // File is already .cso / .spv (pre-compiled)
-            compiledBlob.resize(rawData.size());
-            memcpy(compiledBlob.data(), rawData.data(), rawData.size());
+            compiledBlob.resize(fileSize);
+            memcpy(compiledBlob.data(), rawBuffer, fileSize);
         }
 
         // Create the Asset

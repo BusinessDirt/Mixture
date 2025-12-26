@@ -12,7 +12,7 @@ project "Tests"
 
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.imgui}",
-        "%{IncludeDir.Vulkan}",
+        "%{IncludeDir.vulkan}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.stb_image}",
         "%{IncludeDir.spirv_reflect}",
@@ -26,13 +26,6 @@ project "Tests"
         "ImGui",
         "SPIRV-Reflect",
         "GoogleTest"
-    }
-
-    -- Auto-run tests after build (Optional but recommended)
-    postbuildcommands {
-        "{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Tests", -- Move binary if needed
-        --On Windows, might want to run it:
-        -- "%{cfg.buildtarget.relpath}"
     }
 
     filter "configurations:Debug"

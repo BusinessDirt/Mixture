@@ -9,6 +9,7 @@
 
 #include "Mixture/Assets/IAsset.hpp"
 #include "Mixture/Assets/IAssetLoader.hpp"
+#include "Mixture/Core/Memory/ArenaAllocator.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 
@@ -30,6 +31,8 @@ namespace Mixture
          * @return AssetManager& Reference to the instance.
          */
         static AssetManager& Get() { static AssetManager instance; return instance; }
+
+        AssetManager() : m_LoadingArena(1024 * 1024) {} // 1MB Scratchpad
 
         /**
          * @brief Initializes the AssetManager and registers default loaders.
@@ -102,5 +105,7 @@ namespace Mixture
 
         std::unordered_map<UUID, Ref<IAsset>> m_Assets;
         std::unordered_map<AssetType, Scope<IAssetLoader>> m_Loaders;
+
+        ArenaAllocator m_LoadingArena;
     };
 }
