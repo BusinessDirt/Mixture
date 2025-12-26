@@ -44,9 +44,10 @@ namespace Mixture::RHI
          * Creates a buffer (Vertex, Index, Uniform).
          *
          * @param desc The buffer description.
+         * @param initialData Optional pointer to data to upload to the buffer.
          * @return A reference to the created buffer.
          */
-        virtual Ref<IBuffer> CreateBuffer(const BufferDesc& desc) = 0;
+        virtual Ref<IBuffer> CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr) = 0;
 
         /**
          * Creates a texture (Empty or from data).

@@ -6,6 +6,7 @@
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
 #include <filesystem>
+#include <fstream>
 
 namespace Mixture
 {
@@ -15,6 +16,7 @@ namespace Mixture
         m_Passes.clear();
         m_Resources.clear();
         m_Registry.Clear();
+        // Note: m_Cache is NOT cleared here, to support persistence across frames.
     }
 
     void RenderGraph::Compile()
@@ -33,44 +35,68 @@ namespace Mixture
         // Realize Resources (Allocation Phase)
         for (const auto& node : m_Resources)
         {
-            if (!node.IsImported)
+            if (node.Type == RGResourceType::ImportedTexture)
             {
-                auto texture = context->GetDevice().CreateTexture(node.Desc);
-                m_Registry.ImportTexture(node.Handle, texture.get());
+                m_Registry.ImportTexture(node.Handle, node.ExternalTexture);
             }
-
-            // Imported resources are already in m_Registry via ImportResource()
+            else if (node.Type == RGResourceType::ImportedBuffer)
+            {
+                m_Registry.ImportBuffer(node.Handle, node.ExternalBuffer);
+            }
+            else if (node.Type == RGResourceType::Texture)
+            {
+                // Get from Cache
+                auto texture = m_Cache.GetOrCreateTexture(node.Name, node.TextureDesc);
+                m_Registry.RegisterTexture(node.Handle, texture.get());
+            }
+            else if (node.Type == RGResourceType::Buffer)
+            {
+                // Get from Cache
+                auto buffer = m_Cache.GetOrCreateBuffer(node.Name, node.BufferDesc);
+                m_Registry.RegisterBuffer(node.Handle, buffer.get());
+            }
         }
 
         // Execute Passes
         for (const auto& pass : m_Passes)
         {
-
             // Execute Barriers
             for (const auto& barrier : pass.Barriers)
             {
-                 cmdList->PipelineBarrier(
-                     m_Registry.GetTexture(barrier.Resource), // Look up in member registry
-                     barrier.Before,
-                     barrier.After
-                 );
+                auto& resNode = m_Resources[barrier.Resource.ID];
+                if (resNode.Type == RGResourceType::Texture || resNode.Type == RGResourceType::ImportedTexture)
+                {
+                    cmdList->PipelineBarrier(
+                        m_Registry.GetTexture(barrier.Resource),
+                        barrier.Before,
+                        barrier.After
+                    );
+                }
+                else
+                {
+                    // Buffer Barriers
+                    // TODO: cmdList->BufferBarrier(...)
+                }
             }
 
             // Run Logic
             if (pass.Execute)
             {
                 RHI::RenderingInfo renderingInfo;
-
-                // Setup Render Area
-                // Ideally, get this from the first output texture's dimensions
+                
+                // Setup Render Area from Attachment Writes
                 if (!pass.Writes.empty())
                 {
-                    auto firstTex = m_Registry.GetTexture(pass.Writes[0].Handle);
-                    renderingInfo.RenderAreaWidth = firstTex->GetWidth();
-                    renderingInfo.RenderAreaHeight = firstTex->GetHeight();
+                    RHI::ITexture* firstTex = m_Registry.GetTexture(pass.Writes[0].Handle);
+                    if (firstTex)
+                    {
+                        renderingInfo.RenderAreaWidth = firstTex->GetWidth();
+                        renderingInfo.RenderAreaHeight = firstTex->GetHeight();
+                    }
                 }
                 else
                 {
+                    // Fallback
                     renderingInfo.RenderAreaWidth = context->GetSwapchainWidth();
                     renderingInfo.RenderAreaHeight = context->GetSwapchainHeight();
                 }
@@ -106,21 +132,23 @@ namespace Mixture
                     }
                 }
 
-                // Only call BeginRendering if we actually have attachments (Raster Pass)
+                // Only call BeginRendering if we have attachments
                 if (!renderingInfo.ColorAttachments.empty() || renderingInfo.DepthAttachment)
                 {
-                    uint32_t width = Application::Get().GetContext().GetSwapchainWidth();
-                    uint32_t height = Application::Get().GetContext().GetSwapchainHeight();
+                    uint32_t width = renderingInfo.RenderAreaWidth;
+                    uint32_t height = renderingInfo.RenderAreaHeight;
+                    
                     cmdList->BeginRendering(renderingInfo);
-                    cmdList->SetViewport(0, 0, width, height);
+                    cmdList->SetViewport(0, 0, (float)width, (float)height);
                     cmdList->SetScissor(0, 0, width, height);
+                    
                     pass.Execute(m_Registry, cmdList); // Draw commands happen here
+                    
                     cmdList->EndRendering();
                 }
                 else
                 {
-                    // If no attachments, it might be a Compute Pass or Copy Pass
-                    // Just execute without dynamic rendering scope
+                    // Just execute without dynamic rendering scope (Compute, Copy, etc.)
                     pass.Execute(m_Registry, cmdList);
                 }
             }
@@ -129,43 +157,75 @@ namespace Mixture
 
     RGResourceHandle RenderGraph::ImportResource(const std::string& name, RHI::ITexture* resource)
     {
-        // Create a handle/node just like a normal resource
         RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
         RGResourceHandle handle = { id };
 
-        RGTextureNode node;
+        RGResourceNode node;
         node.Handle = handle;
         node.Name = name;
-        node.Desc.Width = resource->GetWidth();   // Extract info from the real object
-        node.Desc.Height = resource->GetHeight();
-        node.Desc.Format = resource->GetFormat();
-        node.Desc.InitialState = RHI::ResourceState::Undefined;
-        node.IsImported = true;
-        node.ExternalTexture = resource; // Keep it safe
+        node.Type = RGResourceType::ImportedTexture;
+        
+        node.TextureDesc.Width = resource->GetWidth();
+        node.TextureDesc.Height = resource->GetHeight();
+        node.TextureDesc.Format = resource->GetFormat();
+        node.TextureDesc.InitialState = RHI::ResourceState::Undefined; // We don't track external state yet
+        
+        node.ExternalTexture = resource;
 
         m_Resources.push_back(node);
-
-        // Immediately register it so it's available for execution
         m_Registry.ImportTexture(handle, resource);
+
+        return handle;
+    }
+
+    RGResourceHandle RenderGraph::ImportResource(const std::string& name, RHI::IBuffer* resource)
+    {
+        RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
+        RGResourceHandle handle = { id };
+
+        RGResourceNode node;
+        node.Handle = handle;
+        node.Name = name;
+        node.Type = RGResourceType::ImportedBuffer;
+
+        node.BufferDesc.Size = resource->GetSize();
+        node.BufferDesc.Usage = resource->GetUsage();
+        
+        node.ExternalBuffer = resource;
+
+        m_Resources.push_back(node);
+        m_Registry.ImportBuffer(handle, resource);
 
         return handle;
     }
 
     RGResourceHandle RenderGraph::CreateResource(const std::string& name, const RHI::TextureDesc& desc)
     {
-        // Create a new ID based on the current size of the vector
         RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
         RGResourceHandle handle = { id };
 
-        // Create the Node storage
-        RGTextureNode node;
+        RGResourceNode node;
         node.Handle = handle;
         node.Name = name;
-        node.Desc = desc;
+        node.Type = RGResourceType::Texture;
+        node.TextureDesc = desc;
 
-        // Store it
         m_Resources.push_back(node);
+        return handle;
+    }
 
+    RGResourceHandle RenderGraph::CreateResource(const std::string& name, const RHI::BufferDesc& desc)
+    {
+        RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
+        RGResourceHandle handle = { id };
+
+        RGResourceNode node;
+        node.Handle = handle;
+        node.Name = name;
+        node.Type = RGResourceType::Buffer;
+        node.BufferDesc = desc;
+
+        m_Resources.push_back(node);
         return handle;
     }
 
@@ -179,13 +239,34 @@ namespace Mixture
             }
         }
 
-        OPAL_ERROR("Core/RenderGraph", "Resource not found: {}", name);
+        OPAL_ERROR("Core/RenderGraph", "Resource not found: %s", name.c_str());
         return RGResourceHandle();
+    }
+
+    const RHI::TextureDesc& RenderGraph::GetTextureDesc(RGResourceHandle handle) const
+    {
+        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
+        // TODO: Assert type
+        return m_Resources[handle.ID].TextureDesc;
+    }
+
+    const RHI::BufferDesc& RenderGraph::GetBufferDesc(RGResourceHandle handle) const
+    {
+        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
+        // TODO: Assert type
+        return m_Resources[handle.ID].BufferDesc;
+    }
+    
+    const RGResourceNode& RenderGraph::GetResourceNode(RGResourceHandle handle) const
+    {
+        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
+        return m_Resources[handle.ID];
     }
 
     void RenderGraph::SortPasses()
     {
         size_t passCount = m_Passes.size();
+        if (passCount == 0) return;
 
         // Build Adjacency List
         Vector<Vector<size_t>> adjacencyList(passCount);
@@ -199,28 +280,36 @@ namespace Mixture
             auto& pass = m_Passes[i];
 
             // DEPENDENCY: Read-after-Write (RAW)
-            // If this pass reads 'TexA', it depends on whoever wrote 'TexA' last.
             for (auto& handle : pass.Reads)
             {
                 if (resourceWriters.find(handle.ID) != resourceWriters.end())
                 {
                     size_t writerIndex = resourceWriters[handle.ID];
-
-                    // Add edge: Writer -> Current Pass
                     adjacencyList[writerIndex].push_back(i);
                     inDegree[i]++;
                 }
             }
 
-            // DEPENDENCY: Write-after-Write (WAW)
-            // If we write to something already written to this frame, we must run AFTER the previous writer.
+            // DEPENDENCY: Write-after-Write (WAW) - Attachments
             for (auto& write : pass.Writes)
             {
                 if (resourceWriters.find(write.Handle.ID) != resourceWriters.end())
                 {
                     size_t writerIndex = resourceWriters[write.Handle.ID];
-
-                    // Prevent self-dependency if a pass writes to the same subresource multiple times
+                    if (writerIndex != i)
+                    {
+                        adjacencyList[writerIndex].push_back(i);
+                        inDegree[i]++;
+                    }
+                }
+            }
+            
+            // DEPENDENCY: Write-after-Write (WAW) - Buffers
+            for (auto& handle : pass.BufferWrites)
+            {
+                if (resourceWriters.find(handle.ID) != resourceWriters.end())
+                {
+                    size_t writerIndex = resourceWriters[handle.ID];
                     if (writerIndex != i)
                     {
                         adjacencyList[writerIndex].push_back(i);
@@ -229,13 +318,13 @@ namespace Mixture
                 }
             }
 
-            // UPDATE: This pass is now the latest writer for its outputs
-            for (auto& write : pass.Writes)
-                resourceWriters[write.Handle.ID] = i;
+            // UPDATE writers
+            for (auto& write : pass.Writes) resourceWriters[write.Handle.ID] = i;
+            for (auto& handle : pass.BufferWrites) resourceWriters[handle.ID] = i;
         }
 
-        // Kahn's Algorithm (Standard Topological Sort)
-        Vector<size_t> queue; // Passes with 0 dependencies
+        // Kahn's Algorithm
+        Vector<size_t> queue;
         for (size_t i = 0; i < passCount; ++i)
             if (inDegree[i] == 0) queue.push_back(i);
 
@@ -247,10 +336,8 @@ namespace Mixture
             size_t u = queue.back();
             queue.pop_back();
 
-            // Add to final sorted list
             sortedPasses.push_back(m_Passes[u]);
 
-            // "Remove" this pass and satisfy dependencies
             for (size_t v : adjacencyList[u])
             {
                 inDegree[v]--;
@@ -258,7 +345,6 @@ namespace Mixture
             }
         }
 
-        // Cycle Detection: If sorted list is smaller, we have a circular dependency
         if (sortedPasses.size() != passCount)
         {
             OPAL_ERROR("Core/RenderGraph", "Cyclic pass dependency detected.");
@@ -270,46 +356,28 @@ namespace Mixture
 
     void RenderGraph::CalculateLifetimes()
     {
-        // Reset all lifetimes
         for (auto& node : m_Resources)
         {
             node.FirstPassIndex = -1;
             node.LastPassIndex = -1;
         }
 
-        // Iterate through passes in execution order
         for (int32_t passIndex = 0; passIndex < static_cast<int32_t>(m_Passes.size()); ++passIndex)
         {
             const auto& pass = m_Passes[passIndex];
 
-            // Helper lambda to update a single resource
             auto UpdateResource = [&](RGResourceHandle handle)
             {
                 if (!handle.IsValid()) return;
-
                 auto& node = m_Resources[handle.ID];
 
-                // If this is the first time we've seen it, mark start
-                if (node.FirstPassIndex == -1)
-                {
-                    node.FirstPassIndex = passIndex;
-                }
-
-                // Always update the end to the current pass
+                if (node.FirstPassIndex == -1) node.FirstPassIndex = passIndex;
                 node.LastPassIndex = passIndex;
             };
 
-            // Check Reads
-            for (auto handle : pass.Reads)
-            {
-                UpdateResource(handle);
-            }
-
-            // Check Writes
-            for (auto write : pass.Writes)
-            {
-                UpdateResource(write.Handle);
-            }
+            for (auto handle : pass.Reads) UpdateResource(handle);
+            for (auto write : pass.Writes) UpdateResource(write.Handle);
+            for (auto handle : pass.BufferWrites) UpdateResource(handle);
         }
     }
 
@@ -320,36 +388,26 @@ namespace Mixture
 
         for (size_t i = 0; i < m_Resources.size(); ++i)
         {
-            // For internal resources, 'Undefined' is fine.
-            // For imported ones, use their real state.
-            currentStates[i] = m_Resources[i].Desc.InitialState;
+            if (m_Resources[i].Type == RGResourceType::Texture || m_Resources[i].Type == RGResourceType::ImportedTexture)
+                currentStates[i] = m_Resources[i].TextureDesc.InitialState;
+            else
+                currentStates[i] = RHI::ResourceState::Undefined; 
         }
 
         for (auto& pass : m_Passes)
         {
             pass.Barriers.clear();
 
-            // --- Helper Lambda to Inject Barrier ---
             auto TransitionResource = [&](RGResourceHandle handle, RHI::ResourceState targetState, bool isWrite)
             {
                 uint32_t id = handle.ID;
                 RHI::ResourceState current = currentStates[id];
                 bool previousWasWrite = wasLastWrite[id];
 
-                // We need a barrier if:
-                // 1. The Layout/State needs to change (e.g. SRV -> RTV)
-                // 2. OR: The previous access was a Write (Hazard: RAW or WAW)
-                // 3. OR: The current access is a Write AND previous was Read (Hazard: WAR)
-                //    (Note: WAR is often handled implicitly by subpass deps, but explicit barriers are safer)
-
                 bool layoutChanged = (current != targetState);
                 bool hazardExists = previousWasWrite || (isWrite && current != RHI::ResourceState::Undefined);
 
-                // Optimization: Read-after-Read (RAR) usually needs no barrier.
-                if (!isWrite && !previousWasWrite && !layoutChanged)
-                {
-                    return;
-                }
+                if (!isWrite && !previousWasWrite && !layoutChanged) return;
 
                 if (layoutChanged || hazardExists)
                 {
@@ -357,104 +415,61 @@ namespace Mixture
                     barrier.Resource = handle;
                     barrier.Before = current;
                     barrier.After = targetState;
-
-                    // Add to the pass
                     pass.Barriers.push_back(barrier);
-
-                    // Update tracking
                     currentStates[id] = targetState;
                 }
-
                 wasLastWrite[id] = isWrite;
             };
 
-            // --- Process Reads ---
             for (auto& handle : pass.Reads)
             {
-                TransitionResource(handle, RHI::ResourceState::ShaderResource, false);
+                auto& node = m_Resources[handle.ID];
+                if (node.Type == RGResourceType::Texture || node.Type == RGResourceType::ImportedTexture)
+                    TransitionResource(handle, RHI::ResourceState::ShaderResource, false);
+                else
+                    TransitionResource(handle, RHI::ResourceState::ShaderResource, false); // Or Vertex/Constant based on usage?
             }
 
-            // --- Process Writes ---
             for (auto& info : pass.Writes)
             {
                 RGResourceHandle handle = info.Handle;
+                auto& node = m_Resources[handle.ID];
 
-                // Determine Target State
-                bool isDepth = IsDepthFormat(m_Resources[handle.ID].Desc.Format);
-                RHI::ResourceState target = isDepth ? RHI::ResourceState::DepthStencilWrite : RHI::ResourceState::RenderTarget;
-
-                TransitionResource(handle, target, true);
+                if (node.Type == RGResourceType::Texture || node.Type == RGResourceType::ImportedTexture)
+                {
+                    bool isDepth = IsDepthFormat(node.TextureDesc.Format);
+                    RHI::ResourceState target = isDepth ? RHI::ResourceState::DepthStencilWrite : RHI::ResourceState::RenderTarget;
+                    TransitionResource(handle, target, true);
+                }
+            }
+            
+            for (auto& handle : pass.BufferWrites)
+            {
+                 TransitionResource(handle, RHI::ResourceState::UnorderedAccess, true);
             }
         }
     }
 
     void RenderGraph::DumpGraphToJSON()
     {
-        static bool executed = false;
-        if (executed) return;
-
-        // Find the project root by looking for ".git"
-        std::filesystem::path currentPath = std::filesystem::current_path();
-        std::filesystem::path projectRoot = currentPath;
-        bool foundGit = false;
-
-        while (true)
-        {
-            if (std::filesystem::exists(projectRoot / ".git"))
-            {
-                foundGit = true;
-                break;
-            }
-
-            // Move up one level
-            if (projectRoot.has_parent_path() && projectRoot != projectRoot.parent_path())
-            {
-                projectRoot = projectRoot.parent_path();
-            }
-            else
-            {
-                break; // Reached system root (e.g., C:\ or /)
-            }
-        }
-
         // Construct the target path
-        std::filesystem::path outputDir;
-
-        if (foundGit)
-        {
-            outputDir = projectRoot / "docs" / "visualizers";
-        }
-        else
-        {
-            OPAL_WARN("Core/RenderGraph", ".git directory not found. Saving to build directory.");
-            outputDir = currentPath / "docs" / "visualizers";
-        }
-
-        // Create the 'docs' directory if it doesn't exist
-        if (!std::filesystem::exists(outputDir))
-        {
-            std::filesystem::create_directories(outputDir);
-        }
-
-        // Open the file
+        std::filesystem::path currentPath = std::filesystem::current_path();
+        std::filesystem::path outputDir = currentPath / "docs" / "visualizers";
+        if (!std::filesystem::exists(outputDir)) std::filesystem::create_directories(outputDir);
         std::ofstream out(outputDir / "graph.json");
 
         out << "{\n";
-
-        // 1. Dump Resources
         out << "  \"resources\": [\n";
         for (size_t i = 0; i < m_Resources.size(); ++i)
         {
-            // Assuming your resource struct has a 'Name' field.
-            // If not, use "Resource_" + std::to_string(i)
             std::string name = m_Resources[i].Name.empty() ? "Res_" + std::to_string(i) : m_Resources[i].Name;
-            out << "    { \"id\": " << i << ", \"name\": \"" << name << "\" }";
+            std::string typeStr = (m_Resources[i].Type == RGResourceType::Texture) ? "Texture" : "Buffer";
+            out << "    { \"id\": " << i << ", \"name\": \"" << name << "\", \"type\": \"" << typeStr << "\" }";
             if (i < m_Resources.size() - 1) out << ",";
             out << "\n";
         }
         out << "  ],\n";
 
-        // 2. Dump Passes
         out << "  \"passes\": [\n";
         for (size_t i = 0; i < m_Passes.size(); ++i)
         {
@@ -462,39 +477,25 @@ namespace Mixture
             out << "    {\n";
             out << "      \"id\": " << i << ",\n";
             out << "      \"name\": \"" << pass.Name << "\",\n";
-
-            // --- NEW: Dump Barriers ---
-            out << "      \"barriers\": [\n";
-            for (size_t b = 0; b < pass.Barriers.size(); ++b)
-            {
-                const auto& barrier = pass.Barriers[b];
-                std::string_view fromState = RHI::ToString(barrier.Before);
-                std::string_view toState   = RHI::ToString(barrier.After);
-
-                out << "        {";
-                out << " \"res\": " << barrier.Resource.ID << ",";
-                out << " \"from\": \"" << fromState << "\",";
-                out << " \"to\": \"" << toState << "\"";
-                out << " }";
-
-                if (b < pass.Barriers.size() - 1) out << ",";
-                out << "\n";
-            }
-            out << "      ],\n";
-
-            // Writes
-            out << "      \"writes\": [";
-            for (size_t k = 0; k < pass.Writes.size(); ++k) {
-                out << pass.Writes[k].Handle.ID;
-                if (k < pass.Writes.size() - 1) out << ", ";
-            }
-            out << "],\n";
-
-            // Reads
+            
+             // Reads
             out << "      \"reads\": [";
             for (size_t k = 0; k < pass.Reads.size(); ++k) {
                 out << pass.Reads[k].ID;
                 if (k < pass.Reads.size() - 1) out << ", ";
+            }
+            out << "],\n";
+            
+            // Writes (Attachments + Buffers)
+            out << "      \"writes\": [";
+            for (size_t k = 0; k < pass.Writes.size(); ++k) {
+                out << pass.Writes[k].Handle.ID;
+                bool isLastAttachment = (k == pass.Writes.size() - 1);
+                if (!isLastAttachment || !pass.BufferWrites.empty()) out << ", ";
+            }
+            for (size_t k = 0; k < pass.BufferWrites.size(); ++k) {
+                out << pass.BufferWrites[k].ID;
+                if (k < pass.BufferWrites.size() - 1) out << ", ";
             }
             out << "]\n";
 
@@ -504,15 +505,5 @@ namespace Mixture
         }
         out << "  ]\n";
         out << "}\n";
-        out << std::flush;
-
-        OPAL_LOG_DEBUG("Core/RenderGraph", "Dumped Graph to JSON file: {}/graph.json", outputDir.string());
-        executed = true;
-    }
-
-    const RHI::TextureDesc& RenderGraph::GetResourceDesc(RGResourceHandle handle) const
-    {
-        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
-        return m_Resources[handle.ID].Desc;
     }
 }

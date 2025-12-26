@@ -29,7 +29,7 @@ namespace Mixture
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
         m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
-        m_RenderGraph = CreateScope<RenderGraph>();
+        m_RenderGraph = CreateScope<RenderGraph>(m_Context->GetDevice());
 
         AssetManager::Get().Init();
         AssetManager::Get().SetAssetRoot("Assets");
@@ -39,6 +39,7 @@ namespace Mixture
     Application::~Application()
     {
         m_LayerStack.Shutdown();
+        m_RenderGraph.reset();
         m_Context.reset();
     }
 

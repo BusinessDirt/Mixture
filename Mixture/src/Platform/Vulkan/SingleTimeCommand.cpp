@@ -26,15 +26,29 @@ namespace Mixture::Vulkan
     {
         commandBuffer.end();
 
+        auto& context = Context::Get();
+        auto device = context.GetLogicalDevice().GetHandle();
+        auto queue = context.GetLogicalDevice().GetGraphicsQueue();
+        auto commandPool = context.GetCommandPool().GetHandle();
+
         vk::SubmitInfo submitInfo;
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &commandBuffer;
 
-        auto device = Context::Get().GetLogicalDevice();
+        // Create a fence to wait for just THIS command, not the whole GPU
+        vk::FenceCreateInfo fenceInfo;
+        vk::Fence fence = device.createFence(fenceInfo);
 
-        device.GetGraphicsQueue().submit(submitInfo, nullptr);
-        device.GetHandle().waitIdle();
-        device.GetHandle().freeCommandBuffers(Context::Get().GetCommandPool().GetHandle(), commandBuffer);
+        queue.submit(submitInfo, fence);
+
+        auto result = device.waitForFences(1, &fence, VK_TRUE, 100000000000);
+        if (result != vk::Result::eSuccess)
+        {
+            OPAL_ERROR("Core/Vulkan", "SingleTimeCommand::End() - Failed to wait for fence!");
+        }
+
+        device.destroyFence(fence);
+        device.freeCommandBuffers(commandPool, commandBuffer);
     }
 
     void SingleTimeCommand::Submit(const std::function<void(vk::CommandBuffer)>& action)

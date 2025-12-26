@@ -11,6 +11,7 @@
 #include "Mixture/Render/Graph/RenderGraphDefinitions.hpp"
 #include "Mixture/Render/Graph/RenderGraphBuilder.hpp"
 #include "Mixture/Render/Graph/RenderGraphRegistry.hpp"
+#include "Mixture/Render/Graph/RenderGraphResourceCache.hpp"
 
 namespace Mixture
 {
@@ -21,7 +22,9 @@ namespace Mixture
     class RenderGraph
     {
     public:
-        RenderGraph() : m_PassAllocator(64 * 1024) {}
+        RenderGraph(RHI::IGraphicsDevice& device) 
+            : m_PassAllocator(64 * 1024), m_Cache(device) 
+        {}
 
         /**
          * @brief Resets the render graph, clearing all passes and resources.
@@ -73,7 +76,7 @@ namespace Mixture
         void Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context);
 
         /**
-         * @brief Imports an external resource (e.g., Swapchain Backbuffer) into the graph.
+         * @brief Imports an external texture resource (e.g., Swapchain Backbuffer) into the graph.
          * Returns a handle that passes can use to Write() to it.
          *
          * @param name The name of the resource.
@@ -83,6 +86,15 @@ namespace Mixture
         RGResourceHandle ImportResource(const std::string& name, RHI::ITexture* resource);
 
         /**
+         * @brief Imports an external buffer resource into the graph.
+         *
+         * @param name The name of the resource.
+         * @param resource The external buffer resource.
+         * @return RGResourceHandle A handle to the imported resource.
+         */
+        RGResourceHandle ImportResource(const std::string& name, RHI::IBuffer* resource);
+
+        /**
          * @brief Creates a new internal resource (transient) for the graph.
          *
          * @param name The name of the resource.
@@ -90,6 +102,15 @@ namespace Mixture
          * @return RGResourceHandle A handle to the created resource.
          */
         RGResourceHandle CreateResource(const std::string& name, const RHI::TextureDesc& desc);
+
+        /**
+         * @brief Creates a new internal buffer (transient) for the graph.
+         *
+         * @param name The name of the resource.
+         * @param desc The description of the buffer to create.
+         * @return RGResourceHandle A handle to the created resource.
+         */
+        RGResourceHandle CreateResource(const std::string& name, const RHI::BufferDesc& desc);
 
         /**
          * @brief Gets the current pass node being processed.
@@ -108,12 +129,22 @@ namespace Mixture
         RGResourceHandle GetResource(const std::string& name) const;
 
         /**
-         * @brief Retrieves the description of a resource by handle.
+         * @brief Retrieves the description of a texture resource by handle.
          *
          * @param handle The handle of the resource.
          * @return const RHI::TextureDesc& The description of the resource.
          */
-        const RHI::TextureDesc& GetResourceDesc(RGResourceHandle handle) const;
+        const RHI::TextureDesc& GetTextureDesc(RGResourceHandle handle) const;
+
+        /**
+         * @brief Retrieves the description of a buffer resource by handle.
+         *
+         * @param handle The handle of the resource.
+         * @return const RHI::BufferDesc& The description of the resource.
+         */
+        const RHI::BufferDesc& GetBufferDesc(RGResourceHandle handle) const;
+        
+        const RGResourceNode& GetResourceNode(RGResourceHandle handle) const;
 
     private:
         void SortPasses();
@@ -125,8 +156,9 @@ namespace Mixture
         LinearAllocator m_PassAllocator;
 
         Vector<RGPassNode> m_Passes;
-        Vector<RGTextureNode> m_Resources;
+        Vector<RGResourceNode> m_Resources;
 
         RenderGraphRegistry m_Registry;
+        RenderGraphResourceCache m_Cache;
     };
 }

@@ -35,7 +35,7 @@ namespace Mixture
          */
 
         /**
-         * @brief Associates a handle with a real GPU resource.
+         * @brief Associates a handle with a real GPU texture.
          *
          * @param handle The virtual handle.
          * @param texture The physical texture resource.
@@ -43,13 +43,35 @@ namespace Mixture
         void RegisterTexture(RGResourceHandle handle, RHI::ITexture* texture);
 
         /**
-         * @brief Retrieves the real GPU resource during pass execution.
-         * This is the function you call inside your Execute lambda!
+         * @brief Retrieves the real GPU texture during pass execution.
          *
          * @param handle The virtual handle.
          * @return RHI::ITexture* Pointer to the physical texture.
          */
         RHI::ITexture* GetTexture(RGResourceHandle handle);
+
+        /** @} */
+
+        /**
+         * @name Buffer Management
+         * @{
+         */
+
+        /**
+         * @brief Associates a handle with a real GPU buffer.
+         *
+         * @param handle The virtual handle.
+         * @param buffer The physical buffer resource.
+         */
+        void RegisterBuffer(RGResourceHandle handle, RHI::IBuffer* buffer);
+
+        /**
+         * @brief Retrieves the real GPU buffer during pass execution.
+         *
+         * @param handle The virtual handle.
+         * @return RHI::IBuffer* Pointer to the physical buffer.
+         */
+        RHI::IBuffer* GetBuffer(RGResourceHandle handle);
 
         /** @} */
 
@@ -60,12 +82,19 @@ namespace Mixture
 
         /**
          * @brief Imports an existing texture (like the Swapchain image) into the graph.
-         * Returns a handle that passes can use to read/write to it.
          *
          * @param handle The virtual handle to assign.
          * @param texture The external physical texture.
          */
         void ImportTexture(RGResourceHandle handle, RHI::ITexture* texture);
+
+        /**
+         * @brief Imports an existing buffer into the graph.
+         *
+         * @param handle The virtual handle to assign.
+         * @param buffer The external physical buffer.
+         */
+        void ImportBuffer(RGResourceHandle handle, RHI::IBuffer* buffer);
 
         /** @} */
 
@@ -84,9 +113,12 @@ namespace Mixture
     private:
         /**
          * @brief List of textures indexed by their handle ID.
-         * We use a vector because handles are just indices (0, 1, 2...), providing O(1) lookup speed.
          */
         Vector<RHI::ITexture*> m_Textures;
+        
+        /**
+         * @brief List of buffers indexed by their handle ID.
+         */
         Vector<RHI::IBuffer*>  m_Buffers;
     };
 

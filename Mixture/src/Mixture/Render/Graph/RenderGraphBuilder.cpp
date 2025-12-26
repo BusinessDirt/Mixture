@@ -27,9 +27,24 @@ namespace Mixture
 
     RGResourceHandle RenderGraphBuilder::Write(RGResourceHandle handle)
     {
-        RGAttachmentInfo info;
-        info.Handle = handle;
-        return Write(info);
+        if (!handle.IsValid())
+        {
+            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Write - RGResourceHandle is invalid");
+            return handle;
+        }
+
+        const auto& node = m_Graph.GetResourceNode(handle);
+        if (node.Type == RGResourceType::Buffer || node.Type == RGResourceType::ImportedBuffer)
+        {
+            m_PassNode.BufferWrites.push_back(handle);
+            return handle;
+        }
+        else
+        {
+            RGAttachmentInfo info;
+            info.Handle = handle;
+            return Write(info);
+        }
     }
 
     // TODO: Future Proofing: If implementing resource versioning (renaming),
@@ -44,7 +59,7 @@ namespace Mixture
         }
 
         m_PassNode.Writes.push_back(info);
-        const RHI::TextureDesc& desc = m_Graph.GetResourceDesc(info.Handle);
+        const RHI::TextureDesc& desc = m_Graph.GetTextureDesc(info.Handle);
 
         if (RHI::IsDepthFormat(desc.Format))
         {
@@ -61,6 +76,11 @@ namespace Mixture
     RGResourceHandle RenderGraphBuilder::CreateTexture(const std::string& name, const RHI::TextureDesc& desc)
     {
         // Delegate the actual allocation logic to the main graph
+        return m_Graph.CreateResource(name, desc);
+    }
+
+    RGResourceHandle RenderGraphBuilder::CreateBuffer(const std::string& name, const RHI::BufferDesc& desc)
+    {
         return m_Graph.CreateResource(name, desc);
     }
 

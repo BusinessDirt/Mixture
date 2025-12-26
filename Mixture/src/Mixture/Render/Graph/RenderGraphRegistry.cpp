@@ -11,7 +11,7 @@ namespace Mixture
         // Ensure vector is big enough
         if (handle.ID >= m_Textures.size())
         {
-            m_Textures.resize(handle.ID + 1);
+            m_Textures.resize(handle.ID + 1, nullptr);
         }
 
         m_Textures[handle.ID] = texture;
@@ -32,18 +32,44 @@ namespace Mixture
         return m_Textures[handle.ID];
     }
 
+    void RenderGraphRegistry::RegisterBuffer(RGResourceHandle handle, RHI::IBuffer* buffer)
+    {
+        if (!handle.IsValid()) return;
+
+        // Ensure vector is big enough
+        if (handle.ID >= m_Buffers.size())
+        {
+            m_Buffers.resize(handle.ID + 1, nullptr);
+        }
+
+        m_Buffers[handle.ID] = buffer;
+    }
+
+    RHI::IBuffer* RenderGraphRegistry::GetBuffer(RGResourceHandle handle)
+    {
+        if (!handle.IsValid()) {
+            return nullptr;
+        }
+
+        if (handle.ID >= m_Buffers.size()) {
+            return nullptr;
+        }
+
+        return m_Buffers[handle.ID];
+    }
+
     void RenderGraphRegistry::ImportTexture(RGResourceHandle handle, RHI::ITexture* texture)
     {
-        // For now, importing is the same as registering.
-        // Later, you might flag this resource as "Do Not Delete" or "External"
         RegisterTexture(handle, texture);
+    }
+
+    void RenderGraphRegistry::ImportBuffer(RGResourceHandle handle, RHI::IBuffer* buffer)
+    {
+        RegisterBuffer(handle, buffer);
     }
 
     void RenderGraphRegistry::Clear()
     {
-        // NOTE: We do NOT clear imported resources (like the Swapchain) if they persist,
-        // but for a simple implementation, clearing the vector allows a fresh start next frame.
-        // The shared_ptrs will keep the actual Vulkan objects alive if they are held elsewhere.
         m_Textures.clear();
         m_Buffers.clear();
     }

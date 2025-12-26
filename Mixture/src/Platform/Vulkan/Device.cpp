@@ -41,8 +41,12 @@ namespace Mixture::Vulkan
             }
         }
 
+        vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
+        bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
         vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures;
         dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+        dynamicRenderingFeatures.pNext = &bufferDeviceAddressFeatures;
 
         vk::PhysicalDeviceFeatures deviceFeatures;
         deviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -120,9 +124,9 @@ namespace Mixture::Vulkan
         return CreateRef<Shader>(data, size, stage);
     }
 
-    Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc)
+    Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc, const void* initialData)
     {
-        return CreateRef<Buffer>(desc);
+        return CreateRef<Buffer>(desc, initialData);
     }
 
     Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc)

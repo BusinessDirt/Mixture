@@ -47,21 +47,31 @@ namespace Mixture
         float DepthClearValue = 1.0f;
     };
 
+    enum class RGResourceType : uint8_t
+    {
+        Texture,
+        Buffer,
+        ImportedTexture,
+        ImportedBuffer
+    };
+
     /**
-     * @brief Represents a texture resource node in the render graph (The "Data").
+     * @brief Represents a resource node in the render graph (The "Data").
+     * Can be a Texture or a Buffer.
      */
-    struct RGTextureNode
+    struct RGResourceNode
     {
         RGResourceHandle Handle;
         std::string Name;
-        RHI::TextureDesc Desc;
+        RGResourceType Type;
 
-        /**
-         * @brief Flag to prevent the graph from trying to free this memory.
-         * For imports, we might hold the pointer directly here temporarily.
-         */
-        bool IsImported = false;
+        // Descriptors (Only one is valid based on Type)
+        RHI::TextureDesc TextureDesc;
+        RHI::BufferDesc BufferDesc;
+
+        // External Pointers (For imports)
         RHI::ITexture* ExternalTexture = nullptr;
+        RHI::IBuffer* ExternalBuffer = nullptr;
 
         // --- Lifetime Metadata ---
 
@@ -80,7 +90,9 @@ namespace Mixture
 
         // Dependencies (Built during Setup phase)
         Vector<RGResourceHandle> Reads;
-        Vector<RGAttachmentInfo> Writes;
+        Vector<RGAttachmentInfo> Writes; // Texture Attachments
+        Vector<RGResourceHandle> BufferWrites; // Buffer/Storage writes
+
         Vector<RGBarrier> Barriers;
 
         /**

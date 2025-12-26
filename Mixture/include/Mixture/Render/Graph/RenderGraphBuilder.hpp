@@ -57,6 +57,15 @@ namespace Mixture
         RGResourceHandle CreateTexture(const std::string& name, const RHI::TextureDesc& desc);
 
         /**
+         * @brief Creates a new internal transient buffer for this pass.
+         *
+         * @param name The name of the resource.
+         * @param desc The description of the buffer to create.
+         * @return RGResourceHandle A handle to the created resource.
+         */
+        RGResourceHandle CreateBuffer(const std::string& name, const RHI::BufferDesc& desc);
+
+        /**
          * @brief Loads a shader (or retrieves it from cache) using the AssetSystem.
          *
          * @param path Relative path to the shader source file (e.g. "Assets/Shader/Triangle.hlsl")
