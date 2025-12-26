@@ -59,5 +59,33 @@ namespace Mixture
                 cmd->Draw(3, 1, 0, 0);
             }
         );
+
+        graph.AddPass<GamePassData>("DebugPass",
+            [&](RenderGraphBuilder& builder, GamePassData& data)
+            {
+                RGResourceHandle backbuffer = graph.GetResource("Backbuffer");
+                RGAttachmentInfo info;
+                info.Handle = backbuffer;
+                info.LoadOp = RHI::LoadOp::Load;
+                info.StoreOp = RHI::StoreOp::Store;
+                data.Output = builder.Write(info);
+
+                RHI::PipelineDesc desc;
+                desc.VertexShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Vertex);
+                desc.FragmentShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Fragment);
+                desc.Rasterizer.cullMode = RHI::CullMode::Front;
+                data.Pipeline = builder.CreatePipeline(desc);
+            },
+            [&](const RenderGraphRegistry& registry, const GamePassData& data, RHI::ICommandList* cmd)
+            {
+                float width = (float)Application::Get().GetContext().GetSwapchainWidth();
+                float height = (float)Application::Get().GetContext().GetSwapchainHeight();
+
+                cmd->SetViewport(width / 2.0f, height / 2.0f, width / 2.0f, height / 2.0f);
+                cmd->SetScissor(0, 0, (uint32_t)width, (uint32_t)height);
+                cmd->BindPipeline(data.Pipeline);
+                cmd->Draw(3, 1, 0, 0);
+            }
+        );
     }
 }

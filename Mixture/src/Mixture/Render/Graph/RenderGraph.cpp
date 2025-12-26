@@ -208,6 +208,23 @@ namespace Mixture
                 }
             }
 
+            // DEPENDENCY: Write-after-Write (WAW)
+            // If we write to something already written to this frame, we must run AFTER the previous writer.
+            for (auto& write : pass.Writes)
+            {
+                if (resourceWriters.find(write.Handle.ID) != resourceWriters.end())
+                {
+                    size_t writerIndex = resourceWriters[write.Handle.ID];
+
+                    // Prevent self-dependency if a pass writes to the same subresource multiple times
+                    if (writerIndex != i)
+                    {
+                        adjacencyList[writerIndex].push_back(i);
+                        inDegree[i]++;
+                    }
+                }
+            }
+
             // UPDATE: This pass is now the latest writer for its outputs
             for (auto& write : pass.Writes)
                 resourceWriters[write.Handle.ID] = i;
@@ -347,13 +364,13 @@ namespace Mixture
                 wasLastWrite[id] = isWrite;
             };
 
-            // --- 1. Process Reads ---
+            // --- Process Reads ---
             for (auto& handle : pass.Reads)
             {
                 TransitionResource(handle, RHI::ResourceState::ShaderResource, false);
             }
 
-            // --- 2. Process Writes ---
+            // --- Process Writes ---
             for (auto& info : pass.Writes)
             {
                 RGResourceHandle handle = info.Handle;

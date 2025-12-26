@@ -94,7 +94,7 @@ namespace Mixture::Vulkan
             m_RenderFinishedSemaphores.reset();
             m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imagecount);
 
-            OPAL_INFO("Core/Vulkan", "Swapchain Resized to {} x {}", width, height);
+            OPAL_LOG_DEBUG("Core/Vulkan", "Swapchain Resized to {} x {}", width, height);
         }
     }
 
@@ -105,8 +105,6 @@ namespace Mixture::Vulkan
             OPAL_ERROR("Core/Vulkan", "BeginFrame called but frame already started!");
             return nullptr;
         }
-
-        auto device = m_Device->GetHandle();
 
         // Wait for the PREVIOUS frame (using this index) to finish
         if (m_InFlightFences->Wait(m_CurrentFrame) != vk::Result::eSuccess)
