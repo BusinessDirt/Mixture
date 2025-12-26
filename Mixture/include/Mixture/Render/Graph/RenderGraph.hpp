@@ -119,6 +119,7 @@ namespace Mixture
         void SortPasses();
         void CalculateLifetimes();
         void CalculateBarriers();
+        void DumpGraphToJSON();
 
     private:
         LinearAllocator m_PassAllocator;

@@ -5,15 +5,15 @@
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
+#include <filesystem>
+
 namespace Mixture
 {
     void RenderGraph::Clear()
     {
         m_PassAllocator.Reset();
-
         m_Passes.clear();
         m_Resources.clear();
-
         m_Registry.Clear();
     }
 
@@ -22,6 +22,10 @@ namespace Mixture
         SortPasses();
         CalculateLifetimes();
         CalculateBarriers();
+
+#ifdef OPAL_DEBUG
+        DumpGraphToJSON();
+#endif
     }
 
     void RenderGraph::Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context)
@@ -382,6 +386,128 @@ namespace Mixture
                 TransitionResource(handle, target, true);
             }
         }
+    }
+
+    void RenderGraph::DumpGraphToJSON()
+    {
+        static bool executed = false;
+        if (executed) return;
+
+        // Find the project root by looking for ".git"
+        std::filesystem::path currentPath = std::filesystem::current_path();
+        std::filesystem::path projectRoot = currentPath;
+        bool foundGit = false;
+
+        while (true)
+        {
+            if (std::filesystem::exists(projectRoot / ".git"))
+            {
+                foundGit = true;
+                break;
+            }
+
+            // Move up one level
+            if (projectRoot.has_parent_path() && projectRoot != projectRoot.parent_path())
+            {
+                projectRoot = projectRoot.parent_path();
+            }
+            else
+            {
+                break; // Reached system root (e.g., C:\ or /)
+            }
+        }
+
+        // Construct the target path
+        std::filesystem::path outputDir;
+
+        if (foundGit)
+        {
+            outputDir = projectRoot / "docs" / "visualizers";
+        }
+        else
+        {
+            OPAL_WARN("Core/RenderGraph", ".git directory not found. Saving to build directory.");
+            outputDir = currentPath / "docs" / "visualizers";
+        }
+
+        // Create the 'docs' directory if it doesn't exist
+        if (!std::filesystem::exists(outputDir))
+        {
+            std::filesystem::create_directories(outputDir);
+        }
+
+        // Open the file
+        std::ofstream out(outputDir / "graph.json");
+
+        out << "{\n";
+
+        // 1. Dump Resources
+        out << "  \"resources\": [\n";
+        for (size_t i = 0; i < m_Resources.size(); ++i)
+        {
+            // Assuming your resource struct has a 'Name' field.
+            // If not, use "Resource_" + std::to_string(i)
+            std::string name = m_Resources[i].Name.empty() ? "Res_" + std::to_string(i) : m_Resources[i].Name;
+            out << "    { \"id\": " << i << ", \"name\": \"" << name << "\" }";
+            if (i < m_Resources.size() - 1) out << ",";
+            out << "\n";
+        }
+        out << "  ],\n";
+
+        // 2. Dump Passes
+        out << "  \"passes\": [\n";
+        for (size_t i = 0; i < m_Passes.size(); ++i)
+        {
+            const auto& pass = m_Passes[i];
+            out << "    {\n";
+            out << "      \"id\": " << i << ",\n";
+            out << "      \"name\": \"" << pass.Name << "\",\n";
+
+            // --- NEW: Dump Barriers ---
+            out << "      \"barriers\": [\n";
+            for (size_t b = 0; b < pass.Barriers.size(); ++b)
+            {
+                const auto& barrier = pass.Barriers[b];
+                std::string_view fromState = RHI::ToString(barrier.Before);
+                std::string_view toState   = RHI::ToString(barrier.After);
+
+                out << "        {";
+                out << " \"res\": " << barrier.Resource.ID << ",";
+                out << " \"from\": \"" << fromState << "\",";
+                out << " \"to\": \"" << toState << "\"";
+                out << " }";
+
+                if (b < pass.Barriers.size() - 1) out << ",";
+                out << "\n";
+            }
+            out << "      ],\n";
+
+            // Writes
+            out << "      \"writes\": [";
+            for (size_t k = 0; k < pass.Writes.size(); ++k) {
+                out << pass.Writes[k].Handle.ID;
+                if (k < pass.Writes.size() - 1) out << ", ";
+            }
+            out << "],\n";
+
+            // Reads
+            out << "      \"reads\": [";
+            for (size_t k = 0; k < pass.Reads.size(); ++k) {
+                out << pass.Reads[k].ID;
+                if (k < pass.Reads.size() - 1) out << ", ";
+            }
+            out << "]\n";
+
+            out << "    }";
+            if (i < m_Passes.size() - 1) out << ",";
+            out << "\n";
+        }
+        out << "  ]\n";
+        out << "}\n";
+        out << std::flush;
+
+        OPAL_LOG_DEBUG("Core/RenderGraph", "Dumped Graph to JSON file: {}/graph.json", outputDir.string());
+        executed = true;
     }
 
     const RHI::TextureDesc& RenderGraph::GetResourceDesc(RGResourceHandle handle) const

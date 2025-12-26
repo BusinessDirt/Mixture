@@ -38,9 +38,9 @@ namespace Mixture
                 RGAttachmentInfo info;
                 info.Handle = backbuffer;
                 info.LoadOp = RHI::LoadOp::Clear;
-                info.ClearColor[0] = 0.1f;
-                info.ClearColor[1] = 0.1f;
-                info.ClearColor[2] = 0.1f;
+                info.ClearColor[0] = 0.0f;
+                info.ClearColor[1] = 0.0f;
+                info.ClearColor[2] = 0.0f;
                 info.ClearColor[3] = 1.0f;
 
                 data.Output = builder.Write(info);
