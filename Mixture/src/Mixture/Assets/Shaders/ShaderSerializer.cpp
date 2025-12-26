@@ -1,12 +1,12 @@
 #include "mxpch.hpp"
-#include "Mixture/Assets/Shaders/ShaderLoader.hpp"
+#include "Mixture/Assets/Shaders/ShaderSerializer.hpp"
 
 #include "Mixture/Assets/Shaders/ShaderAsset.hpp"
 #include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
 
 namespace Mixture
 {
-    Ref<IAsset> ShaderLoader::LoadSync(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator)
+    Ref<IAsset> ShaderSerializer::Load(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator)
     {
         size_t fileSize = stream.GetFileSize();
         if (fileSize == 0) return nullptr;

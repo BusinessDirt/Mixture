@@ -8,7 +8,7 @@
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Assets/IAsset.hpp"
-#include "Mixture/Assets/IAssetLoader.hpp"
+#include "Mixture/Assets/AssetSerializer.hpp"
 #include "Mixture/Core/Memory/ArenaAllocator.hpp"
 #include "Mixture/Core/Memory/LRUCache.hpp"
 
@@ -115,7 +115,7 @@ namespace Mixture
         RHI::GraphicsAPI m_GraphicsAPI;
 
         LRUCache<UUID, Ref<IAsset>> m_AssetCache;
-        std::unordered_map<AssetType, Scope<IAssetLoader>> m_Loaders;
+        std::unordered_map<AssetType, Scope<AssetSerializer>> m_Serializers;
 
         ArenaAllocator m_LoadingArena;
     };

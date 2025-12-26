@@ -1,13 +1,14 @@
 #include "mxpch.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
+#include "Mixture/Assets/AssetSerializer.hpp"
 
-#include "Mixture/Assets/Shaders/ShaderLoader.hpp"
+#include "Mixture/Assets/Shaders/ShaderSerializer.hpp"
 
 namespace Mixture
 {
     void AssetManager::Init()
     {
-        m_Loaders[AssetType::Shader] = CreateScope<ShaderLoader>();
+        m_Serializers[AssetType::Shader] = CreateScope<ShaderSerializer>();
 
         m_AssetCache.SetEvictionCallback([](const UUID& id, const Ref<IAsset>& asset)
         {
@@ -31,27 +32,59 @@ namespace Mixture
 
     AssetHandle AssetManager::GetAsset(AssetType type, const std::filesystem::path& path)
     {
-        // Create the UUID deterministically from the path
-        // TODO: replace with metadata files
-        UUID id = UUID::FromPath(path.string());
+        const char* typeString = Utils::AssetTypeToString(type);
+        std::filesystem::path fullPath = m_RootDirectory / typeString / path;
 
-        // Check if already loaded in Cache
-        Ref<IAsset> cachedAsset = m_AssetCache.Get(id);
-        if (cachedAsset) return AssetHandle{ id, cachedAsset->GetMagic() };
+        if (!std::filesystem::exists(fullPath))
+        {
+            OPAL_ERROR("Core/Assets", "Asset file not found: {}", fullPath.string());
+            return AssetHandle{ UUID(0), 0 };
+        }
 
-        // If not loaded, load it now
-        Ref<IAsset> newAsset = LoadAssetInternal(type, path, id);
-        if (newAsset) return AssetHandle{ id, newAsset->GetMagic() };
+        // 1. Try to load existing Metadata
+        AssetMetadata metadata;
+        metadata.Type = type;
+        metadata.FilePath = path; // Relative path for the struct
 
-        return AssetHandle{ UUID(0), 0 }; // Return Invalid Handle
+        if (AssetSerializer::HasMetadata(fullPath))
+        {
+            AssetMetadata loadedMeta;
+            if (AssetSerializer::TryLoadMetadata(fullPath, loadedMeta))
+            {
+                metadata.ID = loadedMeta.ID;
+            }
+        }
+
+        // 2. If no ID (no metadata), generate new and save it
+        if (!metadata.ID.IsValid())
+        {
+            metadata.ID = UUID(); // New Random UUID
+            
+            // Need absolute path for writing sidecar
+            AssetMetadata writeMeta = metadata;
+            writeMeta.FilePath = fullPath; 
+            
+            AssetSerializer::WriteMetadata(writeMeta);
+            OPAL_INFO("Core/Assets", "Generated new metadata for '{}' (ID: {})", path.string(), (uint64_t)metadata.ID);
+        }
+
+        // 3. Check Cache
+        Ref<IAsset> cachedAsset = m_AssetCache.Get(metadata.ID);
+        if (cachedAsset) return AssetHandle{ metadata.ID, cachedAsset->GetMagic() };
+
+        // 4. Load from disk
+        Ref<IAsset> newAsset = LoadAssetInternal(type, path, metadata.ID);
+        if (newAsset) return AssetHandle{ metadata.ID, newAsset->GetMagic() };
+
+        return AssetHandle{ UUID(0), 0 };
     }
 
     Ref<IAsset> AssetManager::LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id)
     {
         const char* typeString = Utils::AssetTypeToString(type);
-        if (m_Loaders.find(type) == m_Loaders.end())
+        if (m_Serializers.find(type) == m_Serializers.end())
         {
-            OPAL_ERROR("Core/Assets", "No loader registered for AssetType='{}'", typeString);
+            OPAL_ERROR("Core/Assets", "No serializer registered for AssetType='{}'", typeString);
             return nullptr;
         }
 
@@ -71,8 +104,8 @@ namespace Mixture
         // Note: If loading becomes multi-threaded, this needs to be thread-local or locked.
         m_LoadingArena.Reset();
 
-        IAssetLoader& loader = *m_Loaders[type];
-        Ref<IAsset> asset = loader.LoadSync(stream, metadata, &m_LoadingArena);
+        AssetSerializer& serializer = *m_Serializers[type];
+        Ref<IAsset> asset = serializer.Load(stream, metadata, &m_LoadingArena);
         OPAL_LOG_DEBUG("Core/Assets", "Loaded {} from '{}' with id={}",
             typeString, path.string(), (uint64_t)id);
 

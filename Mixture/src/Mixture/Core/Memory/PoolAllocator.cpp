@@ -20,12 +20,12 @@ namespace Mixture
         
         if (!m_MemoryBlock)
         {
-            OPAL_CRITICAL("Core", "PoolAllocator failed to allocate {} bytes", totalSize);
+            OPAL_CRITICAL("Core/Memory", "PoolAllocator failed to allocate {} bytes", totalSize);
             return;
         }
 
         Reset(); // Initialize free list
-        OPAL_INFO("Core", "Initialized PoolAllocator: {} blocks of {} bytes (Total: {}KB)", 
+        OPAL_INFO("Core/Memory", "Initialized PoolAllocator: {} blocks of {} bytes (Total: {}KB)",
             m_BlockCount, m_BlockSize, totalSize / 1024.0f);
     }
 
@@ -42,7 +42,7 @@ namespace Mixture
     {
         if (!m_FreeList)
         {
-            OPAL_WARN("Core", "PoolAllocator exhausted! (Capacity: {})", m_BlockCount);
+            OPAL_WARN("Core/Memory", "PoolAllocator exhausted! (Capacity: {})", m_BlockCount);
             return nullptr;
         }
 
@@ -64,7 +64,7 @@ namespace Mixture
         uintptr_t p = (uintptr_t)ptr;
         if (p < start || p >= end)
         {
-            OPAL_ERROR("Core", "PoolAllocator::Free: Pointer out of bounds!");
+            OPAL_ERROR("Core/Memory", "PoolAllocator::Free: Pointer out of bounds!");
             return;
         }
         #endif

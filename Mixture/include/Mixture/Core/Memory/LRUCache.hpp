@@ -9,7 +9,7 @@ namespace Mixture
 {
     /**
      * @brief A generic Least Recently Used (LRU) cache with memory limit.
-     * 
+     *
      * Keeps track of memory usage and evicts the least recently used items
      * when the limit is exceeded.
      */
@@ -122,7 +122,7 @@ namespace Mixture
             while (m_CurrentMemoryUsage > m_MaxMemoryUsage && !m_List.empty())
             {
                 auto last = m_List.back();
-                
+
                 if (m_EvictionCallback)
                     m_EvictionCallback(last.K, last.Val);
 
@@ -141,7 +141,7 @@ namespace Mixture
 
         size_t m_MaxMemoryUsage;
         size_t m_CurrentMemoryUsage;
-        
+
         std::list<CacheEntry> m_List;
         std::unordered_map<Key, typename std::list<CacheEntry>::iterator> m_Map;
         EvictionCallback m_EvictionCallback;

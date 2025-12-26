@@ -8,7 +8,7 @@ namespace Mixture
     {
         m_Start = std::malloc(m_TotalSize);
         m_Current = m_Start;
-        OPAL_INFO("Core", "Initialized Arena Allocator with {}KB of space", (m_TotalSize / 1024.0f));
+        OPAL_INFO("Core/Memory", "Initialized Arena Allocator with {}KB of space", (m_TotalSize / 1024.0f));
     }
 
     ArenaAllocator::~ArenaAllocator()
