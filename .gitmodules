@@ -12,14 +12,18 @@
     ignore = dirty
 [submodule "vendor/glfw"]
 	path = vendor/glfw
-	url = https://github.com/BusinessDirt/glfw.git
+	url = https://github.com/glfw/glfw.git
     ignore = dirty
 [submodule "vendor/imgui"]
 	path = vendor/imgui
-	url = https://github.com/BusinessDirt/imgui.git
+	url = https://github.com/ocornut/imgui.git
 	branch = docking
     ignore = dirty
 [submodule "vendor/googletest"]
 	path = vendor/googletest
-	url = https://github.com/BusinessDirt/googletest.git
+	url = https://github.com/google/googletest.git
+    ignore = dirty
+[submodule "vendor/spirv-reflect"]
+	path = vendor/spirv-reflect
+	url = https://github.com/KhronosGroup/SPIRV-Reflect.git
     ignore = dirty

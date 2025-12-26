@@ -52,13 +52,27 @@ namespace Mixture::Vulkan
 		vk::Queue GetTransferQueue() const { return m_TransferQueue; }
 
         /**
+         * @brief Gets the present queue.
+         *
+         * @return vk::Queue The present queue.
+         */
+		vk::Queue GetPresentQueue() const { return m_PresentQueue; }
+
+        /**
+         * @brief Gets the compute queue.
+         *
+         * @return vk::Queue The compute queue.
+         */
+		vk::Queue GetComputeQueue() const { return m_ComputeQueue; }
+
+        /**
          * @brief Gets the handle of the Vulkan Memory Allocator.
          *
          * @return VmaAllocator The vulkan handle of the allocator.
          */
         VmaAllocator GetAllocator() const { return m_Allocator; }
 
-        Ref<RHI::IShader> CreateShader(const std::string& filepath, RHI::ShaderStage stage) override;
+        Ref<RHI::IShader> CreateShader(const void* data, size_t size, RHI::ShaderStage stage) override;
         Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc) override;
         Ref<RHI::ITexture> CreateTexture(const RHI::TextureDesc& desc) override;
         Ref<RHI::IPipeline> CreatePipeline(const RHI::PipelineDesc& desc) override;
@@ -71,6 +85,8 @@ namespace Mixture::Vulkan
 
 		vk::Queue m_GraphicsQueue;
         vk::Queue m_TransferQueue;
+		vk::Queue m_PresentQueue;
+		vk::Queue m_ComputeQueue;
 
         VmaAllocator m_Allocator;
 	};

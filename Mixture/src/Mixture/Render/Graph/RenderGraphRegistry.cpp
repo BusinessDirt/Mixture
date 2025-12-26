@@ -1,17 +1,16 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/Graph/RenderGraphRegistry.hpp"
 
-namespace Mixture 
+namespace Mixture
 {
 
-    void RenderGraphRegistry::RegisterTexture(RGResourceHandle handle, Ref<RHI::ITexture> texture)
+    void RenderGraphRegistry::RegisterTexture(RGResourceHandle handle, RHI::ITexture* texture)
     {
-        if (!handle.IsValid()) {
-            return;
-        }
+        if (!handle.IsValid()) return;
 
         // Ensure vector is big enough
-        if (handle.ID >= m_Textures.size()) {
+        if (handle.ID >= m_Textures.size())
+        {
             m_Textures.resize(handle.ID + 1);
         }
 
@@ -30,10 +29,10 @@ namespace Mixture
             return nullptr;
         }
 
-        return m_Textures[handle.ID].get();
+        return m_Textures[handle.ID];
     }
 
-    void RenderGraphRegistry::ImportTexture(RGResourceHandle handle, Ref<RHI::ITexture> texture)
+    void RenderGraphRegistry::ImportTexture(RGResourceHandle handle, RHI::ITexture* texture)
     {
         // For now, importing is the same as registering.
         // Later, you might flag this resource as "Do Not Delete" or "External"

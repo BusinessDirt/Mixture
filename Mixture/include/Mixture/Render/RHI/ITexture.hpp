@@ -7,6 +7,7 @@
 
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/RenderFormats.hpp"
+#include "Mixture/Render/RHI/ResourceStates.hpp"
 
 #include <string_view>
 
@@ -32,6 +33,8 @@ namespace Mixture::RHI
          * @brief The pixel format of the texture.
          */
         Format Format = Format::R8G8B8A8_UNORM;
+
+        RHI::ResourceState InitialState = RHI::ResourceState::Undefined;
 
         /**
          * @brief Debug name for the texture.

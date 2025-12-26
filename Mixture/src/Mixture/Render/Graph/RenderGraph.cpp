@@ -1,30 +1,19 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/Graph/RenderGraph.hpp"
+
+#include "Mixture/Core/Application.hpp"
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
+#include <filesystem>
+
 namespace Mixture
 {
-    static bool IsDepthFormat(RHI::Format format)
-    {
-        switch (format)
-        {
-            case RHI::Format::D32_FLOAT:
-            case RHI::Format::D24_UNORM_S8_UINT:
-            case RHI::Format::D32_FLOAT_S8_UINT:
-                return true;
-            default:
-                return false;
-        }
-    }
-
     void RenderGraph::Clear()
     {
         m_PassAllocator.Reset();
-
         m_Passes.clear();
         m_Resources.clear();
-
         m_Registry.Clear();
     }
 
@@ -33,9 +22,13 @@ namespace Mixture
         SortPasses();
         CalculateLifetimes();
         CalculateBarriers();
+
+#ifdef OPAL_DEBUG
+        DumpGraphToJSON();
+#endif
     }
 
-    void RenderGraph::Execute(Ref<RHI::ICommandList> cmdList, RHI::IGraphicsContext* context)
+    void RenderGraph::Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context)
     {
         // Realize Resources (Allocation Phase)
         for (const auto& node : m_Resources)
@@ -43,7 +36,7 @@ namespace Mixture
             if (!node.IsImported)
             {
                 auto texture = context->GetDevice().CreateTexture(node.Desc);
-                m_Registry.ImportTexture(node.Handle, texture);
+                m_Registry.ImportTexture(node.Handle, texture.get());
             }
 
             // Imported resources are already in m_Registry via ImportResource()
@@ -116,7 +109,11 @@ namespace Mixture
                 // Only call BeginRendering if we actually have attachments (Raster Pass)
                 if (!renderingInfo.ColorAttachments.empty() || renderingInfo.DepthAttachment)
                 {
+                    uint32_t width = Application::Get().GetContext().GetSwapchainWidth();
+                    uint32_t height = Application::Get().GetContext().GetSwapchainHeight();
                     cmdList->BeginRendering(renderingInfo);
+                    cmdList->SetViewport(0, 0, width, height);
+                    cmdList->SetScissor(0, 0, width, height);
                     pass.Execute(m_Registry, cmdList); // Draw commands happen here
                     cmdList->EndRendering();
                 }
@@ -130,7 +127,7 @@ namespace Mixture
         }
     }
 
-    RGResourceHandle RenderGraph::ImportResource(const std::string& name, Ref<RHI::ITexture> resource)
+    RGResourceHandle RenderGraph::ImportResource(const std::string& name, RHI::ITexture* resource)
     {
         // Create a handle/node just like a normal resource
         RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
@@ -142,6 +139,7 @@ namespace Mixture
         node.Desc.Width = resource->GetWidth();   // Extract info from the real object
         node.Desc.Height = resource->GetHeight();
         node.Desc.Format = resource->GetFormat();
+        node.Desc.InitialState = RHI::ResourceState::Undefined;
         node.IsImported = true;
         node.ExternalTexture = resource; // Keep it safe
 
@@ -190,8 +188,8 @@ namespace Mixture
         size_t passCount = m_Passes.size();
 
         // Build Adjacency List
-        std::vector<std::vector<size_t>> adjacencyList(passCount);
-        std::vector<int> inDegree(passCount, 0);
+        Vector<Vector<size_t>> adjacencyList(passCount);
+        Vector<int> inDegree(passCount, 0);
 
         // Track who wrote to a resource last (ResourceID -> PassIndex)
         std::unordered_map<uint32_t, size_t> resourceWriters;
@@ -214,17 +212,34 @@ namespace Mixture
                 }
             }
 
+            // DEPENDENCY: Write-after-Write (WAW)
+            // If we write to something already written to this frame, we must run AFTER the previous writer.
+            for (auto& write : pass.Writes)
+            {
+                if (resourceWriters.find(write.Handle.ID) != resourceWriters.end())
+                {
+                    size_t writerIndex = resourceWriters[write.Handle.ID];
+
+                    // Prevent self-dependency if a pass writes to the same subresource multiple times
+                    if (writerIndex != i)
+                    {
+                        adjacencyList[writerIndex].push_back(i);
+                        inDegree[i]++;
+                    }
+                }
+            }
+
             // UPDATE: This pass is now the latest writer for its outputs
             for (auto& write : pass.Writes)
                 resourceWriters[write.Handle.ID] = i;
         }
 
         // Kahn's Algorithm (Standard Topological Sort)
-        std::vector<size_t> queue; // Passes with 0 dependencies
+        Vector<size_t> queue; // Passes with 0 dependencies
         for (size_t i = 0; i < passCount; ++i)
             if (inDegree[i] == 0) queue.push_back(i);
 
-        std::vector<RGPassNode> sortedPasses;
+        Vector<RGPassNode> sortedPasses;
         sortedPasses.reserve(passCount);
 
         while (!queue.empty())
@@ -300,51 +315,204 @@ namespace Mixture
 
     void RenderGraph::CalculateBarriers()
     {
-        // Track current state of every resource (Index = ResourceID)
-        // Default state is usually "Undefined" or "ShaderResource" depending on implementation
-        std::vector<RHI::ResourceState> resourceStates(m_Resources.size(), RHI::ResourceState::Undefined);
+        Vector<RHI::ResourceState> currentStates(m_Resources.size());
+        Vector<bool> wasLastWrite(m_Resources.size(), false);
+
+        for (size_t i = 0; i < m_Resources.size(); ++i)
+        {
+            // For internal resources, 'Undefined' is fine.
+            // For imported ones, use their real state.
+            currentStates[i] = m_Resources[i].Desc.InitialState;
+        }
 
         for (auto& pass : m_Passes)
         {
             pass.Barriers.clear();
 
-            // Handle Reads (Need ShaderResource state)
+            // --- Helper Lambda to Inject Barrier ---
+            auto TransitionResource = [&](RGResourceHandle handle, RHI::ResourceState targetState, bool isWrite)
+            {
+                uint32_t id = handle.ID;
+                RHI::ResourceState current = currentStates[id];
+                bool previousWasWrite = wasLastWrite[id];
+
+                // We need a barrier if:
+                // 1. The Layout/State needs to change (e.g. SRV -> RTV)
+                // 2. OR: The previous access was a Write (Hazard: RAW or WAW)
+                // 3. OR: The current access is a Write AND previous was Read (Hazard: WAR)
+                //    (Note: WAR is often handled implicitly by subpass deps, but explicit barriers are safer)
+
+                bool layoutChanged = (current != targetState);
+                bool hazardExists = previousWasWrite || (isWrite && current != RHI::ResourceState::Undefined);
+
+                // Optimization: Read-after-Read (RAR) usually needs no barrier.
+                if (!isWrite && !previousWasWrite && !layoutChanged)
+                {
+                    return;
+                }
+
+                if (layoutChanged || hazardExists)
+                {
+                    RGBarrier barrier;
+                    barrier.Resource = handle;
+                    barrier.Before = current;
+                    barrier.After = targetState;
+
+                    // Add to the pass
+                    pass.Barriers.push_back(barrier);
+
+                    // Update tracking
+                    currentStates[id] = targetState;
+                }
+
+                wasLastWrite[id] = isWrite;
+            };
+
+            // --- Process Reads ---
             for (auto& handle : pass.Reads)
             {
-                RHI::ResourceState current = resourceStates[handle.ID];
-                RHI::ResourceState target = RHI::ResourceState::ShaderResource;
-
-                if (current != target)
-                {
-                    // Insert Barrier: Current -> Target
-                    pass.Barriers.push_back({ handle, current, target });
-                    resourceStates[handle.ID] = target;
-                }
+                TransitionResource(handle, RHI::ResourceState::ShaderResource, false);
             }
 
-            // Handle Writes (Need RenderTarget or CopyDest state)
-            for (auto& write : pass.Writes)
+            // --- Process Writes ---
+            for (auto& info : pass.Writes)
             {
-                auto& handle = write.Handle;
-                RHI::ResourceState current = resourceStates[handle.ID];
+                RGResourceHandle handle = info.Handle;
 
-                // Determine target based on usage
-                // Check if it's a Depth texture or standard Color
+                // Determine Target State
                 bool isDepth = IsDepthFormat(m_Resources[handle.ID].Desc.Format);
                 RHI::ResourceState target = isDepth ? RHI::ResourceState::DepthStencilWrite : RHI::ResourceState::RenderTarget;
 
-                // Optimization: If it's already writable, we might not need a barrier
-                // BUT, Write-After-Write hazards generally need a barrier or at least a memory barrier.
-                // However, if the state is already RenderTarget, it implies the layout is correct.
-                // Vulkan pipeline barriers also handle synchronization.
-                // For safety, we emit a barrier if state differs OR if we want to be safe about WAW.
-                // But simplified logic: only if state differs.
-                if (current != target)
-                {
-                    pass.Barriers.push_back({ handle, current, target });
-                    resourceStates[handle.ID] = target;
-                }
+                TransitionResource(handle, target, true);
             }
         }
+    }
+
+    void RenderGraph::DumpGraphToJSON()
+    {
+        static bool executed = false;
+        if (executed) return;
+
+        // Find the project root by looking for ".git"
+        std::filesystem::path currentPath = std::filesystem::current_path();
+        std::filesystem::path projectRoot = currentPath;
+        bool foundGit = false;
+
+        while (true)
+        {
+            if (std::filesystem::exists(projectRoot / ".git"))
+            {
+                foundGit = true;
+                break;
+            }
+
+            // Move up one level
+            if (projectRoot.has_parent_path() && projectRoot != projectRoot.parent_path())
+            {
+                projectRoot = projectRoot.parent_path();
+            }
+            else
+            {
+                break; // Reached system root (e.g., C:\ or /)
+            }
+        }
+
+        // Construct the target path
+        std::filesystem::path outputDir;
+
+        if (foundGit)
+        {
+            outputDir = projectRoot / "docs" / "visualizers";
+        }
+        else
+        {
+            OPAL_WARN("Core/RenderGraph", ".git directory not found. Saving to build directory.");
+            outputDir = currentPath / "docs" / "visualizers";
+        }
+
+        // Create the 'docs' directory if it doesn't exist
+        if (!std::filesystem::exists(outputDir))
+        {
+            std::filesystem::create_directories(outputDir);
+        }
+
+        // Open the file
+        std::ofstream out(outputDir / "graph.json");
+
+        out << "{\n";
+
+        // 1. Dump Resources
+        out << "  \"resources\": [\n";
+        for (size_t i = 0; i < m_Resources.size(); ++i)
+        {
+            // Assuming your resource struct has a 'Name' field.
+            // If not, use "Resource_" + std::to_string(i)
+            std::string name = m_Resources[i].Name.empty() ? "Res_" + std::to_string(i) : m_Resources[i].Name;
+            out << "    { \"id\": " << i << ", \"name\": \"" << name << "\" }";
+            if (i < m_Resources.size() - 1) out << ",";
+            out << "\n";
+        }
+        out << "  ],\n";
+
+        // 2. Dump Passes
+        out << "  \"passes\": [\n";
+        for (size_t i = 0; i < m_Passes.size(); ++i)
+        {
+            const auto& pass = m_Passes[i];
+            out << "    {\n";
+            out << "      \"id\": " << i << ",\n";
+            out << "      \"name\": \"" << pass.Name << "\",\n";
+
+            // --- NEW: Dump Barriers ---
+            out << "      \"barriers\": [\n";
+            for (size_t b = 0; b < pass.Barriers.size(); ++b)
+            {
+                const auto& barrier = pass.Barriers[b];
+                std::string_view fromState = RHI::ToString(barrier.Before);
+                std::string_view toState   = RHI::ToString(barrier.After);
+
+                out << "        {";
+                out << " \"res\": " << barrier.Resource.ID << ",";
+                out << " \"from\": \"" << fromState << "\",";
+                out << " \"to\": \"" << toState << "\"";
+                out << " }";
+
+                if (b < pass.Barriers.size() - 1) out << ",";
+                out << "\n";
+            }
+            out << "      ],\n";
+
+            // Writes
+            out << "      \"writes\": [";
+            for (size_t k = 0; k < pass.Writes.size(); ++k) {
+                out << pass.Writes[k].Handle.ID;
+                if (k < pass.Writes.size() - 1) out << ", ";
+            }
+            out << "],\n";
+
+            // Reads
+            out << "      \"reads\": [";
+            for (size_t k = 0; k < pass.Reads.size(); ++k) {
+                out << pass.Reads[k].ID;
+                if (k < pass.Reads.size() - 1) out << ", ";
+            }
+            out << "]\n";
+
+            out << "    }";
+            if (i < m_Passes.size() - 1) out << ",";
+            out << "\n";
+        }
+        out << "  ]\n";
+        out << "}\n";
+        out << std::flush;
+
+        OPAL_LOG_DEBUG("Core/RenderGraph", "Dumped Graph to JSON file: {}/graph.json", outputDir.string());
+        executed = true;
+    }
+
+    const RHI::TextureDesc& RenderGraph::GetResourceDesc(RGResourceHandle handle) const
+    {
+        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
+        return m_Resources[handle.ID].Desc;
     }
 }

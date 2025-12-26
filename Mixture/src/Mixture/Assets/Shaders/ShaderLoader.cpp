@@ -2,6 +2,7 @@
 #include "Mixture/Assets/Shaders/ShaderLoader.hpp"
 
 #include "Mixture/Assets/Shaders/ShaderAsset.hpp"
+#include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
 
 namespace Mixture
 {
@@ -23,12 +24,7 @@ namespace Mixture
             // Convert char buffer to string
             std::string sourceCode(rawData.begin(), rawData.end());
 
-            // TODO: Call DXC Compiler here
-            // This is where you invoke IDxcCompiler3::Compile
-            // For now, we simulate it or return empty.
-
-            // Example:
-            // compiledBlob = DxcCompiler::Get().Compile(sourceCode, "vs_6_0", "main");
+            compiledBlob = ShaderCompiler::Compile(sourceCode);
 
             if (compiledBlob.empty())
             {

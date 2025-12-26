@@ -18,9 +18,10 @@ project "Mixture"
 
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.imgui}",
-        "%{IncludeDir.Vulkan}",
+        "%{IncludeDir.vulkan}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glm}",
+        "%{IncludeDir.spirv_reflect}",
         "%{IncludeDir.stb_image}"
     }
 

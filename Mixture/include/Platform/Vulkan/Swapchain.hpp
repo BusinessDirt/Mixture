@@ -51,7 +51,7 @@ namespace Mixture::Vulkan
          * @param semaphore A semaphore to signal when the image is available.
          * @return true if successful, false if the swapchain is out of date (needs resize).
          */
-        bool AcquireNextImage(uint32_t& outImageIndex, vk::Semaphore semaphore);
+        bool AcquireNextImage(uint32_t* outImageIndex, vk::Semaphore semaphore);
 
         /**
          * @brief Submits the image to the presentation queue.
@@ -98,7 +98,7 @@ namespace Mixture::Vulkan
          */
         uint32_t GetImageCount() const { return static_cast<uint32_t>(m_Images.size()); }
 
-        Ref<RHI::ITexture> GetTexture(uint32_t index) const { return m_SwapchainTextures[index]; }
+        RHI::ITexture* GetTexture(uint32_t index) const { return m_SwapchainTextures[index].get(); }
 
     private:
         void CreateSwapchain(uint32_t width, uint32_t height);
@@ -119,7 +119,7 @@ namespace Mixture::Vulkan
         vk::ColorSpaceKHR m_ColorSpace;
         vk::Extent2D m_Extent;
 
-        Vector<Ref<RHI::ITexture>> m_SwapchainTextures;
+        Vector<Scope<RHI::ITexture>> m_SwapchainTextures;
         Vector<vk::Image> m_Images;
         Vector<vk::ImageView> m_ImageViews;
 

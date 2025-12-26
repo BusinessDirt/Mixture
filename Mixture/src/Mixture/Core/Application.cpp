@@ -3,6 +3,8 @@
 
 #include "Mixture/Core/Time.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
+#include "Mixture/Render/PipelineCache.hpp"
+#include "Mixture/Render/ShaderLibrary.hpp"
 
 #include <Opal/Base.hpp>
 #include <ranges>
@@ -31,12 +33,13 @@ namespace Mixture
 
         AssetManager::Get().Init();
         AssetManager::Get().SetAssetRoot("Assets");
-        AssetManager::Get().GetAsset(AssetType::Shader, "Triangle.hlsl");
+        AssetManager::Get().SetGraphicsAPI(appDescription.API);
     }
 
     Application::~Application()
     {
         m_LayerStack.Shutdown();
+        m_Context.reset();
     }
 
     void Application::Close()
@@ -58,7 +61,7 @@ namespace Mixture
 
             m_RenderGraph->Clear();
 
-            if (Ref<RHI::ITexture> backbufferTex = m_Context->BeginFrame())
+            if (RHI::ITexture* backbufferTex = m_Context->BeginFrame())
             {
                 m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
 
@@ -69,7 +72,7 @@ namespace Mixture
                 if (auto commandList = m_Context->GetCommandBuffer())
                 {
                     commandList->Begin();
-                    m_RenderGraph->Execute(commandList, m_Context.get());
+                    m_RenderGraph->Execute(commandList.get(), m_Context.get());
                     commandList->End();
                 }
 

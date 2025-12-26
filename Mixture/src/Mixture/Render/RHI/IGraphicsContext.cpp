@@ -21,10 +21,6 @@ namespace Mixture::RHI
                 OPAL_ERROR("Core", "D3D12 not supported yet!");
                 return nullptr;
 
-            case GraphicsAPI::OpenGL:
-                OPAL_ERROR("Core", "OpenGL not supported yet!");
-                return nullptr;
-
             case GraphicsAPI::Metal:
                 OPAL_ERROR("Core", "Metal not supported yet!");
                 return nullptr;

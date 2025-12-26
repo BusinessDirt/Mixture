@@ -4,6 +4,9 @@
 #include "Platform/Vulkan/Resources/Texture.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
 
+#include "Platform/Vulkan/Pipeline/Pipeline.hpp"
+#include "Platform/Vulkan/Pipeline/Shader.hpp"
+
 #include <vector>
 #include <set>
 
@@ -64,6 +67,25 @@ namespace Mixture::Vulkan
         }
 
         m_GraphicsQueue = m_Device.getQueue(indices.Graphics.value(), 0);
+        m_PresentQueue = m_Device.getQueue(indices.Present.value(), 0);
+
+        if (indices.Compute.has_value())
+        {
+            m_ComputeQueue = m_Device.getQueue(indices.Compute.value(), 0);
+        }
+        else
+        {
+            m_ComputeQueue = m_GraphicsQueue;
+        }
+
+        if (indices.Transfer.has_value())
+        {
+            m_TransferQueue = m_Device.getQueue(indices.Transfer.value(), 0);
+        }
+        else
+        {
+            m_TransferQueue = m_GraphicsQueue;
+        }
 
         VmaVulkanFunctions vulkanFunctions = {};
         vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
@@ -93,9 +115,9 @@ namespace Mixture::Vulkan
         m_Device.destroy();
 	}
 
-    Ref<RHI::IShader> Device::CreateShader(const std::string &filepath, RHI::ShaderStage stage)
+    Ref<RHI::IShader> Device::CreateShader(const void* data, size_t size, RHI::ShaderStage stage)
     {
-        return nullptr;
+        return CreateRef<Shader>(data, size, stage);
     }
 
     Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc)
@@ -110,6 +132,6 @@ namespace Mixture::Vulkan
 
     Ref<RHI::IPipeline> Device::CreatePipeline(const RHI::PipelineDesc& desc)
     {
-        return nullptr;
+        return CreateRef<Pipeline>(desc);
     }
 }

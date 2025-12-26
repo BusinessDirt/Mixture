@@ -7,28 +7,6 @@
 
 namespace Mixture::Vulkan
 {
-    namespace
-    {
-        namespace Utils
-        {
-            static vk::BufferUsageFlags GetVulkanBufferUsage(RHI::BufferUsage usage)
-            {
-                vk::BufferUsageFlags flags = vk::BufferUsageFlagBits::eTransferDst; // Always allow updates via staging
-
-                switch (usage)
-                {
-                    case RHI::BufferUsage::Vertex:   flags |= vk::BufferUsageFlagBits::eVertexBuffer; break;
-                    case RHI::BufferUsage::Index:    flags |= vk::BufferUsageFlagBits::eIndexBuffer; break;
-                    case RHI::BufferUsage::Uniform:  flags |= vk::BufferUsageFlagBits::eUniformBuffer; break;
-                    case RHI::BufferUsage::Storage:  flags |= vk::BufferUsageFlagBits::eStorageBuffer; break;
-                    case RHI::BufferUsage::TransferSrc: flags |= vk::BufferUsageFlagBits::eTransferSrc; break;
-                    case RHI::BufferUsage::TransferDst: flags |= vk::BufferUsageFlagBits::eTransferDst; break;
-                }
-                return flags;
-            }
-        }
-    }
-
     Buffer::Buffer(const RHI::BufferDesc& desc, const void* initialData)
         : m_Desc(desc)
     {
@@ -38,7 +16,7 @@ namespace Mixture::Vulkan
         // We generally allocate GPU_ONLY for best performance.
         vk::BufferCreateInfo bufferInfo = {};
         bufferInfo.size = desc.Size;
-        bufferInfo.usage = Utils::GetVulkanBufferUsage(desc.Usage);
+        bufferInfo.usage = EnumMapper::MapBufferUsage(desc.Usage) |= vk::BufferUsageFlagBits::eTransferDst;
         bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
         VmaAllocationCreateInfo allocInfo = {};

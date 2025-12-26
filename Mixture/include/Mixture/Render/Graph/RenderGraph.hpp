@@ -40,10 +40,10 @@ namespace Mixture
         template<typename PassData>
         void AddPass(const std::string& name,
              std::function<void(RenderGraphBuilder&, PassData&)> setup,
-             std::function<void(const RenderGraphRegistry&, const PassData&, Ref<RHI::ICommandList>)> execute)
+             std::function<void(const RenderGraphRegistry&, const PassData&, RHI::ICommandList*)> execute)
         {
             static_assert(std::is_trivially_destructible<PassData>::value, "RenderGraph PassData must be trivially destructible (POD). Do not use std::vector or std::string inside PassData!");
-            
+
             auto& pass = m_Passes.emplace_back();
             pass.Name = name;
 
@@ -52,7 +52,7 @@ namespace Mixture
             RenderGraphBuilder builder(*this, pass);
             setup(builder, *data);
 
-            pass.Execute = [=](RenderGraphRegistry& registry, Ref<RHI::ICommandList> cmdList)
+            pass.Execute = [=](RenderGraphRegistry& registry, RHI::ICommandList* cmdList)
                 {
                     execute(registry, *data, cmdList);
                 };
@@ -70,7 +70,7 @@ namespace Mixture
          * @param cmdList The command list to record commands into.
          * @param context The graphics context (for resource creation).
          */
-        void Execute(Ref<RHI::ICommandList> cmdList, RHI::IGraphicsContext* context);
+        void Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context);
 
         /**
          * @brief Imports an external resource (e.g., Swapchain Backbuffer) into the graph.
@@ -80,7 +80,7 @@ namespace Mixture
          * @param resource The external texture resource.
          * @return RGResourceHandle A handle to the imported resource.
          */
-        RGResourceHandle ImportResource(const std::string& name, Ref<RHI::ITexture> resource);
+        RGResourceHandle ImportResource(const std::string& name, RHI::ITexture* resource);
 
         /**
          * @brief Creates a new internal resource (transient) for the graph.
@@ -107,10 +107,19 @@ namespace Mixture
          */
         RGResourceHandle GetResource(const std::string& name) const;
 
+        /**
+         * @brief Retrieves the description of a resource by handle.
+         *
+         * @param handle The handle of the resource.
+         * @return const RHI::TextureDesc& The description of the resource.
+         */
+        const RHI::TextureDesc& GetResourceDesc(RGResourceHandle handle) const;
+
     private:
         void SortPasses();
         void CalculateLifetimes();
         void CalculateBarriers();
+        void DumpGraphToJSON();
 
     private:
         LinearAllocator m_PassAllocator;

@@ -15,7 +15,7 @@ namespace Mixture::Vulkan
 {
     /**
      * @brief Vulkan implementation of a GPU texture.
-     * 
+     *
      * Handles both standard textures (owned memory) and wrapped external textures (e.g. Swapchain images).
      */
     class Texture : public RHI::ITexture
@@ -26,7 +26,7 @@ namespace Mixture::Vulkan
         Texture(const std::string& path);
 
         // Swapchain/External Wrapper - We DO NOT own this memory
-        Texture(vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height);
+        Texture(vk::Format format, vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height);
 
         virtual ~Texture();
 

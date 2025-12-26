@@ -336,6 +336,14 @@ namespace Mixture::RHI
          * @brief The width of lines when `polygonMode` is `Line`. Defaults to `1.0f`. 
          */
         float lineWidth = 1.0f;
+
+        bool operator==(const RasterizerState& other) const
+        {
+            return polygonMode == other.polygonMode &&
+                   cullMode == other.cullMode &&
+                   frontFace == other.frontFace &&
+                   lineWidth == other.lineWidth;
+        }
     };
 
     /**
@@ -357,6 +365,13 @@ namespace Mixture::RHI
          * @brief The comparison operation used for depth testing. Defaults to `CompareOp::Less`. 
          */
         CompareOp depthCompareOp = CompareOp::Less;
+        
+        bool operator==(const DepthStencilState& other) const
+        {
+            return depthTest == other.depthTest &&
+                   depthWrite == other.depthWrite &&
+                   depthCompareOp == other.depthCompareOp;
+        }
     };
 
     /**
@@ -398,5 +413,16 @@ namespace Mixture::RHI
          * @brief The blending operation for the alpha component. Defaults to `BlendOp::Add`. 
          */
         BlendOp alphaOp = BlendOp::Add;
+        
+        bool operator==(const BlendState& other) const
+        {
+            return enabled == other.enabled &&
+                   srcColor == other.srcColor &&
+                   dstColor == other.dstColor &&
+                   colorOp == other.colorOp &&
+                   srcAlpha == other.srcAlpha &&
+                   dstAlpha == other.dstAlpha &&
+                   alphaOp == other.alphaOp;
+        }
     };
 }

@@ -9,7 +9,7 @@
 
 #include <cstdint>
 
-namespace Mixture::RHI 
+namespace Mixture::RHI
 {
     /**
      * @enum Format
@@ -19,7 +19,7 @@ namespace Mixture::RHI
      * type (UNORM, SFLOAT, INT, UINT), and intended use (e.g., Albedo, HDR, Depth).
      * These formats are crucial for specifying how data is interpreted by the GPU.
      */
-    enum class Format : uint32_t 
+    enum class Format : uint32_t
     {
         /** @brief Default undefined format. */
         Undefined = 0,
@@ -101,12 +101,17 @@ namespace Mixture::RHI
          * High precision. Used for Position data, World Space Normals.
          */
         R32G32B32A32_FLOAT,
-        
+
         /**
          * @brief 32-bit single channel signed integer format.
          * Used for IDs (Entity ID buffers), atomic counters, or other integer data.
          */
         R32_INT,
+
+        /**
+         * @brief 32-bit four channel signed integer format.
+         */
+        R32G32B32A32_INT,
 
         /**
          * @brief 32-bit single channel unsigned integer format.
@@ -143,9 +148,9 @@ namespace Mixture::RHI
      * @return The size in bytes of a single element of the specified format.
      *         Returns 0 for `Undefined` format or unrecognized formats.
      */
-    inline uint32_t GetFormatStride(Format format) 
+    inline uint32_t GetFormatStride(Format format)
     {
-        switch (format) 
+        switch (format)
         {
             case Format::R8_UNORM:           return 1;
             case Format::R8G8_UNORM:         return 2;
@@ -162,17 +167,31 @@ namespace Mixture::RHI
             case Format::R32G32_FLOAT:       return 8;
             case Format::R32G32B32_FLOAT:    return 12;
             case Format::R32G32B32A32_FLOAT: return 16;
-            
+
             case Format::R32_INT:            return 4;
+            case Format::R32G32B32A32_INT:   return 16;
             case Format::R32_UINT:           return 4;
 
             case Format::D32_FLOAT:          return 4;
             // D24_S8 is packed into 32 bits usually
-            case Format::D24_UNORM_S8_UINT:  return 4; 
+            case Format::D24_UNORM_S8_UINT:  return 4;
             // D32_S8 is often 64 bits (32 depth + 8 stencil + 24 padding)
-            case Format::D32_FLOAT_S8_UINT:  return 8; 
+            case Format::D32_FLOAT_S8_UINT:  return 8;
 
             default: return 0;
+        }
+    }
+
+    inline bool IsDepthFormat(Format format)
+    {
+        switch (format)
+        {
+            case Format::D32_FLOAT:
+            case Format::D24_UNORM_S8_UINT:
+            case Format::D32_FLOAT_S8_UINT:
+                return true;
+            default:
+                return false;
         }
     }
 }

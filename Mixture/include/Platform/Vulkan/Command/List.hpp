@@ -37,8 +37,8 @@ namespace Mixture::Vulkan
 
         void PipelineBarrier(RHI::ITexture* texture, RHI::ResourceState oldState, RHI::ResourceState newState) override;
         void PushConstants(RHI::IPipeline* pipeline, RHI::ShaderStage stage, const void* data, uint32_t size) override;
-        void SetUniformBuffer(uint32_t binding, Ref<RHI::IBuffer> buffer) override;
-        void SetTexture(uint32_t binding, Ref<RHI::ITexture> texture) override;
+        void SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer) override;
+        void SetTexture(uint32_t binding, RHI::ITexture* texture) override;
 
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
@@ -52,8 +52,8 @@ namespace Mixture::Vulkan
         // Staging area for bindings
         struct BindingState
         {
-            Ref<RHI::IBuffer> Buffer;
-            Ref<RHI::ITexture> Texture;
+            RHI::IBuffer* Buffer;
+            RHI::ITexture* Texture;
             vk::DescriptorType Type;
         };
 
