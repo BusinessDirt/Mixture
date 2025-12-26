@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file PipelineCache.hpp
+ * @brief Cache for Pipeline State Objects (PSOs).
+ */
+
 #include "Mixture/Render/RHI/IPipeline.hpp"
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 #include "Mixture/Util/Util.hpp"
@@ -7,6 +12,9 @@
 
 namespace Mixture {
 
+    /**
+     * @brief Caches created pipelines to avoid redundant state creation.
+     */
     class PipelineCache
     {
     public:

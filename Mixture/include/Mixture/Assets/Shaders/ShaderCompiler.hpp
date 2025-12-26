@@ -1,10 +1,19 @@
 #pragma once
+
+/**
+ * @file ShaderCompiler.hpp
+ * @brief Utilities for compiling and reflecting shader code.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Render/RHI/RHI.hpp"
 
 namespace Mixture
 {
+    /**
+     * @brief Contains reflection data extracted from a compiled shader.
+     */
     struct ShaderReflectionData
     {
         enum class ResourceType
@@ -57,6 +66,9 @@ namespace Mixture
         Vector<VertexAttribute> InputAttributes;
     };
 
+    /**
+     * @brief Static class for compiling shader source code.
+     */
     class ShaderCompiler
     {
     public:

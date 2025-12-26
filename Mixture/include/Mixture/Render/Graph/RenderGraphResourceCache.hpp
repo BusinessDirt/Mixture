@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file RenderGraphResourceCache.hpp
+ * @brief Caching mechanism for RenderGraph transient resources.
+ */
+
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/RHI.hpp"
 #include "Mixture/Util/Util.hpp"

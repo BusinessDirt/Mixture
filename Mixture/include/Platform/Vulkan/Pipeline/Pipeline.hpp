@@ -1,10 +1,19 @@
 #pragma once
+
+/**
+ * @file Pipeline.hpp
+ * @brief Vulkan implementation of the Pipeline interface.
+ */
+
 #include "Platform/Vulkan/Definitions.hpp"
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
 
 namespace Mixture::Vulkan
 {
+    /**
+     * @brief Vulkan implementation of a graphics pipeline.
+     */
     class Pipeline : public RHI::IPipeline
     {
     public:

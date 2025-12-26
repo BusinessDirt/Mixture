@@ -1,17 +1,29 @@
 #pragma once
 
+/**
+ * @file UUID.hpp
+ * @brief Universally Unique Identifier implementation.
+ */
+
 #include <cstdint>
 #include <functional>
 
 namespace Mixture
 {
+    /**
+     * @brief Represents a Universally Unique Identifier.
+     */
     class UUID
     {
     public:
-        // Default constructor generates a new random ID
+        /**
+         * @brief Default constructor generates a new random ID.
+         */
         UUID();
 
-        // Constructor for creating a UUID from a known value (e.g. loading from disk)
+        /**
+         * @brief Constructor for creating a UUID from a known value (e.g. loading from disk).
+         */
         UUID(uint64_t uuid);
 
         // Copy constructor

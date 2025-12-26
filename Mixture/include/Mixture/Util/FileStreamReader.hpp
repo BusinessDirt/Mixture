@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file FileStreamReader.hpp
+ * @brief Utility class for reading files.
+ */
+
 #include "Mixture/Core/Base.hpp"
 
 #include <fstream>
@@ -7,7 +13,9 @@
 namespace Mixture
 {
 
-    // wrapper around std::ifstream or a memory buffer
+    /**
+     * @brief Wrapper around std::ifstream or a memory buffer for reading files.
+     */
     class FileStreamReader
     {
     public:

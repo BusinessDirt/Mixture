@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Shader.hpp
+ * @brief Vulkan implementation of the Shader interface.
+ */
+
 #include "Platform/Vulkan/Definitions.hpp"
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
@@ -6,6 +12,9 @@
 
 namespace Mixture::Vulkan
 {
+    /**
+     * @brief Vulkan implementation of a shader module.
+     */
     class Shader : public RHI::IShader
     {
     public:
