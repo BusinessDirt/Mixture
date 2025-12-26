@@ -34,6 +34,7 @@ namespace Mixture
         UUID GetID() const override { return m_ID; }
         AssetType GetType() const override { return AssetType::Shader; }
         const std::string& GetName() const override { return m_Name; }
+        size_t GetMemoryUsage() const override { return sizeof(*this) + m_ByteCode.size() + m_Name.capacity(); }
 
         // --- Shader Specific API ---
 

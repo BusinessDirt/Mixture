@@ -10,6 +10,7 @@
 #include "Mixture/Assets/IAsset.hpp"
 #include "Mixture/Assets/IAssetLoader.hpp"
 #include "Mixture/Core/Memory/ArenaAllocator.hpp"
+#include "Mixture/Core/Memory/LRUCache.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 
@@ -32,7 +33,10 @@ namespace Mixture
          */
         static AssetManager& Get() { static AssetManager instance; return instance; }
 
-        AssetManager() : m_LoadingArena(1024 * 1024) {} // 1MB Scratchpad
+        AssetManager() 
+            : m_LoadingArena(1024 * 1024), // 1MB Scratchpad
+              m_AssetCache(512 * 1024 * 1024) // 512MB Asset Cache by default
+        {} 
 
         /**
          * @brief Initializes the AssetManager and registers default loaders.
@@ -45,6 +49,13 @@ namespace Mixture
          * @param rootPath The root directory path.
          */
         void SetAssetRoot(const std::filesystem::path& rootPath);
+
+        /**
+         * @brief Sets the memory limit for the asset cache.
+         * 
+         * @param sizeInBytes Maximum memory in bytes.
+         */
+        void SetCacheSize(size_t sizeInBytes) { m_AssetCache.SetMaxMemory(sizeInBytes); }
 
         /**
          * @brief Sets the current graphics API for API-specific asset loading (e.g. Shaders).
@@ -81,16 +92,16 @@ namespace Mixture
         {
             if (!handle.ID.IsValid()) return nullptr;
 
-            auto it = m_Assets.find(handle.ID);
-            if (it != m_Assets.end())
+            Ref<IAsset> asset = m_AssetCache.Get(handle.ID);
+            if (asset)
             {
                 // Validate Magic Number
-                if (it->second->GetMagic() != handle.Magic)
+                if (asset->GetMagic() != handle.Magic)
                 {
                     // Handle is stale (refers to an old instance of the asset)
                     return nullptr; 
                 }
-                return std::static_pointer_cast<T>(it->second);
+                return std::static_pointer_cast<T>(asset);
             }
 
             return nullptr;
@@ -103,7 +114,7 @@ namespace Mixture
         std::filesystem::path m_RootDirectory;
         RHI::GraphicsAPI m_GraphicsAPI;
 
-        std::unordered_map<UUID, Ref<IAsset>> m_Assets;
+        LRUCache<UUID, Ref<IAsset>> m_AssetCache;
         std::unordered_map<AssetType, Scope<IAssetLoader>> m_Loaders;
 
         ArenaAllocator m_LoadingArena;

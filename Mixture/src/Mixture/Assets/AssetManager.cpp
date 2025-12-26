@@ -8,6 +8,14 @@ namespace Mixture
     void AssetManager::Init()
     {
         m_Loaders[AssetType::Shader] = CreateScope<ShaderLoader>();
+
+        m_AssetCache.SetEvictionCallback([](const UUID& id, const Ref<IAsset>& asset)
+        {
+            OPAL_LOG_DEBUG("Core/Assets", "Evicting Asset '{}' (ID: {}) Size: {} bytes", 
+                asset ? asset->GetName() : "Unknown", 
+                (uint64_t)id, 
+                asset ? asset->GetMemoryUsage() : 0);
+        });
     }
 
     void AssetManager::SetAssetRoot(const std::filesystem::path& rootPath)
@@ -27,9 +35,9 @@ namespace Mixture
         // TODO: replace with metadata files
         UUID id = UUID::FromPath(path.string());
 
-        // Check if already loaded
-        auto it = m_Assets.find(id);
-        if (it != m_Assets.end()) return AssetHandle{ id, it->second->GetMagic() };
+        // Check if already loaded in Cache
+        Ref<IAsset> cachedAsset = m_AssetCache.Get(id);
+        if (cachedAsset) return AssetHandle{ id, cachedAsset->GetMagic() };
 
         // If not loaded, load it now
         Ref<IAsset> newAsset = LoadAssetInternal(type, path, id);
@@ -73,7 +81,9 @@ namespace Mixture
             // Assign Magic Number (Generation)
             static std::atomic<uint32_t> s_AssetMagicCounter(1);
             asset->SetMagic(s_AssetMagicCounter++);
-            m_Assets[id] = asset;
+            
+            // Add to LRU Cache
+            m_AssetCache.Put(id, asset, asset->GetMemoryUsage());
         }
         return asset;
     }

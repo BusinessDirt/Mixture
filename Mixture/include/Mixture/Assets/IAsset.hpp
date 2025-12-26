@@ -98,6 +98,12 @@ namespace Mixture
          */
         void SetMagic(uint32_t magic) { m_Magic = magic; }
 
+        /**
+         * @brief Gets the approximate memory usage of this asset in bytes.
+         * Used for cache eviction policies.
+         */
+        virtual size_t GetMemoryUsage() const = 0;
+
     protected:
         uint32_t m_Magic = 0;
     };
