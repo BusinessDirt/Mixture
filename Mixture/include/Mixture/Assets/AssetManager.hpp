@@ -81,6 +81,12 @@ namespace Mixture
             auto it = m_Assets.find(handle.ID);
             if (it != m_Assets.end())
             {
+                // Validate Magic Number
+                if (it->second->GetMagic() != handle.Magic)
+                {
+                    // Handle is stale (refers to an old instance of the asset)
+                    return nullptr; 
+                }
                 return std::static_pointer_cast<T>(it->second);
             }
 

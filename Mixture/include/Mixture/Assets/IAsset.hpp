@@ -39,11 +39,24 @@ namespace Mixture
     };
 
     /**
-     * @brief Handle to an asset, wrapping its UUID.
+     * @brief Handle to an asset, wrapping its UUID and a validation magic number.
      */
     struct AssetHandle
     {
         UUID ID;
+        uint32_t Magic = 0; // Magic number to validate against stale memory/reloads
+
+        bool operator==(const AssetHandle& other) const
+        {
+            return ID == other.ID && Magic == other.Magic;
+        }
+
+        bool operator!=(const AssetHandle& other) const
+        {
+            return !(*this == other);
+        }
+
+        operator bool() const { return ID.IsValid() && Magic != 0; }
     };
 
     /**
@@ -74,6 +87,19 @@ namespace Mixture
          * @return const std::string& The name.
          */
         virtual const std::string& GetName() const = 0;
+
+        /**
+         * @brief Gets the magic number (generation) of this asset instance.
+         */
+        uint32_t GetMagic() const { return m_Magic; }
+
+        /**
+         * @brief Sets the magic number. Should be managed by AssetManager.
+         */
+        void SetMagic(uint32_t magic) { m_Magic = magic; }
+
+    protected:
+        uint32_t m_Magic = 0;
     };
 
     namespace Utils

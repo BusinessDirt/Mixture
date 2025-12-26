@@ -28,13 +28,14 @@ namespace Mixture
         UUID id = UUID::FromPath(path.string());
 
         // Check if already loaded
-        if (m_Assets.find(id) != m_Assets.end()) return AssetHandle{ id };
+        auto it = m_Assets.find(id);
+        if (it != m_Assets.end()) return AssetHandle{ id, it->second->GetMagic() };
 
         // If not loaded, load it now
         Ref<IAsset> newAsset = LoadAssetInternal(type, path, id);
-        if (newAsset) return AssetHandle{ id };
+        if (newAsset) return AssetHandle{ id, newAsset->GetMagic() };
 
-        return AssetHandle{ UUID(0) }; // Return Invalid Handle
+        return AssetHandle{ UUID(0), 0 }; // Return Invalid Handle
     }
 
     Ref<IAsset> AssetManager::LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id)
@@ -63,7 +64,13 @@ namespace Mixture
         OPAL_LOG_DEBUG("Core/Assets", "Loaded {} from '{}' with id={}",
             typeString, path.string(), (uint64_t)id);
 
-        if (asset) m_Assets[id] = asset;
+        if (asset)
+        {
+            // Assign Magic Number (Generation)
+            static std::atomic<uint32_t> s_AssetMagicCounter(1);
+            asset->SetMagic(s_AssetMagicCounter++);
+            m_Assets[id] = asset;
+        }
         return asset;
     }
 }
