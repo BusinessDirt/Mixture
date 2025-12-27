@@ -1,65 +1,128 @@
 #pragma once
 
-#include "Platform/Vulkan/Base.hpp"
-#include "Platform/Vulkan/Renderpass.hpp"
+/**
+ * @file Swapchain.hpp
+ * @brief Vulkan Swapchain wrapper.
+ */
 
-#include "Platform/Vulkan/Buffer/Frame.hpp"
-#include "Platform/Vulkan/Buffer/Depth.hpp"
-
-#include "Platform/Vulkan/Sync/Fence.hpp"
-#include "Platform/Vulkan/Sync/Semaphore.hpp"
+#include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/PhysicalDevice.hpp"
+#include "Platform/Vulkan/Device.hpp"
+#include "Platform/Vulkan/Surface.hpp"
 
 namespace Mixture::Vulkan
 {
+
+    /**
+     * @class Swapchain
+     * @brief Manages the swapchain images and presentation to the surface.
+     *
+     * Handles creation, recreation (on resize), acquiring images for rendering,
+     * and presenting rendered images to the screen.
+     */
     class Swapchain
     {
     public:
-        static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+        /**
+         * @brief Constructs a Swapchain.
+         * @param physicalDevice Reference to the physical device.
+         * @param device Reference to the logical device.
+         * @param surface Reference to the window surface.
+         * @param width Initial width of the swapchain.
+         * @param height Initial height of the swapchain.
+         */
+        Swapchain(PhysicalDevice& physicalDevice, Device& device, Surface& surface, uint32_t width, uint32_t height);
 
-        OPAL_NON_COPIABLE(Swapchain);
-        
-        explicit Swapchain(const std::shared_ptr<Swapchain>& previous);
-        Swapchain();
+        /**
+         * @brief Destroys the Swapchain and cleans up associated resources (image views, etc.).
+         */
         ~Swapchain();
 
-        OPAL_NODISCARD VkExtent2D GetExtent() const { return m_Extent; }
-        OPAL_NODISCARD uint32_t GetWidth() const { return m_Extent.width; }
-        OPAL_NODISCARD uint32_t GetHeight() const { return m_Extent.height; }
+        /**
+         * @brief Recreates the swapchain, typically called when the window is resized.
+         * @param width New width of the swapchain.
+         * @param height New height of the swapchain.
+         */
+        void Recreate(uint32_t width, uint32_t height);
 
-        OPAL_NODISCARD VkFormat GetImageFormat() const { return m_FrameBuffers[0]->GetFormat(); }
-        OPAL_NODISCARD VkFormat GetDepthFormat() const { return m_DepthBuffers[0]->GetFormat(); }
+        /**
+         * @brief Acquires the next available image index from the swapchain.
+         * @param[out] outImageIndex The index of the acquired image.
+         * @param semaphore A semaphore to signal when the image is available.
+         * @return true if successful, false if the swapchain is out of date (needs resize).
+         */
+        bool AcquireNextImage(uint32_t* outImageIndex, vk::Semaphore semaphore);
 
-        OPAL_NODISCARD const Renderpass& GetRenderpass() const { return *m_Renderpass; }
-        OPAL_NODISCARD const FrameBuffer& GetFramebuffer(const uint32_t index) const { return *m_FrameBuffers[index]; }
+        /**
+         * @brief Submits the image to the presentation queue.
+         * @param imageIndex The index of the image to present.
+         * @param waitSemaphore A semaphore to wait on before presenting (rendering finished).
+         * @return true if successful, false if the swapchain is out of date or suboptimal.
+         */
+        bool Present(uint32_t imageIndex, vk::Semaphore waitSemaphore);
 
-        OPAL_NODISCARD uint32_t GetCurrentFrameIndex() const { return static_cast<uint32_t>(m_CurrentFrame); }
-        OPAL_NODISCARD size_t GetImageCount() const { return m_FrameBuffers.size(); }
+        /**
+         * @brief Gets the underlying Vulkan Swapchain handle.
+         * @return The vk::SwapchainKHR handle.
+         */
+        vk::SwapchainKHR GetHandle() const { return m_Swapchain; }
 
-        OPAL_NODISCARD VkResult AcquireNextImage() const;
-        OPAL_NODISCARD VkResult SubmitCommandBuffers(const std::vector<VkCommandBuffer>& commandBuffers);
+        /**
+         * @brief Gets the format of the swapchain images.
+         * @return The vk::Format of the images.
+         */
+        vk::Format GetImageFormat() const { return m_ImageFormat; }
 
-        OPAL_NODISCARD bool CompareSwapFormats(const Swapchain& swapChain) const;
-        
+        /**
+         * @brief Gets the extent (resolution) of the swapchain images.
+         * @return The vk::Extent2D of the images.
+         */
+        vk::Extent2D GetExtent() const { return m_Extent; }
+
+        /**
+         * @brief Gets the image views associated with the swapchain images.
+         * @return A vector of vk::ImageView handles.
+         */
+        const Vector<vk::ImageView>& GetImageViews() const { return m_ImageViews; }
+
+        /**
+         * @brief Gets the raw swapchain images.
+         * @note These images are owned by the swapchain/driver, do not manually destroy them.
+         * @return A vector of vk::Image handles.
+         */
+        const Vector<vk::Image>& GetImages() const { return m_Images; }
+
+        /**
+         * @brief Gets the number of images in the swapchain.
+         * @return The number of images.
+         */
+        uint32_t GetImageCount() const { return static_cast<uint32_t>(m_Images.size()); }
+
+        RHI::ITexture* GetTexture(uint32_t index) const { return m_SwapchainTextures[index].get(); }
+
     private:
-        void Init(bool debug);
-        static VkSurfaceFormatKHR ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-        static VkPresentModeKHR  ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-        static VkExtent2D ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-        
+        void CreateSwapchain(uint32_t width, uint32_t height);
+        void CreateImageViews();
+
+        vk::SurfaceFormatKHR ChooseSwapSurfaceFormat(const Vector<vk::SurfaceFormatKHR>& availableFormats);
+        vk::PresentModeKHR ChooseSwapPresentMode(const Vector<vk::PresentModeKHR>& availablePresentModes);
+        vk::Extent2D ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
+
     private:
-        VULKAN_HANDLE(VkSwapchainKHR, m_Swapchain);
-        std::shared_ptr<Swapchain> m_OldSwapchain;
-        
-        VkExtent2D m_Extent;
-        size_t m_CurrentFrame = 0;
+        PhysicalDevice* m_PhysicalDevice;
+        Device* m_Device;
+        Surface* m_Surface;
 
-        Scope<Renderpass> m_Renderpass = nullptr;
-        std::vector<Scope<FrameBuffer>> m_FrameBuffers;
-        std::vector<Scope<DepthBuffer>> m_DepthBuffers;
+        vk::PresentModeKHR m_PresentMode;
+        vk::SwapchainKHR m_Swapchain;
+        vk::Format m_ImageFormat;
+        vk::ColorSpaceKHR m_ColorSpace;
+        vk::Extent2D m_Extent;
 
-        std::vector<Semaphore> m_ImageAvailableSemaphores;
-        std::vector<Semaphore> m_RenderFinishedSemaphores;
-        std::vector<Fence> m_InFlightFences;
-        std::vector<Fence*> m_ImagesInFlight;
+        Vector<Scope<RHI::ITexture>> m_SwapchainTextures;
+        Vector<vk::Image> m_Images;
+        Vector<vk::ImageView> m_ImageViews;
+
+        vk::SwapchainKHR m_OldSwapchain = nullptr;
     };
 }

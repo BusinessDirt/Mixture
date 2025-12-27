@@ -8,6 +8,11 @@
 
 namespace fmt {
 
+    /**
+     * @brief Base formatter for GLM types.
+     * 
+     * Handles parsing of format specifiers (e.g., 'f' for fixed-point, 'e' for scientific).
+     */
     struct GLMFormatter 
     {
 		char presentation = 'f';
@@ -26,6 +31,9 @@ namespace fmt {
     --- VECTORS ---
     */
 
+    /**
+     * @brief Formatter for glm::vec1.
+     */
     template<>
 	struct formatter<glm::vec1> : GLMFormatter
 	{
@@ -38,6 +46,9 @@ namespace fmt {
 		}
 	};
 
+    /**
+     * @brief Formatter for glm::vec2.
+     */
 	template<>
 	struct formatter<glm::vec2> : GLMFormatter
 	{
@@ -50,6 +61,9 @@ namespace fmt {
 		}
 	};
 
+    /**
+     * @brief Formatter for glm::vec3.
+     */
 	template<>
 	struct formatter<glm::vec3> : GLMFormatter
 	{
@@ -62,6 +76,9 @@ namespace fmt {
 		}
 	};
 
+    /**
+     * @brief Formatter for glm::vec4.
+     */
 	template<>
 	struct formatter<glm::vec4> : GLMFormatter
 	{
@@ -78,6 +95,9 @@ namespace fmt {
     --- QUATERNIONS ---
     */
 
+    /**
+     * @brief Formatter for glm::quat.
+     */
     template<> struct formatter<glm::quat> : GLMFormatter 
     {
         template <typename FormatContext>
@@ -94,6 +114,9 @@ namespace fmt {
     --- MATRICES ---
     */
 
+    /**
+     * @brief Formatter for glm::mat2.
+     */
     template<> struct formatter<glm::mat2> : GLMFormatter 
     {
         template <typename FormatContext>
@@ -115,6 +138,9 @@ namespace fmt {
         }
     };
 
+    /**
+     * @brief Formatter for glm::mat3.
+     */
     template<> struct formatter<glm::mat3> : GLMFormatter 
     {
         template <typename FormatContext>
@@ -136,6 +162,9 @@ namespace fmt {
         }
     };
 
+    /**
+     * @brief Formatter for glm::mat4.
+     */
     template<> struct formatter<glm::mat4> : GLMFormatter 
     {
         template <typename FormatContext>

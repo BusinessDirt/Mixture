@@ -1,7 +1,13 @@
 #pragma once
 
+/**
+ * @file mxpch.hpp
+ * @brief Precompiled header file for Mixture.
+ */
+
 #include <string>
 #include <functional>
+#include <filesystem>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES

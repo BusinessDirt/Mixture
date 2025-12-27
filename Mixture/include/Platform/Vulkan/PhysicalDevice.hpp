@@ -1,54 +1,71 @@
 #pragma once
-#include "Platform/Vulkan/Base.hpp"
 
-#include <Opal/Base.hpp>
+/**
+ * @file PhysicalDevice.hpp
+ * @brief Vulkan physical device wrapper.
+ */
+
+#include "Mixture/Core/Base.hpp"
+
+#include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/Instance.hpp"
 
 namespace Mixture::Vulkan
 {
-    struct QueueFamilyIndices
-    {
-        std::optional<uint32_t> Graphics;
-        std::optional<uint32_t> Present;
-        
-        OPAL_NODISCARD bool IsComplete() const
-        {
-            return Graphics.has_value() && Present.has_value();
-        }
-    };
-
-    struct SwapchainSupportDetails
-    {
-        VkSurfaceCapabilitiesKHR Capabilities;
-        std::vector<VkSurfaceFormatKHR> Formats;
-        std::vector<VkPresentModeKHR> PresentModes;
-    };
-
+    /**
+     * @brief Wrapper around a Vulkan physical device (GPU).
+     *
+     * Selects the best available GPU and queries its features/queues.
+     */
     class PhysicalDevice
     {
     public:
-        explicit PhysicalDevice(const std::vector<const char*>& requiredExtensions);
+        // Pass the Instance so we can enumerate GPUs
+        /**
+         * @brief Constructor.
+         *
+         * @param instance The Vulkan instance.
+         */
+        PhysicalDevice(Instance& instance);
         ~PhysicalDevice() = default;
-        
-        OPAL_NON_COPIABLE(PhysicalDevice);
-        
-        OPAL_NODISCARD const VkPhysicalDeviceProperties& GetProperties() const { return m_Properties; }
-        OPAL_NODISCARD const VkPhysicalDeviceFeatures& GetFeatures() const { return m_Features; }
-        OPAL_NODISCARD const QueueFamilyIndices& GetQueueFamilyIndices() const { return m_QueueFamilyIndices; }
 
-        SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice device = VK_NULL_HANDLE) const;
+        /**
+         * @brief Gets the Vulkan physical device handle.
+         *
+         * @return vk::PhysicalDevice The raw handle.
+         */
+        vk::PhysicalDevice GetHandle() const { return m_PhysicalDevice; }
+
+        // Helpers for the Logical Device
+        /**
+         * @brief Gets the indices of the queue families.
+         *
+         * @return QueueFamilyIndices The indices.
+         */
+        QueueFamilyIndices GetQueueFamilies() const { return m_Indices; }
+
+        /**
+         * @brief Gets the properties of the physical device.
+         *
+         * @return vk::PhysicalDeviceProperties The properties.
+         */
+        vk::PhysicalDeviceProperties GetProperties() const { return m_Properties; }
+
+        /**
+         * @brief Gets the name of the device.
+         *
+         * @return std::string_view The device name.
+         */
+        std::string_view GetDeviceName() const;
 
     private:
-        int RateDeviceSuitability(VkPhysicalDevice device, const std::vector<const char*>& requiredExtensions) const;
-        static bool CheckExtensionSupport(VkPhysicalDevice device, const std::vector<const char*>& requiredExtensions);
+        vk::PhysicalDevice SelectBestDevice(const Vector<vk::PhysicalDevice>& devices);
+        int RateDeviceSuitability(vk::PhysicalDevice device);
+        QueueFamilyIndices FindQueueFamilies(vk::PhysicalDevice device);
 
-        static QueueFamilyIndices FindQueueFamilyIndices(VkPhysicalDevice device);
-        
     private:
-        VULKAN_HANDLE(VkPhysicalDevice, m_PhysicalDevice);
-        
-        VkPhysicalDeviceProperties m_Properties;
-        VkPhysicalDeviceFeatures m_Features;
-        
-        QueueFamilyIndices m_QueueFamilyIndices;
+        vk::PhysicalDevice m_PhysicalDevice;
+        vk::PhysicalDeviceProperties m_Properties;
+        QueueFamilyIndices m_Indices;
     };
 }

@@ -9,19 +9,19 @@ project "Mixture"
 
     files { "include/**.hpp", "src/**.cpp", "include/**.h", "src/**.mm" }
 
-    includedirs { 
+    includedirs {
         "include"
     }
 
     externalincludedirs {
         "../Opal/include",
-        "../Jasper/include",
 
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.imgui}",
-        "%{IncludeDir.Vulkan}",
+        "%{IncludeDir.vulkan}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glm}",
+        "%{IncludeDir.spirv_reflect}",
         "%{IncludeDir.stb_image}"
     }
 
@@ -51,6 +51,6 @@ project "Mixture"
             compileas "Objective-C++"  -- Compile .mm files as Objective-C++
 
     -- Add the /utf-8 flag
-    filter "action:vs2022" -- Only apply for MSVC toolset
+    filter "system:windows" -- Only apply for MSVC toolset
         buildoptions { "/utf-8" }
         pchheader "mxpch.hpp"

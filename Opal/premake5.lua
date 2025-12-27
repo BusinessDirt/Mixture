@@ -7,13 +7,13 @@ project "Opal"
 
     files { "include/**.hpp", "src/**.cpp" }
 
-    includedirs { 
+    includedirs {
         "include"
     }
 
     externalincludedirs {
         "%{IncludeDir.spdlog}",
-        "%{IncludeDir.Vulkan}",
+        "%{IncludeDir.vulkan}",
         "%{IncludeDir.glm}",
     }
 
@@ -38,5 +38,5 @@ project "Opal"
         symbols "Off"
 
     -- Add the /utf-8 flag
-    filter "action:vs2022" -- Only apply for MSVC toolset
+    filter "system:windows" -- Only apply for MSVC toolset
         buildoptions { "/utf-8" }

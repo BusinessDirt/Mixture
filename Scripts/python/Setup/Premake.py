@@ -1,62 +1,85 @@
-import sys
-import os
+import logging
 import platform
+import sys
+import subprocess
 from pathlib import Path
-
 import Utils
 
+logger = logging.getLogger(__name__)
+
+def run_premake(binary: str, args: list):
+    cmd = [binary] + args
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1) as process:
+        for line in process.stdout:
+            if ("Error: " in line):
+                logger.error(line.replace("Error: ", "").strip())
+            else:
+                logger.info(line.strip())
+
+    if process.returncode != 0:
+        logger.error(f"Failed with return code {process.returncode}")
+        sys.exit(process.returncode)
+
 class PremakeConfiguration:
-    premakeVersion = "5.0.0-beta7"
-    premakeZipUrl = f"https://github.com/premake/premake-core/releases/download/v{premakeVersion}/premake-{premakeVersion}-"
-    premakeLicenseUrl = "https://raw.githubusercontent.com/premake/premake-core/master/LICENSE.txt"
-    premakeDirectory = "./vendor/premake/bin"
+    premake_version = "5.0.0-beta7"
+    premake_zip_url = f"https://github.com/premake/premake-core/releases/download/v{premake_version}/premake-{premake_version}-"
+    premake_license_url = "https://raw.githubusercontent.com/premake/premake-core/master/LICENSE.txt"
+    premake_directory = Path("./vendor/premake/bin").resolve()
 
     @classmethod
-    def validate(cls):
+    def validate(cls) -> bool:
         if not cls.check_if_premake_is_installed():
-            print("Premake is not installed.")
+            logger.error("Premake is not installed.")
             return False
 
-        print(f"Correct Premake located at {os.path.abspath(cls.premakeDirectory)}")
+        logger.info(f"Correct Premake located at {cls.premake_directory}")
         return True
 
     @classmethod
-    def check_if_premake_is_installed(cls):
-        if platform.system() == "Windows":
-            return cls.__check_if_premake_is_installed_helper("premake5.exe", "windows.zip")
-        
-        if platform.system() == "Linux":
-            return cls.__check_if_premake_is_installed_helper("premake5", "linux.tar.gz")
-        
-        if platform.system() == "Darwin":
-            return cls.__check_if_premake_is_installed_helper("premake5", "macosx.tar.gz")
-        
+    def check_if_premake_is_installed(cls) -> bool:
+        system = platform.system()
+        if system == "Windows":
+            return cls._check_if_premake_is_installed_helper("premake5.exe", "windows.zip")
+        elif system == "Linux":
+            return cls._check_if_premake_is_installed_helper("premake5", "linux.tar.gz")
+        elif system == "Darwin":
+            return cls._check_if_premake_is_installed_helper("premake5", "macosx.tar.gz")
+        else:
+            logger.error(f"Unsupported platform: {system}")
+            return False
+
     @classmethod
-    def __check_if_premake_is_installed_helper(cls, binary: str, distribution: str) -> bool:
-        premakeExe = Path(f"{cls.premakeDirectory}/{binary}");
-        if (not premakeExe.exists()):
-            return cls.InstallPremake(distribution)
+    def _check_if_premake_is_installed_helper(cls, binary: str, distribution: str) -> bool:
+        premake_exe = cls.premake_directory / binary
+        if not premake_exe.exists():
+            return cls.install_premake(distribution)
         return True
 
     @classmethod
-    def InstallPremake(cls, distribution):
-        permissionGranted = False
-        while not permissionGranted:
-            reply = input("Premake not found. Would you like to download Premake {0:s}? [Y/N]: ".format(cls.premakeVersion)).lower().strip()
+    def install_premake(cls, distribution: str) -> bool:
+        permission_granted = False
+        while not permission_granted:
+            # Assuming implicit CI environment check if needed, or pass it as arg
+            # simplified for this context:
+            reply = input(f"Premake not found. Would you like to download Premake {cls.premake_version}? [Y/N]: ").lower().strip()
             if reply == 'n':
                 return False
-            permissionGranted = (reply == 'y')
+            permission_granted = (reply == 'y')
 
-        premakePath = f"{cls.premakeDirectory}/premake-{cls.premakeVersion}-{distribution}"
-        print("Downloading {0:s} to {1:s}".format(cls.premakeZipUrl, premakePath))
-        Utils.download_file(cls.premakeZipUrl + distribution, premakePath)
-        print("Extracting", premakePath)
-        Utils.unzip_file(premakePath, delete_zip_file=True)
-        print(f"Premake {cls.premakeVersion} has been downloaded to '{cls.premakeDirectory}'")
+        premake_path = cls.premake_directory / f"premake-{cls.premake_version}-{distribution}"
 
-        premakeLicensePath = f"{cls.premakeDirectory}/LICENSE.txt"
-        print("Downloading {0:s} to {1:s}".format(cls.premakeLicenseUrl, premakeLicensePath))
-        Utils.download_file(cls.premakeLicenseUrl, premakeLicensePath)
-        print(f"Premake License file has been downloaded to '{cls.premakeDirectory}'")
+        try:
+            Utils.download_file(f"{cls.premake_zip_url}{distribution}", premake_path)
+            Utils.unzip_file(premake_path, delete_zip_file=True)
+            logger.info(f"Premake {cls.premake_version} has been downloaded to '{cls.premake_directory}'")
 
-        return True
+            premake_license_path = cls.premake_directory / "LICENSE.txt"
+            Utils.download_file(cls.premake_license_url, premake_license_path)
+            logger.info(f"Premake License has been downloaded to '{cls.premake_directory}'")
+
+            return True
+        except Exception as e:
+            logger.error(f"Failed to install Premake: {e}")
+            return False
+
+

@@ -8,14 +8,20 @@
 #include <spdlog/fmt/fmt.h>
 
 namespace fmt {
-    // Concept to check if vk::to_string(T) exists
+    /**
+     * @brief Concept to check if vk::to_string(T) exists for a given type.
+     */
     template<typename T>
     concept HasVkToString = requires(T t) 
     {
         { vk::to_string(t) } -> std::convertible_to<std::string>;
     };
 
-    // Formatter that catches ANY type satisfying the concept
+    /**
+     * @brief Formatter for Vulkan types that support vk::to_string.
+     * 
+     * Uses the vulkan.hpp to_string functionality to format Vulkan types.
+     */
     template <HasVkToString T>
     struct formatter<T> : formatter<std::string_view> 
     {

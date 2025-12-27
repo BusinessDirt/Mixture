@@ -1,15 +1,16 @@
 #pragma once
 
+/**
+ * @file Mixture.hpp
+ * @brief Main header file for the Mixture engine.
+ * 
+ * Includes core components like Application, Layer, and LayerStack.
+ */
+
+#include "Mixture/Render/Graph/RenderGraph.hpp"
+#include "Mixture/Render/RHI/RHI.hpp"
+
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Core/Application.hpp"
 #include "Mixture/Core/Layer.hpp"
 #include "Mixture/Core/LayerStack.hpp"
-
-#include "Mixture/Renderer/RenderCommand.hpp"
-#include "Mixture/Renderer/Renderer.hpp"
-#include "Mixture/Renderer/RendererInfo.hpp"
-#include "Mixture/Renderer/Buffer.hpp"
-#include "Mixture/Renderer/Pipeline.hpp"
-#include "Mixture/Renderer/Texture.hpp"
-
-#include "Mixture/ImGui/ImGuiWidgets.hpp"

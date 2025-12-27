@@ -1,10 +1,18 @@
 #pragma once
 
+/**
+ * @file KeyEvent.hpp
+ * @brief Keyboard-related events (press, release, type).
+ */
+
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Input/KeyCodes.hpp"
 
 namespace Mixture 
 {
+    /**
+     * @brief Base class for key events.
+     */
 	class KeyEvent : public Event 
 	{
 	public:
@@ -17,6 +25,9 @@ namespace Mixture
 		KeyCode m_KeyCode;
 	};
 
+    /**
+     * @brief Event triggered when a key is pressed.
+     */
 	class KeyPressedEvent final : public KeyEvent 
 	{
 	public:
@@ -35,6 +46,9 @@ namespace Mixture
 		bool m_IsRepeat;
 	};
 
+    /**
+     * @brief Event triggered when a key is released.
+     */
 	class KeyReleasedEvent final : public KeyEvent 
 	{
 	public:
@@ -50,6 +64,9 @@ namespace Mixture
 		EVENT_CLASS_TYPE(KeyReleased)
 	};
 
+    /**
+     * @brief Event triggered when a character is typed (text input).
+     */
 	class KeyTypedEvent final : public KeyEvent 
 	{
 	public:

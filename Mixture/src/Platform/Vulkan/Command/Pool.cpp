@@ -1,25 +1,28 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Command/Pool.hpp"
 
-#include "Platform/Vulkan/Context.hpp"
-
 namespace Mixture::Vulkan
 {
-    CommandPool::CommandPool()
+    CommandPool::CommandPool(Device& device, const QueueFamilyIndices& indices)
+        : m_Device(&device)
     {
-        const auto [Graphics, Present] = Context::PhysicalDevice->GetQueueFamilyIndices();
+        vk::CommandPoolCreateInfo poolInfo;
+        poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer; // Allow resetting individual buffers
+        poolInfo.queueFamilyIndex = indices.Graphics.value();
 
-        VkCommandPoolCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        createInfo.queueFamilyIndex = Graphics.value();
-
-        VK_ASSERT(vkCreateCommandPool(Context::Device->GetHandle(), &createInfo, nullptr, &m_CommandPool),
-                  "Mixture::Vulkan::CommandPool::CommandPool() - Creation failed!")
+        try
+        {
+            m_Handle = m_Device->GetHandle().createCommandPool(poolInfo);
+        }
+        catch (vk::SystemError& err)
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to create Command Pool!");
+            exit(-1);
+        }
     }
 
     CommandPool::~CommandPool()
     {
-        vkDestroyCommandPool(Context::Device->GetHandle(), m_CommandPool, nullptr);
+        m_Device->GetHandle().destroyCommandPool(m_Handle);
     }
 }

@@ -2,196 +2,115 @@
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
-
-#include <Opal/Base.hpp>
-
-#include <set>
+#include "Platform/Vulkan/Surface.hpp"
 
 namespace Mixture::Vulkan
 {
-    namespace Util
+    namespace
     {
-        namespace
+        std::string VulkanVersionToString(uint32_t version)
         {
-            std::vector<VkExtensionProperties> GetAvailableExtensions(const VkPhysicalDevice physicalDevice)
+            std::stringstream ss;
+            ss << VK_API_VERSION_MAJOR(version) << "."
+                << VK_API_VERSION_MINOR(version) << "."
+                << VK_API_VERSION_PATCH(version);
+            return ss.str();
+        }
+    }
+
+    PhysicalDevice::PhysicalDevice(Instance& instance)
+    {
+        auto devices = instance.GetHandle().enumeratePhysicalDevices();
+        if (devices.empty())
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to find GPUs with Vulkan support!");
+            exit(-1);
+        }
+
+        m_PhysicalDevice = SelectBestDevice(devices);
+        m_Indices = FindQueueFamilies(m_PhysicalDevice);
+
+        m_Properties = m_PhysicalDevice.getProperties();
+        OPAL_INFO("Core/Vulkan", "Selected GPU: {} ({})", std::string_view(m_Properties.deviceName), m_Properties.deviceType);
+        OPAL_INFO("Core/Vulkan", " - API Version: {}", VulkanVersionToString(m_Properties.apiVersion));
+        OPAL_INFO("Core/Vulkan", " - Driver Version: {}", VulkanVersionToString(m_Properties.driverVersion));
+    }
+
+    std::string_view PhysicalDevice::GetDeviceName() const
+    {
+        return std::string_view(m_PhysicalDevice.getProperties().deviceName);
+    }
+
+    vk::PhysicalDevice PhysicalDevice::SelectBestDevice(const Vector<vk::PhysicalDevice>& devices)
+    {
+        vk::PhysicalDevice bestDevice = nullptr;
+        int bestScore = -1;
+
+        for (const auto& device : devices)
+        {
+            int score = RateDeviceSuitability(device);
+            if (score > bestScore)
             {
-                uint32_t extensionCount;
-                vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-
-                std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-                vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
-            
-                return availableExtensions;
-            } 
+                bestDevice = device;
+                bestScore = score;
+            }
         }
+
+        if (!bestDevice || bestScore < 0)
+        {
+            OPAL_CRITICAL("Core/Vulkan", "No suitable GPU found!");
+            exit(-1);
+        }
+
+        return bestDevice;
     }
 
-    PhysicalDevice::PhysicalDevice(const std::vector<const char*>& requiredExtensions)
+    int PhysicalDevice::RateDeviceSuitability(vk::PhysicalDevice device)
     {
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(Context::Instance->GetHandle(), &deviceCount, nullptr);
-        
-        OPAL_ASSERT("Core", deviceCount > 0, "Mixture::Vulkan::PhysicalDevice::PhysicalDevice() - Failed to find GPU with Vulkan support!")
-        
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(Context::Instance->GetHandle(), &deviceCount, devices.data());
-        
-        // Use an ordered map to automatically sort candidates by increasing score
-        std::multimap<int, VkPhysicalDevice> candidates;
+        auto props = device.getProperties();
+        auto features = device.getFeatures();
 
-        for (const auto& device : devices) 
-        {
-            int score = RateDeviceSuitability(device, requiredExtensions);
-            candidates.insert(std::make_pair(score, device));
-        }
-
-        // Check if the best candidate is suitable at all
-        if (candidates.rbegin()->first > 0) 
-        {
-            m_PhysicalDevice = candidates.rbegin()->second;
-            m_QueueFamilyIndices = FindQueueFamilyIndices(m_PhysicalDevice);
-            
-            Util::PrintDebugAvailability(Util::GetAvailableExtensions(m_PhysicalDevice), requiredExtensions, [](const VkExtensionProperties& extension) { return extension.extensionName; }, "Device Extensions");
-        }
-        
-        OPAL_ASSERT("Core", m_PhysicalDevice != VK_NULL_HANDLE,
-                         "Mixture::Vulkan::PhysicalDevice::PhysicalDevice() - Failed to find suitable GPU!")
-        
-        // Debug Information
-        vkGetPhysicalDeviceProperties(m_PhysicalDevice, &m_Properties);
-        vkGetPhysicalDeviceFeatures(m_PhysicalDevice, &m_Features);
-
-        VULKAN_INFO_BEGIN("Selected GPU Information");
-        VULKAN_INFO_LIST("Device Name: {}", 0, m_Properties.deviceName);
-        VULKAN_INFO_LIST("Device Type: {}", 0, ToString::PhysicalDeviceType(m_Properties.deviceType));
-        VULKAN_INFO_LIST("API Version: {}", 0, ToString::Version(m_Properties.apiVersion));
-        VULKAN_INFO_LIST("Driver Version: {}", 0, ToString::Version(m_Properties.driverVersion));
-        VULKAN_INFO_LIST("Vendor ID: 0x{:X}", 0, m_Properties.vendorID);
-        VULKAN_INFO_LIST("Device ID: 0x{:X}", 0, m_Properties.deviceID);
-        VULKAN_INFO_LIST_HEADER("Limits:", 0);
-        VULKAN_INFO_LIST("Max Image Dimension 2D: {}", 1, m_Properties.limits.maxImageDimension2D);
-        VULKAN_INFO_LIST("Max Uniform Buffer Range: {}", 1, m_Properties.limits.maxUniformBufferRange);
-        VULKAN_INFO_LIST("Max Viewports: {}", 1, m_Properties.limits.maxViewports);
-        VULKAN_INFO_END();
-
-    }
-
-    int PhysicalDevice::RateDeviceSuitability(VkPhysicalDevice device, const std::vector<const char*>& requiredExtensions) const
-    {
-        // Basic device properites like name, type, supported vulkan versions, etc
-        VkPhysicalDeviceProperties deviceProperties;
-        vkGetPhysicalDeviceProperties(device, &deviceProperties);
-        
-        // Optional features like texture compression, multi viewport rendering, 64 it floats, etc
-        VkPhysicalDeviceFeatures deviceFeatures;
-        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-        
         int score = 0;
 
-        // Discrete GPUs have a significant performance advantage
-        if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) score += 1000;
+        QueueFamilyIndices indices = FindQueueFamilies(device);
+        if (!indices.IsComplete()) return -1;
 
-        // Maximum possible size of textures affects graphics quality
-        score += static_cast<int>(deviceProperties.limits.maxImageDimension2D);
-        
-        // These features need to be supported for the application to work
-        // ===============================================================
-        
-        // Graphics and Present Queue
-        if (QueueFamilyIndices indices = FindQueueFamilyIndices(device); !indices.IsComplete()) score = 0;
-        
-        // Device Extensions need to be supported
-        if (!CheckExtensionSupport(device, requiredExtensions))
-            score = 0;
-        
-        // Swapchain support (has to have atleast one format and present mode)
-        if (SwapchainSupportDetails swapchainSupport = QuerySwapchainSupport(device);
-            swapchainSupport.Formats.empty() || swapchainSupport.PresentModes.empty())
-            score = 0;
+        if (props.apiVersion < VK_API_VERSION_1_3)
+        {
+            OPAL_WARN("Core/Vulkan", "[Skipped] {} does not support Vulkan 1.3", GetDeviceName());
+            return -1;
+        }
+
+        if (!features.samplerAnisotropy) return -1;
+
+        // Big Score for Discrete GPU (Dedicated Card)
+        if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) score += 1000;
+
+        // Bonus for higher max texture size (e.g. 4096 vs 16384)
+        score += props.limits.maxImageDimension2D;
 
         return score;
     }
 
-    bool PhysicalDevice::CheckExtensionSupport(const VkPhysicalDevice device, const std::vector<const char*>& requiredExtensions)
-    {
-        uint32_t extensionCount;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
-
-        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
-
-        std::set<std::string> extensionSet(requiredExtensions.begin(), requiredExtensions.end());
-
-        for (const auto& [extensionName, specVersion] : availableExtensions)
-            extensionSet.erase(extensionName);
-        
-
-        return extensionSet.empty();
-    }
-
-    QueueFamilyIndices PhysicalDevice::FindQueueFamilyIndices(const VkPhysicalDevice device)
+    QueueFamilyIndices PhysicalDevice::FindQueueFamilies(vk::PhysicalDevice device)
     {
         QueueFamilyIndices indices;
-        
-        uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        Vector<vk::QueueFamilyProperties> queueFamilies = device.getQueueFamilyProperties();
+        vk::SurfaceKHR surface = Context::Get().GetSurface().GetHandle();
 
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-        
         int i = 0;
-        for (const auto& queueFamily : queueFamilies) 
+        for (const auto& queueFamily : queueFamilies)
         {
-            // Graphics Queue
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) indices.Graphics = i;
-            
-            // Present Queue
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, Context::WindowSurface->GetHandle(), &presentSupport);
-            if (presentSupport) indices.Present = i;
+            // Check for Graphics capability
+            if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) indices.Graphics = i;
+            if (queueFamily.queueFlags & vk::QueueFlagBits::eTransfer) indices.Transfer = i;
+            if (device.getSurfaceSupportKHR(i, surface)) indices.Present = i;
+            if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute) indices.Compute = i;
 
-            // break early if all indices have been found
             if (indices.IsComplete()) break;
-            
             i++;
         }
-        
+
         return indices;
-    }
-
-    SwapchainSupportDetails PhysicalDevice::QuerySwapchainSupport(const VkPhysicalDevice device) const
-    {
-        SwapchainSupportDetails details;
-        const VkSurfaceKHR windowSurface = Context::WindowSurface->GetHandle();
-        
-        // Basic surface capabilities
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device == VK_NULL_HANDLE ? m_PhysicalDevice : device, 
-            windowSurface, &details.Capabilities);
-        
-        // Supported surface formats
-        uint32_t formatCount;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device == VK_NULL_HANDLE ? m_PhysicalDevice : device, 
-            windowSurface, &formatCount, nullptr);
-
-        if (formatCount != 0) 
-        {
-            details.Formats.resize(formatCount);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(device == VK_NULL_HANDLE ? m_PhysicalDevice : device, 
-                windowSurface, &formatCount, details.Formats.data());
-        }
-        
-        // Supported presentation modes
-        uint32_t presentModeCount;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device == VK_NULL_HANDLE ? m_PhysicalDevice : device, 
-            windowSurface, &presentModeCount, nullptr);
-
-        if (presentModeCount != 0) 
-        {
-            details.PresentModes.resize(presentModeCount);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(device == VK_NULL_HANDLE ? m_PhysicalDevice : device, 
-                windowSurface, &presentModeCount, details.PresentModes.data());
-        }
-        
-        return details;
     }
 }

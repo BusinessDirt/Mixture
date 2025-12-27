@@ -1,218 +1,244 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Swapchain.hpp"
 
-#include "Platform/Vulkan/Context.hpp"
-
-#include "Mixture/Core/Application.hpp"
-
-#include <cstdint> // Necessary for uint32_t
-#include <limits> // Necessary for std::numeric_limits
-#include <algorithm> // Necessary for std::clamp
+#include "Platform/Vulkan/Resources/Texture.hpp"
 
 namespace Mixture::Vulkan
 {
-    Swapchain::Swapchain()
-        : m_OldSwapchain(nullptr)
+    Swapchain::Swapchain(PhysicalDevice& physicalDevice, Device& device,
+        Surface& surface, uint32_t width, uint32_t height)
+        : m_PhysicalDevice(&physicalDevice), m_Device(&device), m_Surface(&surface)
     {
-        Init(true);
-    }
+        CreateSwapchain(width, height);
+        CreateImageViews();
 
-    Swapchain::Swapchain(const std::shared_ptr<Swapchain>& previous)
-        : m_OldSwapchain(previous)
-    {
-        Init(false);
-        m_OldSwapchain = nullptr;
-    }
-
-    void Swapchain::Init(const bool debug)
-    {
-        const auto [Capabilities, Formats, PresentModes] = Context::PhysicalDevice->QuerySwapchainSupport();
-        auto [format, colorSpace] = ChooseSurfaceFormat(Formats);
-        const VkPresentModeKHR presentMode = ChoosePresentMode(PresentModes);
-        VkExtent2D extent = ChooseExtent(Capabilities);
-
-        uint32_t imageCount = Capabilities.minImageCount + 1;
-        if (Capabilities.maxImageCount > 0 && imageCount > Capabilities.maxImageCount)
-            imageCount = Capabilities.maxImageCount;
-
-        // Swapchain
-        {
-            VkSwapchainCreateInfoKHR createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-            createInfo.surface = Context::WindowSurface->GetHandle();
-            createInfo.minImageCount = imageCount;
-            createInfo.imageFormat = format;
-            createInfo.imageColorSpace = colorSpace;
-            createInfo.imageExtent = extent;
-            createInfo.imageArrayLayers = 1;
-            createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            
-#ifndef OPAL_DIST
-            createInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-#endif
-
-            const auto [Graphics, Present] = Context::PhysicalDevice->GetQueueFamilyIndices();
-            const uint32_t queueFamilyIndices[] = { Graphics.value(), Present.value() };
-
-            if (Graphics != Present)
-            {
-                createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-                createInfo.queueFamilyIndexCount = 2;
-                createInfo.pQueueFamilyIndices = queueFamilyIndices;
-            }
-            else
-            {
-                createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-                createInfo.queueFamilyIndexCount = 0; // Optional
-                createInfo.pQueueFamilyIndices = nullptr; // Optional
-            }
-
-            createInfo.preTransform = Capabilities.currentTransform;
-            createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-            createInfo.presentMode = presentMode;
-            createInfo.clipped = VK_TRUE;
-
-            createInfo.oldSwapchain = m_OldSwapchain ? m_OldSwapchain->m_Swapchain : VK_NULL_HANDLE;
-
-            VK_ASSERT(vkCreateSwapchainKHR(Context::Device->GetHandle(), &createInfo, nullptr, &m_Swapchain),
-                      "Mixture::Vulkan::Swapchain::Swapchain() - Creation failed!")
-
-            if (debug)
-            {
-                VULKAN_INFO_BEGIN("Swapchain Details");
-                VULKAN_INFO_LIST("Surface Format: {}, {}", 0, ToString::Format(format), ToString::ColorSpace(colorSpace));
-                VULKAN_INFO_LIST("Present Mode: {}", 0, ToString::PresentMode(presentMode));
-                VULKAN_INFO_LIST("Extent: {} x {}", 0, extent.width, extent.height);
-                VULKAN_INFO_END();
-            } 
-        }
-
-        // we only specified a minimum number of images in the swap chain, so the implementation is
-        // allowed to create a swap chain with more. That's why we'll first query the final number of
-        // images with vkGetSwapchainImagesKHR, then resize the container and finally call it again to
-        // retrieve the handles.
-        vkGetSwapchainImagesKHR(Context::Device->GetHandle(), m_Swapchain, &imageCount, nullptr);
-        std::vector<VkImage> images(imageCount);
-        vkGetSwapchainImagesKHR(Context::Device->GetHandle(), m_Swapchain, &imageCount, images.data());
-
-        m_Extent = extent;
-        m_Renderpass = CreateScope<Renderpass>(format, true,
-            VK_ATTACHMENT_LOAD_OP_CLEAR, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-        // Depth and Frame buffers
-        m_DepthBuffers.resize(imageCount);
-        m_FrameBuffers.resize(imageCount);
-        for (size_t i = 0; i < imageCount; i++)
-        {
-            m_DepthBuffers[i] = CreateScope<DepthBuffer>(extent);
-            m_FrameBuffers[i] = CreateScope<FrameBuffer>(m_DepthBuffers[i]->GetImageView().GetHandle(), images[i],
-                extent, format, m_Renderpass->GetHandle());
-        }
-
-        // sync objects
-        m_ImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        m_RenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        m_InFlightFences.reserve(MAX_FRAMES_IN_FLIGHT);
-        m_ImagesInFlight.resize(imageCount, nullptr);
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) m_InFlightFences.emplace_back(true);
+        OPAL_INFO("Core/Vulkan", "Swapchain Details:");
+        OPAL_INFO("Core/Vulkan", " - Surface Format: {}, {}",  m_ImageFormat, m_ColorSpace);
+        OPAL_INFO("Core/Vulkan", " - Present Mode: {}", m_PresentMode);
+        OPAL_INFO("Core/Vulkan", " - Extent: {} x {}", m_Extent.width, m_Extent.height);
     }
 
     Swapchain::~Swapchain()
     {
-        vkDestroySwapchainKHR(Context::Device->GetHandle(), m_Swapchain, nullptr);
-    }
-
-    VkResult Swapchain::AcquireNextImage() const
-    {
-        m_InFlightFences[m_CurrentFrame].Wait(std::numeric_limits<uint64_t>::max());
-        
-        return vkAcquireNextImageKHR(Context::Device->GetHandle(), m_Swapchain, std::numeric_limits<uint64_t>::max(),
-            m_ImageAvailableSemaphores[m_CurrentFrame].GetHandle(), VK_NULL_HANDLE, &Context::CurrentImageIndex);
-    }
-
-    VkResult Swapchain::SubmitCommandBuffers(const std::vector<VkCommandBuffer>& commandBuffers)
-    {
-        const uint32_t currentImageIndex = Context::CurrentImageIndex;
-        if (m_ImagesInFlight[currentImageIndex] != nullptr)
+        for (auto imageView : m_ImageViews)
         {
-            m_ImagesInFlight[currentImageIndex]->Wait(std::numeric_limits<uint64_t>::max());
+            m_Device->GetHandle().destroyImageView(imageView);
         }
-        m_ImagesInFlight[currentImageIndex] = &m_InFlightFences[m_CurrentFrame];
 
-        const VkSemaphore waitSemaphores[] = { m_ImageAvailableSemaphores[m_CurrentFrame].GetHandle() };
-        const VkSemaphore signalSemaphores[] = { m_RenderFinishedSemaphores[m_CurrentFrame].GetHandle() };
-        constexpr VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        m_Device->GetHandle().destroySwapchainKHR(m_Swapchain);
+    }
 
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-        submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-        submitInfo.pCommandBuffers = commandBuffers.data();
+    void Swapchain::Recreate(uint32_t width, uint32_t height)
+    {
+        m_Device->WaitForIdle(); // Don't touch resources while GPU is using them
 
-        m_InFlightFences[m_CurrentFrame].Reset();
-        VK_ASSERT(vkQueueSubmit(Context::Device->GetGraphicsQueue(), 1, &submitInfo, m_InFlightFences[m_CurrentFrame].GetHandle()),
-                  "Mixture::Vulkan::Swapchain::SubmitCommandBuffers() - Failed to submit draw command buffer!")
+        // Cleanup old views
+        for (auto imageView : m_ImageViews) m_Device->GetHandle().destroyImageView(imageView);
+        m_ImageViews.clear();
+        m_Images.clear();
 
-        const VkSwapchainKHR swapChains[] = { m_Swapchain };
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        // CACHING: Store current swapchain as "Old" so the driver
+        //          can copy internal data to the new one.
+        m_OldSwapchain = m_Swapchain;
+
+        // Create new Swapchain and destroy the old one
+        CreateSwapchain(width, height);
+        if (m_OldSwapchain)
+        {
+            m_Device->GetHandle().destroySwapchainKHR(m_OldSwapchain);
+            m_OldSwapchain = nullptr;
+        }
+
+        // Re-create Views for the new images
+        CreateImageViews();
+    }
+
+    bool Swapchain::AcquireNextImage(uint32_t* outImageIndex, vk::Semaphore semaphore)
+    {
+        // Time out: UINT64_MAX (Wait forever)
+        vk::Result result = m_Device->GetHandle().acquireNextImageKHR(
+            m_Swapchain, UINT64_MAX, semaphore,
+            nullptr, outImageIndex);
+
+        if (result == vk::Result::eErrorOutOfDateKHR)
+        {
+            return false; // Resize required
+        }
+        else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to acquire swapchain image!");
+            return false;
+        }
+
+        return true;
+    }
+
+    bool Swapchain::Present(uint32_t imageIndex, vk::Semaphore waitSemaphore)
+    {
+        vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
+        presentInfo.pWaitSemaphores = &waitSemaphore;
+
+        vk::SwapchainKHR swapChains[] = { m_Swapchain };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &currentImageIndex;
+        presentInfo.pImageIndices = &imageIndex;
 
-        const VkResult result = vkQueuePresentKHR(Context::Device->GetPresentQueue(), &presentInfo);
-        m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-        return result;
-    }
-
-    bool Swapchain::CompareSwapFormats(const Swapchain& swapChain) const
-    {
-        return GetImageFormat() == swapChain.GetImageFormat() && GetDepthFormat() == swapChain.GetDepthFormat();
-    }
-
-    VkSurfaceFormatKHR Swapchain::ChooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
-    {
-        for (const auto& availableFormat : availableFormats) 
+        vk::Result result;
+        try
         {
-            if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            result = m_Device->GetPresentQueue().presentKHR(presentInfo);
+        }
+        catch (vk::SystemError& err)
+        {
+            OPAL_LOG_DEBUG("Core/Vulkan", "Presenting Swapchain resulted in error: {}", err.what());
+            // catch "Out Of Date" exception thrown by hpp
+            if (err.code() == vk::Result::eErrorOutOfDateKHR)
+            {
+                return false;
+            }
+
+            throw;
+        }
+
+        if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    void Swapchain::CreateSwapchain(uint32_t width, uint32_t height)
+    {
+        auto physicalDevice = m_PhysicalDevice->GetHandle();
+
+        // Query Details
+        vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(m_Surface->GetHandle());
+        Vector<vk::SurfaceFormatKHR> formats = physicalDevice.getSurfaceFormatsKHR(m_Surface->GetHandle());
+        Vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(m_Surface->GetHandle());
+
+        // Choose Settings
+        vk::SurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(formats);
+        vk::PresentModeKHR presentMode = ChooseSwapPresentMode(presentModes);
+        vk::Extent2D extent = ChooseSwapExtent(capabilities, width, height);
+
+        // Image Count (Min + 1 is a good rule of thumb for triple buffering)
+        uint32_t imageCount = capabilities.minImageCount + 1;
+        if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount)
+            imageCount = capabilities.maxImageCount;
+
+        // Create Info
+        vk::SwapchainCreateInfoKHR createInfo;
+        createInfo.surface = m_Surface->GetHandle();
+        createInfo.minImageCount = imageCount;
+        createInfo.imageFormat = surfaceFormat.format;
+        createInfo.imageColorSpace = surfaceFormat.colorSpace;
+        createInfo.imageExtent = extent;
+        createInfo.imageArrayLayers = 1; // Always 1 unless VR (stereoscopic)
+        createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment; // We render directly to it
+        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+        createInfo.preTransform = capabilities.currentTransform;
+        createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+        createInfo.presentMode = presentMode;
+        createInfo.clipped = VK_TRUE;
+        createInfo.oldSwapchain = m_OldSwapchain;
+
+        try
+        {
+            m_Swapchain = m_Device->GetHandle().createSwapchainKHR(createInfo);
+        }
+        catch (vk::SystemError& err)
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to create Swapchain!");
+            exit(-1);
+        }
+
+        // Store selected properties
+        m_PresentMode = presentMode;
+        m_ImageFormat = surfaceFormat.format;
+        m_ColorSpace = surfaceFormat.colorSpace;
+        m_Extent = extent;
+
+        // Retrieve Images
+        m_Images = m_Device->GetHandle().getSwapchainImagesKHR(m_Swapchain);
+    }
+
+    void Swapchain::CreateImageViews()
+    {
+        m_ImageViews.resize(m_Images.size());
+        m_SwapchainTextures.resize(m_Images.size());
+
+        for (size_t i = 0; i < m_Images.size(); i++)
+        {
+            vk::ImageViewCreateInfo createInfo;
+            createInfo.image = m_Images[i];
+            createInfo.viewType = vk::ImageViewType::e2D;
+            createInfo.format = m_ImageFormat;
+
+            // Default Mapping (Identity)
+            createInfo.components.r = vk::ComponentSwizzle::eIdentity;
+            createInfo.components.g = vk::ComponentSwizzle::eIdentity;
+            createInfo.components.b = vk::ComponentSwizzle::eIdentity;
+            createInfo.components.a = vk::ComponentSwizzle::eIdentity;
+
+            // Subresource Range (Which part of image?)
+            createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = 1;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = 1;
+
+            m_ImageViews[i] = m_Device->GetHandle().createImageView(createInfo);
+
+            m_SwapchainTextures[i] = CreateScope<Texture>(m_ImageFormat, m_Images[i], m_ImageViews[i], m_Extent.width, m_Extent.height);
+        }
+    }
+
+    vk::SurfaceFormatKHR Swapchain::ChooseSwapSurfaceFormat(const Vector<vk::SurfaceFormatKHR>& availableFormats)
+    {
+        // Prefer SRGB (Standard colors) with BGRA or RGBA
+        for (const auto& availableFormat : availableFormats)
+        {
+            if (availableFormat.format == vk::Format::eR8G8B8A8Srgb &&
+                availableFormat.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear)
             {
                 return availableFormat;
             }
         }
 
+        // Fallback: Just return the first one
         return availableFormats[0];
     }
 
-    VkPresentModeKHR Swapchain::ChoosePresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+    vk::PresentModeKHR Swapchain::ChooseSwapPresentMode(const Vector<vk::PresentModeKHR>& availablePresentModes)
     {
-        for (const auto& availablePresentMode : availablePresentModes) 
+        // Prefer Mailbox (Triple Buffering, Low Latency, No Tearing)
+        for (const auto& availablePresentMode : availablePresentModes)
         {
-            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+            if (availablePresentMode == vk::PresentModeKHR::eMailbox)
             {
                 return availablePresentMode;
             }
         }
 
-        return VK_PRESENT_MODE_FIFO_KHR;
+        // Fallback: FIFO (VSync) - Guaranteed to be available by spec
+        return vk::PresentModeKHR::eFifo;
     }
 
-    VkExtent2D Swapchain::ChooseExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+    vk::Extent2D Swapchain::ChooseSwapExtent(const vk::SurfaceCapabilitiesKHR &capabilities,
+        uint32_t width, uint32_t height)
     {
-        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) return capabilities.currentExtent;
-        
-        int framebufferWidth, framebufferHeight;
-        Application::Get().GetWindow().GetFramebufferSize(&framebufferWidth, &framebufferHeight);
-        
-        VkExtent2D actualExtent = { static_cast<uint32_t>(framebufferWidth), static_cast<uint32_t>(framebufferHeight) };
-        actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+            return capabilities.currentExtent;
+
+        // Match the window size, clamped to hardware limits
+        vk::Extent2D actualExtent = { width, height };
+
+        actualExtent.width = std::clamp(actualExtent.width,
+            capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = std::clamp(actualExtent.height,
+            capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
         return actualExtent;
     }

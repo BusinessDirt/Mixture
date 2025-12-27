@@ -3,16 +3,34 @@
 
 #include <filesystem>
 
-#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
+
+#ifdef OPAL_PLATFORM_WINDOWS
+    #include <windows.h>
+    #ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+        #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+    #endif
+
+    void PlatformEnableANSI() {
+        HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+        DWORD dwMode = 0;
+        GetConsoleMode(hOut, &dwMode);
+        dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        SetConsoleMode(hOut, dwMode);
+    }
+#endif
 
 namespace Opal
 {
 
     LogBuilder& LogBuilder::UseConsoleSink(spdlog::level::level_enum level)
     {
-        auto sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+#ifdef OPAL_PLATFORM_WINDOWS
+        PlatformEnableANSI();
+#endif
+        auto sink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
         
         // Set standard colors
         sink->set_color(spdlog::level::critical, sink->red_bold);
@@ -24,7 +42,7 @@ namespace Opal
 
         // Apply Custom Formatter
         auto formatter = std::make_unique<spdlog::pattern_formatter>();
-        formatter->add_flag<ColorMarkerFlag>('*').set_pattern("[%T] [Thread %t at %^%l%$] (%n%*): %v");
+        formatter->add_flag<ColorMarkerFlag>('*').set_pattern("[%T] [Thread %t at %^%l%$] (%*): %v");
         
         sink->set_formatter(std::move(formatter));
         sink->set_level(level);
@@ -37,7 +55,7 @@ namespace Opal
     {
         auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(filepath, 1024 * 1024 * 10, 10);
         auto formatter = std::make_unique<spdlog::pattern_formatter>();
-        formatter->add_flag<CleanMarkerFlag>('*').set_pattern("[%T] [Thread %t at %l] (%n%*): %v");
+        formatter->add_flag<CleanMarkerFlag>('*').set_pattern("[%T] [Thread %t at %l] (%*): %v");
 
         sink->set_formatter(std::move(formatter));
         sink->set_level(level);

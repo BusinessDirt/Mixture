@@ -1,36 +1,40 @@
 -- Dependencies
 IncludeDir = {}
 IncludeDir["spdlog"] = "%{wks.location}/vendor/spdlog/include"
-IncludeDir["Vulkan"] = os.getenv("VULKAN_SDK") .. "/Include"
+IncludeDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/include"
 IncludeDir["glm"] = "%{wks.location}/vendor/glm"
-IncludeDir["glfw"] = "%{wks.location}/vendor/glfw/include"
-IncludeDir["stb_image"] = "%{wks.location}/vendor/stb_image"
-IncludeDir["imgui"] = "%{wks.location}/vendor/imgui"
+IncludeDir["stb_image"] = "%{wks.location}/vendor/stb"
 
 LibraryDir = {}
-LibraryDir["Vulkan"] = os.getenv("VULKAN_SDK") .. "/Lib"
+LibraryDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/lib"
 
 Library = {}
-Library["Vulkan"] = "vulkan-1"
-Library["MoltenVK"] = "MoltenVK"
+Library["vulkan"] = "vulkan-1"
+Library["molten_vk"] = "MoltenVK"
 
 if os.istarget("windows") then
-    Library["ShaderC_Debug"] = "%{LibraryDir.VulkanSDK}/shaderc_sharedd.lib"
-    Library["SPIRV_Cross_Debug"] = "%{LibraryDir.VulkanSDK}/spirv-cross-cored.lib"
-    Library["SPIRV_Cross_GLSL_Debug"] = "%{LibraryDir.VulkanSDK}/spirv-cross-glsld.lib"
-    Library["SPIRV_Tools_Debug"] = "%{LibraryDir.VulkanSDK}/SPIRV-Toolsd.lib"
+    Library["dxc_debug"] = "%{LibraryDir.VulkanSDK}/dxcompiler.lib"
+    Library["dxc_release"] = "%{LibraryDir.VulkanSDK}/dxcompiler.lib"
 
-    Library["ShaderC_Release"] = "%{LibraryDir.VulkanSDK}/shaderc_shared.lib"
-    Library["SPIRV_Cross_Release"] = "%{LibraryDir.VulkanSDK}/spirv-cross-core.lib"
-    Library["SPIRV_Cross_GLSL_Release"] = "%{LibraryDir.VulkanSDK}/spirv-cross-glsl.lib"
-elseif os.istarget("macosx") then
-    Library["ShaderC_Debug"] = "shaderc_shared"
-    Library["SPIRV_Cross_Debug"] = "spirv-cross-core"
-    Library["SPIRV_Cross_GLSL_Debug"] = "spirv-cross-glsl"
+    Library["spirv_cross_debug"] = "%{LibraryDir.vulkan}/spirv-cross-cored.lib"
+    Library["spirv_cross_glsl_debug"] = "%{LibraryDir.vulkan}/spirv-cross-glsld.lib"
+    Library["spirv_cross_msl_debug"] = "%{LibraryDir.vulkan}/spirv-cross-msld.lib"
 
-    Library["ShaderC_Release"] = "shaderc_shared"
-    Library["SPIRV_Cross_Release"] = "spirv-cross-glsl"
-    Library["SPIRV_Cross_GLSL_Release"] = "spirv-cross-glsl"
+    Library["spirv_cross_release"] = "%{LibraryDir.vulkan}/spirv-cross-core.lib"
+    Library["spirv_cross_glsl_release"] = "%{LibraryDir.vulkan}/spirv-cross-glsl.lib"
+    Library["spirv_cross_msl_release"] = "%{LibraryDir.vulkan}/spirv-cross-msl.lib"
+
+else
+    Library["dxc_debug"] = "dxcompiler"
+    Library["dxc_release"] = "dxcompiler"
+
+    Library["spirv_cross_debug"] = "spirv-cross-core"
+    Library["spirv_cross_glsl_debug"] = "spirv-cross-glsl"
+    Library["spirv_cross_msl_debug"] = "spirv-cross-msl"
+
+    Library["spirv_cross_release"] = "spirv-cross-core"
+    Library["spirv_cross_glsl_release"] = "spirv-cross-glsl"
+    Library["spirv_cross_msl_release"] = "spirv-cross-msl"
 end
 
 

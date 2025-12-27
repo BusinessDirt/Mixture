@@ -1,28 +1,24 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Command/Buffers.hpp"
 
-#include "Platform/Vulkan/Context.hpp"
-
 namespace Mixture::Vulkan
 {
-    CommandBuffers::CommandBuffers(const VkCommandPool commandPool, const size_t size)
-        : m_CommandPool(commandPool)
+    CommandBuffers::CommandBuffers(Device& device, CommandPool& commandPool, uint32_t count)
+        : m_Device(&device), m_CommandPool(&commandPool)
     {
-        m_CommandBuffers.resize(size);
+        // Allocate Command Buffers (One per frame in flight)
+        m_Handles.resize(count);
 
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = m_CommandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+        vk::CommandBufferAllocateInfo allocInfo;
+        allocInfo.commandPool = m_CommandPool->GetHandle();
+        allocInfo.level = vk::CommandBufferLevel::ePrimary;
+        allocInfo.commandBufferCount = count;
 
-        VK_ASSERT(vkAllocateCommandBuffers(Context::Device->GetHandle(), &allocInfo, m_CommandBuffers.data()),
-                  "Mixture::Vulkan::CommandBuffers::CommandBuffers() - Allocation failed!")
+        m_Handles = m_Device->GetHandle().allocateCommandBuffers(allocInfo);
     }
 
-    CommandBuffers::~CommandBuffers()
+    void CommandBuffers::Reset(uint32_t index)
     {
-        vkFreeCommandBuffers(Context::Device->GetHandle(), m_CommandPool,
-            static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
+        m_Handles[index].reset();
     }
 }

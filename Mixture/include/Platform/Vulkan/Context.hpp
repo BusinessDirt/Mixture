@@ -1,36 +1,136 @@
 #pragma once
 
-#include "Platform/Vulkan/Base.hpp"
-#include "Platform/Vulkan/Instance.hpp"
-#include "Platform/Vulkan/DebugMessenger.hpp"
-#include "Platform/Vulkan/WindowSurface.hpp"
-#include "Platform/Vulkan/PhysicalDevice.hpp"
-#include "Platform/Vulkan/Device.hpp"
-#include "Platform/Vulkan/Swapchain.hpp"
-#include "Platform/Vulkan/Descriptor/Pool.hpp"
-#include "Platform/Vulkan/Command/Pool.hpp"
-#include "Platform/Vulkan/Command/Buffers.hpp"
+/**
+ * @file Context.hpp
+ * @brief Vulkan implementation of the Graphics Context.
+ */
+
+#include "Mixture/Core/Base.hpp"
+#include "Mixture/Render/RHI/RHI.hpp"
+
+#include <vector>
+#include <optional>
 
 namespace Mixture::Vulkan
 {
-    struct Context
+    class Instance;
+    class Surface;
+    class PhysicalDevice;
+    class Device;
+    class Swapchain;
+
+    class CommandBuffers;
+    class CommandList;
+    class CommandPool;
+
+    class Fences;
+    class Semaphores;
+
+    class DescriptorLayoutCache;
+    class DescriptorAllocators;
+    class DescriptorAllocator;
+
+    /**
+     * @brief Vulkan implementation of the Graphics Context.
+     *
+     * Manages the Vulkan instance, physical device, and logical device.
+     */
+    class Context : public RHI::IGraphicsContext
     {
-        static Scope<Instance> Instance;
-        static Scope<DebugMessenger> DebugMessenger;
-        static Scope<WindowSurface> WindowSurface;
-        static Scope<PhysicalDevice> PhysicalDevice;
-        static Scope<Device> Device;
-        static Scope<Swapchain> Swapchain;
-        static Scope<CommandPool> CommandPool;
-        static Scope<CommandBuffers> CommandBuffers;
-        static Scope<DescriptorPool> DescriptorPool;
-        
-        static uint32_t CurrentImageIndex;
-        static VkCommandBuffer CurrentCommandBuffer;
+    public:
+        /**
+         * @brief Constructor.
+         *
+         * @param appDescription Description of the application.
+         */
+        Context(const ApplicationDescription& appDescription, void* windowHandle);
+        ~Context();
 
-        static Scope<Renderpass> ImGuiRenderpass;
-        static Vector<Scope<FrameBuffer>> ImGuiFrameBuffers;
+        RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
+        RHI::IGraphicsDevice& GetDevice() const override;
 
-        static void WaitForDevice() { vkDeviceWaitIdle(Device->GetHandle()); }
+        void OnResize(uint32_t width, uint32_t height) override;
+
+        RHI::ITexture* BeginFrame() override;
+        void EndFrame() override;
+
+        Scope<RHI::ICommandList> GetCommandBuffer() override;
+
+        uint32_t GetSwapchainWidth() const override;
+        uint32_t GetSwapchainHeight() const override;
+
+        /**
+         * @brief Gets the Vulkan instance.
+         *
+         * @return Ref<Instance> Reference to the instance wrapper.
+         */
+        Instance& GetInstance() const { return *m_Instance; }
+
+        /**
+         * @brief Gets the Vulkan Window Surface.
+         *
+         * @return Ref<Surface> Reference to the window surface wrapper.
+         */
+        Surface& GetSurface() const { return *m_Surface; }
+
+        /**
+         * @brief Gets the Vulkan physical device.
+         *
+         * @return Ref<PhysicalDevice> Reference to the physical device wrapper.
+         */
+        PhysicalDevice& GetPhysicalDevice() const { return *m_PhysicalDevice; }
+
+        /**
+         * @brief Gets the Vulkan logical device.
+         *
+         * @return Ref<Device> Reference to the device wrapper.
+         */
+        Device& GetLogicalDevice() const { return *m_Device; }
+
+        /**
+         * @brief Gets the Vulkan swapchain.
+         *
+         * @return Ref<Swapchain> Reference to the swapchain wrapper.
+         */
+        Swapchain& GetSwapchain() const { return *m_Swapchain; }
+
+        /**
+         * @brief Gets the command pool.
+         *
+         * @return Ref<CommandPool> the command pool.
+         */
+        CommandPool& GetCommandPool() const { return *m_CommandPool; }
+
+        uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
+
+        DescriptorAllocator* GetCurrentDescriptorAllocator() const;
+        DescriptorLayoutCache* GetDescriptorLayoutCache() const;
+
+        /**
+         * @brief Gets the singleton context instance.
+         *
+         * @return Context& Reference to the context.
+         */
+        static Context& Get();
+    private:
+        Scope<Instance> m_Instance;
+        Scope<Surface> m_Surface;
+        Scope<PhysicalDevice> m_PhysicalDevice;
+        Scope<Device> m_Device;
+        Scope<Swapchain> m_Swapchain;
+
+        Scope<Semaphores> m_ImageAvailableSemaphores;
+        Scope<Semaphores> m_RenderFinishedSemaphores;
+        Scope<Fences> m_InFlightFences;
+
+        Scope<CommandPool> m_CommandPool;
+        Scope<CommandBuffers> m_CommandBuffers;
+
+        Scope<DescriptorAllocators> m_DescriptorAllocators;
+        Scope<DescriptorLayoutCache> m_DescriptorLayoutCache;
+
+        uint32_t m_CurrentFrame = 0;
+        uint32_t m_ImageIndex = 0;
+        bool m_IsFrameStarted = false;
     };
 }

@@ -6,26 +6,26 @@ project "App"
 
     files { "include/**.hpp", "src/**.cpp" }
     includedirs { "include" }
-    libdirs { "%{LibraryDir.Vulkan}" }
+    libdirs { "%{LibraryDir.vulkan}" }
 
     externalincludedirs {
         "../Opal/include",
-        "../Jasper/include",
         "../Mixture/include",
 
         "%{IncludeDir.spdlog}",
         "%{IncludeDir.imgui}",
-        "%{IncludeDir.Vulkan}",
+        "%{IncludeDir.vulkan}",
         "%{IncludeDir.glm}",
+        "%{IncludeDir.spirv_reflect}",
         "%{IncludeDir.stb_image}"
     }
 
     links {
         "GLFW",
         "Opal",
-        "Jasper",
         "Mixture",
-        "ImGui"
+        "ImGui",
+        "SPIRV-Reflect"
     }
 
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
@@ -37,8 +37,10 @@ project "App"
         runtime "Debug"
         symbols "On"
         links {
-            "%{Library.ShaderC_Debug}",
-            "%{Library.SPIRV_Cross_Debug}"
+            "%{Library.dxc_debug}",
+            "%{Library.spirv_cross_debug}",
+            "%{Library.spirv_cross_glsl_debug}",
+            "%{Library.spirv_cross_msl_debug}"
         }
 
     filter "configurations:Release"
@@ -48,8 +50,10 @@ project "App"
         optimize "On"
         symbols "On"
         links {
-            "%{Library.ShaderC_Release}",
-            "%{Library.SPIRV_Cross_Release}"
+            "%{Library.dxc_release}",
+            "%{Library.spirv_cross_release}",
+            "%{Library.spirv_cross_glsl_release}",
+            "%{Library.spirv_cross_msl_release}"
         }
 
     filter "configurations:Dist"
@@ -59,14 +63,20 @@ project "App"
         optimize "On"
         symbols "Off"
         links {
-            "%{Library.ShaderC_Release}",
-            "%{Library.SPIRV_Cross_Release}"
-        }   
+            "%{Library.dxc_release}",
+            "%{Library.spirv_cross_release}",
+            "%{Library.spirv_cross_glsl_release}",
+            "%{Library.spirv_cross_msl_release}"
+        }
 
     -- windows specific settings
     filter "system:windows"
         links { "%{Library.Vulkan}" }
         buildoptions { "/utf-8" }
+
+    -- linux specific settings
+    filter "system:linux"
+        links { "vulkan" }
 
     -- mac specific settings
     filter "action:xcode4"
@@ -82,10 +92,10 @@ project "App"
             "AppKit.framework"
         }
 
-        frameworkdirs { 
+        frameworkdirs {
             vulkanFW,
             "/System/Library/Frameworks",
-            "%{LibraryDir.Vulkan}"
+            "%{LibraryDir.vulkan}"
         }
 
         xcodebuildsettings {

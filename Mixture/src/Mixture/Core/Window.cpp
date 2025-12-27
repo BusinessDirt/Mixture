@@ -7,7 +7,6 @@
 #include "Mixture/Events/KeyEvent.hpp"
 #include "Mixture/Events/MouseEvent.hpp"
 
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 namespace Mixture
@@ -16,7 +15,7 @@ namespace Mixture
 	{
 		void GlfwErrorCallback(int error, const char* description)
 		{
-			OPAL_ERROR("Core", "GLFW Error ({0}): {1}", error, description);
+			OPAL_ERROR("Core/Window", "GLFW Error ({0}): {1}", error, description);
 		}
 	}
 
@@ -30,9 +29,9 @@ namespace Mixture
 		glfwInitVulkanLoader(vkGetInstanceProcAddr);
 
 		{
-			OPAL_INFO("Core", "Mixture::Window::Window() - Initializing GLFW");
+			OPAL_INFO("Core/Window", "Initializing GLFW");
 			const int success = glfwInit();
-			OPAL_ASSERT("Core", success, "Mixture::Window::Window() - Could not initialize GLFW!")
+			OPAL_ASSERT("Core/Window", success, "Could not initialize GLFW!")
 			glfwSetErrorCallback(GlfwErrorCallback);
 		}
 
@@ -58,7 +57,7 @@ namespace Mixture
 					WindowResizeEvent event(width, height);
 					data.EventCallback(event);
 				});
-            
+
             glfwSetFramebufferSizeCallback(m_WindowHandle, [](GLFWwindow* window, const int width, const int height)
                 {
                     WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
@@ -166,11 +165,4 @@ namespace Mixture
     {
 		glfwGetFramebufferSize(m_WindowHandle, width, height);
     }
-
-    void Window::CreateVulkanSurface(const VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const
-    {
-		const VkResult res = glfwCreateWindowSurface(instance, m_WindowHandle, allocator, surface);
-		OPAL_ASSERT("Core", res == VK_SUCCESS, "Mixture::Window::CreateVulkanSurface() - Failed to create VkSurfaceKHR!")
-    }
-
 }

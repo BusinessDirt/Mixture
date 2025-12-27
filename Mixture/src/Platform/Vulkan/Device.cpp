@@ -1,111 +1,137 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Device.hpp"
 
-#include "Platform/Vulkan/PhysicalDevice.hpp"
-#include "Platform/Vulkan/Context.hpp"
+#include "Platform/Vulkan/Resources/Texture.hpp"
+#include "Platform/Vulkan/Resources/Buffer.hpp"
 
+#include "Platform/Vulkan/Pipeline/Pipeline.hpp"
+#include "Platform/Vulkan/Pipeline/Shader.hpp"
+
+#include <vector>
 #include <set>
 
 namespace Mixture::Vulkan
 {
-    Device::Device(const std::vector<const char*>& requiredLayers, const std::vector<const char*>& requiredExtensions)
-    {
-        const auto& [Graphics, Present] = Context::PhysicalDevice->GetQueueFamilyIndices();
-        
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set uniqueQueueFamilies = { Graphics.value(), Present.value() };
+	Device::Device(Instance& instance, PhysicalDevice& physicalDevice)
+		: m_PhysicalDevice(&physicalDevice)
+	{
+		auto indices = m_PhysicalDevice->GetQueueFamilies();
 
-        float queuePriority = 1.0f;
-        for (uint32_t queueFamily : uniqueQueueFamilies) 
+		float queuePriority = 1.0f;
+		vk::DeviceQueueCreateInfo queueCreateInfo(
+			vk::DeviceQueueCreateFlags(),
+			indices.Graphics.value(),
+			1, &queuePriority
+		);
+
+		Vector<const char*> deviceExtensions = {
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		};
+
+        // Check for Portability Subset (MacOS / MoltenVK)
+        std::vector<vk::ExtensionProperties> availableExtensions =
+            m_PhysicalDevice->GetHandle().enumerateDeviceExtensionProperties();
+
+        for (const auto& ext : availableExtensions)
         {
-            VkDeviceQueueCreateInfo queueCreateInfo{};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.push_back(queueCreateInfo);
+            if (strcmp(ext.extensionName, "VK_KHR_portability_subset") == 0)
+            {
+                deviceExtensions.push_back("VK_KHR_portability_subset");
+                break;
+            }
         }
-        
-        VkPhysicalDeviceFeatures deviceFeatures{};
-        
-        VkDeviceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        createInfo.pQueueCreateInfos = queueCreateInfos.data();
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+
+        vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures;
+        dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+
+        vk::PhysicalDeviceFeatures deviceFeatures;
+        deviceFeatures.samplerAnisotropy = VK_TRUE;
+
+        vk::DeviceCreateInfo createInfo;
+        createInfo.queueCreateInfoCount = 1;
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
         createInfo.pEnabledFeatures = &deviceFeatures;
-        createInfo.enabledExtensionCount = 0;
-        createInfo.enabledLayerCount = static_cast<uint32_t>(requiredLayers.size());
-        createInfo.ppEnabledLayerNames = requiredLayers.data();
-        createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
-        createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-        
-        VK_ASSERT(vkCreateDevice(Context::PhysicalDevice->GetHandle(), &createInfo, nullptr, &m_Device),
-                  "Mixture::Vulkan::Device::Device() - Failed!")
-        
-        // retrieve queues
-        vkGetDeviceQueue(m_Device, Graphics.value(), 0, &m_GraphicsQueue);
-        vkGetDeviceQueue(m_Device, Present.value(), 0, &m_PresentQueue);
-    }
+        createInfo.pNext = &dynamicRenderingFeatures;
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+        createInfo.enabledLayerCount = 0;
 
-    Device::~Device()
-    {
-        vkDestroyDevice(m_Device, nullptr);
-    }
-
-    VkFormat Device::FindSupportedFormat(const std::vector<VkFormat>& candidates, const VkImageTiling tiling, const VkFormatFeatureFlags features)
-    {
-        for (const VkFormat format : candidates)
+        try
         {
-            VkFormatProperties props;
-            vkGetPhysicalDeviceFormatProperties(Context::PhysicalDevice->GetHandle(), format, &props);
-
-            if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features)
-            {
-                return format;
-            }
-
-            if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features)
-            {
-                return format;
-            }
+            m_Device = m_PhysicalDevice->GetHandle().createDevice(createInfo);
         }
-        OPAL_ERROR("Core", "Mixture::Vulkan::Device::FindSupportedFormat() - Failed!");
-        return VK_FORMAT_UNDEFINED;
-    }
-
-    uint32_t Device::FindMemoryType(const uint32_t typeFilter, const VkMemoryPropertyFlags properties)
-    {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(Context::PhysicalDevice->GetHandle(), &memProperties);
-        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+        catch (vk::SystemError& err)
         {
-            if (typeFilter & 1 << i && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
-            {
-                return i;
-            }
+            OPAL_CRITICAL("Core/Vulkan", "Failed to create logical device!");
+            exit(-1);
         }
 
-        OPAL_ERROR("Core", "Mixture::Vulkan::Device::FindMemoryType() - Failed!");
-        return 0;
+        m_GraphicsQueue = m_Device.getQueue(indices.Graphics.value(), 0);
+        m_PresentQueue = m_Device.getQueue(indices.Present.value(), 0);
+
+        if (indices.Compute.has_value())
+        {
+            m_ComputeQueue = m_Device.getQueue(indices.Compute.value(), 0);
+        }
+        else
+        {
+            m_ComputeQueue = m_GraphicsQueue;
+        }
+
+        if (indices.Transfer.has_value())
+        {
+            m_TransferQueue = m_Device.getQueue(indices.Transfer.value(), 0);
+        }
+        else
+        {
+            m_TransferQueue = m_GraphicsQueue;
+        }
+
+        VmaVulkanFunctions vulkanFunctions = {};
+        vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+        vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+
+        VmaAllocatorCreateInfo allocatorInfo = {};
+        allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+        allocatorInfo.physicalDevice = m_PhysicalDevice->GetHandle();
+        allocatorInfo.device = m_Device;
+        allocatorInfo.instance = instance.GetHandle();
+        allocatorInfo.pVulkanFunctions = &vulkanFunctions;
+        allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+
+        if (vmaCreateAllocator(&allocatorInfo, &m_Allocator) != VK_SUCCESS)
+        {
+            OPAL_CRITICAL("Core/Vulkan", "Failed to create VMA Allocator!");
+            exit(-1);
+        }
+
+        OPAL_INFO("Core/Vulkan", "VMA Initialized.");
+	}
+
+	Device::~Device()
+	{
+        m_Device.waitIdle();
+        vmaDestroyAllocator(m_Allocator);
+        m_Device.destroy();
+	}
+
+    Ref<RHI::IShader> Device::CreateShader(const void* data, size_t size, RHI::ShaderStage stage)
+    {
+        return CreateRef<Shader>(data, size, stage);
     }
 
-    void Device::CreateImageWithInfo(const VkImageCreateInfo& imageInfo, const VkMemoryPropertyFlags properties,
-        VkImage& image, VkDeviceMemory& imageMemory) const
+    Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc)
     {
-        VK_ASSERT(vkCreateImage(m_Device, &imageInfo, nullptr, &image),
-                  "Mixture::Vulkan::Device::CreateImageWithInfo() - Image creation failed!")
+        return CreateRef<Buffer>(desc);
+    }
 
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_Device, image, &memRequirements);
+    Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc)
+    {
+        return CreateRef<Texture>(desc);
+    }
 
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-        VK_ASSERT(vkAllocateMemory(m_Device, &allocInfo, nullptr, &imageMemory),
-                  "Mixture::Vulkan::Device::CreateImageWithInfo() - Memory allocation failed!")
-        VK_ASSERT(vkBindImageMemory(m_Device, image, imageMemory, 0),
-                  "Mixture::Vulkan::Device::CreateImageWithInfo() - Memory binding failed!")
+    Ref<RHI::IPipeline> Device::CreatePipeline(const RHI::PipelineDesc& desc)
+    {
+        return CreateRef<Pipeline>(desc);
     }
 }

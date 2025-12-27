@@ -1,8 +1,10 @@
 #include "mxpch.hpp"
 #include "Mixture/Core/Application.hpp"
 
-#include "Mixture/Renderer/Renderer.hpp"
 #include "Mixture/Core/Time.hpp"
+#include "Mixture/Assets/AssetManager.hpp"
+#include "Mixture/Render/PipelineCache.hpp"
+#include "Mixture/Render/ShaderLibrary.hpp"
 
 #include <Opal/Base.hpp>
 #include <ranges>
@@ -11,33 +13,33 @@ namespace Mixture
 {
     Application* Application::s_Instance = nullptr;
 
-    Application::Application(const std::string& name, ApplicationCommandLineArgs args)
+    Application::Application(const ApplicationDescription& appDescription)
+        : m_AppDescription(appDescription)
     {
         OPAL_ASSERT("Core", !s_Instance, "Mixture::Application::Application() - Application already exists!")
-        
+
         s_Instance = this;
 
         auto props = WindowProps();
-        props.Title = name;
-        
+        props.Title = appDescription.Name;
+        props.Width = appDescription.Width;
+        props.Height = appDescription.Height;
+
         m_Window = CreateScope<Window>(props);
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
-        m_AssetManager = CreateScope<AssetManager>();
-        
-        PushOverlay(new ImGuiLayer());
-        Renderer::Initialize(name);
+        m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
+        m_RenderGraph = CreateScope<RenderGraph>();
 
-        m_AssetManager->CreateDefaults();
+        AssetManager::Get().Init();
+        AssetManager::Get().SetAssetRoot("Assets");
+        AssetManager::Get().SetGraphicsAPI(appDescription.API);
     }
 
     Application::~Application()
     {
-        m_AssetManager->UnloadAllTextures();
-        
-        Renderer::DestroyImGuiContext();
-        m_LayerStack.Shutdown(); 
-        Renderer::Shutdown();
+        m_LayerStack.Shutdown();
+        m_Context.reset();
     }
 
     void Application::Close()
@@ -48,35 +50,34 @@ namespace Mixture
     void Application::Run() const
     {
         Timer frameTimer{};
-        FrameInfo frameInfo{};
-        
+
         while (m_Running)
         {
+            float timestep = frameTimer.Tick();
             m_Window->OnUpdate();
-            
-            // Update information about current frame
-            frameInfo.FrameTime = frameTimer.Tick();
-            
-            // Update Layers
-            for (Layer* layer : m_LayerStack) layer->OnUpdate(frameInfo);
 
-            // Draw to ImGui
-            Renderer::BeginImGuiImpl();
-            ImGuiLayer::Begin();
-            for (Layer* layer : m_LayerStack) layer->OnRenderImGui(frameInfo);
-            ImGuiLayer::End();
-            
-            Renderer::BeginFrame();
+            // CPU Logic
+            for (Layer* layer : m_LayerStack) layer->OnUpdate(timestep);
+
+            m_RenderGraph->Clear();
+
+            if (RHI::ITexture* backbufferTex = m_Context->BeginFrame())
             {
-                // Draw Scene
-                Renderer::BeginSceneRenderpass();
-                for (Layer* layer : m_LayerStack) layer->OnRender(frameInfo);
-                Renderer::EndSceneRenderpass();
+                m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
 
-                // Draw UI
-                Renderer::RenderImGui();
+                for (Layer* layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
+
+                m_RenderGraph->Compile();
+
+                if (auto commandList = m_Context->GetCommandBuffer())
+                {
+                    commandList->Begin();
+                    m_RenderGraph->Execute(commandList.get(), m_Context.get());
+                    commandList->End();
+                }
+
+                m_Context->EndFrame();
             }
-            Renderer::EndFrame();
         }
     }
 
@@ -101,7 +102,13 @@ namespace Mixture
 
     bool Application::OnFramebufferResize(const FramebufferResizeEvent& e)
     {
-        Renderer::OnFramebufferResize(e.GetWidth(), e.GetHeight());
+        if (e.GetWidth() == 0 || e.GetHeight() == 0) {
+            // Minimized
+            return false;
+        }
+
+        // Tell the backend to resize
+        if (m_Context) m_Context->OnResize(e.GetWidth(), e.GetHeight());
         return false;
     }
 }

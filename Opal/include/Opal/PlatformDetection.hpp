@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file PlatformDetection.hpp
+ * @brief Macros for detecting the target platform/OS.
+ */
+
 // Platform detection using predefined macros
 #ifdef _WIN32
     #ifdef _WIN64 // Windows x64/x86
