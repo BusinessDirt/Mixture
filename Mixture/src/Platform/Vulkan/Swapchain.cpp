@@ -87,7 +87,7 @@ namespace Mixture::Vulkan
         vk::Result result;
         try
         {
-            result = m_Device->GetPresentQueue().presentKHR(presentInfo);
+            result = m_Device->GetPresentQueue().GetHandle().presentKHR(presentInfo);
         }
         catch (vk::SystemError& err)
         {

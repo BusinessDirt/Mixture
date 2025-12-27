@@ -48,6 +48,8 @@ namespace Mixture::Vulkan
         uint32_t imagecount = m_Swapchain->GetImageCount();
         m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
         m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imagecount);
+        m_TransferFinishedSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
+        m_ComputeFinishedSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
         m_InFlightFences = CreateScope<Fences>(*m_Device, MAX_FRAMES_IN_FLIGHT, true);
 
         // Create Command Pool
@@ -152,28 +154,35 @@ namespace Mixture::Vulkan
             return;
         }
 
-        vk::Semaphore signalSemaphores[] = { m_RenderFinishedSemaphores->Get(m_ImageIndex) };
-        vk::Semaphore waitSemaphores[] = { m_ImageAvailableSemaphores->Get(m_CurrentFrame) };
-        vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
+        // --- SUBMIT TRANSFER ---
+        m_Device->GetTransferQueue().Submit(
+            { m_TransferCommandBuffers->Get(m_CurrentFrame) },
+            { m_TransferFinishedSemaphores->Get(m_CurrentFrame) }
+        );
 
-        vk::SubmitInfo submitInfo;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = m_GraphicsCommandBuffers->GetPointer(m_CurrentFrame);
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
+        // --- SUBMIT COMPUTE ---
+        m_Device->GetComputeQueue().Submit(
+            { m_ComputeCommandBuffers->Get(m_CurrentFrame) },
+            { m_ComputeFinishedSemaphores->Get(m_CurrentFrame) }
+        );
 
-        // Signal the fence for THIS frame
-        try
-        {
-            m_Device->GetGraphicsQueue().submit(submitInfo, m_InFlightFences->Get(m_CurrentFrame));
-        }
-        catch (vk::SystemError& err)
-        {
-            OPAL_CRITICAL("Submit Failed: {}", err.what());
-        }
+        // --- SUBMIT GRAPHICS ---
+        // Wait for: Swapchain Image Available AND Transfer Finished AND Compute Finished
+        m_Device->GetGraphicsQueue().Submit(
+            { m_GraphicsCommandBuffers->Get(m_CurrentFrame) },
+            { m_RenderFinishedSemaphores->Get(m_ImageIndex) },
+            {
+                m_ImageAvailableSemaphores->Get(m_CurrentFrame),
+                m_TransferFinishedSemaphores->Get(m_CurrentFrame),
+                m_ComputeFinishedSemaphores->Get(m_CurrentFrame)
+            },
+            {
+                vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                vk::PipelineStageFlagBits::eVertexInput, // Wait for transfer before vertex input
+                vk::PipelineStageFlagBits::eVertexInput  // Wait for compute before vertex input (assumption)
+            },
+            m_InFlightFences->Get(m_CurrentFrame)
+        );
 
         // Present
         bool success = m_Swapchain->Present(m_ImageIndex, m_RenderFinishedSemaphores->Get(m_ImageIndex));
@@ -189,6 +198,12 @@ namespace Mixture::Vulkan
 
     Scope<RHI::ICommandList> Context::GetCommandBuffer()
     {
-        return CreateScope<CommandList>(m_GraphicsCommandBuffers->Get(m_CurrentFrame), m_Swapchain->GetImages()[m_ImageIndex]);
+        return CreateScope<CommandList>(
+            FrameCommandContext{
+                m_GraphicsCommandBuffers->Get(m_CurrentFrame),
+                m_TransferCommandBuffers->Get(m_CurrentFrame),
+                m_ComputeCommandBuffers->Get(m_CurrentFrame),
+            }, m_Swapchain->GetImages()[m_ImageIndex]
+        );
     }
 }

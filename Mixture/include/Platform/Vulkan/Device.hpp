@@ -8,6 +8,7 @@
 #include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/Instance.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
+#include "Platform/Vulkan/Queue.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
@@ -42,28 +43,28 @@ namespace Mixture::Vulkan
          *
          * @return vk::Queue The graphics queue.
          */
-		vk::Queue GetGraphicsQueue() const { return m_GraphicsQueue; }
+		Queue& GetGraphicsQueue() const { return *m_GraphicsQueue; }
 
         /**
          * @brief Gets the transfer queue.
          *
          * @return vk::Queue The transfer queue.
          */
-		vk::Queue GetTransferQueue() const { return m_TransferQueue; }
+		Queue& GetTransferQueue() const { return *m_TransferQueue; }
 
         /**
          * @brief Gets the present queue.
          *
          * @return vk::Queue The present queue.
          */
-		vk::Queue GetPresentQueue() const { return m_PresentQueue; }
+		Queue& GetPresentQueue() const { return *m_PresentQueue; }
 
         /**
          * @brief Gets the compute queue.
          *
          * @return vk::Queue The compute queue.
          */
-		vk::Queue GetComputeQueue() const { return m_ComputeQueue; }
+		Queue& GetComputeQueue() const { return *m_ComputeQueue; }
 
         /**
          * @brief Gets the handle of the Vulkan Memory Allocator.
@@ -83,10 +84,10 @@ namespace Mixture::Vulkan
 		PhysicalDevice* m_PhysicalDevice;
 		vk::Device m_Device;
 
-		vk::Queue m_GraphicsQueue;
-        vk::Queue m_TransferQueue;
-		vk::Queue m_PresentQueue;
-		vk::Queue m_ComputeQueue;
+		Scope<Queue> m_GraphicsQueue;
+        Scope<Queue> m_TransferQueue;
+		Scope<Queue> m_PresentQueue;
+		Scope<Queue> m_ComputeQueue;
 
         VmaAllocator m_Allocator;
 	};

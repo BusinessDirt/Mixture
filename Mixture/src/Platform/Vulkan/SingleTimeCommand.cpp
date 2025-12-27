@@ -33,7 +33,7 @@ namespace Mixture::Vulkan
         End(commandBuffer, context.GetLogicalDevice().GetGraphicsQueue(), context.GetGraphicsCommandPool().GetHandle());
     }
 
-    void SingleTimeCommand::End(vk::CommandBuffer commandBuffer, vk::Queue queue, vk::CommandPool commandPool)
+    void SingleTimeCommand::End(vk::CommandBuffer commandBuffer, Queue& queue, vk::CommandPool commandPool)
     {
         commandBuffer.end();
 
@@ -47,7 +47,7 @@ namespace Mixture::Vulkan
         vk::FenceCreateInfo fenceInfo;
         vk::Fence fence = device.createFence(fenceInfo);
 
-        queue.submit(submitInfo, fence);
+        queue.GetHandle().submit(submitInfo, fence);
 
         auto result = device.waitForFences(1, &fence, VK_TRUE, 100000000000); // 100s timeout
         if (result != vk::Result::eSuccess)
@@ -65,7 +65,7 @@ namespace Mixture::Vulkan
         Submit(context.GetLogicalDevice().GetGraphicsQueue(), context.GetGraphicsCommandPool().GetHandle(), action);
     }
 
-    void SingleTimeCommand::Submit(vk::Queue queue, vk::CommandPool commandPool, const std::function<void(vk::CommandBuffer)>& action)
+    void SingleTimeCommand::Submit(Queue& queue, vk::CommandPool commandPool, const std::function<void(vk::CommandBuffer)>& action)
     {
         const vk::CommandBuffer commandBuffer = Begin(commandPool);
         action(commandBuffer);

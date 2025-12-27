@@ -13,29 +13,6 @@ namespace Mixture::Vulkan
     {
         namespace Utils
         {
-            static vk::AttachmentLoadOp ConvertLoadOp(RHI::LoadOp op)
-            {
-                switch (op)
-                {
-                    case RHI::LoadOp::Clear: return vk::AttachmentLoadOp::eClear;
-                    case RHI::LoadOp::Load:  return vk::AttachmentLoadOp::eLoad;
-                    case RHI::LoadOp::DontCare: return vk::AttachmentLoadOp::eDontCare;
-                    case RHI::LoadOp::None: return vk::AttachmentLoadOp::eNone;
-                    default: return vk::AttachmentLoadOp::eDontCare;
-                }
-            }
-
-            static vk::AttachmentStoreOp ConvertStoreOp(RHI::StoreOp op)
-            {
-                switch (op)
-                {
-                    case RHI::StoreOp::Store: return vk::AttachmentStoreOp::eStore;
-                    case RHI::StoreOp::DontCare: return vk::AttachmentStoreOp::eDontCare;
-                    case RHI::StoreOp::None: return vk::AttachmentStoreOp::eNone;
-                    default: return vk::AttachmentStoreOp::eStore;
-                }
-            }
-
             void InsertImageBarrier(vk::CommandBuffer cmdbuffer, vk::Image image,
                 vk::ImageLayout oldLayout, vk::ImageLayout newLayout,
                 vk::PipelineStageFlags srcStage, vk::PipelineStageFlags dstStage,
@@ -69,10 +46,12 @@ namespace Mixture::Vulkan
     {
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit; // Reset every frame
-        m_CommandBuffer.begin(beginInfo);
+        m_CommandContext.transferCommandBuffer.begin(beginInfo);
+        m_CommandContext.computeCommandBuffer.begin(beginInfo);
+        m_CommandContext.graphicsCommandBuffer.begin(beginInfo);
 
         Utils::InsertImageBarrier(
-            m_CommandBuffer, m_SwapchainImage,
+            m_CommandContext.graphicsCommandBuffer, m_SwapchainImage,
             vk::ImageLayout::eUndefined,
             vk::ImageLayout::eColorAttachmentOptimal,
             vk::PipelineStageFlagBits::eTopOfPipe,
@@ -85,7 +64,7 @@ namespace Mixture::Vulkan
     void CommandList::End()
     {
         Utils::InsertImageBarrier(
-            m_CommandBuffer, m_SwapchainImage,
+            m_CommandContext.graphicsCommandBuffer, m_SwapchainImage,
             vk::ImageLayout::eColorAttachmentOptimal,
             vk::ImageLayout::ePresentSrcKHR,
             vk::PipelineStageFlagBits::eColorAttachmentOutput,
@@ -94,7 +73,9 @@ namespace Mixture::Vulkan
             vk::AccessFlags() // Presentation reads implicitly
         );
 
-        m_CommandBuffer.end();
+        m_CommandContext.transferCommandBuffer.end();
+        m_CommandContext.computeCommandBuffer.end();
+        m_CommandContext.graphicsCommandBuffer.end();
     }
 
     void CommandList::BeginRendering(const RHI::RenderingInfo& info)
@@ -120,8 +101,8 @@ namespace Mixture::Vulkan
             vkInfo.imageLayout = vk::ImageLayout::eColorAttachmentOptimal; // Or infer from texture usage
 
             // Operations
-            vkInfo.loadOp = Utils::ConvertLoadOp(attachment.LoadOp);
-            vkInfo.storeOp = Utils::ConvertStoreOp(attachment.StoreOp);
+            vkInfo.loadOp = EnumMapper::MapLoadOp(attachment.LoadOp);
+            vkInfo.storeOp = EnumMapper::MapStoreOp(attachment.StoreOp);
 
             // Clear Color (R, G, B, A)
             vkInfo.clearValue.color = std::array<float, 4>
@@ -146,8 +127,8 @@ namespace Mixture::Vulkan
             vkDepthAttachment.imageView = vulkanTexture->GetImageView();
             vkDepthAttachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
-            vkDepthAttachment.loadOp = Utils::ConvertLoadOp(attachment.LoadOp);
-            vkDepthAttachment.storeOp = Utils::ConvertStoreOp(attachment.StoreOp);
+            vkDepthAttachment.loadOp = EnumMapper::MapLoadOp(attachment.LoadOp);
+            vkDepthAttachment.storeOp = EnumMapper::MapStoreOp(attachment.StoreOp);
 
             // Depth Clear Value (Depth, Stencil)
             // Note: You might want to add a StencilClearValue to your struct later
@@ -181,32 +162,32 @@ namespace Mixture::Vulkan
             // vkInfo.pStencilAttachment = &vkDepthAttachment;
         }
 
-        m_CommandBuffer.beginRendering(vkInfo);
+        m_CommandContext.graphicsCommandBuffer.beginRendering(vkInfo);
     }
 
     void CommandList::EndRendering()
     {
-        m_CommandBuffer.endRendering();
+        m_CommandContext.graphicsCommandBuffer.endRendering();
     }
 
     void CommandList::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth)
     {
         // Vulkan Y-flip standard: negative height, y = y + height
         vk::Viewport viewport(x, y + height, width, -height, minDepth, maxDepth);
-        m_CommandBuffer.setViewport(0, 1, &viewport);
+        m_CommandContext.graphicsCommandBuffer.setViewport(0, 1, &viewport);
     }
 
     void CommandList::SetScissor(int32_t x, int32_t y, uint32_t width, uint32_t height)
     {
         vk::Rect2D scissor({x, y}, {width, height});
-        m_CommandBuffer.setScissor(0, 1, &scissor);
+        m_CommandContext.graphicsCommandBuffer.setScissor(0, 1, &scissor);
     }
 
     void CommandList::BindPipeline(RHI::IPipeline* pipeline)
     {
         auto* vkPipeline = static_cast<Pipeline*>(pipeline);
         m_CurrentPipelineLayout = vkPipeline->GetLayout();
-        m_CommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline->GetHandle());
+        m_CommandContext.graphicsCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline->GetHandle());
     }
 
     void CommandList::BindVertexBuffer(RHI::IBuffer* buffer, uint32_t binding)
@@ -223,7 +204,7 @@ namespace Mixture::Vulkan
         vk::Buffer buffers[] = { vkBuffer->GetHandle() };
         vk::DeviceSize offsets[] = { 0 };
 
-        m_CommandBuffer.bindVertexBuffers(binding, 1, buffers, offsets);
+        m_CommandContext.graphicsCommandBuffer.bindVertexBuffers(binding, 1, buffers, offsets);
     }
 
     void CommandList::BindIndexBuffer(RHI::IBuffer* buffer)
@@ -237,7 +218,7 @@ namespace Mixture::Vulkan
         auto vkBuffer = static_cast<Buffer*>(buffer);
 
         // Default to 32-bit indices for simplicity
-        m_CommandBuffer.bindIndexBuffer(vkBuffer->GetHandle(), 0, vk::IndexType::eUint32);
+        m_CommandContext.graphicsCommandBuffer.bindIndexBuffer(vkBuffer->GetHandle(), 0, vk::IndexType::eUint32);
     }
 
     void CommandList::PipelineBarrier(RHI::ITexture* texture, RHI::ResourceState oldState, RHI::ResourceState newState)
@@ -271,13 +252,13 @@ namespace Mixture::Vulkan
     void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
     {
         FlushDescriptors();
-        m_CommandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
+        m_CommandContext.graphicsCommandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
     void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
         FlushDescriptors();
-        m_CommandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+        m_CommandContext.graphicsCommandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }
 
     void CommandList::FlushDescriptors()
@@ -326,7 +307,7 @@ namespace Mixture::Vulkan
             // Set 0 is usually Global (Camera/Scene), bound elsewhere.
             const uint32_t DYNAMIC_SET_INDEX = 1;
 
-            m_CommandBuffer.bindDescriptorSets(
+            m_CommandContext.graphicsCommandBuffer.bindDescriptorSets(
                 vk::PipelineBindPoint::eGraphics,
                 m_CurrentPipelineLayout,
                 DYNAMIC_SET_INDEX,

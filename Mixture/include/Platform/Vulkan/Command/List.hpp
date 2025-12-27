@@ -10,6 +10,12 @@
 
 namespace Mixture::Vulkan
 {
+    struct FrameCommandContext
+    {
+        vk::CommandBuffer graphicsCommandBuffer;
+        vk::CommandBuffer transferCommandBuffer;
+        vk::CommandBuffer computeCommandBuffer;
+    };
     /**
      * @brief Vulkan implementation of the CommandList.
      *
@@ -18,8 +24,8 @@ namespace Mixture::Vulkan
     class CommandList : public RHI::ICommandList
     {
     public:
-        CommandList(vk::CommandBuffer commandBuffer, vk::Image swapchainImage)
-            : m_CommandBuffer(commandBuffer), m_SwapchainImage(swapchainImage) {}
+        CommandList(const FrameCommandContext& commandContext, vk::Image swapchainImage)
+            : m_CommandContext(commandContext), m_SwapchainImage(swapchainImage) {}
         ~CommandList() = default;
 
         void Begin() override;
@@ -43,8 +49,6 @@ namespace Mixture::Vulkan
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
 
-        vk::CommandBuffer GetHandle() const { return m_CommandBuffer; }
-
     private:
         void FlushDescriptors(); // The magic function
 
@@ -57,7 +61,7 @@ namespace Mixture::Vulkan
             vk::DescriptorType Type;
         };
 
-        vk::CommandBuffer m_CommandBuffer;
+        FrameCommandContext m_CommandContext;
         vk::Image m_SwapchainImage;
         vk::PipelineLayout m_CurrentPipelineLayout;
 

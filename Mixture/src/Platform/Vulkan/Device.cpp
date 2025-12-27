@@ -70,26 +70,10 @@ namespace Mixture::Vulkan
             exit(-1);
         }
 
-        m_GraphicsQueue = m_Device.getQueue(indices.Graphics.value(), 0);
-        m_PresentQueue = m_Device.getQueue(indices.Present.value(), 0);
-
-        if (indices.Compute.has_value())
-        {
-            m_ComputeQueue = m_Device.getQueue(indices.Compute.value(), 0);
-        }
-        else
-        {
-            m_ComputeQueue = m_GraphicsQueue;
-        }
-
-        if (indices.Transfer.has_value())
-        {
-            m_TransferQueue = m_Device.getQueue(indices.Transfer.value(), 0);
-        }
-        else
-        {
-            m_TransferQueue = m_GraphicsQueue;
-        }
+        m_GraphicsQueue = CreateScope<Queue>(m_Device, indices.Graphics, "Graphics Queue");
+        m_PresentQueue = CreateScope<Queue>(m_Device, indices.Present, "Present Queue");
+        m_ComputeQueue = CreateScope<Queue>(m_Device, indices.Compute, "Compute Queue", m_GraphicsQueue->GetHandle());
+        m_TransferQueue = CreateScope<Queue>(m_Device, indices.Transfer, "Transfer Queue", m_GraphicsQueue->GetHandle());
 
         VmaVulkanFunctions vulkanFunctions = {};
         vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;

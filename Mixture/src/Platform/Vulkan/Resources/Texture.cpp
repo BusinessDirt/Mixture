@@ -140,7 +140,7 @@ namespace Mixture::Vulkan
         // Release old resources if resizing/reloading
         Release();
 
-        auto device = Context::Get().GetLogicalDevice();
+        auto& device = Context::Get().GetLogicalDevice();
         auto allocator = device.GetAllocator();
 
         // Image Info

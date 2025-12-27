@@ -135,6 +135,8 @@ namespace Mixture::Vulkan
 
         Scope<Semaphores> m_ImageAvailableSemaphores;
         Scope<Semaphores> m_RenderFinishedSemaphores;
+        Scope<Semaphores> m_TransferFinishedSemaphores;
+        Scope<Semaphores> m_ComputeFinishedSemaphores;
         Scope<Fences> m_InFlightFences;
 
         Scope<CommandPool> m_GraphicsCommandPool;

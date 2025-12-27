@@ -6,6 +6,7 @@
  */
 
 #include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/Queue.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -46,7 +47,7 @@ namespace Mixture::Vulkan
          * @param queue The queue to submit to.
          * @param commandPool The pool the buffer was allocated from (for freeing).
          */
-        static void End(vk::CommandBuffer commandBuffer, vk::Queue queue, vk::CommandPool commandPool);
+        static void End(vk::CommandBuffer commandBuffer, Queue& queue, vk::CommandPool commandPool);
 
         /**
          * @brief Convenience function to run a lambda within a single-time command buffer on the default graphics queue.
@@ -62,6 +63,6 @@ namespace Mixture::Vulkan
          * @param commandPool The command pool to allocate from.
          * @param action Lambda taking the command buffer to record commands into.
          */
-        static void Submit(vk::Queue queue, vk::CommandPool commandPool, const std::function<void(vk::CommandBuffer)>& action);
+        static void Submit(Queue& queue, vk::CommandPool commandPool, const std::function<void(vk::CommandBuffer)>& action);
     };
 }
