@@ -5,10 +5,12 @@
  * @brief Common definitions and structures for Vulkan.
  */
 
+#include <vulkan/vulkan.hpp>
+#include <Opal/Formatters/VulkanFormatters.hpp>
+
 #include "Mixture/Core/Base.hpp"
 #include "Platform/Vulkan/EnumMapper.hpp"
 
-#include <vulkan/vulkan.hpp>
 #include <optional>
 
 namespace Mixture::Vulkan

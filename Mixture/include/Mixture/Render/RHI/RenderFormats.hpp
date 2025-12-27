@@ -152,34 +152,34 @@ namespace Mixture::RHI
     {
         switch (format)
         {
-            case Format::R8_UNORM:           return 1;
-            case Format::R8G8_UNORM:         return 2;
-            case Format::R8G8B8_UNORM:       return 3;
-            case Format::R8G8B8A8_UNORM:     return 4;
-            case Format::B8G8R8A8_UNORM:     return 4;
+            case Format::R8_UNORM: return 1;
+            case Format::R8G8_UNORM: return 2;
+            case Format::R8G8B8_UNORM: return 3;
+            case Format::R8G8B8A8_UNORM: return 4;
+            case Format::B8G8R8A8_UNORM: return 4;
 
-            case Format::R16_FLOAT:          return 2;
-            case Format::R16G16_FLOAT:       return 4;
-            case Format::R16G16B16_FLOAT:    return 6;
+            case Format::R16_FLOAT: return 2;
+            case Format::R16G16_FLOAT: return 4;
+            case Format::R16G16B16_FLOAT: return 6;
             case Format::R16G16B16A16_FLOAT: return 8;
 
-            case Format::R32_FLOAT:          return 4;
-            case Format::R32G32_FLOAT:       return 8;
-            case Format::R32G32B32_FLOAT:    return 12;
+            case Format::R32_FLOAT: return 4;
+            case Format::R32G32_FLOAT: return 8;
+            case Format::R32G32B32_FLOAT: return 12;
             case Format::R32G32B32A32_FLOAT: return 16;
 
-            case Format::R32_INT:            return 4;
-            case Format::R32G32B32A32_INT:   return 16;
-            case Format::R32_UINT:           return 4;
+            case Format::R32_INT: return 4;
+            case Format::R32G32B32A32_INT: return 16;
+            case Format::R32_UINT: return 4;
 
-            case Format::D32_FLOAT:          return 4;
+            case Format::D32_FLOAT: return 4;
             // D24_S8 is packed into 32 bits usually
-            case Format::D24_UNORM_S8_UINT:  return 4;
+            case Format::D24_UNORM_S8_UINT: return 4;
             // D32_S8 is often 64 bits (32 depth + 8 stencil + 24 padding)
-            case Format::D32_FLOAT_S8_UINT:  return 8;
-
-            default: return 0;
+            case Format::D32_FLOAT_S8_UINT: return 8;
         }
+
+        return 0;
     }
 
     inline bool IsDepthFormat(Format format)
@@ -192,6 +192,34 @@ namespace Mixture::RHI
                 return true;
             default:
                 return false;
+        }
+    }
+
+    inline std::string_view ToString(Format format)
+    {
+        switch (format)
+        {
+            case Format::Undefined: return "Undefined";
+            case Format::R8_UNORM: return "R8_UNORM";
+            case Format::R8G8_UNORM: return "R8G8_UNORM";
+            case Format::R8G8B8_UNORM: return "R8G8B8_UNORM";
+            case Format::R8G8B8A8_UNORM: return "R8G8B8A8_UNORM";
+            case Format::B8G8R8A8_UNORM: return "B8G8R8A8_UNORM";
+            case Format::R16_FLOAT: return "R16_FLOAT";
+            case Format::R16G16_FLOAT: return "R16G16_FLOAT";
+            case Format::R16G16B16_FLOAT: return "R16G16B16_FLOAT";
+            case Format::R16G16B16A16_FLOAT: return "R16G16B16A16_FLOAT";
+            case Format::R32_FLOAT: return "R32_FLOAT";
+            case Format::R32G32_FLOAT: return "R32G32_FLOAT";
+            case Format::R32G32B32_FLOAT: return "R32G32B32_FLOAT";
+            case Format::R32G32B32A32_FLOAT: return "R32G32B32A32_FLOAT";
+            case Format::R32_INT: return "R32_INT";
+            case Format::R32G32B32A32_INT: return "R32G32B32A32_INT";
+            case Format::R32_UINT: return "R32_UINT";
+            case Format::D32_FLOAT: return "D32_FLOAT";
+            case Format::D24_UNORM_S8_UINT: return "D24_UNORM_S8_UINT";
+            case Format::D32_FLOAT_S8_UINT: return "D32_FLOAT_S8_UINT";
+            default: return "Undefined";
         }
     }
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Opal/Base.hpp"
-#include "Opal/Formatters/LogFormatters.hpp"
+#include "Opal/Formatters/GLMFormatters.hpp"
 
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>

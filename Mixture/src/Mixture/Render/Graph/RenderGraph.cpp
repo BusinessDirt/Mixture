@@ -83,7 +83,7 @@ namespace Mixture
             if (pass.Execute)
             {
                 RHI::RenderingInfo renderingInfo;
-                
+
                 // Setup Render Area from Attachment Writes
                 if (!pass.Writes.empty())
                 {
@@ -137,13 +137,13 @@ namespace Mixture
                 {
                     uint32_t width = renderingInfo.RenderAreaWidth;
                     uint32_t height = renderingInfo.RenderAreaHeight;
-                    
+
                     cmdList->BeginRendering(renderingInfo);
                     cmdList->SetViewport(0, 0, (float)width, (float)height);
                     cmdList->SetScissor(0, 0, width, height);
-                    
+
                     pass.Execute(m_Registry, cmdList); // Draw commands happen here
-                    
+
                     cmdList->EndRendering();
                 }
                 else
@@ -164,12 +164,12 @@ namespace Mixture
         node.Handle = handle;
         node.Name = name;
         node.Type = RGResourceType::ImportedTexture;
-        
+
         node.TextureDesc.Width = resource->GetWidth();
         node.TextureDesc.Height = resource->GetHeight();
         node.TextureDesc.Format = resource->GetFormat();
         node.TextureDesc.InitialState = RHI::ResourceState::Undefined; // We don't track external state yet
-        
+
         node.ExternalTexture = resource;
 
         m_Resources.push_back(node);
@@ -190,7 +190,7 @@ namespace Mixture
 
         node.BufferDesc.Size = resource->GetSize();
         node.BufferDesc.Usage = resource->GetUsage();
-        
+
         node.ExternalBuffer = resource;
 
         m_Resources.push_back(node);
@@ -256,7 +256,7 @@ namespace Mixture
         // TODO: Assert type
         return m_Resources[handle.ID].BufferDesc;
     }
-    
+
     const RGResourceNode& RenderGraph::GetResourceNode(RGResourceHandle handle) const
     {
         OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
@@ -303,7 +303,7 @@ namespace Mixture
                     }
                 }
             }
-            
+
             // DEPENDENCY: Write-after-Write (WAW) - Buffers
             for (auto& handle : pass.BufferWrites)
             {
@@ -391,7 +391,7 @@ namespace Mixture
             if (m_Resources[i].Type == RGResourceType::Texture || m_Resources[i].Type == RGResourceType::ImportedTexture)
                 currentStates[i] = m_Resources[i].TextureDesc.InitialState;
             else
-                currentStates[i] = RHI::ResourceState::Undefined; 
+                currentStates[i] = RHI::ResourceState::Undefined;
         }
 
         for (auto& pass : m_Passes)
@@ -442,7 +442,7 @@ namespace Mixture
                     TransitionResource(handle, target, true);
                 }
             }
-            
+
             for (auto& handle : pass.BufferWrites)
             {
                  TransitionResource(handle, RHI::ResourceState::UnorderedAccess, true);
@@ -452,10 +452,52 @@ namespace Mixture
 
     void RenderGraph::DumpGraphToJSON()
     {
-        // Construct the target path
+        static bool executed = false;
+        if (executed) return;
+
+        // Find the project root by looking for ".git"
         std::filesystem::path currentPath = std::filesystem::current_path();
-        std::filesystem::path outputDir = currentPath / "docs" / "visualizers";
-        if (!std::filesystem::exists(outputDir)) std::filesystem::create_directories(outputDir);
+        std::filesystem::path projectRoot = currentPath;
+        bool foundGit = false;
+
+        while (true)
+        {
+            if (std::filesystem::exists(projectRoot / ".git"))
+            {
+                foundGit = true;
+                break;
+            }
+
+            // Move up one level
+            if (projectRoot.has_parent_path() && projectRoot != projectRoot.parent_path())
+            {
+                projectRoot = projectRoot.parent_path();
+            }
+            else
+            {
+                break; // Reached system root (e.g., C:\ or /)
+            }
+        }
+
+        // Construct the target path
+        std::filesystem::path outputDir;
+
+        if (foundGit)
+        {
+            outputDir = projectRoot / "docs" / "visualizers";
+        }
+        else
+        {
+            OPAL_WARN("Core/RenderGraph", ".git directory not found. Saving to build directory.");
+            outputDir = currentPath / "docs" / "visualizers";
+        }
+
+        // Create the 'docs' directory if it doesn't exist
+        if (!std::filesystem::exists(outputDir))
+        {
+            std::filesystem::create_directories(outputDir);
+        }
+
         std::ofstream out(outputDir / "graph.json");
 
         out << "{\n";
@@ -477,25 +519,39 @@ namespace Mixture
             out << "    {\n";
             out << "      \"id\": " << i << ",\n";
             out << "      \"name\": \"" << pass.Name << "\",\n";
-            
-             // Reads
+
+            // --- NEW: Dump Barriers ---
+            out << "      \"barriers\": [\n";
+            for (size_t b = 0; b < pass.Barriers.size(); ++b)
+            {
+                const auto& barrier = pass.Barriers[b];
+                std::string_view fromState = RHI::ToString(barrier.Before);
+                std::string_view toState   = RHI::ToString(barrier.After);
+
+                out << "        {";
+                out << " \"res\": " << barrier.Resource.ID << ",";
+                out << " \"from\": \"" << fromState << "\",";
+                out << " \"to\": \"" << toState << "\"";
+                out << " }";
+
+                if (b < pass.Barriers.size() - 1) out << ",";
+                out << "\n";
+            }
+            out << "      ],\n";
+
+            // Writes
+            out << "      \"writes\": [";
+            for (size_t k = 0; k < pass.Writes.size(); ++k) {
+                out << pass.Writes[k].Handle.ID;
+                if (k < pass.Writes.size() - 1) out << ", ";
+            }
+            out << "],\n";
+
+            // Reads
             out << "      \"reads\": [";
             for (size_t k = 0; k < pass.Reads.size(); ++k) {
                 out << pass.Reads[k].ID;
                 if (k < pass.Reads.size() - 1) out << ", ";
-            }
-            out << "],\n";
-            
-            // Writes (Attachments + Buffers)
-            out << "      \"writes\": [";
-            for (size_t k = 0; k < pass.Writes.size(); ++k) {
-                out << pass.Writes[k].Handle.ID;
-                bool isLastAttachment = (k == pass.Writes.size() - 1);
-                if (!isLastAttachment || !pass.BufferWrites.empty()) out << ", ";
-            }
-            for (size_t k = 0; k < pass.BufferWrites.size(); ++k) {
-                out << pass.BufferWrites[k].ID;
-                if (k < pass.BufferWrites.size() - 1) out << ", ";
             }
             out << "]\n";
 
@@ -505,5 +561,9 @@ namespace Mixture
         }
         out << "  ]\n";
         out << "}\n";
+        out << std::flush;
+
+        OPAL_LOG_DEBUG("Core/RenderGraph", "Dumped Graph to JSON file: {}/graph.json", outputDir.string());
+        executed = true;
     }
 }

@@ -117,8 +117,7 @@ namespace Mixture::RHI
             case ResourceState::CopySource: return "CopySource";
             case ResourceState::CopyDest: return "CopyDest";
             case ResourceState::Present: return "Present";
+            default: return "Undefined";
         }
-
-        return "Undefined";
     }
 }
