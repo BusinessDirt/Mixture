@@ -95,11 +95,25 @@ namespace Mixture::Vulkan
         Swapchain& GetSwapchain() const { return *m_Swapchain; }
 
         /**
-         * @brief Gets the command pool.
+         * @brief Gets the graphics command pool.
          *
          * @return Ref<CommandPool> the command pool.
          */
-        CommandPool& GetCommandPool() const { return *m_CommandPool; }
+        CommandPool& GetGraphicsCommandPool() const { return *m_GraphicsCommandPool; }
+
+        /**
+         * @brief Gets the transfer command pool.
+         *
+         * @return Ref<CommandPool> the command pool.
+         */
+        CommandPool& GetTransferCommandPool() const { return *m_TransferCommandPool; }
+
+        /**
+         * @brief Gets the compute command pool.
+         *
+         * @return Ref<CommandPool> the command pool.
+         */
+        CommandPool& GetComputeCommandPool() const { return *m_ComputeCommandPool; }
 
         uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 
@@ -123,8 +137,12 @@ namespace Mixture::Vulkan
         Scope<Semaphores> m_RenderFinishedSemaphores;
         Scope<Fences> m_InFlightFences;
 
-        Scope<CommandPool> m_CommandPool;
-        Scope<CommandBuffers> m_CommandBuffers;
+        Scope<CommandPool> m_GraphicsCommandPool;
+        Scope<CommandBuffers> m_GraphicsCommandBuffers;
+        Scope<CommandPool> m_TransferCommandPool;
+        Scope<CommandBuffers> m_TransferCommandBuffers;
+        Scope<CommandPool> m_ComputeCommandPool;
+        Scope<CommandBuffers> m_ComputeCommandBuffers;
 
         Scope<DescriptorAllocators> m_DescriptorAllocators;
         Scope<DescriptorLayoutCache> m_DescriptorLayoutCache;

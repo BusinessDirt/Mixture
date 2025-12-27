@@ -97,6 +97,13 @@ namespace Opal
          */
         std::shared_ptr<spdlog::logger> GetLogger(const std::string& name);
 
+        /**
+         * @brief Sets the name of the current thread for logging purposes.
+         * 
+         * @param name The name to assign to the current thread.
+         */
+        static void SetThreadName(const std::string& name);
+
     private:
         LogRegistry() = default; // Singleton
         std::vector<spdlog::sink_ptr> m_Sinks;

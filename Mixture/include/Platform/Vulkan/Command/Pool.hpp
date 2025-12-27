@@ -12,7 +12,7 @@ namespace Mixture::Vulkan
 {
     /**
      * @brief Wrapper around a Vulkan Command Pool.
-     * 
+     *
      * Manages the creation and destruction of a command pool, used to allocate command buffers.
      */
     class CommandPool
@@ -20,16 +20,16 @@ namespace Mixture::Vulkan
     public:
         /**
          * @brief Constructor.
-         * 
+         *
          * @param device Reference to the logical device.
          * @param indices Queue family indices to determine which queue family the pool supports.
          */
-        CommandPool(Device& device, const QueueFamilyIndices& indices);
+        CommandPool(Device& device, uint32_t queueIndex);
         ~CommandPool();
 
         /**
          * @brief Gets the Vulkan Command Pool handle.
-         * 
+         *
          * @return vk::CommandPool The command pool handle.
          */
         vk::CommandPool GetHandle() const { return m_Handle; }

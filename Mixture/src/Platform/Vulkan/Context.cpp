@@ -52,8 +52,12 @@ namespace Mixture::Vulkan
 
         // Create Command Pool
         QueueFamilyIndices queueFamilyIndices = m_PhysicalDevice->GetQueueFamilies();
-        m_CommandPool = CreateScope<CommandPool>(*m_Device, queueFamilyIndices);
-        m_CommandBuffers = CreateScope<CommandBuffers>(*m_Device, *m_CommandPool, MAX_FRAMES_IN_FLIGHT);
+        m_GraphicsCommandPool = CreateScope<CommandPool>(*m_Device, queueFamilyIndices.Graphics.value());
+        m_GraphicsCommandBuffers = CreateScope<CommandBuffers>(*m_Device, *m_GraphicsCommandPool, MAX_FRAMES_IN_FLIGHT);
+        m_TransferCommandPool = CreateScope<CommandPool>(*m_Device, queueFamilyIndices.Transfer.value());
+        m_TransferCommandBuffers = CreateScope<CommandBuffers>(*m_Device, *m_TransferCommandPool, MAX_FRAMES_IN_FLIGHT);
+        m_ComputeCommandPool = CreateScope<CommandPool>(*m_Device, queueFamilyIndices.Compute.value());
+        m_ComputeCommandBuffers = CreateScope<CommandBuffers>(*m_Device, *m_ComputeCommandPool, MAX_FRAMES_IN_FLIGHT);
 
         m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(*m_Device);
         m_DescriptorAllocators = CreateScope<DescriptorAllocators>(*m_Device, MAX_FRAMES_IN_FLIGHT);
@@ -131,7 +135,9 @@ namespace Mixture::Vulkan
             return nullptr;
         }
 
-        m_CommandBuffers->Reset(m_CurrentFrame);
+        m_GraphicsCommandBuffers->Reset(m_CurrentFrame);
+        m_TransferCommandBuffers->Reset(m_CurrentFrame);
+        m_ComputeCommandBuffers->Reset(m_CurrentFrame);
 
         m_IsFrameStarted = true;
 
@@ -155,7 +161,7 @@ namespace Mixture::Vulkan
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = m_CommandBuffers->GetPointer(m_CurrentFrame);
+        submitInfo.pCommandBuffers = m_GraphicsCommandBuffers->GetPointer(m_CurrentFrame);
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -183,6 +189,6 @@ namespace Mixture::Vulkan
 
     Scope<RHI::ICommandList> Context::GetCommandBuffer()
     {
-        return CreateScope<CommandList>(m_CommandBuffers->Get(m_CurrentFrame), m_Swapchain->GetImages()[m_ImageIndex]);
+        return CreateScope<CommandList>(m_GraphicsCommandBuffers->Get(m_CurrentFrame), m_Swapchain->GetImages()[m_ImageIndex]);
     }
 }

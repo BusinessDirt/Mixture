@@ -3,12 +3,12 @@
 
 namespace Mixture::Vulkan
 {
-    CommandPool::CommandPool(Device& device, const QueueFamilyIndices& indices)
+    CommandPool::CommandPool(Device& device, uint32_t queueIndex)
         : m_Device(&device)
     {
         vk::CommandPoolCreateInfo poolInfo;
         poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer; // Allow resetting individual buffers
-        poolInfo.queueFamilyIndex = indices.Graphics.value();
+        poolInfo.queueFamilyIndex = queueIndex;
 
         try
         {

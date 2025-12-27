@@ -3,6 +3,7 @@
 
 #include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Device.hpp"
+#include "Platform/Vulkan/Command/Pool.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 namespace Mixture::Vulkan
@@ -16,9 +17,9 @@ namespace Mixture::Vulkan
         if (data)
         {
             VkDeviceSize imageSize = m_Width * m_Height * RHI::GetFormatStride(m_Format);
-            
-            auto device = Context::Get().GetLogicalDevice();
-            auto allocator = device.GetAllocator();
+
+            auto& logicalDevice = Context::Get().GetLogicalDevice();
+            auto allocator = logicalDevice.GetAllocator();
 
             // Staging Buffer
             VkBufferCreateInfo bufferInfo = {};
@@ -44,7 +45,8 @@ namespace Mixture::Vulkan
             memcpy(stagingAllocInfo.pMappedData, data, static_cast<size_t>(imageSize));
 
             // Upload to Image
-            SingleTimeCommand::Submit([&](vk::CommandBuffer cmd)
+            SingleTimeCommand::Submit(logicalDevice.GetTransferQueue(), Context::Get().GetTransferCommandPool().GetHandle(),
+            [&](vk::CommandBuffer cmd)
             {
                 vk::ImageMemoryBarrier barrier{};
                 barrier.oldLayout = vk::ImageLayout::eUndefined;
