@@ -53,9 +53,10 @@ namespace Mixture::RHI
          * Creates a texture (Empty or from data).
          *
          * @param desc The texture description.
+         * @param initialData Optional pointer to raw pixel data (must match format/size).
          * @return A reference to the created texture.
          */
-        virtual Ref<ITexture> CreateTexture(const TextureDesc& desc) = 0;
+        virtual Ref<ITexture> CreateTexture(const TextureDesc& desc, const void* initialData = nullptr) = 0;
 
         /**
          * Creates the PSO (Pipeline State Object).

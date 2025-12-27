@@ -74,7 +74,7 @@ namespace Mixture::Vulkan
 
         Ref<RHI::IShader> CreateShader(const void* data, size_t size, RHI::ShaderStage stage) override;
         Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc, const void* initialData = nullptr) override;
-        Ref<RHI::ITexture> CreateTexture(const RHI::TextureDesc& desc) override;
+        Ref<RHI::ITexture> CreateTexture(const RHI::TextureDesc& desc, const void* initialData = nullptr) override;
         Ref<RHI::IPipeline> CreatePipeline(const RHI::PipelineDesc& desc) override;
 
 		void WaitForIdle() override { m_Device.waitIdle(); }

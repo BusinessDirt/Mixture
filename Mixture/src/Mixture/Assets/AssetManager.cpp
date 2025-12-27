@@ -3,12 +3,14 @@
 #include "Mixture/Assets/AssetSerializer.hpp"
 
 #include "Mixture/Assets/Shaders/ShaderSerializer.hpp"
+#include "Mixture/Assets/Textures/TextureSerializer.hpp"
 
 namespace Mixture
 {
     void AssetManager::Init()
     {
         m_Serializers[AssetType::Shader] = CreateScope<ShaderSerializer>();
+        m_Serializers[AssetType::Texture] = CreateScope<TextureSerializer>();
 
         m_AssetCache.SetEvictionCallback([](const UUID& id, const Ref<IAsset>& asset)
         {

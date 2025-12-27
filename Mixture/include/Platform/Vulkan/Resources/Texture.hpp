@@ -22,8 +22,7 @@ namespace Mixture::Vulkan
     {
     public:
         //Standard Texture (Created from spec/file) - We OWN this memory
-        Texture(const RHI::TextureDesc& spec);
-        Texture(const std::string& path);
+        Texture(const RHI::TextureDesc& spec, const void* data = nullptr);
 
         // Swapchain/External Wrapper - We DO NOT own this memory
         Texture(vk::Format format, vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height);

@@ -129,9 +129,9 @@ namespace Mixture::Vulkan
         return CreateRef<Buffer>(desc, initialData);
     }
 
-    Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc)
+    Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc, const void* initialData)
     {
-        return CreateRef<Texture>(desc);
+        return CreateRef<Texture>(desc, initialData);
     }
 
     Ref<RHI::IPipeline> Device::CreatePipeline(const RHI::PipelineDesc& desc)
