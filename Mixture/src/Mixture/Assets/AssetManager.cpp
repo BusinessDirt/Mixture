@@ -1,6 +1,7 @@
 #include "mxpch.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
 #include "Mixture/Assets/AssetSerializer.hpp"
+#include "Mixture/Assets/AssetRegistry.hpp"
 
 #include "Mixture/Assets/Shaders/ShaderSerializer.hpp"
 #include "Mixture/Assets/Textures/TextureSerializer.hpp"
@@ -34,8 +35,11 @@ namespace Mixture
 
     AssetHandle AssetManager::GetAsset(AssetType type, const std::filesystem::path& path)
     {
+        // Resolve path through redirectors in case the asset has moved
+        std::filesystem::path resolvedPath = AssetRegistry::Get().ResolvePath(type, path);
+
         const char* typeString = Utils::AssetTypeToString(type);
-        std::filesystem::path fullPath = m_RootDirectory / typeString / path;
+        std::filesystem::path fullPath = m_RootDirectory / typeString / resolvedPath;
 
         if (!std::filesystem::exists(fullPath))
         {
@@ -46,7 +50,7 @@ namespace Mixture
         // 1. Try to load existing Metadata
         AssetMetadata metadata;
         metadata.Type = type;
-        metadata.FilePath = path; // Relative path for the struct
+        metadata.FilePath = resolvedPath; // Relative path for the struct
 
         if (AssetSerializer::HasMetadata(fullPath))
         {
@@ -67,7 +71,7 @@ namespace Mixture
             writeMeta.FilePath = fullPath; 
             
             AssetSerializer::WriteMetadata(writeMeta);
-            OPAL_INFO("Core/Assets", "Generated new metadata for '{}' (ID: {})", path.string(), (uint64_t)metadata.ID);
+            OPAL_INFO("Core/Assets", "Generated new metadata for '{}' (ID: {})", resolvedPath.string(), (uint64_t)metadata.ID);
         }
 
         // 3. Check Cache
@@ -75,7 +79,7 @@ namespace Mixture
         if (cachedAsset) return AssetHandle{ metadata.ID, cachedAsset->GetMagic() };
 
         // 4. Load from disk
-        Ref<IAsset> newAsset = LoadAssetInternal(type, path, metadata.ID);
+        Ref<IAsset> newAsset = LoadAssetInternal(type, resolvedPath, metadata.ID);
         if (newAsset) return AssetHandle{ metadata.ID, newAsset->GetMagic() };
 
         return AssetHandle{ UUID(0), 0 };

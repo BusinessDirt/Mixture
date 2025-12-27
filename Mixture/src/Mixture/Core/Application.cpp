@@ -7,7 +7,6 @@
 #include "Mixture/Render/ShaderLibrary.hpp"
 
 #include <Opal/Base.hpp>
-#include <ranges>
 
 namespace Mixture
 {
@@ -89,10 +88,10 @@ namespace Mixture
         dispatcher.Dispatch<WindowCloseEvent>(OPAL_BIND_EVENT_FN(OnWindowClose));
         dispatcher.Dispatch<FramebufferResizeEvent>(OPAL_BIND_EVENT_FN(OnFramebufferResize));
 
-        for (const auto& it : std::ranges::reverse_view(m_LayerStack))
+        for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
         {
             if (event.Handled) break;
-            it->OnEvent(event);
+            (*it)->OnEvent(event);
         }
     }
 

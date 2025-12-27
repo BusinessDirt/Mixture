@@ -74,11 +74,32 @@ namespace Mixture
         const std::unordered_map<UUID, AssetMetadata>& GetAssets() const { return m_Assets; }
 
         /**
+         * @brief Adds a redirector for a moved/renamed asset.
+         * 
+         * @param type The type of asset.
+         * @param oldPath The old relative path.
+         * @param newPath The new relative path.
+         */
+        void AddRedirector(AssetType type, const std::filesystem::path& oldPath, const std::filesystem::path& newPath);
+
+        /**
+         * @brief Resolves an asset path through the redirector chain.
+         * 
+         * @param type The type of asset.
+         * @param path The path to resolve.
+         * @return std::filesystem::path The resolved path (or the original if no redirector exists).
+         */
+        std::filesystem::path ResolvePath(AssetType type, const std::filesystem::path& path) const;
+
+        /**
          * @brief Clears the registry.
          */
         void Clear();
 
     private:
         std::unordered_map<UUID, AssetMetadata> m_Assets;
+        
+        // AssetType -> (OldPathString -> NewPathString)
+        std::unordered_map<AssetType, std::unordered_map<std::string, std::string>> m_Redirectors;
     };
 }

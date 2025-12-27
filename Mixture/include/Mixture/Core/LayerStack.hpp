@@ -60,15 +60,15 @@ namespace Mixture
          */
         void PopOverlay(Layer* layer);
 
-        std::vector<Layer*>::iterator begin() { return m_Layers.begin(); }
-        std::vector<Layer*>::iterator end() { return m_Layers.end(); }
-        std::vector<Layer*>::reverse_iterator rbegin() { return m_Layers.rbegin(); }
-        std::vector<Layer*>::reverse_iterator rend() { return m_Layers.rend(); }
+        Vector<Layer*>::iterator begin() { return m_Layers.begin(); }
+        Vector<Layer*>::iterator end() { return m_Layers.end(); }
+        Vector<Layer*>::reverse_iterator rbegin() { return m_Layers.rbegin(); }
+        Vector<Layer*>::reverse_iterator rend() { return m_Layers.rend(); }
 
-        OPAL_NODISCARD std::vector<Layer*>::const_iterator begin() const { return m_Layers.begin(); }
-        OPAL_NODISCARD std::vector<Layer*>::const_iterator end() const { return m_Layers.end(); }
-        OPAL_NODISCARD std::vector<Layer*>::const_reverse_iterator rbegin() const { return m_Layers.rbegin(); }
-        OPAL_NODISCARD std::vector<Layer*>::const_reverse_iterator rend() const { return m_Layers.rend(); }
+        OPAL_NODISCARD Vector<Layer*>::const_iterator begin() const { return m_Layers.begin(); }
+        OPAL_NODISCARD Vector<Layer*>::const_iterator end() const { return m_Layers.end(); }
+        OPAL_NODISCARD Vector<Layer*>::const_reverse_iterator rbegin() const { return m_Layers.rbegin(); }
+        OPAL_NODISCARD Vector<Layer*>::const_reverse_iterator rend() const { return m_Layers.rend(); }
 
     private:
         Vector<Layer*> m_Layers;
