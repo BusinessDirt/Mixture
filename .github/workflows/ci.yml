@@ -39,11 +39,10 @@ jobs:
 
     - name: Run Project Setup
       run: |
-        chmod +x Scripts/linux/Setup.sh
-        chmod +x Scripts/linux/Linux-GenProjects.sh
+        chmod +x Scripts/Setup-Unix.sh
         # Run the setup script (which runs Setup.py and then Linux-GenProjects.sh)
         # Note: We modified Setup.sh to use python3
-        bash Scripts/linux/Setup.sh
+        bash Scripts/Setup-Unix.sh
 
     - name: Build
       run: |
