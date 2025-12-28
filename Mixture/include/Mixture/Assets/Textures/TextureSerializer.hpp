@@ -18,6 +18,6 @@ namespace Mixture
     public:
         virtual ~TextureSerializer() = default;
 
-        Ref<IAsset> Load(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator = nullptr) override;
+        Ref<IAsset> Load(const Vector<char>& data, const AssetMetadata& metadata) override;
     };
 }

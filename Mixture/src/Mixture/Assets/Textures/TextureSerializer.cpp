@@ -6,13 +6,9 @@
 
 namespace Mixture
 {
-    Ref<IAsset> TextureSerializer::Load(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator)
+    Ref<IAsset> TextureSerializer::Load(const Vector<char>& data, const AssetMetadata& metadata)
     {
-        // Read file content into buffer
-        Vector<char> fileBuffer;
-        stream.ReadBuffer(fileBuffer);
-
-        if (fileBuffer.empty())
+        if (data.empty())
         {
             OPAL_ERROR("Core/Assets", "Failed to load texture content: {}", metadata.FilePath.string());
             return nullptr;
@@ -20,11 +16,11 @@ namespace Mixture
 
         int width, height, channels;
         // Force 4 channels (RGBA) for consistency
-        stbi_uc* data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(fileBuffer.data()), 
-                                              static_cast<int>(fileBuffer.size()), 
+        stbi_uc* pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(data.data()), 
+                                              static_cast<int>(data.size()), 
                                               &width, &height, &channels, 4); 
 
-        if (!data)
+        if (!pixels)
         {
             OPAL_ERROR("Core/Assets", "Failed to decode texture '{}': {}", metadata.FilePath.string(), stbi_failure_reason());
             return nullptr;
@@ -32,9 +28,9 @@ namespace Mixture
 
         // Copy to vector
         size_t dataSize = width * height * 4;
-        Vector<uint8_t> textureData(data, data + dataSize);
+        Vector<uint8_t> textureData(pixels, pixels + dataSize);
 
-        stbi_image_free(data);
+        stbi_image_free(pixels);
 
         // Name from filename
         std::string name = metadata.FilePath.filename().string();

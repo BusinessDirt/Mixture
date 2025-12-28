@@ -6,34 +6,11 @@
 
 namespace Mixture
 {
-    Ref<IAsset> ShaderSerializer::Load(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator)
+    Ref<IAsset> ShaderSerializer::Load(const Vector<char>& data, const AssetMetadata& metadata)
     {
-        size_t fileSize = stream.GetFileSize();
-        if (fileSize == 0) return nullptr;
+        if (data.empty()) return nullptr;
 
-        void* rawBuffer = nullptr;
-        std::vector<char> heapBuffer;
-
-        // Optimization: Use Arena for temporary file read buffer if available
-        if (allocator)
-        {
-            rawBuffer = allocator->AllocRaw(fileSize + 1); // +1 for null terminator safety
-            ((char*)rawBuffer)[fileSize] = '\0';
-        }
-        else
-        {
-            heapBuffer.resize(fileSize + 1);
-            rawBuffer = heapBuffer.data();
-            heapBuffer[fileSize] = '\0';
-        }
-
-        if (!rawBuffer) return nullptr;
-
-        if (!stream.ReadRaw(rawBuffer, fileSize))
-        {
-            OPAL_ERROR("Core/Assets", "Failed to read shader file: {}", metadata.FilePath.string());
-            return nullptr;
-        }
+        size_t fileSize = data.size();
 
         std::vector<uint8_t> compiledBlob;
         std::string ext = metadata.FilePath.extension().string();
@@ -41,8 +18,8 @@ namespace Mixture
         if (ext == ".hlsl")
         {
             // --- PATH: COMPILE SOURCE ---
-            // rawBuffer is essentially a string now
-            std::string sourceCode((char*)rawBuffer, fileSize);
+            // Construct string from data (careful if not null terminated)
+            std::string sourceCode(data.begin(), data.end());
 
             compiledBlob = ShaderCompiler::Compile(sourceCode);
 
@@ -57,7 +34,7 @@ namespace Mixture
             // --- PATH: LOAD BINARY ---
             // File is already .cso / .spv (pre-compiled)
             compiledBlob.resize(fileSize);
-            memcpy(compiledBlob.data(), rawBuffer, fileSize);
+            memcpy(compiledBlob.data(), data.data(), fileSize);
         }
 
         // Create the Asset

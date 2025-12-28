@@ -6,6 +6,9 @@
 #include "Mixture/Assets/Shaders/ShaderSerializer.hpp"
 #include "Mixture/Assets/Textures/TextureSerializer.hpp"
 
+#include "Mixture/Util/AsyncFileReader.hpp"
+#include <future>
+
 namespace Mixture
 {
     void AssetManager::Init()
@@ -50,20 +53,11 @@ namespace Mixture
 
                 try
                 {
-                    Ref<IAsset> asset = this->LoadAssetInternal(request.Type, request.Path, request.ID, request.Magic);
-
-                    std::lock_guard<std::mutex> lock(m_CacheMutex);
-                    m_LoadingAssets.erase(request.ID); // Remove from loading
-
-                    if (asset)
-                    {
-                        // Add to LRU Cache
-                        m_AssetCache.Put(request.ID, asset, asset->GetMemoryUsage());
-                    }
+                    this->LoadAssetInternal(request.Type, request.Path, request.ID, request.Magic);
                 }
                 catch (const std::exception& e)
                 {
-                    OPAL_ERROR("Core/Assets", "Asset Load Exception: {}", e.what());
+                    OPAL_ERROR("Core/Assets", "Asset Load Dispatch Exception: {}", e.what());
 
                     std::lock_guard<std::mutex> lock(m_CacheMutex);
                     m_LoadingAssets.erase(request.ID);
@@ -202,40 +196,80 @@ namespace Mixture
         return AssetHandle{ metadata.ID, 0 };
     }
 
-    Ref<IAsset> AssetManager::LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic)
+    void AssetManager::LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic)
     {
         const char* typeString = Utils::AssetTypeToString(type);
         if (m_Serializers.find(type) == m_Serializers.end())
         {
             OPAL_ERROR("Core/Assets", "No serializer registered for AssetType='{}'", typeString);
-            return nullptr;
+            {
+                 std::lock_guard<std::mutex> lock(m_CacheMutex);
+                 m_LoadingAssets.erase(id);
+            }
+            return;
         }
 
-        AssetMetadata metadata;
-        metadata.ID = id;
-        metadata.Type = type;
-        metadata.FilePath = path;
+        std::filesystem::path fullPath = m_RootDirectory / typeString / path;
+        
+        // Use shared_ptr to keep the reader (and its internal file handle) alive until the callback executes
+        auto reader = std::make_shared<AsyncFileReader>(fullPath);
 
-        // Reset the member arena for this load task
-        m_LoadingArena.Reset();
-
-        FileStreamReader stream(m_RootDirectory / typeString / path);
-        if (!stream.IsOpen())
+        if (!reader->IsOpen())
         {
-            OPAL_ERROR("Core/Asses", "Failed to open file {}", path.string());
-            return nullptr;
+            OPAL_ERROR("Core/Assets", "Failed to open file {}", fullPath.string());
+            {
+                 std::lock_guard<std::mutex> lock(m_CacheMutex);
+                 m_LoadingAssets.erase(id);
+            }
+            return;
         }
 
-        AssetSerializer& serializer = *m_Serializers[type];
-        Ref<IAsset> asset = serializer.Load(stream, metadata, &m_LoadingArena);
-
-        OPAL_LOG_DEBUG("Core/Assets", "Loaded {} from '{}' with id={}",
-            typeString, path.string(), (uint64_t)id);
-
-        if (asset)
+        // Initiate Async Read
+        // The callback captures 'this' and metadata, effectively processing deserialization on the I/O completion thread
+        reader->ReadBuffer([this, reader, type, path, id, magic, typeString](Vector<char> data)
         {
-            asset->SetMagic(magic);
-        }
-        return asset;
+            // This callback is executed when the read is done.
+            // reader is captured to ensure it stays alive until here.
+            
+            if (data.empty())
+            {
+                OPAL_ERROR("Core/Assets", "Read empty data or failed from file: {}", path.string());
+                std::lock_guard<std::mutex> lock(m_CacheMutex);
+                m_LoadingAssets.erase(id);
+                return;
+            }
+
+            AssetMetadata metadata;
+            metadata.ID = id;
+            metadata.Type = type;
+            metadata.FilePath = path;
+
+            Ref<IAsset> asset = nullptr;
+
+            try
+            {
+                // We assume serializers are thread-safe or we are the only one accessing this specific serializer instance via read-only map
+                // But Serializers themselves are stateless usually, except for base configuration.
+                AssetSerializer& serializer = *m_Serializers[type];
+                asset = serializer.Load(data, metadata);
+            }
+            catch (const std::exception& e)
+            {
+                OPAL_ERROR("Core/Assets", "Exception deserializing {}: {}", path.string(), e.what());
+            }
+
+            // Update Cache
+            {
+                std::lock_guard<std::mutex> lock(m_CacheMutex);
+                m_LoadingAssets.erase(id);
+
+                if (asset)
+                {
+                    asset->SetMagic(magic);
+                    m_AssetCache.Put(id, asset, asset->GetMemoryUsage());
+                    OPAL_LOG_DEBUG("Core/Assets", "Async Loaded {} from '{}' (ID: {})", typeString, path.string(), (uint64_t)id);
+                }
+            }
+        });
     }
 }

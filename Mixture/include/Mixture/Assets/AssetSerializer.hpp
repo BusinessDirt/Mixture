@@ -2,8 +2,6 @@
 
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Assets/IAsset.hpp"
-#include "Mixture/Util/FileStreamReader.hpp"
-#include "Mixture/Core/Memory/ArenaAllocator.hpp"
 
 namespace Mixture
 {
@@ -17,14 +15,13 @@ namespace Mixture
         virtual ~AssetSerializer() = default;
 
         /**
-         * @brief Loads an asset synchronously from a file stream.
+         * @brief Loads an asset from a memory buffer.
          * 
-         * @param stream The file stream to read from.
+         * @param data The raw file data.
          * @param metadata Metadata about the asset being loaded.
-         * @param allocator Optional arena allocator for temporary scratch memory.
          * @return Ref<IAsset> The loaded asset.
          */
-        virtual Ref<IAsset> Load(FileStreamReader& stream, const AssetMetadata& metadata, ArenaAllocator* allocator = nullptr) = 0;
+        virtual Ref<IAsset> Load(const Vector<char>& data, const AssetMetadata& metadata) = 0;
 
         /**
          * @brief Saves an asset to disk. (Optional/Future Implementation)

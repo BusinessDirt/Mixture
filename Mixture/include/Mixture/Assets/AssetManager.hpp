@@ -9,7 +9,6 @@
 
 #include "Mixture/Assets/IAsset.hpp"
 #include "Mixture/Assets/AssetSerializer.hpp"
-#include "Mixture/Core/Memory/ArenaAllocator.hpp"
 #include "Mixture/Core/Memory/LRUCache.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
@@ -39,7 +38,7 @@ namespace Mixture
         static AssetManager& Get() { static AssetManager instance; return instance; }
 
         AssetManager() 
-            : m_AssetCache(512 * 1024 * 1024), m_LoadingArena(1024 * 1024) // 512MB Asset Cache by default
+            : m_AssetCache(512 * 1024 * 1024) // 512MB Asset Cache by default
         {} 
 
         /**
@@ -119,7 +118,7 @@ namespace Mixture
         bool IsAssetLoaded(UUID id);
 
     private:
-        Ref<IAsset> LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic);
+        void LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic);
         Ref<IAsset> GetAssetFromCache(UUID id);
 
     private:
@@ -139,7 +138,6 @@ namespace Mixture
         LRUCache<UUID, Ref<IAsset>> m_AssetCache;
         std::unordered_map<UUID, uint32_t> m_LoadingAssets; // Protected by m_CacheMutex
         std::unordered_map<AssetType, Scope<AssetSerializer>> m_Serializers;
-        ArenaAllocator m_LoadingArena;
 
         // I/O Thread State
         std::thread m_WorkerThread;
