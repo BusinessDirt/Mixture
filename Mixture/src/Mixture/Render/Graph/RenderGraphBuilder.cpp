@@ -93,6 +93,12 @@ namespace Mixture
 
     RHI::IPipeline* RenderGraphBuilder::CreatePipeline(RHI::PipelineDesc& desc)
     {
+        // If shader assets are not loaded yet, we can't create the pipeline.
+        if (desc.VertexShader == nullptr)
+        {
+            return nullptr;
+        }
+
         desc.ColorAttachmentFormats = m_CurrentColorFormats;
         desc.DepthAttachmentFormat = m_CurrentDepthFormat;
 

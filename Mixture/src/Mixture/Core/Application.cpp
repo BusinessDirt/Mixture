@@ -3,6 +3,7 @@
 
 #include "Mixture/Core/Time.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
+#include "Mixture/Core/Threading/TaskSystem.hpp"
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
 
@@ -18,6 +19,8 @@ namespace Mixture
         OPAL_ASSERT("Core", !s_Instance, "Mixture::Application::Application() - Application already exists!")
 
         s_Instance = this;
+
+        TaskSystem::Init();
 
         auto props = WindowProps();
         props.Title = appDescription.Name;
@@ -41,6 +44,9 @@ namespace Mixture
         m_LayerStack.Shutdown();
         m_RenderGraph.reset();
         m_Context.reset();
+        
+        AssetManager::Get().Shutdown();
+        TaskSystem::Shutdown();
     }
 
     void Application::Close()

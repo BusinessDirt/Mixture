@@ -104,6 +104,13 @@ namespace Opal
          */
         static void SetThreadName(const std::string& name);
 
+        /**
+         * @brief Gets the name of the current thread.
+         * 
+         * @return const std::string& The thread name.
+         */
+        static const std::string& GetThreadName();
+
     private:
         LogRegistry() = default; // Singleton
         std::vector<spdlog::sink_ptr> m_Sinks;

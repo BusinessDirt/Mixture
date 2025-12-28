@@ -75,13 +75,22 @@ namespace Opal {
     /**
      * @brief Custom Spdlog flag formatter for Thread Name.
      *
-     * Retrieves the thread name via OS API (pthread).
+     * Retrieves the thread name via Opal::LogRegistry (thread_local) or OS API (pthread).
      */
     class ThreadNameFlag : public spdlog::custom_flag_formatter
     {
     public:
         void format(const spdlog::details::log_msg &, const std::tm &, spdlog::memory_buf_t &dest) override
         {
+            // 1. Try Thread Local Cache (Fastest & Set by User)
+            const std::string& name = Opal::LogRegistry::GetThreadName();
+            if (!name.empty())
+            {
+                dest.append(name.data(), name.data() + name.size());
+                return;
+            }
+
+            // 2. Try OS API
             char thread_name[32] = {0};
 
             #if defined(OPAL_PLATFORM_WINDOWS)
@@ -91,7 +100,7 @@ namespace Opal {
                 pthread_getname_np(pthread_self(), thread_name, sizeof(thread_name));
             #endif
 
-            // Fallback to Thread ID if name is empty
+            // 3. Fallback to Thread ID
             if (thread_name[0] == 0)
             {
                 // Use default spdlog thread id formatting logic or just simple string
@@ -110,4 +119,33 @@ namespace Opal {
         }
     };
 
+    class UppercaseLevelFlag : public spdlog::custom_flag_formatter
+    {
+    public:
+        void format(const spdlog::details::log_msg &msg, const std::tm &, spdlog::memory_buf_t &dest) override
+        {
+            // Hardcode uppercase strings for performance
+            // (Accessing msg.level which is an enum)
+            const char* level_name = "";
+            switch (msg.level)
+            {
+                case spdlog::level::trace:    level_name = "TRACE"; break;
+                case spdlog::level::debug:    level_name = "DEBUG"; break;
+                case spdlog::level::info:     level_name = "INFO";  break;
+                case spdlog::level::warn:     level_name = "WARN";  break;
+                case spdlog::level::err:      level_name = "ERROR"; break;
+                case spdlog::level::critical: level_name = "CRITICAL"; break;
+                case spdlog::level::off:      level_name = "OFF";   break;
+                default:                      level_name = "UNKNOWN"; break;
+            }
+
+            // Helper to append string to the buffer
+            spdlog::details::fmt_helper::append_string_view(level_name, dest);
+        }
+
+        std::unique_ptr<custom_flag_formatter> clone() const override
+        {
+            return spdlog::details::make_unique<UppercaseLevelFlag>();
+        }
+    };
 }

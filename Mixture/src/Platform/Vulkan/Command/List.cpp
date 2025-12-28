@@ -44,6 +44,8 @@ namespace Mixture::Vulkan
 
     void CommandList::Begin()
     {
+        m_IsPipelineBound = false;
+
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit; // Reset every frame
         m_CommandContext.transferCommandBuffer.begin(beginInfo);
@@ -185,6 +187,13 @@ namespace Mixture::Vulkan
 
     void CommandList::BindPipeline(RHI::IPipeline* pipeline)
     {
+        if (!pipeline)
+        {
+            m_IsPipelineBound = false;
+            return;
+        }
+
+        m_IsPipelineBound = true;
         auto* vkPipeline = static_cast<Pipeline*>(pipeline);
         m_CurrentPipelineLayout = vkPipeline->GetLayout();
         m_CommandContext.graphicsCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline->GetHandle());
@@ -251,12 +260,16 @@ namespace Mixture::Vulkan
 
     void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
     {
+        if (!m_IsPipelineBound) return;
+
         FlushDescriptors();
         m_CommandContext.graphicsCommandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
     }
 
     void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
+        if (!m_IsPipelineBound) return;
+
         FlushDescriptors();
         m_CommandContext.graphicsCommandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
     }

@@ -2,6 +2,7 @@
 #include "Opal/LogFlags.hpp"
 
 #include <filesystem>
+#include <thread>
 
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -44,7 +45,8 @@ namespace Opal
         auto formatter = std::make_unique<spdlog::pattern_formatter>();
         formatter->add_flag<ColorMarkerFlag>('*')
                  .add_flag<ThreadNameFlag>('#')
-                 .set_pattern("[%T] [%# at %^%l%$] (%*): %v");
+                 .add_flag<UppercaseLevelFlag>('U')
+                 .set_pattern("[%T] [%#/%^%U%$] (%*): %v");
 
         sink->set_formatter(std::move(formatter));
         sink->set_level(level);
@@ -59,7 +61,8 @@ namespace Opal
         auto formatter = std::make_unique<spdlog::pattern_formatter>();
         formatter->add_flag<CleanMarkerFlag>('*')
                  .add_flag<ThreadNameFlag>('#')
-                 .set_pattern("[%T] [%# at %l] (%*): %v");
+                 .add_flag<UppercaseLevelFlag>('U')
+                 .set_pattern("[%T] [%#/%U] (%*): %v");
 
         sink->set_formatter(std::move(formatter));
         sink->set_level(level);
@@ -90,8 +93,12 @@ namespace Opal
         return newLogger;
     }
 
+    static thread_local std::string s_CurrentThreadName;
+
     void LogRegistry::SetThreadName(const std::string& name)
     {
+        s_CurrentThreadName = name;
+
 #if defined(OPAL_PLATFORM_DARWIN)
         pthread_setname_np(name.c_str());
 #elif defined(OPAL_PLATFORM_LINUX)
@@ -105,5 +112,10 @@ namespace Opal
         // but user requested mainly for Darwin/Vulkan engine context.
         // SetThreadDescription(GetCurrentThread(), wname.c_str());
 #endif
+    }
+
+    const std::string& LogRegistry::GetThreadName()
+    {
+        return s_CurrentThreadName;
     }
 }

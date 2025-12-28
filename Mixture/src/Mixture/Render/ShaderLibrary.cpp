@@ -20,7 +20,7 @@ namespace Mixture
 
     RHI::IShader* ShaderLibrary::GetShader(AssetHandle handle, RHI::ShaderStage stage)
     {
-        if (!handle.ID.IsValid()) return nullptr;
+        if (!handle) return nullptr;
 
         ShaderCacheKey key = { handle.ID, stage };
 

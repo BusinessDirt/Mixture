@@ -15,6 +15,10 @@
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 
 #include <array>
+#include <mutex>
+#include <thread>
+#include <queue>
+#include <condition_variable>
 
 namespace Mixture
 {
@@ -22,6 +26,7 @@ namespace Mixture
      * @brief Manages the lifecycle and loading of assets.
      * 
      * Handles loading assets from disk, caching them, and providing access via handles.
+     * Uses a dedicated I/O thread to prevent blocking the main TaskSystem.
      */
     class AssetManager
     {
@@ -34,14 +39,18 @@ namespace Mixture
         static AssetManager& Get() { static AssetManager instance; return instance; }
 
         AssetManager() 
-            : m_LoadingArena(1024 * 1024), // 1MB Scratchpad
-              m_AssetCache(512 * 1024 * 1024) // 512MB Asset Cache by default
+            : m_AssetCache(512 * 1024 * 1024), m_LoadingArena(1024 * 1024) // 512MB Asset Cache by default
         {} 
 
         /**
-         * @brief Initializes the AssetManager and registers default loaders.
+         * @brief Initializes the AssetManager, registers loaders, and starts the I/O thread.
          */
         void Init();
+
+        /**
+         * @brief Shuts down the I/O thread and cleans up resources.
+         */
+        void Shutdown();
 
         /**
          * @brief Sets the root directory for asset lookups.
@@ -55,7 +64,7 @@ namespace Mixture
          * 
          * @param sizeInBytes Maximum memory in bytes.
          */
-        void SetCacheSize(size_t sizeInBytes) { m_AssetCache.SetMaxMemory(sizeInBytes); }
+        void SetCacheSize(size_t sizeInBytes);
 
         /**
          * @brief Sets the current graphics API for API-specific asset loading (e.g. Shaders).
@@ -72,7 +81,7 @@ namespace Mixture
         RHI::GraphicsAPI GetGraphicsAPI() const { return m_GraphicsAPI; }
 
         /**
-         * @brief Retrieves a handle to an asset, loading it if necessary.
+         * @brief Retrieves a handle to an asset, queuing it for load if necessary.
          * 
          * @param type The type of asset to load.
          * @param path The path to the asset file, relative to the asset root.
@@ -92,7 +101,7 @@ namespace Mixture
         {
             if (!handle.ID.IsValid()) return nullptr;
 
-            Ref<IAsset> asset = m_AssetCache.Get(handle.ID);
+            Ref<IAsset> asset = GetAssetFromCache(handle.ID);
             if (asset)
             {
                 // Validate Magic Number
@@ -107,16 +116,36 @@ namespace Mixture
             return nullptr;
         }
 
-    private:
-        Ref<IAsset> LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id);
+        bool IsAssetLoaded(UUID id);
 
     private:
+        Ref<IAsset> LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic);
+        Ref<IAsset> GetAssetFromCache(UUID id);
+
+    private:
+        struct LoadRequest
+        {
+            AssetType Type;
+            std::filesystem::path Path;
+            UUID ID;
+            uint32_t Magic;
+        };
+
         std::filesystem::path m_RootDirectory;
         RHI::GraphicsAPI m_GraphicsAPI;
 
+        // Cache State
+        std::mutex m_CacheMutex;
         LRUCache<UUID, Ref<IAsset>> m_AssetCache;
+        std::unordered_map<UUID, uint32_t> m_LoadingAssets; // Protected by m_CacheMutex
         std::unordered_map<AssetType, Scope<AssetSerializer>> m_Serializers;
-
         ArenaAllocator m_LoadingArena;
+
+        // I/O Thread State
+        std::thread m_WorkerThread;
+        std::mutex m_QueueMutex;
+        std::condition_variable m_QueueCV;
+        std::queue<LoadRequest> m_LoadQueue;
+        std::atomic<bool> m_Running = false;
     };
 }

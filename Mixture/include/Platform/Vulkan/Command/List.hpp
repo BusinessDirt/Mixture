@@ -67,5 +67,6 @@ namespace Mixture::Vulkan
 
         std::map<uint32_t, BindingState> m_Bindings;
         bool m_DescriptorsDirty = false;
+        bool m_IsPipelineBound = false;
     };
 }

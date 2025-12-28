@@ -25,8 +25,9 @@ inline int Entrypoint(const int argc, char** argv)
     builder.UseConsoleSink()
            .UseFileSink("logs/latest.log");
 
+    Opal::LogRegistry::Get().SetThreadName("Main Thread");
     Opal::LogRegistry::Get().Initialize(builder.Build());
-
+    
     const Mixture::Application* app = Mixture::CreateApplication({.Count = argc, .Args = argv });
     app->Run();
     delete app;
