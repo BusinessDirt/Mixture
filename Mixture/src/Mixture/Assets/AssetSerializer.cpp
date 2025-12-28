@@ -59,13 +59,13 @@ namespace Mixture
 
         if (!stream.is_open())
         {
-            OPAL_ERROR("Core/Assets", "Failed to write metadata file: {}", metaPath.string());
+            OPAL_ERROR("AssetManager", "Failed to write metadata file: {}", metaPath.string());
             return;
         }
 
         stream << "GUID=" << (uint64_t)metadata.ID << "\n";
         stream << "Type=" << (int)metadata.Type << "\n";
-        
+
         // Add human readable comments
         stream << "# Asset Type: " << Utils::AssetTypeToString(metadata.Type) << "\n";
     }

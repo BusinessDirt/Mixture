@@ -95,6 +95,7 @@ namespace Mixture
 
         // dispatch_io_read reads until 'length' is met or EOF
         dispatch_io_read(m_Impl->Channel, 0, size, m_Impl->Queue, ^(bool done, dispatch_data_t data, int error) {
+            Opal::LogRegistry::SetThreadName("AsyncFileReader");
             if (error)
             {
                 callback({});

@@ -11,7 +11,7 @@ namespace Mixture
         }
         else
         {
-            OPAL_WARN("Core/Assets", "Attempted to register asset with invalid UUID: {0}", metadata.FilePath.string());
+            OPAL_WARN("AssetManager", "Attempted to register asset with invalid UUID: {0}", metadata.FilePath.string());
         }
     }
 
@@ -73,7 +73,7 @@ namespace Mixture
             {
                 if (redirected)
                 {
-                    OPAL_LOG_DEBUG("Core/Assets", "Asset path redirected: '{}' -> '{}'", path.string(), currentPathStr);
+                    OPAL_LOG_DEBUG("AssetManager", "Asset path redirected: '{}' -> '{}'", path.string(), currentPathStr);
                 }
 
                 return std::filesystem::path(currentPathStr);
@@ -83,7 +83,7 @@ namespace Mixture
             redirected = true;
         }
 
-        OPAL_ERROR("Core/Assets", "Redirector loop detected for asset path: {}", path.string());
+        OPAL_ERROR("AssetManager", "Redirector loop detected for asset path: {}", path.string());
         return std::filesystem::path(currentPathStr);
     }
 

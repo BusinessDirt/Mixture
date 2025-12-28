@@ -16,7 +16,7 @@ namespace Mixture
 
         /**
          * @brief Loads an asset from a memory buffer.
-         * 
+         *
          * @param data The raw file data.
          * @param metadata Metadata about the asset being loaded.
          * @return Ref<IAsset> The loaded asset.
@@ -26,9 +26,9 @@ namespace Mixture
         /**
          * @brief Saves an asset to disk. (Optional/Future Implementation)
          */
-        virtual void Save(const std::filesystem::path& path, const Ref<IAsset>& asset) 
-        { 
-            OPAL_WARN("Core/Assets", "Save not implemented for this asset type."); 
+        virtual void Save(const std::filesystem::path& path, const Ref<IAsset>& asset)
+        {
+            OPAL_WARN("AssetManager", "Save not implemented for this asset type.");
         }
 
         // --- Static Metadata Helpers ---

@@ -51,6 +51,7 @@ namespace Mixture
       LPOVERLAPPED lpOverlapped
     )
     {
+        Opal::LogRegistry::SetThreadName("AsyncFileReader");
         // Recover context. Overlapped is the first member, so reinterpret_cast is safe.
         auto* context = reinterpret_cast<ReadContext*>(lpOverlapped);
 

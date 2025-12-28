@@ -65,5 +65,6 @@ namespace Mixture
     private:
         static RHI::IGraphicsDevice* s_Device;
         static std::unordered_map<ShaderCacheKey, Ref<RHI::IShader>, ShaderCacheKeyHash> s_Cache;
+        static std::mutex s_Mutex;
     };
 }

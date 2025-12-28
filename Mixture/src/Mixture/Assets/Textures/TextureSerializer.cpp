@@ -10,19 +10,19 @@ namespace Mixture
     {
         if (data.empty())
         {
-            OPAL_ERROR("Core/Assets", "Failed to load texture content: {}", metadata.FilePath.string());
+            OPAL_ERROR("AssetManager", "Failed to load texture content: {}", metadata.FilePath.string());
             return nullptr;
         }
 
         int width, height, channels;
         // Force 4 channels (RGBA) for consistency
-        stbi_uc* pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(data.data()), 
-                                              static_cast<int>(data.size()), 
-                                              &width, &height, &channels, 4); 
+        stbi_uc* pixels = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(data.data()),
+                                              static_cast<int>(data.size()),
+                                              &width, &height, &channels, 4);
 
         if (!pixels)
         {
-            OPAL_ERROR("Core/Assets", "Failed to decode texture '{}': {}", metadata.FilePath.string(), stbi_failure_reason());
+            OPAL_ERROR("AssetManager", "Failed to decode texture '{}': {}", metadata.FilePath.string(), stbi_failure_reason());
             return nullptr;
         }
 

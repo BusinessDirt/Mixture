@@ -95,6 +95,7 @@ namespace Mixture
 
         // Spawn a thread to handle the io_uring operations
         std::thread([fileFd, fileSize, cb = std::move(callback)]() mutable {
+            Opal::LogRegistry::SetThreadName("AsyncFileReader");
 
             struct io_uring_params params;
             memset(&params, 0, sizeof(params));

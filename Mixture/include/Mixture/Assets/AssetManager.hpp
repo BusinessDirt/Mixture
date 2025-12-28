@@ -81,6 +81,21 @@ namespace Mixture
         RHI::GraphicsAPI GetGraphicsAPI() const { return m_GraphicsAPI; }
 
         /**
+         * @brief Callback function type for asset reload events.
+         * 
+         * @param type The type of asset that was reloaded.
+         * @param id The UUID of the reloaded asset.
+         */
+        using AssetReloadCallback = std::function<void(AssetType, UUID)>;
+
+        /**
+         * @brief Registers a callback to be notified when an asset is reloaded.
+         * 
+         * @param callback The callback function.
+         */
+        void AddReloadCallback(AssetReloadCallback callback);
+
+        /**
          * @brief Retrieves a handle to an asset, queuing it for load if necessary.
          * 
          * @param type The type of asset to load.
@@ -125,6 +140,7 @@ namespace Mixture
         bool IsAssetLoaded(UUID id);
 
     private:
+        void OnAssetChange(const std::filesystem::path& path, FileAction action);
         void LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic);
         Ref<IAsset> GetAssetFromCache(UUID id);
 
@@ -152,6 +168,9 @@ namespace Mixture
         std::condition_variable m_QueueCV;
         std::queue<LoadRequest> m_LoadQueue;
         std::atomic<bool> m_Running = false;
+
+        std::mutex m_CallbackMutex;
+        Vector<AssetReloadCallback> m_ReloadCallbacks;
 
         Scope<FileSystemWatcher> m_FileWatcher;
     };

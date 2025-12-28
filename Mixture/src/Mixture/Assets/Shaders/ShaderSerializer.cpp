@@ -25,7 +25,7 @@ namespace Mixture
 
             if (compiledBlob.empty())
             {
-                OPAL_ERROR("Core/Assets", "Shader Compilation Failed: {}", metadata.FilePath.string());
+                OPAL_ERROR("AssetManager", "Shader Compilation Failed: {}", metadata.FilePath.string());
                 return nullptr;
             }
         }

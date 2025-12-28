@@ -18,7 +18,7 @@ namespace Mixture
 
         m_AssetCache.SetEvictionCallback([](const UUID& id, const Ref<IAsset>& asset)
         {
-            OPAL_LOG_DEBUG("Core/Assets", "Evicting Asset '{}' (ID: {}) Size: {} bytes",
+            OPAL_LOG_DEBUG("AssetManager", "Evicting Asset '{}' (ID: {}) Size: {} bytes",
                 asset ? asset->GetName() : "Unknown",
                 (uint64_t)id,
                 asset ? asset->GetMemoryUsage() : 0);
@@ -29,7 +29,7 @@ namespace Mixture
         m_WorkerThread = std::thread([this]()
         {
             Opal::LogRegistry::SetThreadName("I/O Thread");
-            OPAL_INFO("Core/Assets", "I/O Thread Started.");
+            OPAL_INFO("AssetManager", "I/O Thread Started.");
 
             while (m_Running)
             {
@@ -57,7 +57,7 @@ namespace Mixture
                 }
                 catch (const std::exception& e)
                 {
-                    OPAL_ERROR("Core/Assets", "Asset Load Dispatch Exception: {}", e.what());
+                    OPAL_ERROR("AssetManager", "Asset Load Dispatch Exception: {}", e.what());
 
                     std::lock_guard<std::mutex> lock(m_CacheMutex);
                     m_LoadingAssets.erase(request.ID);
@@ -82,18 +82,18 @@ namespace Mixture
             if (m_WorkerThread.joinable())
                 m_WorkerThread.join();
 
-            OPAL_INFO("Core/Assets", "I/O Thread Shutdown.");
+            OPAL_INFO("AssetManager", "I/O Thread Shutdown.");
         }
     }
 
     void AssetManager::SetAssetRoot(const std::filesystem::path& rootPath)
     {
         m_RootDirectory = std::filesystem::absolute(rootPath);
-        OPAL_INFO("Core/Assets", "Asset Directory set to: {}", m_RootDirectory.string());
+        OPAL_INFO("AssetManager", "Asset Directory set to: {}", m_RootDirectory.string());
 
         if (!std::filesystem::exists(m_RootDirectory))
         {
-            OPAL_WARN("Core/Assets", "Asset Directory does not exist!");
+            OPAL_WARN("AssetManager", "Asset Directory does not exist!");
         }
 
         // Initialize File Watcher
@@ -101,18 +101,9 @@ namespace Mixture
         {
             if (m_FileWatcher) m_FileWatcher->Stop();
 
-            m_FileWatcher = CreateScope<FileSystemWatcher>(m_RootDirectory, [](const std::filesystem::path& path, FileAction action)
+            m_FileWatcher = CreateScope<FileSystemWatcher>(m_RootDirectory, [this](const std::filesystem::path& path, FileAction action)
             {
-                const char* actionStr = "Unknown";
-                switch(action)
-                {
-                    case FileAction::Added: actionStr = "Added"; break;
-                    case FileAction::Modified: actionStr = "Modified"; break;
-                    case FileAction::Deleted: actionStr = "Deleted"; break;
-                }
-                OPAL_INFO("Core/Assets", "Asset File Changed: {} ({})", path.string(), actionStr);
-                
-                // TODO: Trigger hot-reload logic here
+                this->OnAssetChange(path, action);
             });
             m_FileWatcher->Start();
         }
@@ -122,6 +113,55 @@ namespace Mixture
     {
         std::lock_guard<std::mutex> lock(m_CacheMutex);
         m_AssetCache.SetMaxMemory(sizeInBytes);
+    }
+
+    void AssetManager::AddReloadCallback(AssetReloadCallback callback)
+    {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        m_ReloadCallbacks.push_back(std::move(callback));
+    }
+
+    void AssetManager::OnAssetChange(const std::filesystem::path& path, FileAction action)
+    {
+        // We only care about modifications for now
+        if (action != FileAction::Modified) return;
+
+        // Find the asset associated with this path
+        // Note: This iterates all registered assets. For a large DB, we might want a reverse lookup map.
+        UUID assetID = UUID(0);
+        AssetType assetType = AssetType::None;
+        std::filesystem::path relativePath;
+
+        const auto& assets = AssetRegistry::Get().GetAssets();
+        for (const auto& [id, metadata] : assets)
+        {
+            const char* typeString = Utils::AssetTypeToString(metadata.Type);
+            std::filesystem::path fullPath = m_RootDirectory / typeString / metadata.FilePath;
+
+            // Check if paths are equivalent (handles absolute/relative issues)
+            std::error_code ec;
+            if (std::filesystem::equivalent(fullPath, path, ec))
+            {
+                assetID = id;
+                assetType = metadata.Type;
+                relativePath = metadata.FilePath;
+                break;
+            }
+        }
+
+        if (!assetID.IsValid()) return;
+
+        // If found, check if it's currently loaded
+        if (IsAssetLoaded(assetID))
+        {
+            Ref<IAsset> currentAsset = GetAssetFromCache(assetID);
+            if (currentAsset)
+            {
+                OPAL_INFO("AssetManager", "Reactive Reloading asset: {}", path.string());
+                // Reuse existing magic to keep handles valid
+                LoadAssetInternal(assetType, relativePath, assetID, currentAsset->GetMagic());
+            }
+        }
     }
 
     Ref<IAsset> AssetManager::GetAssetFromCache(UUID id)
@@ -148,7 +188,7 @@ namespace Mixture
         // Optimally, we would trust the registry or metadata, but for now we keep it.
         // However, we should avoid doing it inside a lock if possible.
 
-        // 1. Try to load existing Metadata (Blocking I/O but small)
+        // Try to load existing Metadata (Blocking I/O but small)
         // We do this BEFORE locking because it involves I/O.
         AssetMetadata metadata;
         metadata.Type = type;
@@ -158,18 +198,16 @@ namespace Mixture
         {
             AssetMetadata loadedMeta;
             if (AssetSerializer::TryLoadMetadata(fullPath, loadedMeta))
-            {
                 metadata.ID = loadedMeta.ID;
-            }
         }
 
-        // 2. If no ID (no metadata), generate new and save it
+        // If no ID (no metadata), generate new and save it
         if (!metadata.ID.IsValid())
         {
             // If file doesn't exist, we can't really load it.
             if (!std::filesystem::exists(fullPath))
             {
-                OPAL_ERROR("Core/Assets", "Asset file not found: {}", fullPath.string());
+                OPAL_ERROR("AssetManager", "Asset file not found: {}", fullPath.string());
                 return AssetHandle{ UUID(0), 0 };
             }
 
@@ -180,10 +218,13 @@ namespace Mixture
             writeMeta.FilePath = fullPath;
 
             AssetSerializer::WriteMetadata(writeMeta);
-            OPAL_INFO("Core/Assets", "Generated new metadata for '{}' (ID: {})", resolvedPath.string(), (uint64_t)metadata.ID);
+            OPAL_INFO("AssetManager", "Generated new metadata for '{}' (ID: {})", resolvedPath.string(), (uint64_t)metadata.ID);
         }
 
-        // 3. Check Cache & Loading Map
+        // Register the asset in the registry so it can be found by path (e.g. for reactive reloading)
+        AssetRegistry::Get().RegisterAsset(metadata);
+
+        // Check Cache & Loading Map
         {
             std::lock_guard<std::mutex> lock(m_CacheMutex);
 
@@ -193,14 +234,10 @@ namespace Mixture
 
             // Check if already loading
             auto it = m_LoadingAssets.find(metadata.ID);
-            if (it != m_LoadingAssets.end())
-            {
-                // Return handle with 0 magic (loading)
-                return AssetHandle{ metadata.ID, 0 };
-            }
+            if (it != m_LoadingAssets.end()) return AssetHandle{ metadata.ID, 0 };
         }
 
-        // 4. Submit Load Task
+        // Submit Load Task
         static std::atomic<uint32_t> s_AssetMagicCounter(1);
         uint32_t newMagic = s_AssetMagicCounter++;
 
@@ -217,6 +254,7 @@ namespace Mixture
             std::lock_guard<std::mutex> lock(m_QueueMutex);
             m_LoadQueue.push({ type, resolvedPath, metadata.ID, newMagic });
         }
+
         m_QueueCV.notify_one();
 
         // Return 0 magic to indicate loading
@@ -228,26 +266,30 @@ namespace Mixture
         const char* typeString = Utils::AssetTypeToString(type);
         if (m_Serializers.find(type) == m_Serializers.end())
         {
-            OPAL_ERROR("Core/Assets", "No serializer registered for AssetType='{}'", typeString);
+            OPAL_ERROR("AssetManager", "No serializer registered for AssetType='{}'", typeString);
+
             {
                  std::lock_guard<std::mutex> lock(m_CacheMutex);
                  m_LoadingAssets.erase(id);
             }
+
             return;
         }
 
         std::filesystem::path fullPath = m_RootDirectory / typeString / path;
-        
+
         // Use shared_ptr to keep the reader (and its internal file handle) alive until the callback executes
         auto reader = std::make_shared<AsyncFileReader>(fullPath);
 
         if (!reader->IsOpen())
         {
-            OPAL_ERROR("Core/Assets", "Failed to open file {}", fullPath.string());
+            OPAL_ERROR("AssetManager", "Failed to open file {}", fullPath.string());
+
             {
                  std::lock_guard<std::mutex> lock(m_CacheMutex);
                  m_LoadingAssets.erase(id);
             }
+
             return;
         }
 
@@ -257,10 +299,10 @@ namespace Mixture
         {
             // This callback is executed when the read is done.
             // reader is captured to ensure it stays alive until here.
-            
+
             if (data.empty())
             {
-                OPAL_ERROR("Core/Assets", "Read empty data or failed from file: {}", path.string());
+                OPAL_ERROR("AssetManager", "Read empty data or failed from file: {}", path.string());
                 std::lock_guard<std::mutex> lock(m_CacheMutex);
                 m_LoadingAssets.erase(id);
                 return;
@@ -282,7 +324,7 @@ namespace Mixture
             }
             catch (const std::exception& e)
             {
-                OPAL_ERROR("Core/Assets", "Exception deserializing {}: {}", path.string(), e.what());
+                OPAL_ERROR("AssetManager", "Exception deserializing {}: {}", path.string(), e.what());
             }
 
             // Update Cache
@@ -294,7 +336,20 @@ namespace Mixture
                 {
                     asset->SetMagic(magic);
                     m_AssetCache.Put(id, asset, asset->GetMemoryUsage());
-                    OPAL_LOG_DEBUG("Core/Assets", "Async Loaded {} from '{}' (ID: {})", typeString, path.string(), (uint64_t)id);
+                    OPAL_LOG_DEBUG("AssetManager", "Async Loaded {} from '{}' (ID: {})", typeString, path.string(), (uint64_t)id);
+
+                    // Notify listeners
+                    {
+                        std::lock_guard<std::mutex> cbLock(m_CallbackMutex);
+                        for (const auto& callback : m_ReloadCallbacks)
+                        {
+                            callback(type, id);
+                        }
+                    }
+                }
+                else
+                {
+                    OPAL_LOG_DEBUG("AssetManager", "Failed to reload asset: invalid data.");
                 }
             }
         });

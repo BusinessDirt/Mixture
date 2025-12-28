@@ -88,7 +88,7 @@ namespace Mixture
         pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
         if (pErrors && pErrors->GetStringLength() != 0)
         {
-            OPAL_ERROR("Core/Assets", "Shader Compile Errror: {}", pErrors->GetStringPointer());
+            OPAL_ERROR("AssetManager", "Shader Compile Errror: {}", pErrors->GetStringPointer());
             return {};
         }
 
@@ -132,7 +132,7 @@ namespace Mixture
         }
         catch (const std::exception& e)
         {
-            OPAL_ERROR("Core/Assets", "SPIRV-Cross compilation failed: {}", e.what());
+            OPAL_ERROR("AssetManager", "SPIRV-Cross compilation failed: {}", e.what());
             return {};
         }
 
