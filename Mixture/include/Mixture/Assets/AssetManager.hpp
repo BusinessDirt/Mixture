@@ -115,6 +115,12 @@ namespace Mixture
             return nullptr;
         }
 
+        /**
+         * @brief Checks if an asset with the given ID is currently loaded in memory.
+         * 
+         * @param id The asset ID.
+         * @return true If the asset is loaded.
+         */
         bool IsAssetLoaded(UUID id);
 
     private:

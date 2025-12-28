@@ -19,6 +19,13 @@ namespace Mixture
     public:
         virtual ~ShaderSerializer() = default;
 
+        /**
+         * @brief Loads a shader asset from binary data (SPIR-V).
+         * 
+         * @param data The raw file data.
+         * @param metadata The asset metadata.
+         * @return Ref<IAsset> The loaded shader asset.
+         */
         Ref<IAsset> Load(const Vector<char>& data, const AssetMetadata& metadata) override;
     };
 }

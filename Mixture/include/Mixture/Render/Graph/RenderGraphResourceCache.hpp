@@ -19,10 +19,30 @@ namespace Mixture
     class RenderGraphResourceCache
     {
     public:
+        /**
+         * @brief Constructs a RenderGraphResourceCache.
+         * 
+         * @param device Reference to the graphics device.
+         */
         RenderGraphResourceCache(RHI::IGraphicsDevice& device);
         ~RenderGraphResourceCache();
 
+        /**
+         * @brief Retrieves a cached texture or creates a new one if not found.
+         * 
+         * @param name The name key for the texture.
+         * @param desc The description of the texture.
+         * @return Ref<RHI::ITexture> The texture.
+         */
         Ref<RHI::ITexture> GetOrCreateTexture(const std::string& name, const RHI::TextureDesc& desc);
+
+        /**
+         * @brief Retrieves a cached buffer or creates a new one if not found.
+         * 
+         * @param name The name key for the buffer.
+         * @param desc The description of the buffer.
+         * @return Ref<RHI::IBuffer> The buffer.
+         */
         Ref<RHI::IBuffer> GetOrCreateBuffer(const std::string& name, const RHI::BufferDesc& desc);
 
         /**

@@ -44,9 +44,40 @@ namespace Mixture::Vulkan
          */
         VmaAllocator GetAllocator() const { return m_Allocator; }
 
+        /**
+         * @brief Creates a Vulkan shader module.
+         * 
+         * @param data Pointer to the shader bytecode.
+         * @param size Size of the bytecode in bytes.
+         * @param stage The shader stage.
+         * @return Ref<RHI::IShader> The created shader.
+         */
         Ref<RHI::IShader> CreateShader(const void* data, size_t size, RHI::ShaderStage stage) override;
+
+        /**
+         * @brief Creates a Vulkan buffer.
+         * 
+         * @param desc The buffer description.
+         * @param initialData Optional pointer to data to upload.
+         * @return Ref<RHI::IBuffer> The created buffer.
+         */
         Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc, const void* initialData = nullptr) override;
+
+        /**
+         * @brief Creates a Vulkan texture.
+         * 
+         * @param desc The texture description.
+         * @param initialData Optional pointer to raw pixel data.
+         * @return Ref<RHI::ITexture> The created texture.
+         */
         Ref<RHI::ITexture> CreateTexture(const RHI::TextureDesc& desc, const void* initialData = nullptr) override;
+
+        /**
+         * @brief Creates a Vulkan pipeline.
+         * 
+         * @param desc The pipeline description.
+         * @return Ref<RHI::IPipeline> The created pipeline.
+         */
         Ref<RHI::IPipeline> CreatePipeline(const RHI::PipelineDesc& desc) override;
 
 		void WaitForIdle() override { m_Device.waitIdle(); }

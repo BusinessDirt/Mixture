@@ -21,10 +21,23 @@ namespace Mixture::Vulkan
     class Texture : public RHI::ITexture
     {
     public:
-        //Standard Texture (Created from spec/file) - We OWN this memory
+        /**
+         * @brief Constructs a Standard Texture (memory owned by this class).
+         * 
+         * @param spec The texture description.
+         * @param data Optional initial data to upload.
+         */
         Texture(const RHI::TextureDesc& spec, const void* data = nullptr);
 
-        // Swapchain/External Wrapper - We DO NOT own this memory
+        /**
+         * @brief Constructs a wrapper around an existing Vulkan Image (e.g., Swapchain Image).
+         * 
+         * @param format The image format.
+         * @param image The existing image handle.
+         * @param imageView The existing image view handle.
+         * @param width The width of the image.
+         * @param height The height of the image.
+         */
         Texture(vk::Format format, vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height);
 
         virtual ~Texture();
@@ -35,14 +48,30 @@ namespace Mixture::Vulkan
         RHI::Format GetFormat() const override { return m_Format; }
         std::string_view GetDebugName() const override { return m_DebugName; }
 
-        // Vulkan Specific Getters (Used by CommandList / ImGui)
+        /**
+         * @brief Gets the Vulkan Image handle.
+         * 
+         * @return vk::Image The image handle.
+         */
         vk::Image GetImage() const { return m_Image; }
+
+        /**
+         * @brief Gets the Vulkan ImageView handle.
+         * 
+         * @return vk::ImageView The image view handle.
+         */
         vk::ImageView GetImageView() const { return m_ImageView; }
 
-        // Helper for Descriptors (Future use)
+        /**
+         * @brief Creates a descriptor image info structure for this texture.
+         * 
+         * @return vk::DescriptorImageInfo The descriptor info.
+         */
         vk::DescriptorImageInfo GetDescriptorInfo() const;
 
-        // Lifecycle (For Standard Textures)
+        /**
+         * @brief Invalidates and releases the texture resources (if owned).
+         */
         void Invalidate();
 
     private:

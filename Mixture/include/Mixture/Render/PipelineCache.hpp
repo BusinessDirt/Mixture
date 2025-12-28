@@ -18,10 +18,29 @@ namespace Mixture {
     class PipelineCache
     {
     public:
+        /**
+         * @brief Initializes the pipeline cache.
+         * 
+         * @param device The graphics device used for creating pipelines.
+         */
         static void Init(RHI::IGraphicsDevice& device);
+
+        /**
+         * @brief Shuts down the pipeline cache and clears all cached pipelines.
+         */
         static void Shutdown();
 
+        /**
+         * @brief Retrieves a pipeline from the cache, or creates it if it doesn't exist.
+         * 
+         * @param desc The description of the pipeline to get/create.
+         * @return RHI::IPipeline* Pointer to the pipeline.
+         */
         static RHI::IPipeline* GetPipeline(const RHI::PipelineDesc& desc);
+
+        /**
+         * @brief Clears the internal cache.
+         */
         static void Clear();
 
     private:

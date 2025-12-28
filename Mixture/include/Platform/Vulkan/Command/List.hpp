@@ -24,6 +24,12 @@ namespace Mixture::Vulkan
     class CommandList : public RHI::ICommandList
     {
     public:
+        /**
+         * @brief Constructs a Vulkan CommandList.
+         * 
+         * @param commandContext The context containing the Vulkan command buffers.
+         * @param swapchainImage The swapchain image for the current frame.
+         */
         CommandList(const FrameCommandContext& commandContext, vk::Image swapchainImage)
             : m_CommandContext(commandContext), m_SwapchainImage(swapchainImage) {}
         ~CommandList() = default;

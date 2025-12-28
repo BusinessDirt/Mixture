@@ -19,17 +19,41 @@ namespace Mixture
     class FileStreamReader
     {
     public:
+        /**
+         * @brief Constructs a FileStreamReader for the specified file.
+         * 
+         * @param path Path to the file to read.
+         */
         FileStreamReader(const std::filesystem::path& path);
 
+        /**
+         * @brief Checks if the file stream is currently open.
+         * 
+         * @return true If open.
+         */
         bool IsOpen() const { return m_Stream.is_open(); }
 
-        // Read bytes into a buffer
+        /**
+         * @brief Reads the entire file content into a vector.
+         * 
+         * @param buffer The destination buffer.
+         */
         void ReadBuffer(Vector<char>& buffer);
         
-        // Read bytes into a raw pointer
+        /**
+         * @brief Reads a specific number of bytes into a raw pointer.
+         * 
+         * @param dest Destination memory address.
+         * @param size Number of bytes to read.
+         * @return true If read was successful.
+         */
         bool ReadRaw(void* dest, size_t size);
         
-        // Get the size of the file
+        /**
+         * @brief Gets the total size of the file in bytes.
+         * 
+         * @return size_t File size.
+         */
         size_t GetFileSize();
 
         // TODO: Add specific read methods (ReadInt, ReadString) as needed

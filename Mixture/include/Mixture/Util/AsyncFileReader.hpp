@@ -24,6 +24,11 @@ namespace Mixture
         // If vector is empty, read might have failed or file is empty.
         using ReadCallback = std::function<void(Vector<char>)>;
 
+        /**
+         * @brief Constructs an AsyncFileReader for the specified file.
+         * 
+         * @param path The path to the file.
+         */
         AsyncFileReader(const std::filesystem::path& path);
         ~AsyncFileReader();
 
