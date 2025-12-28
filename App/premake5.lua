@@ -3,14 +3,11 @@ project "App"
     cppdialect "C++20"
     targetdir "Binaries/%{cfg.buildcfg}"
     staticruntime "off"
+    debugdir "%{wks.location}"
 
     files { "include/**.hpp", "src/**.cpp" }
     includedirs { "include" }
     libdirs { "%{LibraryDir.vulkan}" }
-
-    postbuildcommands {
-        "{COPY} %{wks.location}/Assets %{cfg.targetdir}"
-    }
 
     externalincludedirs {
         "../Opal/include",

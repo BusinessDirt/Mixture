@@ -101,8 +101,10 @@ namespace Mixture::Vulkan
         Vector<vk::PipelineColorBlendAttachmentState> blendAttachments;
         for (const auto& format : desc.ColorAttachmentFormats)
         {
+            bool formatSupportsBlend = RHI::IsBlendable(format);
+            
             vk::PipelineColorBlendAttachmentState colorBlendAttachment;
-            colorBlendAttachment.blendEnable = desc.Blend.enabled;
+            colorBlendAttachment.blendEnable = desc.Blend.enabled && formatSupportsBlend;
             colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR
                                                 | vk::ColorComponentFlagBits::eG
                                                 | vk::ColorComponentFlagBits::eB

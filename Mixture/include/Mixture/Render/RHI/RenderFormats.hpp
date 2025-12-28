@@ -152,6 +152,7 @@ namespace Mixture::RHI
     {
         switch (format)
         {
+            case Format::Undefined: return 0;
             case Format::R8_UNORM: return 1;
             case Format::R8G8_UNORM: return 2;
             case Format::R8G8B8_UNORM: return 3;
@@ -192,6 +193,20 @@ namespace Mixture::RHI
                 return true;
             default:
                 return false;
+        }
+    }
+
+    // TODO: make more robust
+    inline bool IsBlendable(Format format)
+    {
+        switch(format)
+        {
+            // Example of non-blendable types
+            case Format::R32_UINT:
+            case Format::R32_INT:
+                return false;
+            default:
+                return true;
         }
     }
 

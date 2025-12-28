@@ -43,10 +43,15 @@ namespace Mixture
             DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&pCompiler));
             return true;
         }();
+        
+        if (!bInitialized)
+        {
+            OPAL_ERROR("AssetManager", "DXC was not initialized!");
+        }
 
         // Create a blob from the source string
         CComPtr<IDxcBlobEncoding> pSource;
-        pUtils->CreateBlob(source.c_str(), source.length(), CP_UTF8, &pSource);
+        pUtils->CreateBlob(source.c_str(), static_cast<uint32_t>(source.length()), CP_UTF8, &pSource);
 
         // Set up Compiler Arguments
         Vector<LPCWSTR> arguments;
@@ -219,6 +224,13 @@ namespace Mixture
                     case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER:
                         res.Type = ShaderReflectionData::ResourceType::Sampler;
                         data.Samplers.push_back(res);
+                        break;
+                    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+                    case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                    case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                    case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                    case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
                         break;
                 }
             }

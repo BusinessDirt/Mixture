@@ -58,7 +58,6 @@ namespace Mixture::Vulkan
         createInfo.pNext = &dynamicRenderingFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-        createInfo.enabledLayerCount = 0;
 
         try
         {
