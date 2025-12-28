@@ -12,6 +12,7 @@
 #include "Mixture/Core/Memory/LRUCache.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
+#include "Mixture/Util/FileSystemWatcher.hpp"
 
 #include <array>
 #include <mutex>
@@ -151,5 +152,7 @@ namespace Mixture
         std::condition_variable m_QueueCV;
         std::queue<LoadRequest> m_LoadQueue;
         std::atomic<bool> m_Running = false;
+
+        Scope<FileSystemWatcher> m_FileWatcher;
     };
 }

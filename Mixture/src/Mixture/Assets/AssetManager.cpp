@@ -68,6 +68,12 @@ namespace Mixture
 
     void AssetManager::Shutdown()
     {
+        if (m_FileWatcher)
+        {
+            m_FileWatcher->Stop();
+            m_FileWatcher.reset();
+        }
+
         if (m_Running)
         {
             m_Running = false;
@@ -88,6 +94,27 @@ namespace Mixture
         if (!std::filesystem::exists(m_RootDirectory))
         {
             OPAL_WARN("Core/Assets", "Asset Directory does not exist!");
+        }
+
+        // Initialize File Watcher
+        if (std::filesystem::exists(m_RootDirectory))
+        {
+            if (m_FileWatcher) m_FileWatcher->Stop();
+
+            m_FileWatcher = CreateScope<FileSystemWatcher>(m_RootDirectory, [](const std::filesystem::path& path, FileAction action)
+            {
+                const char* actionStr = "Unknown";
+                switch(action)
+                {
+                    case FileAction::Added: actionStr = "Added"; break;
+                    case FileAction::Modified: actionStr = "Modified"; break;
+                    case FileAction::Deleted: actionStr = "Deleted"; break;
+                }
+                OPAL_INFO("Core/Assets", "Asset File Changed: {} ({})", path.string(), actionStr);
+                
+                // TODO: Trigger hot-reload logic here
+            });
+            m_FileWatcher->Start();
         }
     }
 
