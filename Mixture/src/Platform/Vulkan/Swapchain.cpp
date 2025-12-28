@@ -73,7 +73,7 @@ namespace Mixture::Vulkan
         return true;
     }
 
-    bool Swapchain::Present(uint32_t imageIndex, vk::Semaphore waitSemaphore)
+    bool Swapchain::Present(uint32_t imageIndex, vk::Semaphore waitSemaphore, vk::Queue presentQueue)
     {
         vk::PresentInfoKHR presentInfo;
         presentInfo.waitSemaphoreCount = 1;
@@ -87,7 +87,7 @@ namespace Mixture::Vulkan
         vk::Result result;
         try
         {
-            result = m_Device->GetPresentQueue().GetHandle().presentKHR(presentInfo);
+            result = presentQueue.presentKHR(presentInfo);
         }
         catch (vk::SystemError& err)
         {

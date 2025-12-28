@@ -57,9 +57,7 @@ namespace Mixture::Vulkan
             memcpy(mappedData, initialData, desc.Size);
             vmaUnmapMemory(allocator, stagingAlloc);
 
-            auto& logicalDevice = Context::Get().GetLogicalDevice();
-            SingleTimeCommand::Submit(logicalDevice.GetTransferQueue(), Context::Get().GetTransferCommandPool().GetHandle(),
-            [&](vk::CommandBuffer cmd)
+            SingleTimeCommand::Submit(Context::Get().GetTransferQueue(), [&](vk::CommandBuffer cmd)
             {
                 vk::BufferCopy copyRegion;
                 copyRegion.size = desc.Size;

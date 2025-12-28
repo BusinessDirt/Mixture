@@ -9,14 +9,14 @@ namespace Mixture::Vulkan
 {
     vk::CommandBuffer SingleTimeCommand::Begin()
     {
-        return Begin(Context::Get().GetGraphicsCommandPool().GetHandle());
+        return Begin(Context::Get().GetGraphicsQueue());
     }
 
-    vk::CommandBuffer SingleTimeCommand::Begin(vk::CommandPool commandPool)
+    vk::CommandBuffer SingleTimeCommand::Begin(Queue& queue)
     {
         vk::CommandBufferAllocateInfo allocInfo;
         allocInfo.level = vk::CommandBufferLevel::ePrimary;
-        allocInfo.commandPool = commandPool;
+        allocInfo.commandPool = queue.GetPool().GetHandle();
         allocInfo.commandBufferCount = 1;
 
         vk::CommandBuffer commandBuffer = Context::Get().GetLogicalDevice().GetHandle().allocateCommandBuffers(allocInfo)[0];
@@ -29,11 +29,10 @@ namespace Mixture::Vulkan
 
     void SingleTimeCommand::End(const vk::CommandBuffer commandBuffer)
     {
-        auto& context = Context::Get();
-        End(commandBuffer, context.GetLogicalDevice().GetGraphicsQueue(), context.GetGraphicsCommandPool().GetHandle());
+        End(commandBuffer, Context::Get().GetGraphicsQueue());
     }
 
-    void SingleTimeCommand::End(vk::CommandBuffer commandBuffer, Queue& queue, vk::CommandPool commandPool)
+    void SingleTimeCommand::End(const vk::CommandBuffer commandBuffer, Queue& queue)
     {
         commandBuffer.end();
 
@@ -56,19 +55,18 @@ namespace Mixture::Vulkan
         }
 
         device.destroyFence(fence);
-        device.freeCommandBuffers(commandPool, commandBuffer);
+        device.freeCommandBuffers(queue.GetPool().GetHandle(), commandBuffer);
     }
 
     void SingleTimeCommand::Submit(const std::function<void(vk::CommandBuffer)>& action)
     {
-        auto& context = Context::Get();
-        Submit(context.GetLogicalDevice().GetGraphicsQueue(), context.GetGraphicsCommandPool().GetHandle(), action);
+        Submit(Context::Get().GetGraphicsQueue(), action);
     }
 
-    void SingleTimeCommand::Submit(Queue& queue, vk::CommandPool commandPool, const std::function<void(vk::CommandBuffer)>& action)
+    void SingleTimeCommand::Submit(Queue& queue, const std::function<void(vk::CommandBuffer)>& action)
     {
-        const vk::CommandBuffer commandBuffer = Begin(commandPool);
+        const vk::CommandBuffer commandBuffer = Begin(queue);
         action(commandBuffer);
-        End(commandBuffer, queue, commandPool);
+        End(commandBuffer, queue);
     }
 }

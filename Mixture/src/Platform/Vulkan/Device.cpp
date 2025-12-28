@@ -70,11 +70,6 @@ namespace Mixture::Vulkan
             exit(-1);
         }
 
-        m_GraphicsQueue = CreateScope<Queue>(m_Device, indices.Graphics, "Graphics Queue");
-        m_PresentQueue = CreateScope<Queue>(m_Device, indices.Present, "Present Queue");
-        m_ComputeQueue = CreateScope<Queue>(m_Device, indices.Compute, "Compute Queue", m_GraphicsQueue->GetHandle());
-        m_TransferQueue = CreateScope<Queue>(m_Device, indices.Transfer, "Transfer Queue", m_GraphicsQueue->GetHandle());
-
         VmaVulkanFunctions vulkanFunctions = {};
         vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
         vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;

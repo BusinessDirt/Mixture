@@ -19,6 +19,8 @@ namespace Mixture::Vulkan
     class Device;
     class Swapchain;
 
+    class Queue;
+
     class CommandBuffers;
     class CommandList;
     class CommandPool;
@@ -95,25 +97,32 @@ namespace Mixture::Vulkan
         Swapchain& GetSwapchain() const { return *m_Swapchain; }
 
         /**
-         * @brief Gets the graphics command pool.
+         * @brief Gets the graphics queue.
          *
-         * @return Ref<CommandPool> the command pool.
+         * @return vk::Queue The graphics queue.
          */
-        CommandPool& GetGraphicsCommandPool() const { return *m_GraphicsCommandPool; }
+		Queue& GetGraphicsQueue() const { return *m_GraphicsQueue; }
 
         /**
-         * @brief Gets the transfer command pool.
+         * @brief Gets the transfer queue.
          *
-         * @return Ref<CommandPool> the command pool.
+         * @return vk::Queue The transfer queue.
          */
-        CommandPool& GetTransferCommandPool() const { return *m_TransferCommandPool; }
+		Queue& GetTransferQueue() const { return *m_TransferQueue; }
 
         /**
-         * @brief Gets the compute command pool.
+         * @brief Gets the present queue.
          *
-         * @return Ref<CommandPool> the command pool.
+         * @return vk::Queue The present queue.
          */
-        CommandPool& GetComputeCommandPool() const { return *m_ComputeCommandPool; }
+		Queue& GetPresentQueue() const { return *m_PresentQueue; }
+
+        /**
+         * @brief Gets the compute queue.
+         *
+         * @return vk::Queue The compute queue.
+         */
+		Queue& GetComputeQueue() const { return *m_ComputeQueue; }
 
         uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 
@@ -133,18 +142,16 @@ namespace Mixture::Vulkan
         Scope<Device> m_Device;
         Scope<Swapchain> m_Swapchain;
 
+        Scope<Queue> m_GraphicsQueue;
+        Scope<Queue> m_TransferQueue;
+		Scope<Queue> m_PresentQueue;
+		Scope<Queue> m_ComputeQueue;
+
         Scope<Semaphores> m_ImageAvailableSemaphores;
         Scope<Semaphores> m_RenderFinishedSemaphores;
         Scope<Semaphores> m_TransferFinishedSemaphores;
         Scope<Semaphores> m_ComputeFinishedSemaphores;
         Scope<Fences> m_InFlightFences;
-
-        Scope<CommandPool> m_GraphicsCommandPool;
-        Scope<CommandBuffers> m_GraphicsCommandBuffers;
-        Scope<CommandPool> m_TransferCommandPool;
-        Scope<CommandBuffers> m_TransferCommandBuffers;
-        Scope<CommandPool> m_ComputeCommandPool;
-        Scope<CommandBuffers> m_ComputeCommandBuffers;
 
         Scope<DescriptorAllocators> m_DescriptorAllocators;
         Scope<DescriptorLayoutCache> m_DescriptorLayoutCache;

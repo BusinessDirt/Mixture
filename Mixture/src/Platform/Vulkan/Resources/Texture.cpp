@@ -45,8 +45,7 @@ namespace Mixture::Vulkan
             memcpy(stagingAllocInfo.pMappedData, data, static_cast<size_t>(imageSize));
 
             // Upload to Image
-            SingleTimeCommand::Submit(logicalDevice.GetTransferQueue(), Context::Get().GetTransferCommandPool().GetHandle(),
-            [&](vk::CommandBuffer cmd)
+            SingleTimeCommand::Submit(Context::Get().GetTransferQueue(), [&](vk::CommandBuffer cmd)
             {
                 vk::ImageMemoryBarrier barrier{};
                 barrier.oldLayout = vk::ImageLayout::eUndefined;

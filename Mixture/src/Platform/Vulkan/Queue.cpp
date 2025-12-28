@@ -3,26 +3,27 @@
 
 namespace Mixture::Vulkan
 {
-    Queue::Queue(vk::Device device, std::optional<uint32_t> queueIndex,
-                 std::string_view debugName, vk::Queue fallback)
-        : m_DebugName(debugName)
+    Queue::Queue(Device& device, std::optional<uint32_t> queueIndex,
+            uint32_t frameCount, std::string_view debugName,
+            std::optional<uint32_t> fallbackIndex)
+        : m_Device(&device), m_DebugName(debugName)
     {
-        if (queueIndex.has_value())
+        if (!queueIndex.has_value() && !fallbackIndex.has_value())
         {
-            m_Handle = device.getQueue(queueIndex.value(), 0);
+            OPAL_ERROR("Core/Vulkan", "Tried to create '{}' but index had no value and fallback index has no value.",
+                m_DebugName);
             return;
         }
 
-        if (fallback == nullptr)
-        {
-            OPAL_WARN("Core/Vulkan", "Tried to create '{}' but index had no value and fallback is nullptr",
-                      m_DebugName);
-        }
+        uint32_t index = queueIndex.has_value() ? queueIndex.value() : fallbackIndex.value();
+        m_Handle = m_Device->GetHandle().getQueue(index, 0);
 
-        m_Handle = fallback;
+        if (frameCount == 0) return;
+        m_Pool = CreateScope<CommandPool>(*m_Device, index);
+        m_Buffers = CreateScope<CommandBuffers>(*m_Device, *m_Pool, frameCount);
     }
 
-    void Queue::Submit(Vector<vk::CommandBuffer> commandBuffers,
+    void Queue::Submit(uint32_t frameIndex,
                        Vector<vk::Semaphore> signalSemaphores,
                        Vector<vk::Semaphore> waitSemaphores,
                        Vector<vk::PipelineStageFlags> waitStages,
@@ -38,8 +39,8 @@ namespace Mixture::Vulkan
         try
         {
             vk::SubmitInfo submitInfo;
-            submitInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
-            submitInfo.pCommandBuffers = commandBuffers.data();
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = m_Buffers->GetPointer(frameIndex);
             submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
             submitInfo.pSignalSemaphores = signalSemaphores.data();
             submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
