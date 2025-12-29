@@ -3,11 +3,11 @@
 
 #include "Mixture/Core/Time.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
+#include "Mixture/Core/Threading/TaskSystem.hpp"
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
 
 #include <Opal/Base.hpp>
-#include <ranges>
 
 namespace Mixture
 {
@@ -20,6 +20,8 @@ namespace Mixture
 
         s_Instance = this;
 
+        TaskSystem::Init();
+
         auto props = WindowProps();
         props.Title = appDescription.Name;
         props.Width = appDescription.Width;
@@ -29,7 +31,7 @@ namespace Mixture
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
         m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
-        m_RenderGraph = CreateScope<RenderGraph>();
+        m_RenderGraph = CreateScope<RenderGraph>(m_Context->GetDevice());
 
         AssetManager::Get().Init();
         AssetManager::Get().SetAssetRoot("Assets");
@@ -38,8 +40,13 @@ namespace Mixture
 
     Application::~Application()
     {
+        m_Context->GetDevice().WaitForIdle();
         m_LayerStack.Shutdown();
+        m_RenderGraph.reset();
         m_Context.reset();
+        
+        AssetManager::Get().Shutdown();
+        TaskSystem::Shutdown();
     }
 
     void Application::Close()
@@ -87,10 +94,10 @@ namespace Mixture
         dispatcher.Dispatch<WindowCloseEvent>(OPAL_BIND_EVENT_FN(OnWindowClose));
         dispatcher.Dispatch<FramebufferResizeEvent>(OPAL_BIND_EVENT_FN(OnFramebufferResize));
 
-        for (const auto& it : std::ranges::reverse_view(m_LayerStack))
+        for (auto it = m_LayerStack.rbegin(); it != m_LayerStack.rend(); ++it)
         {
             if (event.Handled) break;
-            it->OnEvent(event);
+            (*it)->OnEvent(event);
         }
     }
 

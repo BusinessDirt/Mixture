@@ -1,0 +1,85 @@
+#pragma once
+
+/**
+ * @file RenderGraphResourceCache.hpp
+ * @brief Caching mechanism for RenderGraph transient resources.
+ */
+
+#include "Mixture/Core/Base.hpp"
+#include "Mixture/Render/RHI/RHI.hpp"
+#include "Mixture/Util/Util.hpp"
+#include <unordered_map>
+
+namespace Mixture
+{
+    /**
+     * @brief Caches render graph resources (Textures, Buffers) across frames.
+     * Uses Name + Description as the key to ensure persistence for specific resources.
+     */
+    class RenderGraphResourceCache
+    {
+    public:
+        /**
+         * @brief Constructs a RenderGraphResourceCache.
+         * 
+         * @param device Reference to the graphics device.
+         */
+        RenderGraphResourceCache(RHI::IGraphicsDevice& device);
+        ~RenderGraphResourceCache();
+
+        /**
+         * @brief Retrieves a cached texture or creates a new one if not found.
+         * 
+         * @param name The name key for the texture.
+         * @param desc The description of the texture.
+         * @return Ref<RHI::ITexture> The texture.
+         */
+        Ref<RHI::ITexture> GetOrCreateTexture(const std::string& name, const RHI::TextureDesc& desc);
+
+        /**
+         * @brief Retrieves a cached buffer or creates a new one if not found.
+         * 
+         * @param name The name key for the buffer.
+         * @param desc The description of the buffer.
+         * @return Ref<RHI::IBuffer> The buffer.
+         */
+        Ref<RHI::IBuffer> GetOrCreateBuffer(const std::string& name, const RHI::BufferDesc& desc);
+
+        /**
+         * @brief Clears the cache, releasing all held resources.
+         */
+        void Clear();
+
+    private:
+        RHI::IGraphicsDevice& m_Device;
+
+        struct TextureKey {
+            std::string Name;
+            RHI::TextureDesc Desc;
+            bool operator==(const TextureKey& other) const { return Name == other.Name && Desc == other.Desc; }
+        };
+        struct TextureKeyHash {
+            std::size_t operator()(const TextureKey& key) const {
+                size_t seed = 0;
+                Util::HashCombine(seed, key.Name, key.Desc.Width, key.Desc.Height, key.Desc.Format);
+                return seed;
+            }
+        };
+
+        struct BufferKey {
+            std::string Name;
+            RHI::BufferDesc Desc;
+            bool operator==(const BufferKey& other) const { return Name == other.Name && Desc == other.Desc; }
+        };
+        struct BufferKeyHash {
+            std::size_t operator()(const BufferKey& key) const {
+                size_t seed = 0;
+                Util::HashCombine(seed, key.Name, key.Desc.Size, key.Desc.Usage);
+                return seed;
+            }
+        };
+
+        std::unordered_map<TextureKey, Ref<RHI::ITexture>, TextureKeyHash> m_TextureCache;
+        std::unordered_map<BufferKey, Ref<RHI::IBuffer>, BufferKeyHash> m_BufferCache;
+    };
+}

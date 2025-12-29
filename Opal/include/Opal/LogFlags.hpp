@@ -1,6 +1,10 @@
 #include "Opal/Log.hpp"
 #include "Opal/Colors.hpp"
 
+#ifndef OPAL_PLATFORM_WINDOWS
+#include <pthread.h>
+#endif
+
 namespace Opal {
 
     namespace
@@ -38,11 +42,23 @@ namespace Opal {
     class ColorMarkerFlag : public spdlog::custom_flag_formatter
     {
     public:
+        /**
+         * @brief Formats the log message.
+         * 
+         * @param msg The log message.
+         * @param tm The time structure (unused).
+         * @param dest The destination buffer.
+         */
         void format(const spdlog::details::log_msg &msg, const std::tm &, spdlog::memory_buf_t &dest) override
         {
             AppendMarkerToBuffer(msg, dest, Colors::magenta_bold.data(), Colors::reset.data());
         }
 
+        /**
+         * @brief Clones the formatter.
+         * 
+         * @return std::unique_ptr<custom_flag_formatter> The cloned formatter.
+         */
         std::unique_ptr<custom_flag_formatter> clone() const override
         {
             return spdlog::details::make_unique<ColorMarkerFlag>();
@@ -57,15 +73,127 @@ namespace Opal {
     class CleanMarkerFlag : public spdlog::custom_flag_formatter
     {
     public:
+        /**
+         * @brief Formats the log message.
+         * 
+         * @param msg The log message.
+         * @param tm The time structure (unused).
+         * @param dest The destination buffer.
+         */
         void format(const spdlog::details::log_msg &msg, const std::tm &, spdlog::memory_buf_t &dest) override
         {
             AppendMarkerToBuffer(msg, dest, "", "");
         }
 
+        /**
+         * @brief Clones the formatter.
+         * 
+         * @return std::unique_ptr<custom_flag_formatter> The cloned formatter.
+         */
         std::unique_ptr<custom_flag_formatter> clone() const override
         {
             return spdlog::details::make_unique<CleanMarkerFlag>();
         }
     };
 
+    /**
+     * @brief Custom Spdlog flag formatter for Thread Name.
+     *
+     * Retrieves the thread name via Opal::LogRegistry (thread_local) or OS API (pthread).
+     */
+    class ThreadNameFlag : public spdlog::custom_flag_formatter
+    {
+    public:
+        /**
+         * @brief Formats the log message.
+         * 
+         * @param msg The log message (unused).
+         * @param tm The time structure (unused).
+         * @param dest The destination buffer.
+         */
+        void format(const spdlog::details::log_msg &, const std::tm &, spdlog::memory_buf_t &dest) override
+        {
+            // 1. Try Thread Local Cache (Fastest & Set by User)
+            const std::string& name = Opal::LogRegistry::GetThreadName();
+            if (!name.empty())
+            {
+                dest.append(name.data(), name.data() + name.size());
+                return;
+            }
+
+            // 2. Try OS API
+            char thread_name[32] = {0};
+
+            #if defined(OPAL_PLATFORM_WINDOWS)
+                // Windows implementation could go here (GetThreadDescription)
+                // For now, default to empty to trigger fallback
+            #elif defined(OPAL_PLATFORM_LINUX) || defined(OPAL_PLATFORM_DARWIN)
+                pthread_getname_np(pthread_self(), thread_name, sizeof(thread_name));
+            #endif
+
+            // 3. Fallback to Thread ID
+            if (thread_name[0] == 0)
+            {
+                // Use default spdlog thread id formatting logic or just simple string
+                 std::string tid = std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+                 dest.append(tid.data(), tid.data() + tid.size());
+            }
+            else
+            {
+                dest.append(thread_name, thread_name + strlen(thread_name));
+            }
+        }
+
+        /**
+         * @brief Clones the formatter.
+         * 
+         * @return std::unique_ptr<custom_flag_formatter> The cloned formatter.
+         */
+        std::unique_ptr<custom_flag_formatter> clone() const override
+        {
+            return spdlog::details::make_unique<ThreadNameFlag>();
+        }
+    };
+
+    class UppercaseLevelFlag : public spdlog::custom_flag_formatter
+    {
+    public:
+        /**
+         * @brief Formats the log message.
+         * 
+         * @param msg The log message.
+         * @param tm The time structure (unused).
+         * @param dest The destination buffer.
+         */
+        void format(const spdlog::details::log_msg &msg, const std::tm &, spdlog::memory_buf_t &dest) override
+        {
+            // Hardcode uppercase strings for performance
+            // (Accessing msg.level which is an enum)
+            const char* level_name = "";
+            switch (msg.level)
+            {
+                case spdlog::level::trace:    level_name = "TRACE"; break;
+                case spdlog::level::debug:    level_name = "DEBUG"; break;
+                case spdlog::level::info:     level_name = "INFO";  break;
+                case spdlog::level::warn:     level_name = "WARN";  break;
+                case spdlog::level::err:      level_name = "ERROR"; break;
+                case spdlog::level::critical: level_name = "CRITICAL"; break;
+                case spdlog::level::off:      level_name = "OFF";   break;
+                default:                      level_name = "UNKNOWN"; break;
+            }
+
+            // Helper to append string to the buffer
+            spdlog::details::fmt_helper::append_string_view(level_name, dest);
+        }
+
+        /**
+         * @brief Clones the formatter.
+         * 
+         * @return std::unique_ptr<custom_flag_formatter> The cloned formatter.
+         */
+        std::unique_ptr<custom_flag_formatter> clone() const override
+        {
+            return spdlog::details::make_unique<UppercaseLevelFlag>();
+        }
+    };
 }

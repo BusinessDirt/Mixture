@@ -10,6 +10,7 @@
 #include "Platform/Vulkan/Surface.hpp"
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 #include "Platform/Vulkan/Device.hpp"
+#include "Platform/Vulkan/Queue.hpp"
 #include "Platform/Vulkan/Swapchain.hpp"
 
 #include "Platform/Vulkan/Command/Buffers.hpp"
@@ -45,15 +46,18 @@ namespace Mixture::Vulkan
         m_Device = CreateScope<Device>(*m_Instance, *m_PhysicalDevice);
         m_Swapchain = CreateScope<Swapchain>(*m_PhysicalDevice, *m_Device, *m_Surface, appDescription.Width, appDescription.Height);
 
+        QueueFamilyIndices indices = m_PhysicalDevice->GetQueueFamilies();
+        m_GraphicsQueue = CreateScope<Queue>(*m_Device, indices.Graphics, MAX_FRAMES_IN_FLIGHT, "Graphics Queue");
+        m_PresentQueue = CreateScope<Queue>(*m_Device, indices.Present, 0, "Present Queue");
+        m_ComputeQueue = CreateScope<Queue>(*m_Device, indices.Compute, MAX_FRAMES_IN_FLIGHT, "Compute Queue", indices.Graphics);
+        m_TransferQueue = CreateScope<Queue>(*m_Device, indices.Transfer, MAX_FRAMES_IN_FLIGHT, "Transfer Queue", indices.Graphics);
+
         uint32_t imagecount = m_Swapchain->GetImageCount();
         m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
         m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imagecount);
+        m_TransferFinishedSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
+        m_ComputeFinishedSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
         m_InFlightFences = CreateScope<Fences>(*m_Device, MAX_FRAMES_IN_FLIGHT, true);
-
-        // Create Command Pool
-        QueueFamilyIndices queueFamilyIndices = m_PhysicalDevice->GetQueueFamilies();
-        m_CommandPool = CreateScope<CommandPool>(*m_Device, queueFamilyIndices);
-        m_CommandBuffers = CreateScope<CommandBuffers>(*m_Device, *m_CommandPool, MAX_FRAMES_IN_FLIGHT);
 
         m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(*m_Device);
         m_DescriptorAllocators = CreateScope<DescriptorAllocators>(*m_Device, MAX_FRAMES_IN_FLIGHT);
@@ -131,7 +135,9 @@ namespace Mixture::Vulkan
             return nullptr;
         }
 
-        m_CommandBuffers->Reset(m_CurrentFrame);
+        m_GraphicsQueue->ResetBuffer(m_CurrentFrame);
+        m_TransferQueue->ResetBuffer(m_CurrentFrame);
+        m_ComputeQueue->ResetBuffer(m_CurrentFrame);
 
         m_IsFrameStarted = true;
 
@@ -146,31 +152,24 @@ namespace Mixture::Vulkan
             return;
         }
 
-        vk::Semaphore signalSemaphores[] = { m_RenderFinishedSemaphores->Get(m_ImageIndex) };
-        vk::Semaphore waitSemaphores[] = { m_ImageAvailableSemaphores->Get(m_CurrentFrame) };
-        vk::PipelineStageFlags waitStages[] = { vk::PipelineStageFlagBits::eColorAttachmentOutput };
-
-        vk::SubmitInfo submitInfo;
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = m_CommandBuffers->GetPointer(m_CurrentFrame);
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-
-        // Signal the fence for THIS frame
-        try
-        {
-            m_Device->GetGraphicsQueue().submit(submitInfo, m_InFlightFences->Get(m_CurrentFrame));
-        }
-        catch (vk::SystemError& err)
-        {
-            OPAL_CRITICAL("Submit Failed: {}", err.what());
-        }
+        m_TransferQueue->Submit(m_CurrentFrame, { m_TransferFinishedSemaphores->Get(m_CurrentFrame) });
+        m_ComputeQueue->Submit(m_CurrentFrame, { m_ComputeFinishedSemaphores->Get(m_CurrentFrame) });
+        m_GraphicsQueue->Submit(m_CurrentFrame, { m_RenderFinishedSemaphores->Get(m_ImageIndex) },
+            {
+                m_ImageAvailableSemaphores->Get(m_CurrentFrame),
+                m_TransferFinishedSemaphores->Get(m_CurrentFrame),
+                m_ComputeFinishedSemaphores->Get(m_CurrentFrame)
+            },
+            {
+                vk::PipelineStageFlagBits::eColorAttachmentOutput,
+                vk::PipelineStageFlagBits::eVertexInput, // Wait for transfer before vertex input
+                vk::PipelineStageFlagBits::eVertexInput  // Wait for compute before vertex input (assumption)
+            },
+            m_InFlightFences->Get(m_CurrentFrame)
+        );
 
         // Present
-        bool success = m_Swapchain->Present(m_ImageIndex, m_RenderFinishedSemaphores->Get(m_ImageIndex));
+        bool success = m_Swapchain->Present(m_ImageIndex, m_RenderFinishedSemaphores->Get(m_ImageIndex), m_PresentQueue->GetHandle());
         if (!success)
         {
             // TODO: Handle resize
@@ -183,6 +182,12 @@ namespace Mixture::Vulkan
 
     Scope<RHI::ICommandList> Context::GetCommandBuffer()
     {
-        return CreateScope<CommandList>(m_CommandBuffers->Get(m_CurrentFrame), m_Swapchain->GetImages()[m_ImageIndex]);
+        return CreateScope<CommandList>(
+            FrameCommandContext{
+                m_GraphicsQueue->GetBuffer(m_CurrentFrame),
+                m_TransferQueue->GetBuffer(m_CurrentFrame),
+                m_ComputeQueue->GetBuffer(m_CurrentFrame),
+            }, m_Swapchain->GetImages()[m_ImageIndex]
+        );
     }
 }

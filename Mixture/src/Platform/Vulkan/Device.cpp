@@ -41,8 +41,12 @@ namespace Mixture::Vulkan
             }
         }
 
+        vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
+        bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
         vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures;
         dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+        dynamicRenderingFeatures.pNext = &bufferDeviceAddressFeatures;
 
         vk::PhysicalDeviceFeatures deviceFeatures;
         deviceFeatures.samplerAnisotropy = VK_TRUE;
@@ -54,7 +58,6 @@ namespace Mixture::Vulkan
         createInfo.pNext = &dynamicRenderingFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
-        createInfo.enabledLayerCount = 0;
 
         try
         {
@@ -64,27 +67,6 @@ namespace Mixture::Vulkan
         {
             OPAL_CRITICAL("Core/Vulkan", "Failed to create logical device!");
             exit(-1);
-        }
-
-        m_GraphicsQueue = m_Device.getQueue(indices.Graphics.value(), 0);
-        m_PresentQueue = m_Device.getQueue(indices.Present.value(), 0);
-
-        if (indices.Compute.has_value())
-        {
-            m_ComputeQueue = m_Device.getQueue(indices.Compute.value(), 0);
-        }
-        else
-        {
-            m_ComputeQueue = m_GraphicsQueue;
-        }
-
-        if (indices.Transfer.has_value())
-        {
-            m_TransferQueue = m_Device.getQueue(indices.Transfer.value(), 0);
-        }
-        else
-        {
-            m_TransferQueue = m_GraphicsQueue;
         }
 
         VmaVulkanFunctions vulkanFunctions = {};
@@ -120,14 +102,14 @@ namespace Mixture::Vulkan
         return CreateRef<Shader>(data, size, stage);
     }
 
-    Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc)
+    Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc, const void* initialData)
     {
-        return CreateRef<Buffer>(desc);
+        return CreateRef<Buffer>(desc, initialData);
     }
 
-    Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc)
+    Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc, const void* initialData)
     {
-        return CreateRef<Texture>(desc);
+        return CreateRef<Texture>(desc, initialData);
     }
 
     Ref<RHI::IPipeline> Device::CreatePipeline(const RHI::PipelineDesc& desc)

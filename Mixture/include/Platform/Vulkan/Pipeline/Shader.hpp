@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file Shader.hpp
+ * @brief Vulkan implementation of the Shader interface.
+ */
+
 #include "Platform/Vulkan/Definitions.hpp"
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
@@ -6,15 +12,38 @@
 
 namespace Mixture::Vulkan
 {
+    /**
+     * @brief Vulkan implementation of a shader module.
+     */
     class Shader : public RHI::IShader
     {
     public:
+        /**
+         * @brief Constructs a Vulkan Shader module from bytecode.
+         * 
+         * @param data Pointer to the shader bytecode.
+         * @param size Size of the bytecode in bytes.
+         * @param stage The shader stage.
+         */
         Shader(const void* data, size_t size, RHI::ShaderStage stage);
         ~Shader();
 
         RHI::ShaderStage GetStage() const override { return m_Stage; }
 
+        /**
+         * @brief Creates the Vulkan Shader Stage Create Info structure.
+         * 
+         * Used during pipeline creation.
+         * 
+         * @return vk::PipelineShaderStageCreateInfo The create info.
+         */
         vk::PipelineShaderStageCreateInfo CreateInfo();
+
+        /**
+         * @brief Gets the reflection data extracted from the shader.
+         * 
+         * @return const ShaderReflectionData& The reflection data.
+         */
         const ShaderReflectionData& GetReflectionData() const { return m_ReflectionData; }
 
     private:

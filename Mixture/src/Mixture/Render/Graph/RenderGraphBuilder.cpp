@@ -27,9 +27,24 @@ namespace Mixture
 
     RGResourceHandle RenderGraphBuilder::Write(RGResourceHandle handle)
     {
-        RGAttachmentInfo info;
-        info.Handle = handle;
-        return Write(info);
+        if (!handle.IsValid())
+        {
+            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Write - RGResourceHandle is invalid");
+            return handle;
+        }
+
+        const auto& node = m_Graph.GetResourceNode(handle);
+        if (node.Type == RGResourceType::Buffer || node.Type == RGResourceType::ImportedBuffer)
+        {
+            m_PassNode.BufferWrites.push_back(handle);
+            return handle;
+        }
+        else
+        {
+            RGAttachmentInfo info;
+            info.Handle = handle;
+            return Write(info);
+        }
     }
 
     // TODO: Future Proofing: If implementing resource versioning (renaming),
@@ -44,7 +59,7 @@ namespace Mixture
         }
 
         m_PassNode.Writes.push_back(info);
-        const RHI::TextureDesc& desc = m_Graph.GetResourceDesc(info.Handle);
+        const RHI::TextureDesc& desc = m_Graph.GetTextureDesc(info.Handle);
 
         if (RHI::IsDepthFormat(desc.Format))
         {
@@ -64,6 +79,11 @@ namespace Mixture
         return m_Graph.CreateResource(name, desc);
     }
 
+    RGResourceHandle RenderGraphBuilder::CreateBuffer(const std::string& name, const RHI::BufferDesc& desc)
+    {
+        return m_Graph.CreateResource(name, desc);
+    }
+
     RHI::IShader* RenderGraphBuilder::LoadShader(const std::string& path, RHI::ShaderStage stage)
     {
         AssetHandle handle = AssetManager::Get().GetAsset(AssetType::Shader, path);
@@ -73,6 +93,12 @@ namespace Mixture
 
     RHI::IPipeline* RenderGraphBuilder::CreatePipeline(RHI::PipelineDesc& desc)
     {
+        // If shader assets are not loaded yet, we can't create the pipeline.
+        if (desc.VertexShader == nullptr)
+        {
+            return nullptr;
+        }
+
         desc.ColorAttachmentFormats = m_CurrentColorFormats;
         desc.DepthAttachmentFormat = m_CurrentDepthFormat;
 

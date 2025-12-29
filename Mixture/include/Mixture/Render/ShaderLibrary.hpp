@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * @file ShaderLibrary.hpp
+ * @brief Library for managing loaded shader instances.
+ */
+
 #include "Mixture/Render/RHI/IPipeline.hpp"
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
@@ -60,5 +65,6 @@ namespace Mixture
     private:
         static RHI::IGraphicsDevice* s_Device;
         static std::unordered_map<ShaderCacheKey, Ref<RHI::IShader>, ShaderCacheKeyHash> s_Cache;
+        static std::mutex s_Mutex;
     };
 }

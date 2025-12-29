@@ -1,9 +1,10 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
-#include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Device.hpp"
+#include "Platform/Vulkan/Command/Pool.hpp"
+#include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -56,7 +57,7 @@ namespace Mixture::Vulkan
             memcpy(mappedData, initialData, desc.Size);
             vmaUnmapMemory(allocator, stagingAlloc);
 
-            SingleTimeCommand::Submit([&](vk::CommandBuffer cmd)
+            SingleTimeCommand::Submit(Context::Get().GetTransferQueue(), [&](vk::CommandBuffer cmd)
             {
                 vk::BufferCopy copyRegion;
                 copyRegion.size = desc.Size;
@@ -69,7 +70,8 @@ namespace Mixture::Vulkan
 
     Buffer::~Buffer()
     {
-        if (m_Buffer) {
+        if (m_Buffer)
+        {
             vmaDestroyBuffer(Context::Get().GetLogicalDevice().GetAllocator(), m_Buffer, m_Allocation);
         }
     }

@@ -59,7 +59,7 @@ namespace Mixture::Vulkan
          * @param waitSemaphore A semaphore to wait on before presenting (rendering finished).
          * @return true if successful, false if the swapchain is out of date or suboptimal.
          */
-        bool Present(uint32_t imageIndex, vk::Semaphore waitSemaphore);
+        bool Present(uint32_t imageIndex, vk::Semaphore waitSemaphore, vk::Queue presentQueue);
 
         /**
          * @brief Gets the underlying Vulkan Swapchain handle.

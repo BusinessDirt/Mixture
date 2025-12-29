@@ -60,15 +60,45 @@ namespace Mixture
          */
         void PopOverlay(Layer* layer);
 
-        std::vector<Layer*>::iterator begin() { return m_Layers.begin(); }
-        std::vector<Layer*>::iterator end() { return m_Layers.end(); }
-        std::vector<Layer*>::reverse_iterator rbegin() { return m_Layers.rbegin(); }
-        std::vector<Layer*>::reverse_iterator rend() { return m_Layers.rend(); }
+        /**
+         * @brief Iterator to the beginning of the layer stack.
+         */
+        Vector<Layer*>::iterator begin() { return m_Layers.begin(); }
 
-        OPAL_NODISCARD std::vector<Layer*>::const_iterator begin() const { return m_Layers.begin(); }
-        OPAL_NODISCARD std::vector<Layer*>::const_iterator end() const { return m_Layers.end(); }
-        OPAL_NODISCARD std::vector<Layer*>::const_reverse_iterator rbegin() const { return m_Layers.rbegin(); }
-        OPAL_NODISCARD std::vector<Layer*>::const_reverse_iterator rend() const { return m_Layers.rend(); }
+        /**
+         * @brief Iterator to the end of the layer stack.
+         */
+        Vector<Layer*>::iterator end() { return m_Layers.end(); }
+
+        /**
+         * @brief Reverse iterator to the beginning of the layer stack.
+         */
+        Vector<Layer*>::reverse_iterator rbegin() { return m_Layers.rbegin(); }
+
+        /**
+         * @brief Reverse iterator to the end of the layer stack.
+         */
+        Vector<Layer*>::reverse_iterator rend() { return m_Layers.rend(); }
+
+        /**
+         * @brief Const iterator to the beginning of the layer stack.
+         */
+        OPAL_NODISCARD Vector<Layer*>::const_iterator begin() const { return m_Layers.begin(); }
+
+        /**
+         * @brief Const iterator to the end of the layer stack.
+         */
+        OPAL_NODISCARD Vector<Layer*>::const_iterator end() const { return m_Layers.end(); }
+
+        /**
+         * @brief Const reverse iterator to the beginning of the layer stack.
+         */
+        OPAL_NODISCARD Vector<Layer*>::const_reverse_iterator rbegin() const { return m_Layers.rbegin(); }
+
+        /**
+         * @brief Const reverse iterator to the end of the layer stack.
+         */
+        OPAL_NODISCARD Vector<Layer*>::const_reverse_iterator rend() const { return m_Layers.rend(); }
 
     private:
         Vector<Layer*> m_Layers;

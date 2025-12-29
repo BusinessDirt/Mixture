@@ -23,7 +23,7 @@ namespace Mixture {
         if (it != s_Cache.end())
             return it->second.get();
 
-        OPAL_ASSERT("Core/Assets", s_Device, "PipelineCache not initialized!");
+        OPAL_ASSERT("AssetManager", s_Device, "PipelineCache not initialized!");
 
         Ref<RHI::IPipeline> pipeline = s_Device->CreatePipeline(desc);
         s_Cache[desc] = pipeline;

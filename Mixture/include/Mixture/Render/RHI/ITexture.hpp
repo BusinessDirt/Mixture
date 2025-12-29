@@ -41,6 +41,14 @@ namespace Mixture::RHI
          */
         std::string_view DebugName = "Unnamed Texture";
         // MipLevels, IsRenderTarget, etc. can be added later
+
+        bool operator==(const TextureDesc& other) const
+        {
+            return Width == other.Width &&
+                   Height == other.Height &&
+                   Format == other.Format &&
+                   InitialState == other.InitialState;
+        }
     };
 
     /**

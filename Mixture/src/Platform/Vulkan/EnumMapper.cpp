@@ -21,10 +21,10 @@ namespace Mixture::Vulkan
 
         switch (usage)
         {
-            case RHI::BufferUsage::Vertex:   flags |= vk::BufferUsageFlagBits::eVertexBuffer; break;
-            case RHI::BufferUsage::Index:    flags |= vk::BufferUsageFlagBits::eIndexBuffer; break;
-            case RHI::BufferUsage::Uniform:  flags |= vk::BufferUsageFlagBits::eUniformBuffer; break;
-            case RHI::BufferUsage::Storage:  flags |= vk::BufferUsageFlagBits::eStorageBuffer; break;
+            case RHI::BufferUsage::Vertex: flags |= vk::BufferUsageFlagBits::eVertexBuffer; break;
+            case RHI::BufferUsage::Index: flags |= vk::BufferUsageFlagBits::eIndexBuffer; break;
+            case RHI::BufferUsage::Uniform: flags |= vk::BufferUsageFlagBits::eUniformBuffer; break;
+            case RHI::BufferUsage::Storage: flags |= vk::BufferUsageFlagBits::eStorageBuffer; break;
             case RHI::BufferUsage::TransferSrc: flags |= vk::BufferUsageFlagBits::eTransferSrc; break;
             case RHI::BufferUsage::TransferDst: flags |= vk::BufferUsageFlagBits::eTransferDst; break;
         }
@@ -36,19 +36,26 @@ namespace Mixture::Vulkan
     {
         switch (format)
         {
-            case RHI::Format::R8_UNORM:           return vk::Format::eR8Unorm;
-            case RHI::Format::R8G8_UNORM:         return vk::Format::eR8G8Unorm;
-            case RHI::Format::R8G8B8_UNORM:       return vk::Format::eR8G8B8Unorm;
-            case RHI::Format::R8G8B8A8_UNORM:     return vk::Format::eR8G8B8A8Unorm;
-            case RHI::Format::B8G8R8A8_UNORM:     return vk::Format::eB8G8R8A8Unorm;
-            case RHI::Format::R16_FLOAT:          return vk::Format::eR16Sfloat;
-            case RHI::Format::R16G16_FLOAT:       return vk::Format::eR16G16Sfloat;
-            case RHI::Format::R16G16B16_FLOAT:    return vk::Format::eR16G16B16Sfloat;
+            case RHI::Format::Undefined: return vk::Format::eUndefined;
+            case RHI::Format::R8_UNORM: return vk::Format::eR8Unorm;
+            case RHI::Format::R8G8_UNORM: return vk::Format::eR8G8Unorm;
+            case RHI::Format::R8G8B8_UNORM: return vk::Format::eR8G8B8Unorm;
+            case RHI::Format::R8G8B8A8_UNORM: return vk::Format::eR8G8B8A8Unorm;
+            case RHI::Format::B8G8R8A8_UNORM: return vk::Format::eB8G8R8A8Unorm;
+            case RHI::Format::R16_FLOAT: return vk::Format::eR16Sfloat;
+            case RHI::Format::R16G16_FLOAT: return vk::Format::eR16G16Sfloat;
+            case RHI::Format::R16G16B16_FLOAT: return vk::Format::eR16G16B16Sfloat;
             case RHI::Format::R16G16B16A16_FLOAT: return vk::Format::eR16G16B16A16Sfloat;
-            case RHI::Format::R32_FLOAT:          return vk::Format::eR32Sfloat;
-            case RHI::Format::R32G32_FLOAT:       return vk::Format::eR32G32Sfloat;
-            case RHI::Format::R32G32B32_FLOAT:    return vk::Format::eR32G32B32Sfloat;
+            case RHI::Format::R32_FLOAT: return vk::Format::eR32Sfloat;
+            case RHI::Format::R32G32_FLOAT: return vk::Format::eR32G32Sfloat;
+            case RHI::Format::R32G32B32_FLOAT: return vk::Format::eR32G32B32Sfloat;
             case RHI::Format::R32G32B32A32_FLOAT: return vk::Format::eR32G32B32A32Sfloat;
+            case RHI::Format::R32_INT: return vk::Format::eR32Sint;
+            case RHI::Format::R32G32B32A32_INT: return vk::Format::eR32G32B32A32Sint;
+            case RHI::Format::R32_UINT: return vk::Format::eR32Uint;
+            case RHI::Format::D32_FLOAT: return vk::Format::eD32Sfloat;
+            case RHI::Format::D24_UNORM_S8_UINT: return vk::Format::eD24UnormS8Uint;
+            case RHI::Format::D32_FLOAT_S8_UINT: return vk::Format::eD32SfloatS8Uint;
         }
 
         return vk::Format::eUndefined;
@@ -89,8 +96,8 @@ namespace Mixture::Vulkan
             case RHI::CompareOp::LessOrEqual: return vk::CompareOp::eLessOrEqual;
             case RHI::CompareOp::Greater: return vk::CompareOp::eGreater;
             case RHI::CompareOp::NotEqual: return vk::CompareOp::eNotEqual;
-            case RHI::CompareOp::GreaterOrEqual: vk::CompareOp::eGreaterOrEqual;
-            case RHI::CompareOp::Always: vk::CompareOp::eAlways;
+            case RHI::CompareOp::GreaterOrEqual: return vk::CompareOp::eGreaterOrEqual;
+            case RHI::CompareOp::Always: return vk::CompareOp::eAlways;
         }
 
         return vk::CompareOp::eNever;
@@ -195,10 +202,13 @@ namespace Mixture::Vulkan
             case vk::Format::eR32G32Sfloat: return RHI::Format::R32G32_FLOAT;
             case vk::Format::eR32G32B32Sfloat: return RHI::Format::R32G32B32_FLOAT;
             case vk::Format::eR32G32B32A32Sfloat: return RHI::Format::R32G32B32A32_FLOAT;
+            case vk::Format::eR32Sint: return RHI::Format::R32_INT;
+            case vk::Format::eR32G32B32A32Sint: return RHI::Format::R32G32B32A32_INT;
+            case vk::Format::eR32Uint: return RHI::Format::R32_UINT;
             case vk::Format::eD32Sfloat: return RHI::Format::D32_FLOAT;
             case vk::Format::eD24UnormS8Uint: return RHI::Format::D24_UNORM_S8_UINT;
+            case vk::Format::eD32SfloatS8Uint: return RHI::Format::D32_FLOAT_S8_UINT;
+            default: return RHI::Format::Undefined;
         }
-
-        return RHI::Format::Undefined;
     }
 }

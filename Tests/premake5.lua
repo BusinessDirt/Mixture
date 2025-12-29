@@ -1,46 +1,35 @@
 project "Tests"
     kind "ConsoleApp"
-    language "C++"
-    cppdialect "C++20"
-
-    files { "include/**.hpp", "src/**.cpp" }
-    includedirs { "include" }
+    common_language_spec()
+    common_target()
+    common_directories()
 
     externalincludedirs {
-        "../Opal/include",
-        "../Mixture/include",
-
-        "%{IncludeDir.spdlog}",
-        "%{IncludeDir.imgui}",
-        "%{IncludeDir.Vulkan}",
-        "%{IncludeDir.glm}",
-        "%{IncludeDir.stb_image}",
-        "%{IncludeDir.spirv_reflect}",
+        application_externalincludedirs(),
         "%{IncludeDir.googletest}"
     }
 
     links {
-        "GLFW",
-        "Opal",
-        "Mixture",
-        "ImGui",
-        "SPIRV-Reflect",
+        application_links(),
         "GoogleTest"
     }
 
-    -- Auto-run tests after build (Optional but recommended)
-    postbuildcommands {
-        "{COPY} %{cfg.buildtarget.relpath} ../bin/" .. outputdir .. "/Tests", -- Move binary if needed
-        --On Windows, might want to run it:
-        -- "%{cfg.buildtarget.relpath}"
-    }
-
     filter "configurations:Debug"
-        defines { "DEBUG" }
-        runtime "Debug"
-        symbols "On"
+        application_debug_settings()
 
     filter "configurations:Release"
-        defines { "NDEBUG" }
-        runtime "Release"
-        optimize "On"
+        application_release_settings()
+
+    filter "configurations:Dist"
+        application_dist_settings()
+
+    filter "system:windows"
+        windows_settings()
+
+    filter "system:linux"
+        linux_settings()
+
+    filter "action:xcode4"
+        xcode_settings()
+
+    filter {}

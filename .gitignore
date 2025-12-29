@@ -52,3 +52,4 @@ Scripts/python/generated
 *.sln.DotSettings.user
 imgui.ini
 docs/
+*.meta

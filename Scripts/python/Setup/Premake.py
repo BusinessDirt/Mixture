@@ -1,6 +1,7 @@
 import logging
 import platform
 import sys
+import os
 import subprocess
 from pathlib import Path
 import Utils
@@ -57,7 +58,14 @@ class PremakeConfiguration:
 
     @classmethod
     def install_premake(cls, distribution: str) -> bool:
-        permission_granted = False
+        # Check if we are in a CI environment
+        # GitHub Actions, GitLab, etc. set the 'CI' env var to 'true'
+        if os.getenv("CI"):
+            print(f"CI environment detected. Auto-approving download of Premake {cls.premake_version}.")
+            permission_granted = True
+        else:
+            permission_granted = False
+
         while not permission_granted:
             # Assuming implicit CI environment check if needed, or pass it as arg
             # simplified for this context:

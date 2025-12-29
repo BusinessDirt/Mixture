@@ -46,8 +46,18 @@ namespace Mixture
          */
         virtual void OnEvent(Event& event) {};
 
+        /**
+         * @brief Called every frame to update the layer logic.
+         * 
+         * @param dt Delta time in seconds.
+         */
         virtual void OnUpdate(float dt) {};
 
+        /**
+         * @brief Called every frame to populate the render graph.
+         * 
+         * @param graph The render graph builder.
+         */
         virtual void OnRender(RenderGraph& graph) {};
 
         /**

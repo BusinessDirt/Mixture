@@ -193,8 +193,20 @@ namespace Mixture::RHI
          */
         virtual void PushConstants(IPipeline* pipeline, ShaderStage stage, const void* data, uint32_t size) = 0;
 
+        /**
+         * @brief Binds a uniform buffer to a specific binding point.
+         * 
+         * @param binding The binding index.
+         * @param buffer The buffer to bind.
+         */
         virtual void SetUniformBuffer(uint32_t binding, IBuffer* buffer) = 0;
 
+        /**
+         * @brief Binds a texture to a specific binding point.
+         * 
+         * @param binding The binding index.
+         * @param texture The texture to bind.
+         */
         virtual void SetTexture(uint32_t binding, ITexture* texture) = 0;
 
         // ---------------------------------------------------------------------

@@ -130,8 +130,8 @@ namespace Mixture
         LayerStack m_LayerStack;
 
         Scope<Window> m_Window;
-        Scope<RenderGraph> m_RenderGraph;
         Scope<RHI::IGraphicsContext> m_Context;
+        Scope<RenderGraph> m_RenderGraph;
     private:
         static Application* s_Instance;
         friend int ::Entrypoint(int argc, char** argv);

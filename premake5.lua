@@ -1,6 +1,10 @@
 -- premake5.lua
-include "./vendor/premake/customizations/vscode.lua"
+rootdir = path.getabsolute(".")
+outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
+
+include "./vendor/premake/customizations/common_config.lua"
 include "./vendor/premake/customizations/solution_items.lua"
+include "./vendor/premake/customizations/vscode.lua"
 include "Dependencies.lua"
 
 workspace "Mixture"
@@ -9,15 +13,9 @@ workspace "Mixture"
     startproject "App"
     multiprocessorcompile ("on")
 
-    postbuildcommands {
-        "{COPY} %{wks.location}/Assets %{cfg.targetdir}"
-    }
-
     -- Workspace-wide build options for MSVC
     filter "system:windows"
         buildoptions { "/EHsc", "/Zc:preprocessor", "/Zc:__cplusplus" }
-
-outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Dependencies"
     include "vendor/premake/dependencies/glfw.lua"

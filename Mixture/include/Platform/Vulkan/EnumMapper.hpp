@@ -1,4 +1,10 @@
 #pragma once
+
+/**
+ * @file EnumMapper.hpp
+ * @brief Helper class to map RHI enums to Vulkan enums.
+ */
+
 #include "Mixture/Core/Base.hpp"
 #include <vulkan/vulkan.hpp>
 
@@ -6,6 +12,9 @@
 
 namespace Mixture::Vulkan
 {
+    /**
+     * @brief Static helper class for converting RHI enums to Vulkan equivalents.
+     */
     class EnumMapper
     {
     public:

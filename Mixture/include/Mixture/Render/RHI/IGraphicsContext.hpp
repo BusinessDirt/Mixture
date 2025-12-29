@@ -56,12 +56,45 @@ namespace Mixture::RHI
          */
         virtual IGraphicsDevice& GetDevice() const = 0;
 
+        /**
+         * @brief Called when the window is resized.
+         * 
+         * @param width The new width.
+         * @param height The new height.
+         */
         virtual void OnResize(uint32_t width, uint32_t height) = 0;
+
+        /**
+         * @brief Begins a new frame and acquires the next swapchain image.
+         * 
+         * @return RHI::ITexture* Pointer to the current backbuffer texture.
+         */
         virtual RHI::ITexture* BeginFrame() = 0;
+
+        /**
+         * @brief Ends the current frame and presents the swapchain image.
+         */
         virtual void EndFrame() = 0;
+
+        /**
+         * @brief Gets a command buffer for the current frame.
+         * 
+         * @return Scope<RHI::ICommandList> The command buffer.
+         */
         virtual Scope<RHI::ICommandList> GetCommandBuffer() = 0;
 
+        /**
+         * @brief Gets the current width of the swapchain.
+         * 
+         * @return uint32_t The width.
+         */
         virtual uint32_t GetSwapchainWidth() const = 0;
+
+        /**
+         * @brief Gets the current height of the swapchain.
+         * 
+         * @return uint32_t The height.
+         */
         virtual uint32_t GetSwapchainHeight() const = 0;
 
         /**

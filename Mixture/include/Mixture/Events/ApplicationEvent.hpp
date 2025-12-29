@@ -7,6 +7,8 @@
 
 #include "Mixture/Events/Event.hpp"
 
+#include <sstream>
+
 namespace Mixture 
 {
     /**

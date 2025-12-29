@@ -21,7 +21,12 @@ namespace Mixture::Vulkan
     class Buffer : public RHI::IBuffer
     {
     public:
-        // Constructor now takes the Desc and optional initial data
+        /**
+         * @brief Constructs a Vulkan Buffer.
+         * 
+         * @param desc The buffer description.
+         * @param initialData Optional pointer to data to upload on creation.
+         */
         Buffer(const RHI::BufferDesc& desc, const void* initialData = nullptr);
         virtual ~Buffer();
 
@@ -29,7 +34,11 @@ namespace Mixture::Vulkan
         virtual uint64_t GetSize() const override { return m_Desc.Size; }
         virtual RHI::BufferUsage GetUsage() const override { return m_Desc.Usage; }
 
-        // Vulkan Accessors (for CommandList)
+        /**
+         * @brief Gets the Vulkan Buffer handle.
+         * 
+         * @return vk::Buffer The raw handle.
+         */
         vk::Buffer GetHandle() const { return m_Buffer; }
 
     private:

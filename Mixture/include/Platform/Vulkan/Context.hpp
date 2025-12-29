@@ -19,6 +19,8 @@ namespace Mixture::Vulkan
     class Device;
     class Swapchain;
 
+    class Queue;
+
     class CommandBuffers;
     class CommandList;
     class CommandPool;
@@ -47,16 +49,53 @@ namespace Mixture::Vulkan
         ~Context();
 
         RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
+        
+        /**
+         * @brief Gets the Vulkan Device implementation.
+         * 
+         * @return RHI::IGraphicsDevice& The device.
+         */
         RHI::IGraphicsDevice& GetDevice() const override;
 
+        /**
+         * @brief Handles window resize events.
+         * 
+         * @param width New width.
+         * @param height New height.
+         */
         void OnResize(uint32_t width, uint32_t height) override;
 
+        /**
+         * @brief Begins the frame and acquires the next image.
+         * 
+         * @return RHI::ITexture* The backbuffer texture.
+         */
         RHI::ITexture* BeginFrame() override;
+
+        /**
+         * @brief Ends the frame and presents the image.
+         */
         void EndFrame() override;
 
+        /**
+         * @brief Gets a command buffer for the current frame.
+         * 
+         * @return Scope<RHI::ICommandList> The command buffer.
+         */
         Scope<RHI::ICommandList> GetCommandBuffer() override;
 
+        /**
+         * @brief Gets the swapchain width.
+         * 
+         * @return uint32_t The width.
+         */
         uint32_t GetSwapchainWidth() const override;
+
+        /**
+         * @brief Gets the swapchain height.
+         * 
+         * @return uint32_t The height.
+         */
         uint32_t GetSwapchainHeight() const override;
 
         /**
@@ -95,11 +134,32 @@ namespace Mixture::Vulkan
         Swapchain& GetSwapchain() const { return *m_Swapchain; }
 
         /**
-         * @brief Gets the command pool.
+         * @brief Gets the graphics queue.
          *
-         * @return Ref<CommandPool> the command pool.
+         * @return vk::Queue The graphics queue.
          */
-        CommandPool& GetCommandPool() const { return *m_CommandPool; }
+		Queue& GetGraphicsQueue() const { return *m_GraphicsQueue; }
+
+        /**
+         * @brief Gets the transfer queue.
+         *
+         * @return vk::Queue The transfer queue.
+         */
+		Queue& GetTransferQueue() const { return *m_TransferQueue; }
+
+        /**
+         * @brief Gets the present queue.
+         *
+         * @return vk::Queue The present queue.
+         */
+		Queue& GetPresentQueue() const { return *m_PresentQueue; }
+
+        /**
+         * @brief Gets the compute queue.
+         *
+         * @return vk::Queue The compute queue.
+         */
+		Queue& GetComputeQueue() const { return *m_ComputeQueue; }
 
         uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
 
@@ -119,12 +179,16 @@ namespace Mixture::Vulkan
         Scope<Device> m_Device;
         Scope<Swapchain> m_Swapchain;
 
+        Scope<Queue> m_GraphicsQueue;
+        Scope<Queue> m_TransferQueue;
+		Scope<Queue> m_PresentQueue;
+		Scope<Queue> m_ComputeQueue;
+
         Scope<Semaphores> m_ImageAvailableSemaphores;
         Scope<Semaphores> m_RenderFinishedSemaphores;
+        Scope<Semaphores> m_TransferFinishedSemaphores;
+        Scope<Semaphores> m_ComputeFinishedSemaphores;
         Scope<Fences> m_InFlightFences;
-
-        Scope<CommandPool> m_CommandPool;
-        Scope<CommandBuffers> m_CommandBuffers;
 
         Scope<DescriptorAllocators> m_DescriptorAllocators;
         Scope<DescriptorLayoutCache> m_DescriptorLayoutCache;

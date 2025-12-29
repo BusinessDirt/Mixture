@@ -26,8 +26,6 @@ namespace Mixture
 		m_Data.Height = props.Height;
         m_Data.AspectRatio = static_cast<float>(props.Width) / static_cast<float>(props.Height);
 
-		glfwInitVulkanLoader(vkGetInstanceProcAddr);
-
 		{
 			OPAL_INFO("Core/Window", "Initializing GLFW");
 			const int success = glfwInit();

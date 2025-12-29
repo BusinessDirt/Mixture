@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Opal/Base.hpp"
-#include "Opal/Formatters/LogFormatters.hpp"
+#include "Opal/Formatters/GLMFormatters.hpp"
 
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>
@@ -96,6 +96,20 @@ namespace Opal
          * @return std::shared_ptr<spdlog::logger> The logger instance.
          */
         std::shared_ptr<spdlog::logger> GetLogger(const std::string& name);
+
+        /**
+         * @brief Sets the name of the current thread for logging purposes.
+         * 
+         * @param name The name to assign to the current thread.
+         */
+        static void SetThreadName(const std::string& name);
+
+        /**
+         * @brief Gets the name of the current thread.
+         * 
+         * @return const std::string& The thread name.
+         */
+        static const std::string& GetThreadName();
 
     private:
         LogRegistry() = default; // Singleton

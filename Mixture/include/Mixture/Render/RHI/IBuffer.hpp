@@ -68,6 +68,11 @@ namespace Mixture::RHI
          * @brief Debug name for the buffer.
          */
         const char* DebugName = "Unnamed Buffer";
+
+        bool operator==(const BufferDesc& other) const
+        {
+            return Size == other.Size && Usage == other.Usage;
+        }
     };
 
     /**

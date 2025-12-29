@@ -18,6 +18,9 @@ namespace Mixture
 
         void OnUpdate(float dt) override;
         void OnRender(RenderGraph& graph) override;
+
+    private:
+        Ref<RHI::IBuffer> m_VertexBuffer;
     };
 }
 
