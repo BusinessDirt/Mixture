@@ -1,9 +1,11 @@
 -- premake5.lua
-include "./vendor/premake/customizations/vscode.lua"
-include "./vendor/premake/customizations/solution_items.lua"
-include "Dependencies.lua"
+rootdir = path.getabsolute(".")
+outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
-local root_dir = path.getabsolute(".")
+include "./vendor/premake/customizations/common_config.lua"
+include "./vendor/premake/customizations/solution_items.lua"
+include "./vendor/premake/customizations/vscode.lua"
+include "Dependencies.lua"
 
 workspace "Mixture"
     architecture "x64"
@@ -14,15 +16,6 @@ workspace "Mixture"
     -- Workspace-wide build options for MSVC
     filter "system:windows"
         buildoptions { "/EHsc", "/Zc:preprocessor", "/Zc:__cplusplus" }
-
-    filter "action:xcode4"
-        postbuildcommands {
-            "rm -rf \"%{cfg.targetdir}/Assets\"",
-            "ln -sf \"" .. root_dir .. "/Assets\" \"%{cfg.targetdir}/Assets\""
-        }
-    filter {}
-
-outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Dependencies"
     include "vendor/premake/dependencies/glfw.lua"
