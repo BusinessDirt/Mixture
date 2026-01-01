@@ -13,7 +13,6 @@ project "Opal"
 
     externalincludedirs {
         "%{IncludeDir.spdlog}",
-        "%{IncludeDir.vulkan}",
         "%{IncludeDir.glm}",
     }
 

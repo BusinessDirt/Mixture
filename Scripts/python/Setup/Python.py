@@ -41,7 +41,7 @@ class PythonConfiguration:
 
         permission_granted = False
         if os.getenv("CI"):
-            logger.info(f"CI environment detected. Auto-approving download of Premake {cls.premake_version}.")
+            logger.info(f"CI environment detected. Auto-approving download of '{package_name}'.")
             permission_granted = True
         else:
             permission_granted = False

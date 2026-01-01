@@ -5,6 +5,8 @@ IncludeDir = {}
 IncludeDir["spdlog"] = "%{wks.location}/vendor/spdlog/include"
 if vulkanSDK then
     IncludeDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/include"
+else
+    IncludeDir["vulkan"] = ""
 end
 IncludeDir["glm"] = "%{wks.location}/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/vendor/stb"
@@ -12,6 +14,8 @@ IncludeDir["stb_image"] = "%{wks.location}/vendor/stb"
 LibraryDir = {}
 if vulkanSDK then
     LibraryDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/lib"
+else
+    LibraryDir["vulkan"] = ""
 end
 
 Library = {}
