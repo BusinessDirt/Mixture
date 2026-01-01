@@ -1,5 +1,6 @@
 import logging
 import sys
+import os
 import subprocess
 import importlib.util as importlib_util
 
@@ -38,9 +39,13 @@ class PythonConfiguration:
     def _install_package(cls, package_name: str) -> bool:
         logger.info(f"Installing {package_name} module...")
 
-        # Determine if we can prompt the user
-        # In a real CLI app, we might want to just ask, or check for a -y flag in args (omitted here for simplicity)
         permission_granted = False
+        if os.getenv("CI"):
+            logger.info(f"CI environment detected. Auto-approving download of Premake {cls.premake_version}.")
+            permission_granted = True
+        else:
+            permission_granted = False
+
         while not permission_granted:
             user_input = input(f"Would you like to install Python package '{package_name}'? [Y/N]: ").lower().strip()
             if user_input == 'n':
