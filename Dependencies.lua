@@ -1,20 +1,26 @@
 -- Dependencies
+local vulkanSDK = os.getenv("VULKAN_SDK")
+
 IncludeDir = {}
 IncludeDir["spdlog"] = "%{wks.location}/vendor/spdlog/include"
-IncludeDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/include"
+if vulkanSDK != nil then
+    IncludeDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/include"
+end
 IncludeDir["glm"] = "%{wks.location}/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/vendor/stb"
 
 LibraryDir = {}
-LibraryDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/lib"
+if vulkanSDK != nil then
+    LibraryDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/lib"
+end
 
 Library = {}
 Library["vulkan"] = "vulkan-1"
 Library["molten_vk"] = "MoltenVK"
 
 if os.istarget("windows") then
-    Library["dxc_debug"] = "%{LibraryDir.VulkanSDK}/dxcompiler.lib"
-    Library["dxc_release"] = "%{LibraryDir.VulkanSDK}/dxcompiler.lib"
+    Library["dxc_debug"] = "%{LibraryDir.vulkan}/dxcompiler.lib"
+    Library["dxc_release"] = "%{LibraryDir.vulkan}/dxcompiler.lib"
 
     Library["spirv_cross_debug"] = "%{LibraryDir.vulkan}/spirv-cross-cored.lib"
     Library["spirv_cross_glsl_debug"] = "%{LibraryDir.vulkan}/spirv-cross-glsld.lib"
