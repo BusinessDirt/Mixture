@@ -23,22 +23,28 @@ jobs:
             name: Ubuntu 24.04
             setup_script: bash ./Scripts/Setup-Unix.sh
             build_command: make config=release
+            dependency_command: sudo apt upgrade && sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libwayland-dev libxkbcommon-dev
 
           - os: windows-latest
             name: Windows
             setup_script: pwsh ./Scripts/Setup-Windows.ps1
             build_command: msbuild /p:Configuration=Release /p:Platform=x64
+            dependency_command:
 
           - os: macos-latest
             name: MacOS
             setup_script: bash ./Scripts/Setup-Unix.sh
             build_command: xcodebuild -workspace Mixture.xcworkspace -scheme Tests -configuration Release
+            dependency_command:
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
         submodules: recursive
+
+    - name: Install Dependencies
+      run: ${{ matrix.dependency_command }}
 
     - name: Setup Python
       uses: actions/setup-python@v5
