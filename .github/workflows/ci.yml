@@ -49,7 +49,7 @@ jobs:
         # Build using the generated makefiles
         # Premake generates a Makefile in the root or where specified.
         # Default config is usually Debug x64 if not specified, but best to be explicit.
-        make config=debug_x64
+        make config=debug
 
     - name: Run Tests
       run: |
