@@ -62,14 +62,13 @@ jobs:
         wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
         sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.3.290-noble.list https://packages.lunarg.com/vulkan/1.3.290/lunarg-vulkan-1.3.290-noble.list
         sudo apt-get update
-        sudo apt-get install -y vulkan-sdk
+        sudo apt-get install -y vulkan-sdk libxcursor-dev libxi-dev libxrandr-dev
 
     # Windows
     - name: Install Vulkan SDK (Windows)
       if: runner.os == 'Windows'
       run: |
-        curl -o VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.3.290.0/windows/VulkanSDK-1.3.290.0-Installer.exe
-        ./VulkanSDK.exe /S
+        choco install vulkan-sdk --version=1.3.290.0 --execution-timeout=3600 -y
         # Add Vulkan to GITHUB_ENV so subsequent steps can find it if needed
         echo "VULKAN_SDK=C:\VulkanSDK\1.3.290.0" >> $env:GITHUB_ENV
       shell: pwsh
@@ -95,6 +94,16 @@ jobs:
 
         # Update the environment variable to point to the new location
         echo "VULKAN_SDK=$INSTALL_DIR/macOS" >> $GITHUB_ENV
+
+        # FIX: Ensure vma/vk_mem_alloc.h exists where expected
+        if [ ! -d "$INSTALL_DIR/macOS/include/vma" ]; then
+          mkdir -p "$INSTALL_DIR/macOS/include/vma"
+        fi
+        
+        if [ -f "$INSTALL_DIR/macOS/include/vk_mem_alloc.h" ] && [ ! -f "$INSTALL_DIR/macOS/include/vma/vk_mem_alloc.h" ]; then
+            echo "Moving vk_mem_alloc.h to vma/ subdirectory"
+            mv "$INSTALL_DIR/macOS/include/vk_mem_alloc.h" "$INSTALL_DIR/macOS/include/vma/vk_mem_alloc.h"
+        fi
 
     # --- Project Generation (Premake) ---
     - name: Make Scripts Executable (Unix)
