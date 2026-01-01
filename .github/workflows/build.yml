@@ -91,11 +91,25 @@ jobs:
       if: runner.os != 'Windows'
       run: chmod +x ./Scripts/Setup-Unix.sh
 
-    - name: Run Setup Script (Generate Project Files)
+    - name: Run Setup Script
       run: ${{ matrix.setup_script }}
-      shell: ${{ matrix.shell }}
+      # We explicitly use bash for Unix and pwsh for Windows
+      shell: bash
+      if: runner.os != 'Windows'
+
+    - name: Run Setup Script (Windows)
+      run: ${{ matrix.setup_script }}
+      shell: pwsh
+      if: runner.os == 'Windows'
 
     # --- Compile / Build ---
-    - name: Build Project
+
+    - name: Build Project (Unix)
+      if: runner.os != 'Windows'
       run: ${{ matrix.build_command }}
-      shell: ${{ matrix.shell }}
+      shell: bash
+
+    - name: Build Project (Windows)
+      if: runner.os == 'Windows'
+      run: ${{ matrix.build_command }}
+      shell: pwsh
