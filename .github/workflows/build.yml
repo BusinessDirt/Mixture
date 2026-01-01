@@ -55,57 +55,21 @@ jobs:
 
     # --- Vulkan SDK Setup ---
 
-    # Linux (Ubuntu)
-    - name: Install Vulkan SDK (Linux)
+    # Linux Dependencies (The action does not install system libs)
+    - name: Install Linux Dependencies
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev
-        wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
-        CODENAME=$(lsb_release -c -s)
-        sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-1.3.290-$CODENAME.list https://packages.lunarg.com/vulkan/1.3.290/lunarg-vulkan-1.3.290-$CODENAME.list
-        sudo apt-get update
-        sudo apt-get install -y vulkan-sdk
-        
-        # Manually install VMA header if missing (common in some repo versions)
-        if [ ! -f "/usr/include/vk_mem_alloc.h" ] && [ ! -f "/usr/include/vma/vk_mem_alloc.h" ]; then
-            echo "VMA header not found, downloading..."
-            sudo mkdir -p /usr/include/vma
-            sudo wget -q https://raw.githubusercontent.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator/master/include/vk_mem_alloc.h -O /usr/include/vma/vk_mem_alloc.h
-        fi
 
-    # Windows
-    - name: Install Vulkan SDK (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "https://sdk.lunarg.com/sdk/download/1.3.290.0/windows/VulkanSDK-1.3.290.0-Installer.exe" -OutFile "VulkanSDK.exe"
-        ./VulkanSDK.exe /S
-        # Add Vulkan to GITHUB_ENV so subsequent steps can find it if needed
-        echo "VULKAN_SDK=C:\VulkanSDK\1.3.290.0" >> $env:GITHUB_ENV
-      shell: pwsh
-
-    # macOS
-    - name: Install Vulkan SDK (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        wget https://sdk.lunarg.com/sdk/download/1.3.290.0/mac/vulkansdk-macos-1.3.290.0.dmg -O /tmp/vulkansdk.dmg
-        hdiutil attach /tmp/vulkansdk.dmg -mountpoint /Volumes/vulkan
-
-        # Define a clean install directory in the user's home folder
-        INSTALL_DIR="$HOME/vulkan-sdk"
-
-        # Run installer without sudo (since it's in user home) and point to new dir
-        /Volumes/vulkan/InstallVulkan.app/Contents/MacOS/InstallVulkan \
-          --root "$INSTALL_DIR" \
-          --accept-licenses \
-          --default-answer \
-          --confirm-command install com.lunarg.vulkan.core com.lunarg.vulkan.volk com.lunarg.vulkan.vma
-
-        hdiutil detach /Volumes/vulkan
-
-        # Update the environment variable to point to the new location
-        echo "VULKAN_SDK=$INSTALL_DIR/macOS" >> $GITHUB_ENV
+    # Universal SDK Installer
+    - name: Install Vulkan SDK
+      uses: jakoch/install-vulkan-sdk-action@v1
+      with:
+        vulkan_version: 1.3.290.0
+        cache: true
+        # Optional: Include specific components if needed (e.g., for older versions or specific needs)
+        # For 1.3.290, VMA and DXC are typically included or standard.
 
     # --- Project Generation (Premake) ---
     - name: Make Scripts Executable (Unix)
