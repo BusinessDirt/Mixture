@@ -7,8 +7,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-latest # Must be latest to run your Premake binary
     env:
       CI: true
       VULKAN_SDK: /usr
@@ -21,12 +20,12 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libgl1-mesa-dev xorg-dev xvfb wget gnupg ca-certificates clang
+        sudo apt-get install -y build-essential g++-12 libgl1-mesa-dev xorg-dev xvfb wget gnupg ca-certificates clang
 
     - name: Setup Vulkan SDK
       run: |
         wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
-        sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-jammy.list http://packages.lunarg.com/vulkan/lunarg-vulkan-jammy.list
+        sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-noble.list http://packages.lunarg.com/vulkan/lunarg-vulkan-noble.list
         sudo apt-get update
         sudo apt-get install -y vulkan-sdk
 
@@ -45,7 +44,7 @@ jobs:
 
     - name: Build
       run: |
-        make config=debug
+        make config=debug CC=clang CXX=clang++ CXXFLAGS="--gcc-toolchain=/usr/lib/gcc/x86_64-linux-gnu/12"
 
     - name: Run Tests
       run: |
