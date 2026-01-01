@@ -7,10 +7,13 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest # Must be latest to run your Premake binary
+    runs-on: ubuntu-latest
     env:
       CI: true
       VULKAN_SDK: /usr
+      # Set compilers globally so Premake and Make both see them
+      CC: clang
+      CXX: clang++
 
     steps:
     - uses: actions/checkout@v4
@@ -20,7 +23,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential g++-12 libgl1-mesa-dev xorg-dev xvfb wget gnupg ca-certificates clang
+        sudo apt-get install -y build-essential g++-13 libstdc++-13-dev libgl1-mesa-dev xorg-dev xvfb wget gnupg ca-certificates clang
 
     - name: Setup Vulkan SDK
       run: |
@@ -44,7 +47,7 @@ jobs:
 
     - name: Build
       run: |
-        make config=debug CC=clang CXX=clang++ CXXFLAGS="--gcc-toolchain=/usr/lib/gcc/x86_64-linux-gnu/12"
+        make config=debug
 
     - name: Run Tests
       run: |
