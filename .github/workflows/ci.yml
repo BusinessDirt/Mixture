@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest  # Uses 24.04. Solves the "GLIBC_2.38" error.
+    runs-on: ubuntu-latest
     env:
       CI: true
       VULKAN_SDK: /usr
@@ -20,14 +20,11 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update
-        # We only need build-essential (includes GCC) and libraries.
-        # No clang or complex version pinning needed.
         sudo apt-get install -y build-essential libgl1-mesa-dev xorg-dev xvfb wget gnupg ca-certificates
 
     - name: Setup Vulkan SDK
       run: |
         wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
-        # Uses 'noble' repo for 24.04
         sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-noble.list http://packages.lunarg.com/vulkan/lunarg-vulkan-noble.list
         sudo apt-get update
         sudo apt-get install -y vulkan-sdk
@@ -47,8 +44,6 @@ jobs:
 
     - name: Build
       run: |
-        # Premake defaults to GCC on Linux.
-        # We don't set CC/CXX, so it uses the system default (GCC 14).
         make config=debug
 
     - name: Run Tests
