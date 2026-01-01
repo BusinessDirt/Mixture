@@ -49,7 +49,7 @@ namespace Mixture
         {
             std::string Name;
             uint32_t Location;
-            RHI::Format Format;
+            RHI::Format PixelFormat;
             uint32_t Size;
             uint32_t Offset;
         };
@@ -74,7 +74,7 @@ namespace Mixture
     public:
         /**
          * @brief Compiles shader source code into SPIR-V.
-         * 
+         *
          * @param source The shader source code.
          * @return Vector<uint8_t> The compiled SPIR-V bytecode.
          */
@@ -82,7 +82,7 @@ namespace Mixture
 
         /**
          * @brief Converts SPIR-V bytecode to Metal Shading Language (MSL).
-         * 
+         *
          * @param spv The SPIR-V bytecode.
          * @return Vector<uint8_t> The MSL source code.
          */
@@ -90,7 +90,7 @@ namespace Mixture
 
         /**
          * @brief Reflects SPIR-V bytecode to extract resources and attributes.
-         * 
+         *
          * @param binaryData Pointer to the SPIR-V data.
          * @param binarySize Size of the data in bytes.
          * @return ShaderReflectionData The extracted reflection data.
@@ -99,7 +99,7 @@ namespace Mixture
 
         /**
          * @brief Reflects DXIL bytecode to extract resources and attributes.
-         * 
+         *
          * @param binaryData Pointer to the DXIL data.
          * @param binarySize Size of the data in bytes.
          * @return ShaderReflectionData The extracted reflection data.

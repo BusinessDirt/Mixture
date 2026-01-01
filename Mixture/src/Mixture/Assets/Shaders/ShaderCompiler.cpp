@@ -273,8 +273,8 @@ namespace Mixture
                 ShaderReflectionData::VertexAttribute attr;
                 attr.Name = input->name ? input->name : "";
                 attr.Location = input->location;
-                attr.Format = Util::ConvertFormat(input->format);
-                attr.Size = GetFormatStride(attr.Format);
+                attr.PixelFormat = Util::ConvertFormat(input->format);
+                attr.Size = GetFormatStride(attr.PixelFormat);
                 data.InputAttributes.push_back(attr);
             }
         }

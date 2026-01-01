@@ -45,7 +45,7 @@ namespace Mixture::Vulkan
                 vk::VertexInputAttributeDescription vkAttr;
                 vkAttr.binding = 0; // TODO: Assume 1 buffer for simplicity
                 vkAttr.location = attr.Location;
-                vkAttr.format = EnumMapper::MapFormat(attr.Format);
+                vkAttr.format = EnumMapper::MapFormat(attr.PixelFormat);
                 vkAttr.offset = stride; // Auto-calculate offset
                 attributeDescriptions.push_back(vkAttr);
 

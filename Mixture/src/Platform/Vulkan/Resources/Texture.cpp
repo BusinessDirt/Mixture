@@ -9,7 +9,7 @@
 namespace Mixture::Vulkan
 {
     Texture::Texture(const RHI::TextureDesc& spec, const void* data)
-        : m_Width(spec.Width), m_Height(spec.Height), m_Format(spec.Format),
+        : m_Width(spec.Width), m_Height(spec.Height), m_Format(spec.PixelFormat),
           m_DebugName(spec.DebugName), m_OwnsImage(true)
     {
         Invalidate();

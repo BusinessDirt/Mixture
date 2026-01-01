@@ -21,7 +21,7 @@ namespace Mixture
     public:
         /**
          * @brief Constructs a RenderGraphResourceCache.
-         * 
+         *
          * @param device Reference to the graphics device.
          */
         RenderGraphResourceCache(RHI::IGraphicsDevice& device);
@@ -29,7 +29,7 @@ namespace Mixture
 
         /**
          * @brief Retrieves a cached texture or creates a new one if not found.
-         * 
+         *
          * @param name The name key for the texture.
          * @param desc The description of the texture.
          * @return Ref<RHI::ITexture> The texture.
@@ -38,7 +38,7 @@ namespace Mixture
 
         /**
          * @brief Retrieves a cached buffer or creates a new one if not found.
-         * 
+         *
          * @param name The name key for the buffer.
          * @param desc The description of the buffer.
          * @return Ref<RHI::IBuffer> The buffer.
@@ -61,7 +61,7 @@ namespace Mixture
         struct TextureKeyHash {
             std::size_t operator()(const TextureKey& key) const {
                 size_t seed = 0;
-                Util::HashCombine(seed, key.Name, key.Desc.Width, key.Desc.Height, key.Desc.Format);
+                Util::HashCombine(seed, key.Name, key.Desc.Width, key.Desc.Height, key.Desc.PixelFormat);
                 return seed;
             }
         };

@@ -61,13 +61,13 @@ namespace Mixture
         m_PassNode.Writes.push_back(info);
         const RHI::TextureDesc& desc = m_Graph.GetTextureDesc(info.Handle);
 
-        if (RHI::IsDepthFormat(desc.Format))
+        if (RHI::IsDepthFormat(desc.PixelFormat))
         {
-            m_CurrentDepthFormat = desc.Format;
+            m_CurrentDepthFormat = desc.PixelFormat;
         }
         else
         {
-            m_CurrentColorFormats.push_back(desc.Format);
+            m_CurrentColorFormats.push_back(desc.PixelFormat);
         }
 
         return info.Handle;

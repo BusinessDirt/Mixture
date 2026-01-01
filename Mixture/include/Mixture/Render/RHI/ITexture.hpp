@@ -32,7 +32,7 @@ namespace Mixture::RHI
         /**
          * @brief The pixel format of the texture.
          */
-        Format Format = Format::R8G8B8A8_UNORM;
+        Format PixelFormat = Format::R8G8B8A8_UNORM;
 
         RHI::ResourceState InitialState = RHI::ResourceState::Undefined;
 
@@ -46,7 +46,7 @@ namespace Mixture::RHI
         {
             return Width == other.Width &&
                    Height == other.Height &&
-                   Format == other.Format &&
+                   PixelFormat == other.PixelFormat &&
                    InitialState == other.InitialState;
         }
     };

@@ -167,7 +167,7 @@ namespace Mixture
 
         node.TextureDesc.Width = resource->GetWidth();
         node.TextureDesc.Height = resource->GetHeight();
-        node.TextureDesc.Format = resource->GetFormat();
+        node.TextureDesc.PixelFormat = resource->GetFormat();
         node.TextureDesc.InitialState = RHI::ResourceState::Undefined; // We don't track external state yet
 
         node.ExternalTexture = resource;
@@ -437,7 +437,7 @@ namespace Mixture
 
                 if (node.Type == RGResourceType::Texture || node.Type == RGResourceType::ImportedTexture)
                 {
-                    bool isDepth = IsDepthFormat(node.TextureDesc.Format);
+                    bool isDepth = IsDepthFormat(node.TextureDesc.PixelFormat);
                     RHI::ResourceState target = isDepth ? RHI::ResourceState::DepthStencilWrite : RHI::ResourceState::RenderTarget;
                     TransitionResource(handle, target, true);
                 }

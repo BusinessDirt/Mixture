@@ -68,6 +68,7 @@ jobs:
       with:
         vulkan_version: 1.3.290.0
         cache: true
+        optional_components: com.lunarg.vulkan.vma
         # Optional: Include specific components if needed (e.g., for older versions or specific needs)
         # For 1.3.290, VMA and DXC are typically included or standard.
 
