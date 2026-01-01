@@ -56,4 +56,7 @@ jobs:
     - name: Run Setup Script
       run: ${{ matrix.setup_script }}
 
+    - name: Build
+      run: ${{ matrix.build_command }}
+
 
