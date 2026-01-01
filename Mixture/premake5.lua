@@ -2,7 +2,6 @@ project "Mixture"
     kind "StaticLib"
     language "C++"
     cppdialect "C++20"
-    targetdir "Binaries/%{cfg.buildcfg}"
     staticruntime "off"
 
     pchsource "src/mxpch.cpp"

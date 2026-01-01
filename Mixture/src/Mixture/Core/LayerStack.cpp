@@ -1,6 +1,8 @@
 #include "mxpch.hpp"
 #include "Mixture/Core/LayerStack.hpp"
 
+#include <algorithm>
+
 namespace Mixture
 {
     void LayerStack::Shutdown() const
@@ -27,7 +29,7 @@ namespace Mixture
 
     void LayerStack::PopLayer(Layer* layer)
     {
-        if (const auto it = std::ranges::find(m_Layers, layer);
+        if (const auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
             it != m_Layers.begin() + m_LayerInsertIndex)
         {
             layer->OnDetach();
@@ -38,7 +40,7 @@ namespace Mixture
 
     void LayerStack::PopOverlay(Layer* layer)
     {
-        if (const auto it = std::ranges::find(m_Layers, layer);
+        if (const auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
             it != m_Layers.end())
         {
             layer->OnDetach();
