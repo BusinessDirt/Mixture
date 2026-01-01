@@ -61,7 +61,7 @@ class PremakeConfiguration:
         # Check if we are in a CI environment
         # GitHub Actions, GitLab, etc. set the 'CI' env var to 'true'
         if os.getenv("CI"):
-            print(f"CI environment detected. Auto-approving download of Premake {cls.premake_version}.")
+            logger.info(f"CI environment detected. Auto-approving download of Premake {cls.premake_version}.")
             permission_granted = True
         else:
             permission_granted = False
