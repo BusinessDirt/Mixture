@@ -83,7 +83,7 @@ function application_dist_settings()
 end
 
 function windows_settings()
-    links { "%{Library.Vulkan}" }
+    links { "%{Library.vulkan}" }
     buildoptions { "/utf-8" }
 end
 

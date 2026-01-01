@@ -80,10 +80,21 @@ jobs:
       run: |
         wget https://sdk.lunarg.com/sdk/download/1.3.290.0/mac/vulkansdk-macos-1.3.290.0.dmg -O /tmp/vulkansdk.dmg
         hdiutil attach /tmp/vulkansdk.dmg -mountpoint /Volumes/vulkan
-        sudo /Volumes/vulkan/InstallVulkan.app/Contents/MacOS/InstallVulkan --root /usr/local --accept-licenses --default-answer --confirm-command install
+
+        # Define a clean install directory in the user's home folder
+        INSTALL_DIR="$HOME/vulkan-sdk"
+
+        # Run installer without sudo (since it's in user home) and point to new dir
+        /Volumes/vulkan/InstallVulkan.app/Contents/MacOS/InstallVulkan \
+          --root "$INSTALL_DIR" \
+          --accept-licenses \
+          --default-answer \
+          --confirm-command install
+
         hdiutil detach /Volumes/vulkan
-        # Set ENV var for the build step
-        echo "VULKAN_SDK=/usr/local" >> $GITHUB_ENV
+
+        # Update the environment variable to point to the new location
+        echo "VULKAN_SDK=$INSTALL_DIR" >> $GITHUB_ENV
 
     # --- Project Generation (Premake) ---
     - name: Make Scripts Executable (Unix)
@@ -108,7 +119,13 @@ jobs:
       run: ${{ matrix.build_command }}
       shell: bash
 
+    # Setup MSBuild (REQUIRED for Windows)
+    - name: Setup MSBuild
+      if: runner.os == 'Windows'
+      uses: microsoft/setup-msbuild@v2
+
+    # Build Project (Windows)
     - name: Build Project (Windows)
       if: runner.os == 'Windows'
-      run: ${{ matrix.build_command }}
+      run: msbuild /p:Configuration=Release /p:Platform=x64
       shell: pwsh
