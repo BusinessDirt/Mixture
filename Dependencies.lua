@@ -3,14 +3,14 @@ local vulkanSDK = os.getenv("VULKAN_SDK")
 
 IncludeDir = {}
 IncludeDir["spdlog"] = "%{wks.location}/vendor/spdlog/include"
-if vulkanSDK != nil then
+if vulkanSDK then
     IncludeDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/include"
 end
 IncludeDir["glm"] = "%{wks.location}/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/vendor/stb"
 
 LibraryDir = {}
-if vulkanSDK != nil then
+if vulkanSDK then
     LibraryDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/lib"
 end
 
