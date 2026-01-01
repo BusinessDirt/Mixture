@@ -1,10 +1,17 @@
 -- Dependencies
 local vulkanSDK = os.getenv("VULKAN_SDK")
 
+-- On Linux, if VULKAN_SDK is not set, try to find it in standard locations
+if not vulkanSDK and os.istarget("linux") then
+    if os.isdir("/usr/include/vulkan") then
+        vulkanSDK = "/usr"
+    end
+end
+
 IncludeDir = {}
 IncludeDir["spdlog"] = "%{wks.location}/vendor/spdlog/include"
 if vulkanSDK then
-    IncludeDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/include"
+    IncludeDir["vulkan"] = vulkanSDK .. "/include"
 else
     IncludeDir["vulkan"] = ""
 end
@@ -13,13 +20,17 @@ IncludeDir["stb_image"] = "%{wks.location}/vendor/stb"
 
 LibraryDir = {}
 if vulkanSDK then
-    LibraryDir["vulkan"] = os.getenv("VULKAN_SDK") .. "/lib"
+    LibraryDir["vulkan"] = vulkanSDK .. "/lib"
 else
     LibraryDir["vulkan"] = ""
 end
 
 Library = {}
-Library["vulkan"] = "vulkan-1"
+if os.istarget("windows") then
+    Library["vulkan"] = "vulkan-1"
+else
+    Library["vulkan"] = "vulkan"
+end
 Library["molten_vk"] = "MoltenVK"
 
 if os.istarget("windows") then
