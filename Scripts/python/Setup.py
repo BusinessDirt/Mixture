@@ -51,7 +51,7 @@ if premake_installed:
         case "Windows":
             binary, args = premake_binary_path / "premake5.exe", [get_premake_target()]
         case "Linux":
-            binary, args = premake_binary_path / "premake5", ["--cc=clang", "gmake2"]
+            binary, args = premake_binary_path / "premake5", ["--cc=gcc", "gmake2"]
         case "Darwin":
             binary, args = premake_binary_path / "premake5", ["--cc=clang", "xcode4"]
         case _:
