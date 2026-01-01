@@ -92,8 +92,9 @@ function linux_settings()
 end
 
 function xcode_settings()
-    local vulkanFW = os.getenv("VULKAN_SDK") .. "/Frameworks"
-    local vulkanLibs = os.getenv("VULKAN_SDK") .. "/Lib"
+    local vulkanSDK = os.getenv("VULKAN_SDK") or ""
+    local vulkanFW = vulkanSDK .. "/Frameworks"
+    local vulkanLibs = vulkanSDK .. "/Lib"
 
     links {
         "vulkan.framework",

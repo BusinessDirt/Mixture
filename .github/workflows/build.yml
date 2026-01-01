@@ -68,7 +68,7 @@ jobs:
     - name: Install Vulkan SDK (Windows)
       if: runner.os == 'Windows'
       run: |
-        curl -o VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.3.290.0/windows/VulkanRT-1.3.290.0-Installer.exe
+        curl -o VulkanSDK.exe https://sdk.lunarg.com/sdk/download/1.3.290.0/windows/VulkanSDK-1.3.290.0-Installer.exe
         ./VulkanSDK.exe /S
         # Add Vulkan to GITHUB_ENV so subsequent steps can find it if needed
         echo "VULKAN_SDK=C:\VulkanSDK\1.3.290.0" >> $env:GITHUB_ENV
@@ -94,7 +94,7 @@ jobs:
         hdiutil detach /Volumes/vulkan
 
         # Update the environment variable to point to the new location
-        echo "VULKAN_SDK=$INSTALL_DIR" >> $GITHUB_ENV
+        echo "VULKAN_SDK=$INSTALL_DIR/macOS" >> $GITHUB_ENV
 
     # --- Project Generation (Premake) ---
     - name: Make Scripts Executable (Unix)
