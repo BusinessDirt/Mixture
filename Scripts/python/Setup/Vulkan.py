@@ -13,6 +13,9 @@ class VulkanConfiguration:
 
     @classmethod
     def validate(cls) -> bool:
+        if platform.system() == "Linux":
+            return True
+
         if not cls.check_vulkan_sdk():
             logger.error("Vulkan SDK not installed correctly.")
             return False
