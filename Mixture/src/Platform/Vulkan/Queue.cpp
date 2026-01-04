@@ -17,6 +17,7 @@ namespace Mixture::Vulkan
 
         uint32_t index = queueIndex.has_value() ? queueIndex.value() : fallbackIndex.value();
         m_Handle = m_Device->GetHandle().getQueue(index, 0);
+        m_Index = index;
 
         if (frameCount == 0) return;
         m_Pool = CreateScope<CommandPool>(*m_Device, index);

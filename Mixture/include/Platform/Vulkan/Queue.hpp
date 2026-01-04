@@ -14,7 +14,7 @@ namespace Mixture::Vulkan
     public:
         /**
          * @brief Constructs a Vulkan Queue wrapper.
-         * 
+         *
          * @param device Reference to the logical device.
          * @param queueIndex The index of the queue family.
          * @param frameCount Number of frames in flight (for command buffer allocation).
@@ -27,22 +27,29 @@ namespace Mixture::Vulkan
         ~Queue() = default;
 
         /**
+         * @brief Gets the Index of this queue.
+         *
+         * @return uint32_t The index
+         */
+        uint32_t GetIndex() const { return m_Index; }
+
+        /**
          * @brief Gets the Vulkan Queue handle.
-         * 
+         *
          * @return vk::Queue The raw handle.
          */
         vk::Queue GetHandle() const { return m_Handle; }
 
         /**
          * @brief Resets the command buffer for a specific frame index.
-         * 
+         *
          * @param frameIndex The frame index.
          */
         void ResetBuffer(uint32_t frameIndex) { m_Buffers->Reset(frameIndex); }
 
         /**
          * @brief Gets the command buffer for a specific frame index.
-         * 
+         *
          * @param frameIndex The frame index.
          * @return vk::CommandBuffer The command buffer.
          */
@@ -50,14 +57,14 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Gets the command pool associated with this queue.
-         * 
+         *
          * @return CommandPool& Reference to the command pool.
          */
         CommandPool& GetPool() const { return *m_Pool; }
 
         /**
          * @brief Submits work to the queue.
-         * 
+         *
          * @param frameIndex The current frame index (to select the command buffer).
          * @param signalSemaphores Semaphores to signal when execution completes.
          * @param waitSemaphores Semaphores to wait on before execution begins.
@@ -70,9 +77,10 @@ namespace Mixture::Vulkan
 
     private:
         Device* m_Device;
-        vk::Queue m_Handle;
         std::string_view m_DebugName;
+        uint32_t m_Index;
 
+        vk::Queue m_Handle;
         Scope<CommandPool> m_Pool;
         Scope<CommandBuffers> m_Buffers;
     };

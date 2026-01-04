@@ -28,13 +28,13 @@ namespace Mixture
         props.Width = appDescription.Width;
         props.Height = appDescription.Height;
 
+        ImGuiContext::Initialize();
+
         m_Window = CreateScope<Window>(props);
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
         m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
         m_RenderGraph = CreateScope<RenderGraph>(m_Context->GetDevice());
-
-        ImGuiContext::Initialize();
 
         AssetManager::Get().Init();
         AssetManager::Get().SetAssetRoot("Assets");
@@ -44,12 +44,13 @@ namespace Mixture
     Application::~Application()
     {
         m_Context->GetDevice().WaitForIdle();
-
-        ImGuiContext::Shutdown();
-
         m_LayerStack.Shutdown();
         m_RenderGraph.reset();
         m_Context.reset();
+
+        ImGuiContext::Shutdown();
+
+        m_Window.reset();
 
         AssetManager::Get().Shutdown();
         TaskSystem::Shutdown();
