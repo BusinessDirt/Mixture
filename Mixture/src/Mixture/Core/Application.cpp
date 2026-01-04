@@ -6,6 +6,7 @@
 #include "Mixture/Core/Threading/TaskSystem.hpp"
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
+#include "Mixture/Render/ImGui/Context.hpp"
 
 #include <Opal/Base.hpp>
 
@@ -33,6 +34,8 @@ namespace Mixture
         m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
         m_RenderGraph = CreateScope<RenderGraph>(m_Context->GetDevice());
 
+        ImGuiContext::Initialize();
+
         AssetManager::Get().Init();
         AssetManager::Get().SetAssetRoot("Assets");
         AssetManager::Get().SetGraphicsAPI(appDescription.API);
@@ -41,10 +44,13 @@ namespace Mixture
     Application::~Application()
     {
         m_Context->GetDevice().WaitForIdle();
+
+        ImGuiContext::Shutdown();
+
         m_LayerStack.Shutdown();
         m_RenderGraph.reset();
         m_Context.reset();
-        
+
         AssetManager::Get().Shutdown();
         TaskSystem::Shutdown();
     }
