@@ -70,7 +70,7 @@ namespace Mixture::Vulkan
         ShaderLibrary::Init(*m_Device);
 
         // Setup Platform/Renderer backends
-        ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(windowHandle), true);
+        ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(windowHandle), false);
         ImGui_ImplVulkan_InitInfo init_info = {};
         init_info.ApiVersion = VK_API_VERSION_1_3;
         init_info.Instance = m_Instance->GetHandle();
