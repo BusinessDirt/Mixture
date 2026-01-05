@@ -21,7 +21,7 @@ namespace Mixture
             },
             [=](const RenderGraphRegistry& registry, const ImGuiPassData& data, RHI::ICommandList* cmd)
             {
-
+                Application::Get().GetContext().RenderImGui(cmd);
             }
         );
     }
