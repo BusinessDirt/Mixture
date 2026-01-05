@@ -23,6 +23,10 @@
 #include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
 #include "Platform/Vulkan/Descriptors/Allocator.hpp"
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
+
 #include <GLFW/glfw3.h>
 
 namespace Mixture::Vulkan
@@ -65,14 +69,52 @@ namespace Mixture::Vulkan
         PipelineCache::Init(*m_Device);
         ShaderLibrary::Init(*m_Device);
 
+        // Setup Platform/Renderer backends
+        ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(windowHandle), false);
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.ApiVersion = VK_API_VERSION_1_3;
+        init_info.Instance = m_Instance->GetHandle();
+        init_info.PhysicalDevice = m_PhysicalDevice->GetHandle();
+        init_info.Device = m_Device->GetHandle();
+        init_info.QueueFamily = m_GraphicsQueue->GetIndex();
+        init_info.Queue = m_GraphicsQueue->GetHandle();
+        init_info.DescriptorPoolSize = 100;
+        init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
+        init_info.ImageCount = m_Swapchain->GetImageCount();
+        init_info.Allocator = nullptr;
+
+        VkFormat format = static_cast<VkFormat>(m_Swapchain->GetImageFormat());
+        VkPipelineRenderingCreateInfo pipelineRenderingCreateInfo = {};
+        pipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+        pipelineRenderingCreateInfo.colorAttachmentCount = 1;
+        pipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
+        pipelineRenderingCreateInfo.depthAttachmentFormat = VK_FORMAT_UNDEFINED;
+        pipelineRenderingCreateInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+        init_info.PipelineInfoMain.PipelineRenderingCreateInfo = pipelineRenderingCreateInfo;
+        init_info.PipelineInfoMain.Subpass = 0;
+        init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+        init_info.CheckVkResultFn = [](VkResult err)
+        {
+            if (err == VK_SUCCESS) return;
+            OPAL_ERROR("Core/Vulkan", "VkResult = {}", err);
+            if (err < 0) abort();
+        };
+
+        ImGui_ImplVulkan_Init(&init_info);
+
         OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
     }
 
     Context::~Context()
     {
-        m_Device->WaitForIdle();
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+
         PipelineCache::Shutdown();
         ShaderLibrary::Shutdown();
+        
         s_Instance = nullptr;
     }
 
@@ -189,5 +231,49 @@ namespace Mixture::Vulkan
                 m_ComputeQueue->GetBuffer(m_CurrentFrame),
             }, m_Swapchain->GetImages()[m_ImageIndex]
         );
+    }
+
+    void Context::BeginImGuiFrame()
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
+
+    void Context::EndImGuiFrame()
+    {
+        ImGui::Render();
+    }
+
+    void Context::RenderImGui(RHI::ICommandList* cmd)
+    {
+        auto vkCmdList = static_cast<CommandList*>(cmd);
+        vk::CommandBuffer commandBuffer = vkCmdList->GetHandle();
+
+        RHI::ITexture* backbuffer = m_Swapchain->GetTexture(m_ImageIndex);
+
+        // Transition to Color Attachment
+        cmd->PipelineBarrier(backbuffer, RHI::ResourceState::Present, RHI::ResourceState::ColorAttachment);
+
+        vk::RenderingAttachmentInfo colorAttachmentInfo;
+        colorAttachmentInfo.imageView = m_Swapchain->GetImages()[m_ImageIndex];
+        colorAttachmentInfo.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+        colorAttachmentInfo.loadOp = vk::AttachmentLoadOp::eLoad;
+        colorAttachmentInfo.storeOp = vk::AttachmentStoreOp::eStore;
+
+        vk::RenderingInfo renderingInfo;
+        renderingInfo.renderArea = vk::Rect2D({ 0, 0 }, m_Swapchain->GetExtent());
+        renderingInfo.layerCount = 1;
+        renderingInfo.colorAttachmentCount = 1;
+        renderingInfo.pColorAttachments = &colorAttachmentInfo;
+
+        commandBuffer.beginRendering(renderingInfo);
+
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+
+        commandBuffer.endRendering();
+
+        // Transition to Present
+        cmd->PipelineBarrier(backbuffer, RHI::ResourceState::ColorAttachment, RHI::ResourceState::Present);
     }
 }

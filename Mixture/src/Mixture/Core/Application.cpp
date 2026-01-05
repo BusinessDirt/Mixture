@@ -6,6 +6,7 @@
 #include "Mixture/Core/Threading/TaskSystem.hpp"
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
+#include "Mixture/Render/ImGui/Context.hpp"
 
 #include <Opal/Base.hpp>
 
@@ -27,6 +28,8 @@ namespace Mixture
         props.Width = appDescription.Width;
         props.Height = appDescription.Height;
 
+        ImGuiContext::Initialize();
+
         m_Window = CreateScope<Window>(props);
         m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
@@ -44,7 +47,11 @@ namespace Mixture
         m_LayerStack.Shutdown();
         m_RenderGraph.reset();
         m_Context.reset();
-        
+
+        ImGuiContext::Shutdown();
+
+        m_Window.reset();
+
         AssetManager::Get().Shutdown();
         TaskSystem::Shutdown();
     }
@@ -66,6 +73,11 @@ namespace Mixture
             // CPU Logic
             for (Layer* layer : m_LayerStack) layer->OnUpdate(timestep);
 
+            // ImGui Recording
+            ImGuiContext::BeginFrame();
+            for (Layer* layer : m_LayerStack) layer->OnDrawImGui();
+            ImGuiContext::EndFrame();
+
             m_RenderGraph->Clear();
 
             if (RHI::ITexture* backbufferTex = m_Context->BeginFrame())
@@ -80,6 +92,7 @@ namespace Mixture
                 {
                     commandList->Begin();
                     m_RenderGraph->Execute(commandList.get(), m_Context.get());
+                    m_Context->RenderImGui(commandList.get());
                     commandList->End();
                 }
 

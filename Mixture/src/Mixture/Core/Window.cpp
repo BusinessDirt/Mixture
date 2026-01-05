@@ -8,6 +8,7 @@
 #include "Mixture/Events/MouseEvent.hpp"
 
 #include <GLFW/glfw3.h>
+#include <backends/imgui_impl_glfw.h>
 
 namespace Mixture
 {
@@ -74,6 +75,7 @@ namespace Mixture
 
 			glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow* window, const int key, int scancode, const int action, int mods)
 				{
+                    ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
 					const WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 					switch (action)
@@ -102,6 +104,7 @@ namespace Mixture
 
 			glfwSetCharCallback(m_WindowHandle, [](GLFWwindow* window, const unsigned int keycode)
 				{
+                    ImGui_ImplGlfw_CharCallback(window, keycode);
 					const WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 					KeyTypedEvent event(static_cast<KeyCode>(keycode));
@@ -110,6 +113,7 @@ namespace Mixture
 
 			glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow* window, const int button, const int action, int mods)
 				{
+                    ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
 					const WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 					switch (action)
@@ -132,6 +136,7 @@ namespace Mixture
 
 			glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, const double xOffset, const double yOffset)
 				{
+                    ImGui_ImplGlfw_ScrollCallback(window, xOffset, yOffset);
 					const WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 					MouseScrolledEvent event(static_cast<float>(xOffset), static_cast<float>(yOffset));
@@ -140,6 +145,7 @@ namespace Mixture
 
 			glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow* window, const double xPos, const double yPos)
 				{
+                    ImGui_ImplGlfw_CursorPosCallback(window, xPos, yPos);
 					const WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 					MouseMovedEvent event(static_cast<float>(xPos), static_cast<float>(yPos));

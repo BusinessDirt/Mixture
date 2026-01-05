@@ -58,7 +58,7 @@ namespace Mixture::RHI
 
         /**
          * @brief Called when the window is resized.
-         * 
+         *
          * @param width The new width.
          * @param height The new height.
          */
@@ -66,7 +66,7 @@ namespace Mixture::RHI
 
         /**
          * @brief Begins a new frame and acquires the next swapchain image.
-         * 
+         *
          * @return RHI::ITexture* Pointer to the current backbuffer texture.
          */
         virtual RHI::ITexture* BeginFrame() = 0;
@@ -78,24 +78,28 @@ namespace Mixture::RHI
 
         /**
          * @brief Gets a command buffer for the current frame.
-         * 
+         *
          * @return Scope<RHI::ICommandList> The command buffer.
          */
         virtual Scope<RHI::ICommandList> GetCommandBuffer() = 0;
 
         /**
          * @brief Gets the current width of the swapchain.
-         * 
+         *
          * @return uint32_t The width.
          */
         virtual uint32_t GetSwapchainWidth() const = 0;
 
         /**
          * @brief Gets the current height of the swapchain.
-         * 
+         *
          * @return uint32_t The height.
          */
         virtual uint32_t GetSwapchainHeight() const = 0;
+
+        virtual void BeginImGuiFrame() = 0;
+        virtual void EndImGuiFrame() = 0;
+        virtual void RenderImGui(RHI::ICommandList* cmd) = 0;
 
         /**
          * @brief Factory method to create a graphics context.
