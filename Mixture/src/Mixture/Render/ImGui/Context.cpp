@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/ImGui/Context.hpp"
+#include "Mixture/Core/Application.hpp"
 
 #include <imgui.h>
 
@@ -34,5 +35,15 @@ namespace Mixture
     void ImGuiContext::Shutdown()
     {
         ImGui::DestroyContext();
+    }
+
+    void ImGuiContext::BeginFrame()
+    {
+        Application::Get().GetContext().BeginImGuiFrame();
+    }
+
+    void ImGuiContext::EndFrame()
+    {
+        Application::Get().GetContext().EndImGuiFrame();
     }
 }

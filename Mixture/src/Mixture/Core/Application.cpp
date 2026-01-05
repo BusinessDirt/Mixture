@@ -73,6 +73,11 @@ namespace Mixture
             // CPU Logic
             for (Layer* layer : m_LayerStack) layer->OnUpdate(timestep);
 
+            // ImGui Recording
+            ImGuiContext::BeginFrame();
+            for (Layer* layer : m_LayerStack) layer->OnDrawImGui();
+            ImGuiContext::EndFrame();
+
             m_RenderGraph->Clear();
 
             if (RHI::ITexture* backbufferTex = m_Context->BeginFrame())
@@ -87,6 +92,7 @@ namespace Mixture
                 {
                     commandList->Begin();
                     m_RenderGraph->Execute(commandList.get(), m_Context.get());
+                    m_Context->RenderImGui(commandList.get());
                     commandList->End();
                 }
 

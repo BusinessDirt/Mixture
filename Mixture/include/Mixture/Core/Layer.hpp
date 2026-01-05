@@ -13,17 +13,17 @@ namespace Mixture
 
     /**
      * @brief Abstract base class for application layers.
-     * 
+     *
      * Layers are pushed to the LayerStack and updated/rendered in order.
      */
     class Layer
     {
     public:
         OPAL_NON_COPIABLE(Layer);
-        
+
         /**
          * @brief Constructor.
-         * 
+         *
          * @param name Debug name of the layer.
          */
         explicit Layer(std::string name = "Layer") : m_DebugName(std::move(name)) {}
@@ -38,31 +38,36 @@ namespace Mixture
          * @brief Called when the layer is detached from the layer stack.
          */
         virtual void OnDetach() {};
-        
+
         /**
          * @brief Called when an event is dispatched to this layer.
-         * 
+         *
          * @param event The event to handle.
          */
         virtual void OnEvent(Event& event) {};
 
         /**
          * @brief Called every frame to update the layer logic.
-         * 
+         *
          * @param dt Delta time in seconds.
          */
         virtual void OnUpdate(float dt) {};
 
         /**
          * @brief Called every frame to populate the render graph.
-         * 
+         *
          * @param graph The render graph builder.
          */
         virtual void OnRender(RenderGraph& graph) {};
 
         /**
+         * @brief Called every frame to populate the ImGui draw data.
+         */
+        virtual void OnDrawImGui() {};
+
+        /**
          * @brief Gets the debug name of the layer.
-         * 
+         *
          * @return const std::string& The name.
          */
         OPAL_NODISCARD const std::string& GetName() const { return m_DebugName; }

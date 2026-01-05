@@ -13,11 +13,12 @@ namespace Mixture
 
         void OnAttach() override;
         void OnDetach() override;
-        
+
         void OnEvent(Event& event) override;
 
         void OnUpdate(float dt) override;
         void OnRender(RenderGraph& graph) override;
+        void OnDrawImGui() override;
 
     private:
         Ref<RHI::IBuffer> m_VertexBuffer;

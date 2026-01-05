@@ -23,6 +23,7 @@
 #include "Platform/Vulkan/Descriptors/LayoutCache.hpp"
 #include "Platform/Vulkan/Descriptors/Allocator.hpp"
 
+#include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
@@ -230,5 +231,49 @@ namespace Mixture::Vulkan
                 m_ComputeQueue->GetBuffer(m_CurrentFrame),
             }, m_Swapchain->GetImages()[m_ImageIndex]
         );
+    }
+
+    void Context::BeginImGuiFrame()
+    {
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+    }
+
+    void Context::EndImGuiFrame()
+    {
+        ImGui::Render();
+    }
+
+    void Context::RenderImGui(RHI::ICommandList* cmd)
+    {
+        auto vkCmdList = static_cast<CommandList*>(cmd);
+        vk::CommandBuffer commandBuffer = vkCmdList->GetHandle();
+
+        RHI::ITexture* backbuffer = m_Swapchain->GetTexture(m_ImageIndex);
+
+        // Transition to Color Attachment
+        cmd->PipelineBarrier(backbuffer, RHI::ResourceState::Present, RHI::ResourceState::ColorAttachment);
+
+        vk::RenderingAttachmentInfo colorAttachmentInfo;
+        colorAttachmentInfo.imageView = m_Swapchain->GetImages()[m_ImageIndex];
+        colorAttachmentInfo.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+        colorAttachmentInfo.loadOp = vk::AttachmentLoadOp::eLoad;
+        colorAttachmentInfo.storeOp = vk::AttachmentStoreOp::eStore;
+
+        vk::RenderingInfo renderingInfo;
+        renderingInfo.renderArea = vk::Rect2D({ 0, 0 }, m_Swapchain->GetExtent());
+        renderingInfo.layerCount = 1;
+        renderingInfo.colorAttachmentCount = 1;
+        renderingInfo.pColorAttachments = &colorAttachmentInfo;
+
+        commandBuffer.beginRendering(renderingInfo);
+
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+
+        commandBuffer.endRendering();
+
+        // Transition to Present
+        cmd->PipelineBarrier(backbuffer, RHI::ResourceState::ColorAttachment, RHI::ResourceState::Present);
     }
 }

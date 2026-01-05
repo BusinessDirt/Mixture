@@ -2,6 +2,8 @@
 
 #include "Mixture/Core/Application.hpp"
 
+#include <imgui.h>
+
 namespace Mixture
 {
     struct Vertex
@@ -127,5 +129,10 @@ namespace Mixture
                 cmd->Draw(3, 1, 0, 0);
             }
         );
+    }
+
+    void MainLayer::OnDrawImGui()
+    {
+        ImGui::ShowDemoWindow();
     }
 }

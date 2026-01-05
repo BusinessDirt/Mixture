@@ -98,6 +98,10 @@ namespace Mixture::Vulkan
          */
         uint32_t GetSwapchainHeight() const override;
 
+        void BeginImGuiFrame() override;
+        void EndImGuiFrame() override;
+        void RenderImGui(RHI::ICommandList* cmd) override;
+
         /**
          * @brief Gets the Vulkan instance.
          *
