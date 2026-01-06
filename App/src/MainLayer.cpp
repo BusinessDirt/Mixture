@@ -130,9 +130,4 @@ namespace Mixture
             }
         );
     }
-
-    void MainLayer::OnDrawImGui()
-    {
-        ImGui::ShowDemoWindow();
-    }
 }

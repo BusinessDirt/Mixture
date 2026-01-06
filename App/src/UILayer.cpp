@@ -4,12 +4,12 @@ namespace Mixture
 {
     void UILayer::OnAttach()
     {
-        OPAL_INFO("Client", "UILayer::OnAttach()");
+
     }
 
     void UILayer::OnDetach()
     {
-        OPAL_INFO("Client", "UILayer::OnDetach()");
+
     }
 
     void UILayer::OnEvent(Event& event)
@@ -24,6 +24,11 @@ namespace Mixture
 
     void UILayer::OnRender(RenderGraph& graph)
     {
-        
+        graph.AddPass<ImGuiPass>("ImGuiPass", graph.GetResource("Backbuffer"));
+    }
+
+    void UILayer::OnDrawImGui()
+    {
+        ImGui::ShowDemoWindow();
     }
 }
