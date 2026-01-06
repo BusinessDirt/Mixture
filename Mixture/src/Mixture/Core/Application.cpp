@@ -87,8 +87,6 @@ namespace Mixture
 
                 for (Layer* layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
 
-                ImGuiPass::AddToGraph(*m_RenderGraph, backbuffer);
-
                 m_RenderGraph->Compile();
 
                 if (auto commandList = m_Context->GetCommandBuffer())

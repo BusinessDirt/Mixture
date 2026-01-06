@@ -6,14 +6,17 @@ namespace Mixture
 {
     class RenderGraph;
 
-    struct ImGuiPassData
-    {
-        RGResourceHandle Output;
-    };
-
-    class ImGuiPass
+    class ImGuiPass : public RenderPass
     {
     public:
-        static void AddToGraph(RenderGraph& graph, RGResourceHandle outputHandle);
+        ImGuiPass(RGResourceHandle outputHandle);
+        ~ImGuiPass() = default;
+
+        void Setup(RenderGraphBuilder& builder) override;
+        void Execute(const RenderGraphRegistry& registry, RHI::ICommandList* cmdList) const override;
+
+    private:
+        RGResourceHandle m_OutputHandle;
+        RGResourceHandle m_Output;
     };
 }

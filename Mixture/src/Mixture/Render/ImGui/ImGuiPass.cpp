@@ -7,22 +7,23 @@
 
 namespace Mixture
 {
-    void ImGuiPass::AddToGraph(RenderGraph& graph, RGResourceHandle outputHandle)
+    ImGuiPass::ImGuiPass(RGResourceHandle outputHandle)
+        : m_OutputHandle(outputHandle)
     {
-        graph.AddPass<ImGuiPassData>("ImGuiPass",
-            [=](RenderGraphBuilder& builder, ImGuiPassData& data)
-            {
-                RGAttachmentInfo info;
-                info.Handle = outputHandle;
-                info.LoadOp = RHI::LoadOp::Load;
-                info.StoreOp = RHI::StoreOp::Store;
+    }
 
-                data.Output = builder.Write(info);
-            },
-            [=](const RenderGraphRegistry& registry, const ImGuiPassData& data, RHI::ICommandList* cmd)
-            {
-                Application::Get().GetContext().RenderImGui(cmd);
-            }
-        );
+    void ImGuiPass::Setup(RenderGraphBuilder& builder)
+    {
+        RGAttachmentInfo info;
+        info.Handle = m_OutputHandle;
+        info.LoadOp = RHI::LoadOp::Load;
+        info.StoreOp = RHI::StoreOp::Store;
+
+        m_Output = builder.Write(info);
+    }
+
+    void ImGuiPass::Execute(const RenderGraphRegistry& registry, RHI::ICommandList* cmdList) const
+    {
+        Application::Get().GetContext().RenderImGui(cmdList);
     }
 }
