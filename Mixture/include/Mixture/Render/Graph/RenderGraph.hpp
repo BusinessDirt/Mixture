@@ -13,6 +13,8 @@
 #include "Mixture/Render/Graph/RenderGraphRegistry.hpp"
 #include "Mixture/Render/Graph/RenderGraphResourceCache.hpp"
 
+#include <type_traits>
+
 namespace Mixture
 {
 
@@ -33,7 +35,35 @@ namespace Mixture
         void Clear();
 
         /**
-         * @brief Adds a new render pass to the graph.
+         * @brief Adds a new render pass to the graph using a class (Base Class approach).
+         *
+         * @tparam PassT The pass class. Must derive from RenderPass.
+         * @param name The name of the pass.
+         * @param args Constructor arguments for the pass.
+         */
+        template<typename PassT, typename... Args>
+        typename std::enable_if<std::is_base_of<RenderPass, PassT>::value>::type
+        AddPass(const std::string& name, Args&&... args)
+        {
+            static_assert(std::is_trivially_destructible<PassT>::value, "RenderGraph PassT must be trivially destructible (POD-like) for ArenaAllocator.");
+
+            auto& pass = m_Passes.emplace_back();
+            pass.Name = name;
+
+            // Allocate and construct the pass in the arena
+            PassT* data = m_PassAllocator.Alloc<PassT>(std::forward<Args>(args)...);
+
+            RenderGraphBuilder builder(*this, pass);
+            data->Setup(builder);
+
+            pass.Execute = [=](RenderGraphRegistry& registry, RHI::ICommandList* cmdList)
+                {
+                    data->Execute(registry, cmdList);
+                };
+        }
+
+        /**
+         * @brief Adds a new render pass to the graph (Lambda approach).
          *
          * @tparam DataT A struct defining the pass data (inputs/outputs).
          * @param name The name of the pass (for debugging/profiling).
@@ -41,7 +71,8 @@ namespace Mixture
          * @param execute The execution function where commands are recorded.
          */
         template<typename PassData>
-        void AddPass(const std::string& name,
+        typename std::enable_if<!std::is_base_of<RenderPass, PassData>::value>::type
+        AddPass(const std::string& name,
              std::function<void(RenderGraphBuilder&, PassData&)> setup,
              std::function<void(const RenderGraphRegistry&, const PassData&, RHI::ICommandList*)> execute)
         {

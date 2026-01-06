@@ -23,6 +23,22 @@ namespace Mixture
     }
 
     class RenderGraphRegistry; // Forward Declaration
+    class RenderGraphBuilder; // Forward Declaration
+
+    /**
+     * @brief Base class for all render passes.
+     * Must be trivially destructible (no RAII resources) as it is allocated in an Arena.
+     */
+    class RenderPass
+    {
+    public:
+        // Non-virtual destructor to keep it trivially destructible (if derived classes are).
+        // We do not delete RenderPasses individually, so this is safe for Arena allocation.
+        ~RenderPass() = default;
+
+        virtual void Setup(RenderGraphBuilder& builder) = 0;
+        virtual void Execute(const RenderGraphRegistry& registry, RHI::ICommandList* cmdList) const = 0;
+    };
 
     /**
      * @brief Represents a resource barrier to transition resource states between passes.
