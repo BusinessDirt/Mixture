@@ -177,7 +177,7 @@ namespace Mixture::Vulkan
 
         if (result.result != vk::Result::eSuccess)
         {
-            OPAL_ERROR("Core/Vulkan", "Failed to create Graphics Pipeline!");
+            OPAL_ERROR("Core/Vulkan", "Failed to create Graphics Pipeline! Error: {}", vk::to_string(result.result));
         }
         else
         {

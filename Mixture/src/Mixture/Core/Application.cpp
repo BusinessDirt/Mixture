@@ -7,6 +7,7 @@
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
 #include "Mixture/Render/ImGui/Context.hpp"
+#include "Mixture/Render/ImGui/ImGuiPass.hpp"
 
 #include <Opal/Base.hpp>
 
@@ -82,9 +83,11 @@ namespace Mixture
 
             if (RHI::ITexture* backbufferTex = m_Context->BeginFrame())
             {
-                m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
+                RGResourceHandle backbuffer = m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
 
                 for (Layer* layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
+
+                ImGuiPass::AddToGraph(*m_RenderGraph, backbuffer);
 
                 m_RenderGraph->Compile();
 
@@ -92,7 +95,6 @@ namespace Mixture
                 {
                     commandList->Begin();
                     m_RenderGraph->Execute(commandList.get(), m_Context.get());
-                    m_Context->RenderImGui(commandList.get());
                     commandList->End();
                 }
 

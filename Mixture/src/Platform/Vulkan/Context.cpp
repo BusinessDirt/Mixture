@@ -26,6 +26,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
+#include <backends/imgui_impl_vulkan.cpp>
 
 #include <GLFW/glfw3.h>
 
@@ -81,6 +82,7 @@ namespace Mixture::Vulkan
         init_info.DescriptorPoolSize = 100;
         init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
         init_info.ImageCount = m_Swapchain->GetImageCount();
+        init_info.UseDynamicRendering = true;
         init_info.Allocator = nullptr;
 
         VkFormat format = static_cast<VkFormat>(m_Swapchain->GetImageFormat());
@@ -98,7 +100,7 @@ namespace Mixture::Vulkan
         init_info.CheckVkResultFn = [](VkResult err)
         {
             if (err == VK_SUCCESS) return;
-            OPAL_ERROR("Core/Vulkan", "VkResult = {}", err);
+            OPAL_ERROR("Core/Vulkan", "VkResult = {}", static_cast<vk::Result>(err));
             if (err < 0) abort();
         };
 
@@ -114,7 +116,7 @@ namespace Mixture::Vulkan
 
         PipelineCache::Shutdown();
         ShaderLibrary::Shutdown();
-        
+
         s_Instance = nullptr;
     }
 
@@ -251,29 +253,6 @@ namespace Mixture::Vulkan
         vk::CommandBuffer commandBuffer = vkCmdList->GetHandle();
 
         RHI::ITexture* backbuffer = m_Swapchain->GetTexture(m_ImageIndex);
-
-        // Transition to Color Attachment
-        cmd->PipelineBarrier(backbuffer, RHI::ResourceState::Present, RHI::ResourceState::ColorAttachment);
-
-        vk::RenderingAttachmentInfo colorAttachmentInfo;
-        colorAttachmentInfo.imageView = m_Swapchain->GetImages()[m_ImageIndex];
-        colorAttachmentInfo.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-        colorAttachmentInfo.loadOp = vk::AttachmentLoadOp::eLoad;
-        colorAttachmentInfo.storeOp = vk::AttachmentStoreOp::eStore;
-
-        vk::RenderingInfo renderingInfo;
-        renderingInfo.renderArea = vk::Rect2D({ 0, 0 }, m_Swapchain->GetExtent());
-        renderingInfo.layerCount = 1;
-        renderingInfo.colorAttachmentCount = 1;
-        renderingInfo.pColorAttachments = &colorAttachmentInfo;
-
-        commandBuffer.beginRendering(renderingInfo);
-
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-
-        commandBuffer.endRendering();
-
-        // Transition to Present
-        cmd->PipelineBarrier(backbuffer, RHI::ResourceState::ColorAttachment, RHI::ResourceState::Present);
     }
 }
