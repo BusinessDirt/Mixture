@@ -31,6 +31,8 @@ namespace Mixture::RHI
      * @brief Interface for the graphics context.
      *
      * Handles initialization of the graphics API and creation of the device.
+     * User-interface framework lifecycle and rendering are application-owned
+     * concerns and intentionally do not form part of this contract.
      */
     class IGraphicsContext
     {
