@@ -14,6 +14,80 @@
 
 namespace Mixture
 {
+    void RenderGraphAlgorithms::CullPasses(Vector<RGPassNode>& passes, const Vector<RGResourceNode>& resources)
+    {
+        std::unordered_set<RGResourceHandle::IDType> requiredResources;
+        Vector<bool> livePasses(passes.size(), false);
+
+        auto isImported = [&](RGResourceHandle handle)
+        {
+            if (!handle.IsValid() || handle.ID >= resources.size()) return false;
+            const RGResourceType type = resources[handle.ID].Type;
+            return type == RGResourceType::ImportedTexture || type == RGResourceType::ImportedBuffer;
+        };
+
+        auto isRequired = [&](RGResourceHandle handle)
+        {
+            return handle.IsValid() && requiredResources.contains(handle.ID);
+        };
+
+        for (size_t passIndex = passes.size(); passIndex-- > 0;)
+        {
+            const auto& pass = passes[passIndex];
+            const bool hasWrites = !pass.Writes.empty() || !pass.BufferWrites.empty();
+
+            bool writesImportedResource = false;
+            bool producesRequiredResource = false;
+
+            for (const auto& write : pass.Writes)
+            {
+                writesImportedResource |= isImported(write.Handle);
+                producesRequiredResource |= isRequired(write.Handle);
+            }
+            for (const auto handle : pass.BufferWrites)
+            {
+                writesImportedResource |= isImported(handle);
+                producesRequiredResource |= isRequired(handle);
+            }
+
+            const bool isLive = pass.HasSideEffects || !hasWrites ||
+                                writesImportedResource || producesRequiredResource;
+            if (!isLive) continue;
+
+            livePasses[passIndex] = true;
+
+            // The latest live writer satisfies the downstream requirement.
+            for (const auto& write : pass.Writes)
+            {
+                requiredResources.erase(write.Handle.ID);
+                if (write.LoadOp == RHI::LoadOp::Load)
+                {
+                    requiredResources.insert(write.Handle.ID);
+                }
+            }
+            for (const auto handle : pass.BufferWrites)
+            {
+                requiredResources.erase(handle.ID);
+            }
+
+            for (const auto handle : pass.Reads)
+            {
+                if (handle.IsValid()) requiredResources.insert(handle.ID);
+            }
+        }
+
+        Vector<RGPassNode> culledPasses;
+        culledPasses.reserve(passes.size());
+        for (size_t passIndex = 0; passIndex < passes.size(); ++passIndex)
+        {
+            if (livePasses[passIndex])
+            {
+                culledPasses.push_back(std::move(passes[passIndex]));
+            }
+        }
+        passes = std::move(culledPasses);
+    }
+
     bool RenderGraphAlgorithms::SortPasses(Vector<RGPassNode>& passes)
     {
         const size_t passCount = passes.size();
@@ -129,6 +203,34 @@ namespace Mixture
         return true;
     }
 
+    void RenderGraphAlgorithms::CalculateResourceLifetimes(
+        const Vector<RGPassNode>& passes,
+        Vector<RGResourceNode>& resources)
+    {
+        for (auto& resource : resources)
+        {
+            resource.FirstPassIndex = -1;
+            resource.LastPassIndex = -1;
+        }
+
+        auto updateResource = [&](RGResourceHandle handle, int32_t passIndex)
+        {
+            if (!handle.IsValid() || handle.ID >= resources.size()) return;
+
+            auto& resource = resources[handle.ID];
+            if (resource.FirstPassIndex == -1) resource.FirstPassIndex = passIndex;
+            resource.LastPassIndex = passIndex;
+        };
+
+        for (int32_t passIndex = 0; passIndex < static_cast<int32_t>(passes.size()); ++passIndex)
+        {
+            const auto& pass = passes[passIndex];
+            for (const auto handle : pass.Reads) updateResource(handle, passIndex);
+            for (const auto& write : pass.Writes) updateResource(write.Handle, passIndex);
+            for (const auto handle : pass.BufferWrites) updateResource(handle, passIndex);
+        }
+    }
+
     void RenderGraph::Clear()
     {
         m_PassAllocator.Reset();
@@ -140,6 +242,7 @@ namespace Mixture
 
     void RenderGraph::Compile()
     {
+        CullPasses();
         SortPasses();
         CalculateLifetimes();
         CalculateBarriers();
@@ -151,9 +254,13 @@ namespace Mixture
 
     void RenderGraph::Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context)
     {
+        m_Cache.BeginFrame(context->GetCurrentFrameIndex());
+
         // Realize Resources (Allocation Phase)
         for (const auto& node : m_Resources)
         {
+            if (node.FirstPassIndex < 0) continue;
+
             if (node.Type == RGResourceType::ImportedTexture)
             {
                 m_Registry.ImportTexture(node.Handle, node.ExternalTexture);
@@ -165,20 +272,32 @@ namespace Mixture
             else if (node.Type == RGResourceType::Texture)
             {
                 // Get from Cache
-                auto texture = m_Cache.GetOrCreateTexture(node.Name, node.TextureDesc);
+                auto texture = m_Cache.GetOrCreateTexture(node.TextureDesc);
                 m_Registry.RegisterTexture(node.Handle, texture.get());
             }
             else if (node.Type == RGResourceType::Buffer)
             {
                 // Get from Cache
-                auto buffer = m_Cache.GetOrCreateBuffer(node.Name, node.BufferDesc);
+                auto buffer = m_Cache.GetOrCreateBuffer(node.BufferDesc);
                 m_Registry.RegisterBuffer(node.Handle, buffer.get());
             }
         }
 
-        // Execute Passes
-        for (const auto& pass : m_Passes)
+        Vector<Vector<const RGResourceNode*>> resourcesEndingAtPass(m_Passes.size());
+        for (const auto& node : m_Resources)
         {
+            const bool isTransient = node.Type == RGResourceType::Texture || node.Type == RGResourceType::Buffer;
+            if (isTransient && node.LastPassIndex >= 0)
+            {
+                resourcesEndingAtPass[static_cast<size_t>(node.LastPassIndex)].push_back(&node);
+            }
+        }
+
+        // Execute Passes
+        for (size_t passIndex = 0; passIndex < m_Passes.size(); ++passIndex)
+        {
+            const auto& pass = m_Passes[passIndex];
+
             // Execute Barriers
             for (const auto& barrier : pass.Barriers)
             {
@@ -270,6 +389,16 @@ namespace Mixture
                     // Just execute without dynamic rendering scope (Compute, Copy, etc.)
                     pass.Execute(m_Registry, cmdList);
                 }
+            }
+
+            // Virtual handles are valid only through their calculated lifetime.
+            // The frame-slot cache retains physical ownership until GPU-safe reuse.
+            for (const RGResourceNode* resource : resourcesEndingAtPass[passIndex])
+            {
+                if (resource->Type == RGResourceType::Texture)
+                    m_Registry.UnregisterTexture(resource->Handle);
+                else
+                    m_Registry.UnregisterBuffer(resource->Handle);
             }
         }
     }
@@ -390,31 +519,14 @@ namespace Mixture
         }
     }
 
+    void RenderGraph::CullPasses()
+    {
+        RenderGraphAlgorithms::CullPasses(m_Passes, m_Resources);
+    }
+
     void RenderGraph::CalculateLifetimes()
     {
-        for (auto& node : m_Resources)
-        {
-            node.FirstPassIndex = -1;
-            node.LastPassIndex = -1;
-        }
-
-        for (int32_t passIndex = 0; passIndex < static_cast<int32_t>(m_Passes.size()); ++passIndex)
-        {
-            const auto& pass = m_Passes[passIndex];
-
-            auto UpdateResource = [&](RGResourceHandle handle)
-            {
-                if (!handle.IsValid()) return;
-                auto& node = m_Resources[handle.ID];
-
-                if (node.FirstPassIndex == -1) node.FirstPassIndex = passIndex;
-                node.LastPassIndex = passIndex;
-            };
-
-            for (auto handle : pass.Reads) UpdateResource(handle);
-            for (auto write : pass.Writes) UpdateResource(write.Handle);
-            for (auto handle : pass.BufferWrites) UpdateResource(handle);
-        }
+        RenderGraphAlgorithms::CalculateResourceLifetimes(m_Passes, m_Resources);
     }
 
     void RenderGraph::CalculateBarriers()

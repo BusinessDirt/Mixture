@@ -96,6 +96,11 @@ namespace Mixture
         Vector<RGBarrier> Barriers;
 
         /**
+         * @brief Prevents culling when the pass performs work outside declared resources.
+         */
+        bool HasSideEffects = false;
+
+        /**
          * @brief The actual execution logic (Recorded lambda).
          * We pass the Registry so you can look up the REAL texture later.
          */
@@ -104,6 +109,15 @@ namespace Mixture
 
     namespace RenderGraphAlgorithms
     {
+        /**
+         * @brief Removes passes whose transient outputs cannot affect a graph output.
+         *
+         * Writes to imported resources and explicitly side-effecting passes are
+         * graph roots. Passes without declared writes are retained for backward
+         * compatibility because their external effects cannot be inferred.
+         */
+        void CullPasses(Vector<RGPassNode>& passes, const Vector<RGResourceNode>& resources);
+
         /**
          * @brief Orders passes while preserving all implicit resource hazards.
          *
@@ -115,5 +129,10 @@ namespace Mixture
          * @return true when a complete ordering was produced.
          */
         bool SortPasses(Vector<RGPassNode>& passes);
+
+        /**
+         * @brief Calculates first and last pass use for every virtual resource.
+         */
+        void CalculateResourceLifetimes(const Vector<RGPassNode>& passes, Vector<RGResourceNode>& resources);
     }
 }

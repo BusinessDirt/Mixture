@@ -32,6 +32,14 @@ namespace Mixture
         return m_Textures[handle.ID];
     }
 
+    void RenderGraphRegistry::UnregisterTexture(RGResourceHandle handle)
+    {
+        if (handle.IsValid() && handle.ID < m_Textures.size())
+        {
+            m_Textures[handle.ID] = nullptr;
+        }
+    }
+
     void RenderGraphRegistry::RegisterBuffer(RGResourceHandle handle, RHI::IBuffer* buffer)
     {
         if (!handle.IsValid()) return;
@@ -56,6 +64,14 @@ namespace Mixture
         }
 
         return m_Buffers[handle.ID];
+    }
+
+    void RenderGraphRegistry::UnregisterBuffer(RGResourceHandle handle)
+    {
+        if (handle.IsValid() && handle.ID < m_Buffers.size())
+        {
+            m_Buffers[handle.ID] = nullptr;
+        }
     }
 
     void RenderGraphRegistry::ImportTexture(RGResourceHandle handle, RHI::ITexture* texture)

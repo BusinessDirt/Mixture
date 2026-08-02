@@ -98,6 +98,14 @@ namespace Mixture::RHI
         virtual uint32_t GetSwapchainHeight() const = 0;
 
         /**
+         * @brief Gets the synchronized frame slot currently being recorded.
+         *
+         * Resource caches may retire objects associated with this slot because
+         * BeginFrame has waited for its previous GPU submission to complete.
+         */
+        virtual uint32_t GetCurrentFrameIndex() const = 0;
+
+        /**
          * @brief Factory method to create a graphics context.
          *
          * @param appDescription Description of the application.

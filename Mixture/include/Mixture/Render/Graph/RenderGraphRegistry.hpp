@@ -50,6 +50,9 @@ namespace Mixture
          */
         RHI::ITexture* GetTexture(RGResourceHandle handle);
 
+        /** @brief Removes a transient texture mapping after its last graph use. */
+        void UnregisterTexture(RGResourceHandle handle);
+
         /** @} */
 
         /**
@@ -72,6 +75,9 @@ namespace Mixture
          * @return RHI::IBuffer* Pointer to the physical buffer.
          */
         RHI::IBuffer* GetBuffer(RGResourceHandle handle);
+
+        /** @brief Removes a transient buffer mapping after its last graph use. */
+        void UnregisterBuffer(RGResourceHandle handle);
 
         /** @} */
 

@@ -161,7 +161,7 @@ namespace Mixture::Vulkan
          */
 		Queue& GetComputeQueue() const { return *m_ComputeQueue; }
 
-        uint32_t GetCurrentFrameIndex() const { return m_CurrentFrame; }
+        uint32_t GetCurrentFrameIndex() const override { return m_CurrentFrame; }
 
         DescriptorAllocator* GetCurrentDescriptorAllocator() const;
         DescriptorLayoutCache* GetDescriptorLayoutCache() const;

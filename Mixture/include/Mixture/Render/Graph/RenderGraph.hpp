@@ -147,6 +147,7 @@ namespace Mixture
         const RGResourceNode& GetResourceNode(RGResourceHandle handle) const;
 
     private:
+        void CullPasses();
         void SortPasses();
         void CalculateLifetimes();
         void CalculateBarriers();
