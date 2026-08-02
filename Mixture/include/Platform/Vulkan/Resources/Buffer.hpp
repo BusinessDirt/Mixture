@@ -13,6 +13,8 @@
 
 namespace Mixture::Vulkan
 {
+    class Device;
+
     /**
      * @brief Vulkan implementation of a GPU buffer.
      * 
@@ -24,10 +26,11 @@ namespace Mixture::Vulkan
         /**
          * @brief Constructs a Vulkan Buffer.
          * 
+         * @param device Shared ownership of the creating device.
          * @param desc The buffer description.
          * @param initialData Optional pointer to data to upload on creation.
          */
-        Buffer(const RHI::BufferDesc& desc, const void* initialData = nullptr);
+        Buffer(Ref<Device> device, const RHI::BufferDesc& desc, const void* initialData = nullptr);
         virtual ~Buffer();
 
         // IBuffer Interface
@@ -42,6 +45,7 @@ namespace Mixture::Vulkan
         vk::Buffer GetHandle() const { return m_Buffer; }
 
     private:
+        Ref<Device> m_Device;
         RHI::BufferDesc m_Desc;
         vk::Buffer m_Buffer = nullptr;
         VmaAllocation m_Allocation = nullptr;

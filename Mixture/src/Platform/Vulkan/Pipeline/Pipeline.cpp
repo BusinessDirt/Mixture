@@ -3,15 +3,15 @@
 
 #include "Platform/Vulkan/Pipeline/Shader.hpp"
 
-#include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Device.hpp"
 
 namespace Mixture::Vulkan
 {
-    Pipeline::Pipeline(const RHI::PipelineDesc& desc)
+    Pipeline::Pipeline(Ref<Device> device, const RHI::PipelineDesc& desc)
+        : m_Device(std::move(device))
     {
-        auto& device = Context::Get().GetLogicalDevice();
-        vk::Device vkDevice = device.GetHandle();
+        OPAL_ASSERT("Core/Vulkan", m_Device, "Pipeline requires an owning device");
+        vk::Device vkDevice = m_Device->GetHandle();
 
         Vector<vk::PipelineShaderStageCreateInfo> shaderStages;
         auto* vertexShader = static_cast<Shader*>(desc.VertexShader);
@@ -20,6 +20,13 @@ namespace Mixture::Vulkan
         if (!vertexShader)
         {
             OPAL_ERROR("Core/Vulkan", "Vertex Shader is required!");
+            return;
+        }
+
+        if (&vertexShader->GetDevice() != m_Device.get()
+            || (fragmentShader && &fragmentShader->GetDevice() != m_Device.get()))
+        {
+            OPAL_ERROR("Core/Vulkan", "Pipeline shaders must belong to the pipeline's device!");
             return;
         }
 
@@ -187,8 +194,7 @@ namespace Mixture::Vulkan
 
     Pipeline::~Pipeline()
     {
-        auto& device = Context::Get().GetLogicalDevice();
-        vk::Device vkDevice = device.GetHandle();
+        vk::Device vkDevice = m_Device->GetHandle();
 
         if (m_Handle) vkDevice.destroyPipeline(m_Handle);
         if (m_Layout) vkDevice.destroyPipelineLayout(m_Layout);

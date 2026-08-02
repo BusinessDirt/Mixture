@@ -37,10 +37,10 @@ namespace Mixture::Vulkan
     {
         s_Instance = this;
 
-        m_Instance = CreateScope<Instance>(appDescription);
+        m_Instance = CreateRef<Instance>(appDescription);
         m_Surface = CreateScope<Surface>(*m_Instance, windowHandle);
-        m_PhysicalDevice = CreateScope<PhysicalDevice>(*m_Instance);
-        m_Device = CreateScope<Device>(*m_Instance, *m_PhysicalDevice);
+        m_PhysicalDevice = CreateRef<PhysicalDevice>(*m_Instance);
+        m_Device = CreateRef<Device>(m_Instance, m_PhysicalDevice);
         m_Swapchain = CreateScope<Swapchain>(*m_PhysicalDevice, *m_Device, *m_Surface, appDescription.Width, appDescription.Height);
 
         QueueFamilyIndices indices = m_PhysicalDevice->GetQueueFamilies();
@@ -48,6 +48,7 @@ namespace Mixture::Vulkan
         m_PresentQueue = CreateScope<Queue>(*m_Device, indices.Present, 0, "Present Queue");
         m_ComputeQueue = CreateScope<Queue>(*m_Device, indices.Compute, MAX_FRAMES_IN_FLIGHT, "Compute Queue", indices.Graphics);
         m_TransferQueue = CreateScope<Queue>(*m_Device, indices.Transfer, MAX_FRAMES_IN_FLIGHT, "Transfer Queue", indices.Graphics);
+        m_Device->SetTransferQueue(*m_TransferQueue);
 
         uint32_t imagecount = m_Swapchain->GetImageCount();
         m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
@@ -65,6 +66,7 @@ namespace Mixture::Vulkan
     Context::~Context()
     {
         m_Device->WaitForIdle();
+        m_Device->ClearTransferQueue();
         s_Instance = nullptr;
     }
 

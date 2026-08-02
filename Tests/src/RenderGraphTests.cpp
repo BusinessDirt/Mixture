@@ -6,6 +6,13 @@
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
+#include "Platform/Vulkan/Device.hpp"
+#include "Platform/Vulkan/Pipeline/Pipeline.hpp"
+#include "Platform/Vulkan/Pipeline/Shader.hpp"
+#include "Platform/Vulkan/Resources/Buffer.hpp"
+#include "Platform/Vulkan/Resources/Texture.hpp"
+
+#include <type_traits>
 
 namespace Mixture::Tests
 {
@@ -332,4 +339,28 @@ namespace Mixture::Tests
         EXPECT_FALSE(ShaderLibrary::IsInitialized());
         AssetManager::Get().Shutdown();
     }
+
+    TEST(VulkanResourceLifetimeTests, ResourceConstructorsRequireSharedDeviceOwnership)
+    {
+        using namespace Vulkan;
+
+        static_assert(std::is_base_of_v<std::enable_shared_from_this<Device>, Device>);
+        static_assert(std::is_constructible_v<Device, Ref<Instance>, Ref<PhysicalDevice>>);
+        static_assert(!std::is_constructible_v<Device, Instance&, PhysicalDevice&>);
+
+        static_assert(std::is_constructible_v<Buffer, Ref<Device>, const RHI::BufferDesc&, const void*>);
+        static_assert(!std::is_constructible_v<Buffer, const RHI::BufferDesc&, const void*>);
+
+        static_assert(std::is_constructible_v<Texture, Ref<Device>, const RHI::TextureDesc&, const void*>);
+        static_assert(!std::is_constructible_v<Texture, const RHI::TextureDesc&, const void*>);
+
+        static_assert(std::is_constructible_v<Shader, Ref<Device>, const void*, size_t, RHI::ShaderStage>);
+        static_assert(!std::is_constructible_v<Shader, const void*, size_t, RHI::ShaderStage>);
+
+        static_assert(std::is_constructible_v<Pipeline, Ref<Device>, const RHI::PipelineDesc&>);
+        static_assert(!std::is_constructible_v<Pipeline, const RHI::PipelineDesc&>);
+
+        SUCCEED();
+    }
+
 }

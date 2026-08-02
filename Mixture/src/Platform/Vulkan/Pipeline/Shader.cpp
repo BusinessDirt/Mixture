@@ -1,20 +1,20 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Pipeline/Shader.hpp"
 
-#include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Device.hpp"
 
 namespace Mixture::Vulkan
 {
-    Shader::Shader(const void* data, size_t size, RHI::ShaderStage stage)
-        : m_Stage(stage), m_ReflectionData(ShaderCompiler::ReflectSPIRV(data, size))
+    Shader::Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage)
+        : m_Device(std::move(device)), m_Stage(stage), m_ReflectionData(ShaderCompiler::ReflectSPIRV(data, size))
     {
+        OPAL_ASSERT("Core/Vulkan", m_Device, "Shader requires an owning device");
+
         vk::ShaderModuleCreateInfo createInfo;
         createInfo.setCodeSize(size);
         createInfo.setPCode(reinterpret_cast<const uint32_t*>(data));
 
-        auto& device = Context::Get().GetLogicalDevice();
-        vk::Device vkDevice = device.GetHandle();
+        vk::Device vkDevice = m_Device->GetHandle();
 
         try
         {
@@ -33,8 +33,7 @@ namespace Mixture::Vulkan
     {
         if (m_Handle)
         {
-            auto& device = Context::Get().GetLogicalDevice();
-            device.GetHandle().destroyShaderModule(m_Handle);
+            m_Device->GetHandle().destroyShaderModule(m_Handle);
         }
     }
 

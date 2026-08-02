@@ -173,10 +173,10 @@ namespace Mixture::Vulkan
          */
         static Context& Get();
     private:
-        Scope<Instance> m_Instance;
+        Ref<Instance> m_Instance;
         Scope<Surface> m_Surface;
-        Scope<PhysicalDevice> m_PhysicalDevice;
-        Scope<Device> m_Device;
+        Ref<PhysicalDevice> m_PhysicalDevice;
+        Ref<Device> m_Device;
         Scope<Swapchain> m_Swapchain;
 
         Scope<Queue> m_GraphicsQueue;

@@ -6,15 +6,18 @@
 
 #include "Platform/Vulkan/Pipeline/Pipeline.hpp"
 #include "Platform/Vulkan/Pipeline/Shader.hpp"
+#include "Platform/Vulkan/Queue.hpp"
 
 #include <vector>
 #include <set>
 
 namespace Mixture::Vulkan
 {
-	Device::Device(Instance& instance, PhysicalDevice& physicalDevice)
-		: m_PhysicalDevice(&physicalDevice)
+	Device::Device(Ref<Instance> instance, Ref<PhysicalDevice> physicalDevice)
+		: m_Instance(std::move(instance)), m_PhysicalDevice(std::move(physicalDevice))
 	{
+		OPAL_ASSERT("Core/Vulkan", m_Instance && m_PhysicalDevice, "Device requires explicit instance and physical-device ownership");
+
 		auto indices = m_PhysicalDevice->GetQueueFamilies();
 
 		float queuePriority = 1.0f;
@@ -77,7 +80,7 @@ namespace Mixture::Vulkan
         allocatorInfo.vulkanApiVersion = VK_API_VERSION_1_3;
         allocatorInfo.physicalDevice = m_PhysicalDevice->GetHandle();
         allocatorInfo.device = m_Device;
-        allocatorInfo.instance = instance.GetHandle();
+        allocatorInfo.instance = m_Instance->GetHandle();
         allocatorInfo.pVulkanFunctions = &vulkanFunctions;
         allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
@@ -92,28 +95,36 @@ namespace Mixture::Vulkan
 
 	Device::~Device()
 	{
+		if (!m_Device) return;
+
         m_Device.waitIdle();
-        vmaDestroyAllocator(m_Allocator);
+        if (m_Allocator) vmaDestroyAllocator(m_Allocator);
         m_Device.destroy();
 	}
 
+    Queue& Device::GetTransferQueue() const
+    {
+        OPAL_ASSERT("Core/Vulkan", m_TransferQueue, "Transfer queue has not been assigned to the device");
+        return *m_TransferQueue;
+    }
+
     Ref<RHI::IShader> Device::CreateShader(const void* data, size_t size, RHI::ShaderStage stage)
     {
-        return CreateRef<Shader>(data, size, stage);
+        return CreateRef<Shader>(shared_from_this(), data, size, stage);
     }
 
     Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc, const void* initialData)
     {
-        return CreateRef<Buffer>(desc, initialData);
+        return CreateRef<Buffer>(shared_from_this(), desc, initialData);
     }
 
     Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc, const void* initialData)
     {
-        return CreateRef<Texture>(desc, initialData);
+        return CreateRef<Texture>(shared_from_this(), desc, initialData);
     }
 
     Ref<RHI::IPipeline> Device::CreatePipeline(const RHI::PipelineDesc& desc)
     {
-        return CreateRef<Pipeline>(desc);
+        return CreateRef<Pipeline>(shared_from_this(), desc);
     }
 }

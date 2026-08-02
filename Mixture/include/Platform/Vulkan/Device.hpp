@@ -15,10 +15,12 @@
 
 namespace Mixture::Vulkan
 {
+    class Queue;
+
     /**
      * @brief Wrapper around a Vulkan logical device.
      */
-	class Device : public RHI::IGraphicsDevice
+	class Device : public RHI::IGraphicsDevice, public std::enable_shared_from_this<Device>
 	{
 	public:
         /**
@@ -27,7 +29,7 @@ namespace Mixture::Vulkan
          * @param instance The vulkan instance
          * @param physicalDevice The physical device to create the logical device from.
          */
-		Device(Instance& instance, PhysicalDevice& physicalDevice);
+		Device(Ref<Instance> instance, Ref<PhysicalDevice> physicalDevice);
 		~Device();
 
         /**
@@ -43,6 +45,18 @@ namespace Mixture::Vulkan
          * @return VmaAllocator The vulkan handle of the allocator.
          */
         VmaAllocator GetAllocator() const { return m_Allocator; }
+
+        /** @brief Gets the physical device retained by this logical device. */
+        PhysicalDevice& GetPhysicalDevice() const { return *m_PhysicalDevice; }
+
+        /** @brief Assigns the queue used for immediate resource uploads. */
+        void SetTransferQueue(Queue& transferQueue) { m_TransferQueue = &transferQueue; }
+
+        /** @brief Clears the non-owning upload queue before its context is destroyed. */
+        void ClearTransferQueue() { m_TransferQueue = nullptr; }
+
+        /** @brief Gets the queue used for immediate resource uploads. */
+        Queue& GetTransferQueue() const;
 
         /**
          * @brief Creates a Vulkan shader module.
@@ -83,9 +97,11 @@ namespace Mixture::Vulkan
 		void WaitForIdle() override { m_Device.waitIdle(); }
 
 	private:
-		PhysicalDevice* m_PhysicalDevice;
-		vk::Device m_Device;
+		Ref<Instance> m_Instance;
+		Ref<PhysicalDevice> m_PhysicalDevice;
+		Queue* m_TransferQueue = nullptr;
+		vk::Device m_Device = nullptr;
 
-        VmaAllocator m_Allocator;
+        VmaAllocator m_Allocator = nullptr;
 	};
 }

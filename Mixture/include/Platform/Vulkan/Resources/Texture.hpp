@@ -13,6 +13,8 @@
 
 namespace Mixture::Vulkan
 {
+    class Device;
+
     /**
      * @brief Vulkan implementation of a GPU texture.
      *
@@ -24,21 +26,24 @@ namespace Mixture::Vulkan
         /**
          * @brief Constructs a Standard Texture (memory owned by this class).
          * 
+         * @param device Shared ownership of the creating device.
          * @param spec The texture description.
          * @param data Optional initial data to upload.
          */
-        Texture(const RHI::TextureDesc& spec, const void* data = nullptr);
+        Texture(Ref<Device> device, const RHI::TextureDesc& spec, const void* data = nullptr);
 
         /**
          * @brief Constructs a wrapper around an existing Vulkan Image (e.g., Swapchain Image).
          * 
+         * @param device Shared ownership of the creating device.
          * @param format The image format.
          * @param image The existing image handle.
          * @param imageView The existing image view handle.
          * @param width The width of the image.
          * @param height The height of the image.
          */
-        Texture(vk::Format format, vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height);
+        Texture(Ref<Device> device, vk::Format format, vk::Image image, vk::ImageView imageView,
+            uint32_t width, uint32_t height);
 
         virtual ~Texture();
 
@@ -78,6 +83,7 @@ namespace Mixture::Vulkan
         void Release(); // Helper to clean up
 
     private:
+        Ref<Device> m_Device;
         uint32_t m_Width = 0;
         uint32_t m_Height = 0;
         RHI::Format m_Format;
