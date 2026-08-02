@@ -5,6 +5,7 @@
 #include "Mixture/Render/Graph/RenderGraphRegistry.hpp"
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
+#include "Mixture/Render/RHI/IGraphicsContext.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/Pipeline/Pipeline.hpp"
@@ -103,6 +104,31 @@ namespace Mixture::Tests
 
             size_t BufferCreationCount = 0;
             size_t TextureCreationCount = 0;
+        };
+
+        class HeadlessGraphicsContext final : public RHI::IGraphicsContext
+        {
+        public:
+            RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::None; }
+            RHI::IGraphicsDevice& GetDevice() const override { return m_Device; }
+            void OnResize(uint32_t, uint32_t) override {}
+            RHI::ITexture* BeginFrame() override { return nullptr; }
+            void EndFrame() override {}
+            Scope<RHI::ICommandList> GetCommandBuffer() override { return nullptr; }
+            uint32_t GetSwapchainWidth() const override { return 0; }
+            uint32_t GetSwapchainHeight() const override { return 0; }
+            uint32_t GetCurrentFrameIndex() const override { return 0; }
+
+        private:
+            mutable MockGraphicsDevice m_Device;
+        };
+
+        template<typename T>
+        concept HasImGuiLifecycle = requires(T& context, RHI::ICommandList* commandList)
+        {
+            context.BeginImGuiFrame();
+            context.EndImGuiFrame();
+            context.RenderImGui(commandList);
         };
     }
 
@@ -361,6 +387,17 @@ namespace Mixture::Tests
         static_assert(!std::is_constructible_v<Pipeline, const RHI::PipelineDesc&>);
 
         SUCCEED();
+    }
+
+    TEST(GraphicsContextContractTests, SupportsAContextWithoutImGui)
+    {
+        static_assert(!HasImGuiLifecycle<RHI::IGraphicsContext>);
+        static_assert(std::is_default_constructible_v<HeadlessGraphicsContext>);
+
+        HeadlessGraphicsContext context;
+        EXPECT_EQ(context.GetAPI(), RHI::GraphicsAPI::None);
+        EXPECT_EQ(context.BeginFrame(), nullptr);
+        EXPECT_EQ(context.GetCommandBuffer(), nullptr);
     }
 
 }
