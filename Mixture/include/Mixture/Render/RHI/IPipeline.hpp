@@ -38,6 +38,22 @@ namespace Mixture::RHI
     };
 
     /**
+     * @brief Stable identity used to cache objects derived from shader code.
+     *
+     * StableID identifies the logical shader asset, while Version changes each
+     * time that asset is reloaded. Stage distinguishes entry points within it.
+     */
+    struct ShaderIdentity
+    {
+        uint64_t StableID = 0;
+        uint64_t Version = 0;
+        ShaderStage Stage = ShaderStage::Vertex;
+
+        bool operator==(const ShaderIdentity&) const = default;
+        explicit operator bool() const { return StableID != 0 && Version != 0; }
+    };
+
+    /**
      * @brief Interface representing a compiled shader module.
      */
     class IShader
@@ -47,6 +63,9 @@ namespace Mixture::RHI
          * @brief Virtual destructor.
          */
         virtual ~IShader() = default;
+
+        /** @brief Gets the stable, versioned identity of this shader. */
+        virtual ShaderIdentity GetIdentity() const = 0;
 
         /**
          * @brief Retrieves the stage of this shader.

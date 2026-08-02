@@ -75,12 +75,40 @@ namespace Mixture::Tests
             RHI::BufferDesc m_Desc;
         };
 
+        class MockShader final : public RHI::IShader
+        {
+        public:
+            explicit MockShader(RHI::ShaderIdentity identity)
+                : m_Identity(identity)
+            {}
+
+            RHI::ShaderIdentity GetIdentity() const override { return m_Identity; }
+            RHI::ShaderStage GetStage() const override { return m_Identity.Stage; }
+
+        private:
+            RHI::ShaderIdentity m_Identity;
+        };
+
+        class MockPipeline final : public RHI::IPipeline
+        {
+        public:
+            explicit MockPipeline(size_t& destructionCount)
+                : m_DestructionCount(destructionCount)
+            {}
+
+            ~MockPipeline() override { ++m_DestructionCount; }
+
+        private:
+            size_t& m_DestructionCount;
+        };
+
         class MockGraphicsDevice final : public RHI::IGraphicsDevice
         {
         public:
-            Ref<RHI::IShader> CreateShader(const void*, size_t, RHI::ShaderStage) override
+            Ref<RHI::IShader> CreateShader(const void*, size_t, RHI::ShaderStage,
+                RHI::ShaderIdentity identity) override
             {
-                return nullptr;
+                return CreateRef<MockShader>(identity);
             }
 
             Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc, const void*) override
@@ -97,13 +125,16 @@ namespace Mixture::Tests
 
             Ref<RHI::IPipeline> CreatePipeline(const RHI::PipelineDesc&) override
             {
-                return CreateRef<RHI::IPipeline>();
+                ++PipelineCreationCount;
+                return CreateRef<MockPipeline>(PipelineDestructionCount);
             }
 
             void WaitForIdle() override {}
 
             size_t BufferCreationCount = 0;
             size_t TextureCreationCount = 0;
+            size_t PipelineCreationCount = 0;
+            size_t PipelineDestructionCount = 0;
         };
 
         class HeadlessGraphicsContext final : public RHI::IGraphicsContext
@@ -380,8 +411,10 @@ namespace Mixture::Tests
         static_assert(std::is_constructible_v<Texture, Ref<Device>, const RHI::TextureDesc&, const void*>);
         static_assert(!std::is_constructible_v<Texture, const RHI::TextureDesc&, const void*>);
 
-        static_assert(std::is_constructible_v<Shader, Ref<Device>, const void*, size_t, RHI::ShaderStage>);
-        static_assert(!std::is_constructible_v<Shader, const void*, size_t, RHI::ShaderStage>);
+        static_assert(std::is_constructible_v<Shader, Ref<Device>, const void*, size_t,
+            RHI::ShaderStage, RHI::ShaderIdentity>);
+        static_assert(!std::is_constructible_v<Shader, const void*, size_t, RHI::ShaderStage,
+            RHI::ShaderIdentity>);
 
         static_assert(std::is_constructible_v<Pipeline, Ref<Device>, const RHI::PipelineDesc&>);
         static_assert(!std::is_constructible_v<Pipeline, const RHI::PipelineDesc&>);
@@ -398,6 +431,41 @@ namespace Mixture::Tests
         EXPECT_EQ(context.GetAPI(), RHI::GraphicsAPI::None);
         EXPECT_EQ(context.BeginFrame(), nullptr);
         EXPECT_EQ(context.GetCommandBuffer(), nullptr);
+    }
+
+    TEST(PipelineCacheTests, ShaderReloadReleasesAndRecreatesDependentPipelines)
+    {
+        MockGraphicsDevice device;
+        PipelineCache::Init(device);
+        ShaderLibrary::Init(device);
+
+        const UUID shaderAssetID(0xC0FFEE);
+        MockShader firstVersion({ static_cast<uint64_t>(shaderAssetID), 1, RHI::ShaderStage::Vertex });
+        RHI::PipelineDesc desc;
+        desc.VertexShader = &firstVersion;
+
+        RHI::IPipeline* firstPipeline = PipelineCache::GetPipeline(desc);
+        ASSERT_NE(firstPipeline, nullptr);
+        EXPECT_EQ(device.PipelineCreationCount, 1u);
+        EXPECT_EQ(device.PipelineDestructionCount, 0u);
+
+        MockShader equivalentFirstVersion(
+            { static_cast<uint64_t>(shaderAssetID), 1, RHI::ShaderStage::Vertex });
+        desc.VertexShader = &equivalentFirstVersion;
+        EXPECT_EQ(PipelineCache::GetPipeline(desc), firstPipeline);
+        EXPECT_EQ(device.PipelineCreationCount, 1u);
+
+        ShaderLibrary::Reload(AssetHandle{ shaderAssetID, 0 });
+        EXPECT_EQ(device.PipelineDestructionCount, 1u);
+
+        MockShader secondVersion({ static_cast<uint64_t>(shaderAssetID), 2, RHI::ShaderStage::Vertex });
+        desc.VertexShader = &secondVersion;
+        ASSERT_NE(PipelineCache::GetPipeline(desc), nullptr);
+        EXPECT_EQ(device.PipelineCreationCount, 2u);
+
+        ShaderLibrary::Shutdown();
+        PipelineCache::Shutdown();
+        EXPECT_EQ(device.PipelineDestructionCount, 2u);
     }
 
 }

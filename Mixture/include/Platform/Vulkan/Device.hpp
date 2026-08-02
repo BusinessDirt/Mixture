@@ -64,9 +64,11 @@ namespace Mixture::Vulkan
          * @param data Pointer to the shader bytecode.
          * @param size Size of the bytecode in bytes.
          * @param stage The shader stage.
+         * @param identity Stable logical identity and code version.
          * @return Ref<RHI::IShader> The created shader.
          */
-        Ref<RHI::IShader> CreateShader(const void* data, size_t size, RHI::ShaderStage stage) override;
+        Ref<RHI::IShader> CreateShader(const void* data, size_t size, RHI::ShaderStage stage,
+            RHI::ShaderIdentity identity) override;
 
         /**
          * @brief Creates a Vulkan buffer.
