@@ -48,6 +48,14 @@ namespace Mixture
         RGResourceHandle Write(const RGAttachmentInfo& info);
 
         /**
+         * @brief Keeps this pass even when it has no live graph resource output.
+         *
+         * Use this for external effects that cannot be represented by a resource
+         * read or write.
+         */
+        void SetSideEffect();
+
+        /**
          * @brief Creates a new internal transient resource for this pass.
          *
          * @param name The name of the resource.

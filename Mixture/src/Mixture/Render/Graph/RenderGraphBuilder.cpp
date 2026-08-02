@@ -73,6 +73,11 @@ namespace Mixture
         return info.Handle;
     }
 
+    void RenderGraphBuilder::SetSideEffect()
+    {
+        m_PassNode.HasSideEffects = true;
+    }
+
     RGResourceHandle RenderGraphBuilder::CreateTexture(const std::string& name, const RHI::TextureDesc& desc)
     {
         // Delegate the actual allocation logic to the main graph
