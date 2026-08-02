@@ -90,6 +90,9 @@ namespace Mixture
          */
         static Application& Get() { return *s_Instance; }
 
+        /** @brief Returns whether an application currently owns engine services. */
+        static bool IsCreated() { return s_Instance != nullptr; }
+
         /**
          * @brief Gets the application window.
          *
@@ -122,6 +125,7 @@ namespace Mixture
         void Run() const;
         bool OnWindowClose(WindowCloseEvent& e);
         bool OnFramebufferResize(const FramebufferResizeEvent& e);
+        void ShutdownOwnedServices() noexcept;
 
     private:
         ApplicationDescription m_AppDescription;

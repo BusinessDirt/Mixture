@@ -9,6 +9,8 @@
 
 #include <Opal/Base.hpp>
 
+#include <stdexcept>
+
 namespace Mixture
 {
     Application* Application::s_Instance = nullptr;
@@ -16,37 +18,69 @@ namespace Mixture
     Application::Application(const ApplicationDescription& appDescription)
         : m_AppDescription(appDescription)
     {
-        OPAL_ASSERT("Core", !s_Instance, "Mixture::Application::Application() - Application already exists!")
+        if (s_Instance)
+        {
+            throw std::logic_error("Mixture::Application already exists");
+        }
 
         s_Instance = this;
+        try
+        {
+            TaskSystem::Init();
 
-        TaskSystem::Init();
+            AssetManager::Get().Init();
+            AssetManager::Get().SetAssetRoot("Assets");
+            AssetManager::Get().SetGraphicsAPI(appDescription.API);
 
-        auto props = WindowProps();
-        props.Title = appDescription.Name;
-        props.Width = appDescription.Width;
-        props.Height = appDescription.Height;
+            auto props = WindowProps();
+            props.Title = appDescription.Name;
+            props.Width = appDescription.Width;
+            props.Height = appDescription.Height;
 
-        m_Window = CreateScope<Window>(props);
-        m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
+            m_Window = CreateScope<Window>(props);
+            m_Window->SetEventCallback(OPAL_BIND_EVENT_FN(OnEvent));
 
-        m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
-        m_RenderGraph = CreateScope<RenderGraph>(m_Context->GetDevice());
+            m_Context = RHI::IGraphicsContext::Create(appDescription, m_Window->GetNativeWindow());
+            if (!m_Context)
+            {
+                throw std::runtime_error("Failed to create graphics context");
+            }
 
-        AssetManager::Get().Init();
-        AssetManager::Get().SetAssetRoot("Assets");
-        AssetManager::Get().SetGraphicsAPI(appDescription.API);
+            PipelineCache::Init(m_Context->GetDevice());
+            ShaderLibrary::Init(m_Context->GetDevice());
+            m_RenderGraph = CreateScope<RenderGraph>(m_Context->GetDevice());
+        }
+        catch (...)
+        {
+            ShutdownOwnedServices();
+            throw;
+        }
     }
 
     Application::~Application()
     {
-        m_Context->GetDevice().WaitForIdle();
+        ShutdownOwnedServices();
+    }
+
+    void Application::ShutdownOwnedServices() noexcept
+    {
+        if (m_Context)
+        {
+            m_Context->GetDevice().WaitForIdle();
+        }
+
         m_LayerStack.Shutdown();
         m_RenderGraph.reset();
+
+        // Renderer services own device resources and must stop before the device.
+        ShaderLibrary::Shutdown();
+        PipelineCache::Shutdown();
         m_Context.reset();
-        
+        m_Window.reset();
+
         AssetManager::Get().Shutdown();
         TaskSystem::Shutdown();
+        s_Instance = nullptr;
     }
 
     void Application::Close()

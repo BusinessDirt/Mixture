@@ -41,6 +41,7 @@ namespace Mixture
         AssetManager() 
             : m_AssetCache(512 * 1024 * 1024) // 512MB Asset Cache by default
         {} 
+        ~AssetManager() { Shutdown(); }
 
         /**
          * @brief Initializes the AssetManager, registers loaders, and starts the I/O thread.
@@ -51,6 +52,9 @@ namespace Mixture
          * @brief Shuts down the I/O thread and cleans up resources.
          */
         void Shutdown();
+
+        /** @brief Returns whether the manager currently owns a running I/O service. */
+        bool IsInitialized() const { return m_Initialized.load(); }
 
         /**
          * @brief Sets the root directory for asset lookups.
@@ -87,13 +91,17 @@ namespace Mixture
          * @param id The UUID of the reloaded asset.
          */
         using AssetReloadCallback = std::function<void(AssetType, UUID)>;
+        using ReloadCallbackHandle = uint64_t;
 
         /**
          * @brief Registers a callback to be notified when an asset is reloaded.
          * 
          * @param callback The callback function.
          */
-        void AddReloadCallback(AssetReloadCallback callback);
+        ReloadCallbackHandle AddReloadCallback(AssetReloadCallback callback);
+
+        /** @brief Removes a previously registered reload callback. */
+        bool RemoveReloadCallback(ReloadCallbackHandle handle);
 
         /**
          * @brief Retrieves a handle to an asset, queuing it for load if necessary.
@@ -154,7 +162,10 @@ namespace Mixture
         };
 
         std::filesystem::path m_RootDirectory;
-        RHI::GraphicsAPI m_GraphicsAPI;
+        RHI::GraphicsAPI m_GraphicsAPI = RHI::GraphicsAPI::None;
+
+        std::mutex m_LifecycleMutex;
+        std::atomic<bool> m_Initialized = false;
 
         // Cache State
         std::mutex m_CacheMutex;
@@ -170,7 +181,8 @@ namespace Mixture
         std::atomic<bool> m_Running = false;
 
         std::mutex m_CallbackMutex;
-        Vector<AssetReloadCallback> m_ReloadCallbacks;
+        std::unordered_map<ReloadCallbackHandle, AssetReloadCallback> m_ReloadCallbacks;
+        ReloadCallbackHandle m_NextReloadCallbackHandle = 1;
 
         Scope<FileSystemWatcher> m_FileWatcher;
     };

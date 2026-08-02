@@ -30,6 +30,9 @@ namespace Mixture
          */
         static void Shutdown();
 
+        /** @brief Returns whether worker threads are currently owned by the service. */
+        static bool IsInitialized();
+
         /**
          * @brief Submits a task to be executed asynchronously.
          * 

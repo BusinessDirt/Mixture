@@ -46,6 +46,9 @@ namespace Mixture
         static void Init(RHI::IGraphicsDevice& device);
         static void Shutdown();
 
+        /** @brief Returns whether the library is bound to a graphics device. */
+        static bool IsInitialized();
+
         /**
          * @brief Retrieves an RHI shader for the given asset handle.
          * Creates the shader if it doesn't exist in the library.
@@ -64,6 +67,7 @@ namespace Mixture
 
     private:
         static RHI::IGraphicsDevice* s_Device;
+        static AssetManager::ReloadCallbackHandle s_ReloadCallbackHandle;
         static std::unordered_map<ShaderCacheKey, Ref<RHI::IShader>, ShaderCacheKeyHash> s_Cache;
         static std::mutex s_Mutex;
     };

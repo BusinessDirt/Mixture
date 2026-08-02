@@ -109,6 +109,32 @@ TEST_F(AssetManagerTests, GraphicsAPI)
     EXPECT_EQ(AssetManager::Get().GetGraphicsAPI(), RHI::GraphicsAPI::Metal);
 }
 
+TEST_F(AssetManagerTests, LifecycleIsIdempotentAndResetsState)
+{
+    AssetManager& manager = AssetManager::Get();
+    ASSERT_TRUE(manager.IsInitialized());
+
+    manager.Init();
+    EXPECT_TRUE(manager.IsInitialized());
+
+    manager.Shutdown();
+    EXPECT_FALSE(manager.IsInitialized());
+    EXPECT_EQ(manager.GetGraphicsAPI(), RHI::GraphicsAPI::None);
+
+    manager.Shutdown();
+    manager.Init();
+    EXPECT_TRUE(manager.IsInitialized());
+}
+
+TEST_F(AssetManagerTests, ReloadCallbackRegistrationsAreRemovable)
+{
+    AssetManager& manager = AssetManager::Get();
+    const auto callback = manager.AddReloadCallback([](AssetType, UUID) {});
+
+    EXPECT_TRUE(manager.RemoveReloadCallback(callback));
+    EXPECT_FALSE(manager.RemoveReloadCallback(callback));
+}
+
 // --- AssetSerializer Metadata Tests ---
 
 TEST(AssetSerializerTests, MetadataRoundTrip)

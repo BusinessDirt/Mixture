@@ -15,14 +15,23 @@ namespace Mixture
         std::queue<std::function<void()>> Queue;
         std::mutex Mutex;
         std::condition_variable Condition;
-        std::atomic<bool> Running = true;
+        std::atomic<bool> Running = false;
     };
 
     static TaskQueue s_TaskQueue;
     static std::vector<std::thread> s_Threads;
+    static std::mutex s_LifecycleMutex;
+    static std::atomic<bool> s_Initialized = false;
 
     void TaskSystem::Init(uint32_t threadCount)
     {
+        std::lock_guard<std::mutex> lifecycleLock(s_LifecycleMutex);
+        if (s_Initialized)
+        {
+            OPAL_LOG_DEBUG("Core/Threading", "TaskSystem::Init ignored; service is already running.");
+            return;
+        }
+
         if (threadCount == 0)
         {
             threadCount = std::thread::hardware_concurrency();
@@ -34,52 +43,70 @@ namespace Mixture
 
         s_TaskQueue.Running = true;
 
-        for (uint32_t i = 0; i < threadCount; ++i)
+        try
         {
-            s_Threads.emplace_back([i]()
+            for (uint32_t i = 0; i < threadCount; ++i)
             {
-                std::string threadName = "Worker Thread " + std::to_string(i);
-                Opal::LogRegistry::SetThreadName(threadName);
-
-                while (s_TaskQueue.Running)
+                s_Threads.emplace_back([i]()
                 {
-                    std::function<void()> task;
-                    {
-                        std::unique_lock<std::mutex> lock(s_TaskQueue.Mutex);
-                        
-                        s_TaskQueue.Condition.wait(lock, [] { 
-                            return !s_TaskQueue.Queue.empty() || !s_TaskQueue.Running; 
-                        });
+                    std::string threadName = "Worker Thread " + std::to_string(i);
+                    Opal::LogRegistry::SetThreadName(threadName);
 
-                        if (!s_TaskQueue.Running && s_TaskQueue.Queue.empty())
-                            return;
-
-                        if (s_TaskQueue.Queue.empty())
-                            continue;
-
-                        task = std::move(s_TaskQueue.Queue.front());
-                        s_TaskQueue.Queue.pop();
-                    }
-
-                    try
+                    while (s_TaskQueue.Running)
                     {
-                        task();
+                        std::function<void()> task;
+                        {
+                            std::unique_lock<std::mutex> lock(s_TaskQueue.Mutex);
+                            s_TaskQueue.Condition.wait(lock, [] {
+                                return !s_TaskQueue.Queue.empty() || !s_TaskQueue.Running;
+                            });
+
+                            if (!s_TaskQueue.Running && s_TaskQueue.Queue.empty())
+                                return;
+
+                            if (s_TaskQueue.Queue.empty())
+                                continue;
+
+                            task = std::move(s_TaskQueue.Queue.front());
+                            s_TaskQueue.Queue.pop();
+                        }
+
+                        try
+                        {
+                            task();
+                        }
+                        catch (const std::exception& e)
+                        {
+                            OPAL_ERROR("Core/Threading", "Task threw exception: {}", e.what());
+                        }
+                        catch (...)
+                        {
+                            OPAL_ERROR("Core/Threading", "Task threw unknown exception!");
+                        }
                     }
-                    catch (const std::exception& e)
-                    {
-                        OPAL_ERROR("Core/Threading", "Task threw exception: {}", e.what());
-                    }
-                    catch (...)
-                    {
-                        OPAL_ERROR("Core/Threading", "Task threw unknown exception!");
-                    }
-                }
-            });
+                });
+            }
         }
+        catch (...)
+        {
+            s_TaskQueue.Running = false;
+            s_TaskQueue.Condition.notify_all();
+            for (auto& thread : s_Threads)
+            {
+                if (thread.joinable()) thread.join();
+            }
+            s_Threads.clear();
+            throw;
+        }
+
+        s_Initialized = true;
     }
 
     void TaskSystem::Shutdown()
     {
+        std::lock_guard<std::mutex> lifecycleLock(s_LifecycleMutex);
+        if (!s_Initialized) return;
+
         s_TaskQueue.Running = false;
         s_TaskQueue.Condition.notify_all();
 
@@ -90,7 +117,13 @@ namespace Mixture
         }
 
         s_Threads.clear();
+        s_Initialized = false;
         OPAL_INFO("Core/Threading", "TaskSystem Shutdown.");
+    }
+
+    bool TaskSystem::IsInitialized()
+    {
+        return s_Initialized.load();
     }
 
     void TaskSystem::Submit(std::function<void()> task)
