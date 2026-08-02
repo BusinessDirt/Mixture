@@ -11,6 +11,8 @@
 
 namespace Mixture::Vulkan
 {
+    class Device;
+
     /**
      * @brief Vulkan implementation of a graphics pipeline.
      */
@@ -20,9 +22,10 @@ namespace Mixture::Vulkan
         /**
          * @brief Constructs a Vulkan Pipeline.
          * 
+         * @param device Shared ownership of the creating device.
          * @param desc The pipeline description.
          */
-        Pipeline(const RHI::PipelineDesc& desc);
+        Pipeline(Ref<Device> device, const RHI::PipelineDesc& desc);
         ~Pipeline();
 
         /**
@@ -40,7 +43,8 @@ namespace Mixture::Vulkan
         vk::PipelineLayout GetLayout() const { return m_Layout; }
 
     private:
-        vk::Pipeline m_Handle;
-        vk::PipelineLayout m_Layout;
+        Ref<Device> m_Device;
+        vk::Pipeline m_Handle = nullptr;
+        vk::PipelineLayout m_Layout = nullptr;
     };
 }

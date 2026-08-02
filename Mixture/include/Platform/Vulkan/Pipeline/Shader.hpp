@@ -12,6 +12,8 @@
 
 namespace Mixture::Vulkan
 {
+    class Device;
+
     /**
      * @brief Vulkan implementation of a shader module.
      */
@@ -21,14 +23,18 @@ namespace Mixture::Vulkan
         /**
          * @brief Constructs a Vulkan Shader module from bytecode.
          * 
+         * @param device Shared ownership of the creating device.
          * @param data Pointer to the shader bytecode.
          * @param size Size of the bytecode in bytes.
          * @param stage The shader stage.
          */
-        Shader(const void* data, size_t size, RHI::ShaderStage stage);
+        Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage);
         ~Shader();
 
         RHI::ShaderStage GetStage() const override { return m_Stage; }
+
+        /** @brief Gets the device that owns this shader module. */
+        Device& GetDevice() const { return *m_Device; }
 
         /**
          * @brief Creates the Vulkan Shader Stage Create Info structure.
@@ -47,8 +53,9 @@ namespace Mixture::Vulkan
         const ShaderReflectionData& GetReflectionData() const { return m_ReflectionData; }
 
     private:
+        Ref<Device> m_Device;
         RHI::ShaderStage m_Stage;
         ShaderReflectionData m_ReflectionData;
-        vk::ShaderModule m_Handle;
+        vk::ShaderModule m_Handle = nullptr;
     };
 }

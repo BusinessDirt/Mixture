@@ -191,7 +191,8 @@ namespace Mixture::Vulkan
 
             m_ImageViews[i] = m_Device->GetHandle().createImageView(createInfo);
 
-            m_SwapchainTextures[i] = CreateScope<Texture>(m_ImageFormat, m_Images[i], m_ImageViews[i], m_Extent.width, m_Extent.height);
+            m_SwapchainTextures[i] = CreateScope<Texture>(m_Device->shared_from_this(), m_ImageFormat,
+                m_Images[i], m_ImageViews[i], m_Extent.width, m_Extent.height);
         }
     }
 

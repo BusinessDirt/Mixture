@@ -1,25 +1,24 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Resources/Texture.hpp"
 
-#include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Device.hpp"
-#include "Platform/Vulkan/Command/Pool.hpp"
+#include "Platform/Vulkan/Queue.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 namespace Mixture::Vulkan
 {
-    Texture::Texture(const RHI::TextureDesc& spec, const void* data)
-        : m_Width(spec.Width), m_Height(spec.Height), m_Format(spec.PixelFormat),
+    Texture::Texture(Ref<Device> device, const RHI::TextureDesc& spec, const void* data)
+        : m_Device(std::move(device)), m_Width(spec.Width), m_Height(spec.Height), m_Format(spec.PixelFormat),
           m_DebugName(spec.DebugName), m_OwnsImage(true)
     {
+        OPAL_ASSERT("Core/Vulkan", m_Device, "Texture requires an owning device");
         Invalidate();
 
         if (data)
         {
             VkDeviceSize imageSize = m_Width * m_Height * RHI::GetFormatStride(m_Format);
 
-            auto& logicalDevice = Context::Get().GetLogicalDevice();
-            auto allocator = logicalDevice.GetAllocator();
+            auto allocator = m_Device->GetAllocator();
 
             // Staging Buffer
             VkBufferCreateInfo bufferInfo = {};
@@ -45,7 +44,7 @@ namespace Mixture::Vulkan
             memcpy(stagingAllocInfo.pMappedData, data, static_cast<size_t>(imageSize));
 
             // Upload to Image
-            SingleTimeCommand::Submit(Context::Get().GetTransferQueue(), [&](vk::CommandBuffer cmd)
+            SingleTimeCommand::Submit(m_Device->GetTransferQueue(), [&](vk::CommandBuffer cmd)
             {
                 vk::ImageMemoryBarrier barrier{};
                 barrier.oldLayout = vk::ImageLayout::eUndefined;
@@ -102,11 +101,14 @@ namespace Mixture::Vulkan
         }
     }
 
-    Texture::Texture(vk::Format format, vk::Image image, vk::ImageView imageView, uint32_t width, uint32_t height)
-        : m_Format(EnumMapper::MapFormat(format)), m_Image(image)
+    Texture::Texture(Ref<Device> device, vk::Format format, vk::Image image, vk::ImageView imageView,
+        uint32_t width, uint32_t height)
+        : m_Device(std::move(device)), m_Format(EnumMapper::MapFormat(format)), m_Image(image)
         , m_ImageView(imageView), m_Width(width), m_Height(height)
         , m_OwnsImage(false)
-    {}
+    {
+        OPAL_ASSERT("Core/Vulkan", m_Device, "Texture requires an owning device");
+    }
 
     Texture::~Texture()
     {
@@ -117,8 +119,8 @@ namespace Mixture::Vulkan
     {
         if (m_OwnsImage)
         {
-            auto device = Context::Get().GetLogicalDevice().GetHandle();
-            auto allocator = Context::Get().GetLogicalDevice().GetAllocator();
+            auto device = m_Device->GetHandle();
+            auto allocator = m_Device->GetAllocator();
 
             if (m_ImageView) device.destroyImageView(m_ImageView);
             if (m_Sampler) device.destroySampler(m_Sampler);
@@ -139,7 +141,7 @@ namespace Mixture::Vulkan
         // Release old resources if resizing/reloading
         Release();
 
-        auto& device = Context::Get().GetLogicalDevice();
+        auto& device = *m_Device;
         auto allocator = device.GetAllocator();
 
         // Image Info
@@ -193,7 +195,7 @@ namespace Mixture::Vulkan
         samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
         samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
         samplerInfo.anisotropyEnable = VK_TRUE;
-        samplerInfo.maxAnisotropy = Context::Get().GetPhysicalDevice().GetProperties().limits.maxSamplerAnisotropy;
+        samplerInfo.maxAnisotropy = m_Device->GetPhysicalDevice().GetProperties().limits.maxSamplerAnisotropy;
         samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
         samplerInfo.compareEnable = VK_FALSE;

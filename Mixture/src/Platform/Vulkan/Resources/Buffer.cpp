@@ -1,17 +1,17 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
 
-#include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Device.hpp"
-#include "Platform/Vulkan/Command/Pool.hpp"
+#include "Platform/Vulkan/Queue.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 namespace Mixture::Vulkan
 {
-    Buffer::Buffer(const RHI::BufferDesc& desc, const void* initialData)
-        : m_Desc(desc)
+    Buffer::Buffer(Ref<Device> device, const RHI::BufferDesc& desc, const void* initialData)
+        : m_Device(std::move(device)), m_Desc(desc)
     {
-        auto allocator = Context::Get().GetLogicalDevice().GetAllocator();
+        OPAL_ASSERT("Core/Vulkan", m_Device, "Buffer requires an owning device");
+        auto allocator = m_Device->GetAllocator();
 
         // Create the GPU Buffer
         // We generally allocate GPU_ONLY for best performance.
@@ -57,7 +57,7 @@ namespace Mixture::Vulkan
             memcpy(mappedData, initialData, desc.Size);
             vmaUnmapMemory(allocator, stagingAlloc);
 
-            SingleTimeCommand::Submit(Context::Get().GetTransferQueue(), [&](vk::CommandBuffer cmd)
+            SingleTimeCommand::Submit(m_Device->GetTransferQueue(), [&](vk::CommandBuffer cmd)
             {
                 vk::BufferCopy copyRegion;
                 copyRegion.size = desc.Size;
@@ -72,7 +72,7 @@ namespace Mixture::Vulkan
     {
         if (m_Buffer)
         {
-            vmaDestroyBuffer(Context::Get().GetLogicalDevice().GetAllocator(), m_Buffer, m_Allocation);
+            vmaDestroyBuffer(m_Device->GetAllocator(), m_Buffer, m_Allocation);
         }
     }
 }
