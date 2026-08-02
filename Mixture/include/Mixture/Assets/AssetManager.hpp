@@ -19,6 +19,7 @@
 #include <thread>
 #include <queue>
 #include <condition_variable>
+#include <unordered_set>
 
 namespace Mixture
 {
@@ -55,6 +56,12 @@ namespace Mixture
 
         /** @brief Returns whether the manager currently owns a running I/O service. */
         bool IsInitialized() const { return m_Initialized.load(); }
+
+        /** @brief Blocks until all queued and active asset reads have completed. */
+        void WaitForIdle();
+
+        /** @brief Cancels a queued or active asset load. */
+        bool CancelLoad(UUID id);
 
         /**
          * @brief Sets the root directory for asset lookups.
@@ -148,7 +155,11 @@ namespace Mixture
         bool IsAssetLoaded(UUID id);
 
     private:
+        struct LoadRequest;
+
         void OnAssetChange(const std::filesystem::path& path, FileAction action);
+        bool EnqueueLoad(LoadRequest request);
+        bool IsLoadCancelled(UUID id);
         void LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic);
         Ref<IAsset> GetAssetFromCache(UUID id);
 
@@ -177,7 +188,11 @@ namespace Mixture
         std::thread m_WorkerThread;
         std::mutex m_QueueMutex;
         std::condition_variable m_QueueCV;
+        std::condition_variable m_IdleCV;
         std::queue<LoadRequest> m_LoadQueue;
+        std::unordered_set<UUID> m_CancelledLoads;
+        UUID m_ActiveLoadID = UUID::Invalid();
+        bool m_ActiveLoadCancellable = false;
         std::atomic<bool> m_Running = false;
 
         std::mutex m_CallbackMutex;

@@ -135,6 +135,51 @@ TEST_F(AssetManagerTests, ReloadCallbackRegistrationsAreRemovable)
     EXPECT_FALSE(manager.RemoveReloadCallback(callback));
 }
 
+TEST_F(AssetManagerTests, LoadsAssetsOnOwnedExecutorAndWaitsForIdle)
+{
+    AssetManager& manager = AssetManager::Get();
+    const std::filesystem::path root = std::filesystem::temp_directory_path()
+        / ("MixtureAssetIO-" + std::to_string(static_cast<uint64_t>(UUID())));
+    const std::filesystem::path shaderDirectory = root / "Shader";
+    const std::filesystem::path shaderPath = shaderDirectory / "ExecutorTest.spv";
+
+    std::filesystem::create_directories(shaderDirectory);
+    {
+        const std::array<char, 4> bytecode{ 0x03, 0x02, 0x23, 0x07 };
+        std::ofstream stream(shaderPath, std::ios::binary);
+        stream.write(bytecode.data(), static_cast<std::streamsize>(bytecode.size()));
+    }
+
+    manager.SetAssetRoot(root);
+    const AssetHandle pending = manager.GetAsset(AssetType::Shader, shaderPath.filename());
+    ASSERT_TRUE(pending.ID.IsValid());
+    EXPECT_EQ(pending.Magic, 0u);
+
+    manager.WaitForIdle();
+
+    const AssetHandle loaded = manager.GetAsset(AssetType::Shader, shaderPath.filename());
+    ASSERT_TRUE(loaded);
+    Ref<ShaderAsset> shader = manager.GetResource<ShaderAsset>(loaded);
+    ASSERT_NE(shader, nullptr);
+    EXPECT_EQ(shader->GetBufferSize(), 4u);
+
+    const std::filesystem::path cancelledPath = shaderDirectory / "Cancelled.spv";
+    {
+        std::ofstream stream(cancelledPath, std::ios::binary);
+        stream.seekp((32 * 1024 * 1024) - 1);
+        stream.put('\0');
+    }
+
+    const AssetHandle cancelled = manager.GetAsset(AssetType::Shader, cancelledPath.filename());
+    ASSERT_TRUE(cancelled.ID.IsValid());
+    EXPECT_TRUE(manager.CancelLoad(cancelled.ID));
+    manager.WaitForIdle();
+    EXPECT_FALSE(manager.IsAssetLoaded(cancelled.ID));
+
+    manager.Shutdown();
+    std::filesystem::remove_all(root);
+}
+
 // --- AssetSerializer Metadata Tests ---
 
 TEST(AssetSerializerTests, MetadataRoundTrip)
