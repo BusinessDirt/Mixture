@@ -101,4 +101,19 @@ namespace Mixture
          */
         std::function<void(RenderGraphRegistry&, RHI::ICommandList*)> Execute;
     };
+
+    namespace RenderGraphAlgorithms
+    {
+        /**
+         * @brief Orders passes while preserving all implicit resource hazards.
+         *
+         * Pass declaration order defines the order of conflicting accesses. The
+         * sort may only reorder independent passes and remains stable for passes
+         * that are simultaneously ready.
+         *
+         * @param passes Passes to sort in-place.
+         * @return true when a complete ordering was produced.
+         */
+        bool SortPasses(Vector<RGPassNode>& passes);
+    }
 }

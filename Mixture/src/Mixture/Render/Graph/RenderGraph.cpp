@@ -5,11 +5,130 @@
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <queue>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace Mixture
 {
+    bool RenderGraphAlgorithms::SortPasses(Vector<RGPassNode>& passes)
+    {
+        const size_t passCount = passes.size();
+        if (passCount < 2) return true;
+
+        Vector<Vector<size_t>> adjacencyList(passCount);
+        Vector<std::unordered_set<size_t>> adjacencySets(passCount);
+        Vector<size_t> inDegree(passCount, 0);
+
+        std::unordered_map<RGResourceHandle::IDType, size_t> lastWriters;
+        std::unordered_map<RGResourceHandle::IDType, Vector<size_t>> readersSinceLastWrite;
+
+        auto addDependency = [&](size_t before, size_t after)
+        {
+            if (before == after) return;
+
+            if (adjacencySets[before].insert(after).second)
+            {
+                adjacencyList[before].push_back(after);
+                ++inDegree[after];
+            }
+        };
+
+        auto registerRead = [&](RGResourceHandle handle, size_t passIndex)
+        {
+            const auto writer = lastWriters.find(handle.ID);
+            if (writer != lastWriters.end())
+            {
+                // Read-after-write (RAW).
+                addDependency(writer->second, passIndex);
+            }
+
+            auto& readers = readersSinceLastWrite[handle.ID];
+            if (std::find(readers.begin(), readers.end(), passIndex) == readers.end())
+            {
+                readers.push_back(passIndex);
+            }
+        };
+
+        auto registerWrite = [&](RGResourceHandle handle, size_t passIndex)
+        {
+            const auto writer = lastWriters.find(handle.ID);
+            if (writer != lastWriters.end())
+            {
+                // Write-after-write (WAW).
+                addDependency(writer->second, passIndex);
+            }
+
+            auto& readers = readersSinceLastWrite[handle.ID];
+            for (const size_t reader : readers)
+            {
+                // Write-after-read (WAR).
+                addDependency(reader, passIndex);
+            }
+            readers.clear();
+
+            lastWriters[handle.ID] = passIndex;
+        };
+
+        for (size_t passIndex = 0; passIndex < passCount; ++passIndex)
+        {
+            const auto& pass = passes[passIndex];
+
+            for (const auto handle : pass.Reads)
+            {
+                registerRead(handle, passIndex);
+            }
+            for (const auto& write : pass.Writes)
+            {
+                registerWrite(write.Handle, passIndex);
+            }
+            for (const auto handle : pass.BufferWrites)
+            {
+                registerWrite(handle, passIndex);
+            }
+        }
+
+        // Always choose the earliest declared ready pass. This keeps independent
+        // passes stable while still honoring every resource dependency.
+        std::priority_queue<size_t, Vector<size_t>, std::greater<size_t>> readyPasses;
+        for (size_t passIndex = 0; passIndex < passCount; ++passIndex)
+        {
+            if (inDegree[passIndex] == 0) readyPasses.push(passIndex);
+        }
+
+        Vector<size_t> sortedIndices;
+        sortedIndices.reserve(passCount);
+
+        while (!readyPasses.empty())
+        {
+            const size_t passIndex = readyPasses.top();
+            readyPasses.pop();
+            sortedIndices.push_back(passIndex);
+
+            for (const size_t dependentPass : adjacencyList[passIndex])
+            {
+                if (--inDegree[dependentPass] == 0)
+                {
+                    readyPasses.push(dependentPass);
+                }
+            }
+        }
+
+        if (sortedIndices.size() != passCount) return false;
+
+        Vector<RGPassNode> sortedPasses;
+        sortedPasses.reserve(passCount);
+        for (const size_t passIndex : sortedIndices)
+        {
+            sortedPasses.push_back(std::move(passes[passIndex]));
+        }
+        passes = std::move(sortedPasses);
+        return true;
+    }
+
     void RenderGraph::Clear()
     {
         m_PassAllocator.Reset();
@@ -265,93 +384,10 @@ namespace Mixture
 
     void RenderGraph::SortPasses()
     {
-        size_t passCount = m_Passes.size();
-        if (passCount == 0) return;
-
-        // Build Adjacency List
-        Vector<Vector<size_t>> adjacencyList(passCount);
-        Vector<int> inDegree(passCount, 0);
-
-        // Track who wrote to a resource last (ResourceID -> PassIndex)
-        std::unordered_map<uint32_t, size_t> resourceWriters;
-
-        for (size_t i = 0; i < passCount; ++i)
+        if (!RenderGraphAlgorithms::SortPasses(m_Passes))
         {
-            auto& pass = m_Passes[i];
-
-            // DEPENDENCY: Read-after-Write (RAW)
-            for (auto& handle : pass.Reads)
-            {
-                if (resourceWriters.find(handle.ID) != resourceWriters.end())
-                {
-                    size_t writerIndex = resourceWriters[handle.ID];
-                    adjacencyList[writerIndex].push_back(i);
-                    inDegree[i]++;
-                }
-            }
-
-            // DEPENDENCY: Write-after-Write (WAW) - Attachments
-            for (auto& write : pass.Writes)
-            {
-                if (resourceWriters.find(write.Handle.ID) != resourceWriters.end())
-                {
-                    size_t writerIndex = resourceWriters[write.Handle.ID];
-                    if (writerIndex != i)
-                    {
-                        adjacencyList[writerIndex].push_back(i);
-                        inDegree[i]++;
-                    }
-                }
-            }
-
-            // DEPENDENCY: Write-after-Write (WAW) - Buffers
-            for (auto& handle : pass.BufferWrites)
-            {
-                if (resourceWriters.find(handle.ID) != resourceWriters.end())
-                {
-                    size_t writerIndex = resourceWriters[handle.ID];
-                    if (writerIndex != i)
-                    {
-                        adjacencyList[writerIndex].push_back(i);
-                        inDegree[i]++;
-                    }
-                }
-            }
-
-            // UPDATE writers
-            for (auto& write : pass.Writes) resourceWriters[write.Handle.ID] = i;
-            for (auto& handle : pass.BufferWrites) resourceWriters[handle.ID] = i;
+            OPAL_ERROR("Core/RenderGraph", "Failed to produce a valid pass ordering.");
         }
-
-        // Kahn's Algorithm
-        Vector<size_t> queue;
-        for (size_t i = 0; i < passCount; ++i)
-            if (inDegree[i] == 0) queue.push_back(i);
-
-        Vector<RGPassNode> sortedPasses;
-        sortedPasses.reserve(passCount);
-
-        while (!queue.empty())
-        {
-            size_t u = queue.back();
-            queue.pop_back();
-
-            sortedPasses.push_back(m_Passes[u]);
-
-            for (size_t v : adjacencyList[u])
-            {
-                inDegree[v]--;
-                if (inDegree[v] == 0) queue.push_back(v);
-            }
-        }
-
-        if (sortedPasses.size() != passCount)
-        {
-            OPAL_ERROR("Core/RenderGraph", "Cyclic pass dependency detected.");
-            return;
-        }
-
-        m_Passes = std::move(sortedPasses);
     }
 
     void RenderGraph::CalculateLifetimes()
