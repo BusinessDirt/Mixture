@@ -36,9 +36,11 @@ namespace Mixture::RHI
          * @param data Pointer to the shader bytecode.
          * @param size Size of the bytecode in bytes.
          * @param stage The shader stage.
+         * @param identity Stable logical identity and code version.
          * @return A reference to the created shader.
          */
-        virtual Ref<IShader> CreateShader(const void* data, size_t size, ShaderStage stage) = 0;
+        virtual Ref<IShader> CreateShader(const void* data, size_t size, ShaderStage stage,
+            ShaderIdentity identity) = 0;
 
         /**
          * Creates a buffer (Vertex, Index, Uniform).

@@ -69,6 +69,7 @@ namespace Mixture
         static RHI::IGraphicsDevice* s_Device;
         static AssetManager::ReloadCallbackHandle s_ReloadCallbackHandle;
         static std::unordered_map<ShaderCacheKey, Ref<RHI::IShader>, ShaderCacheKeyHash> s_Cache;
+        static std::unordered_map<UUID, uint64_t> s_Versions;
         static std::mutex s_Mutex;
     };
 }

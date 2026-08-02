@@ -41,53 +41,74 @@ namespace Mixture {
          */
         static RHI::IPipeline* GetPipeline(const RHI::PipelineDesc& desc);
 
+        /** @brief Releases pipelines that depend on the given logical shader. */
+        static void InvalidateShader(uint64_t stableShaderID);
+
         /**
          * @brief Clears the internal cache.
          */
         static void Clear();
 
     private:
-        struct PipelineDescHash
+        struct PipelineKey
         {
-            std::size_t operator()(const RHI::PipelineDesc& desc) const
+            RHI::ShaderIdentity VertexShader;
+            RHI::ShaderIdentity FragmentShader;
+            RHI::RasterizerState Rasterizer;
+            RHI::DepthStencilState DepthStencil;
+            RHI::BlendState Blend;
+            RHI::PrimitiveTopology Topology = RHI::PrimitiveTopology::TriangleList;
+            Vector<RHI::Format> ColorAttachmentFormats;
+            RHI::Format DepthAttachmentFormat = RHI::Format::Undefined;
+
+            bool operator==(const PipelineKey&) const = default;
+        };
+
+        struct PipelineKeyHash
+        {
+            std::size_t operator()(const PipelineKey& key) const
             {
                 std::size_t seed = 0;
 
-                Util::HashCombine(seed, desc.VertexShader, desc.FragmentShader);
+                Util::HashCombine(seed,
+                    key.VertexShader.StableID, key.VertexShader.Version, key.VertexShader.Stage,
+                    key.FragmentShader.StableID, key.FragmentShader.Version, key.FragmentShader.Stage);
 
                 // Rasterizer
-                Util::HashCombine(seed, desc.Rasterizer.polygonMode,
-                                        desc.Rasterizer.cullMode,
-                                        desc.Rasterizer.frontFace,
-                                        desc.Rasterizer.lineWidth);
+                Util::HashCombine(seed, key.Rasterizer.polygonMode,
+                                        key.Rasterizer.cullMode,
+                                        key.Rasterizer.frontFace,
+                                        key.Rasterizer.lineWidth);
 
                 // DepthStencil
-                Util::HashCombine(seed, desc.DepthStencil.depthTest,
-                                        desc.DepthStencil.depthWrite,
-                                        desc.DepthStencil.depthCompareOp);
+                Util::HashCombine(seed, key.DepthStencil.depthTest,
+                                        key.DepthStencil.depthWrite,
+                                        key.DepthStencil.depthCompareOp);
 
                 // Blend
-                Util::HashCombine(seed, desc.Blend.enabled,
-                                        desc.Blend.srcColor,
-                                        desc.Blend.dstColor,
-                                        desc.Blend.colorOp,
-                                        desc.Blend.srcAlpha,
-                                        desc.Blend.dstAlpha,
-                                        desc.Blend.alphaOp);
+                Util::HashCombine(seed, key.Blend.enabled,
+                                        key.Blend.srcColor,
+                                        key.Blend.dstColor,
+                                        key.Blend.colorOp,
+                                        key.Blend.srcAlpha,
+                                        key.Blend.dstAlpha,
+                                        key.Blend.alphaOp);
 
                 // Topology
-                Util::HashCombine(seed, desc.Topology);
+                Util::HashCombine(seed, key.Topology);
 
                 // Formats
-                for (auto f : desc.ColorAttachmentFormats) Util::HashCombine(seed, f);
-                Util::HashCombine(seed, desc.DepthAttachmentFormat);
+                for (auto format : key.ColorAttachmentFormats) Util::HashCombine(seed, format);
+                Util::HashCombine(seed, key.DepthAttachmentFormat);
 
                 return seed;
             }
         };
 
+        static PipelineKey MakeKey(const RHI::PipelineDesc& desc);
+
         static RHI::IGraphicsDevice* s_Device;
         static std::mutex s_Mutex;
-        static std::unordered_map<RHI::PipelineDesc, Ref<RHI::IPipeline>, PipelineDescHash> s_Cache;
+        static std::unordered_map<PipelineKey, Ref<RHI::IPipeline>, PipelineKeyHash> s_Cache;
     };
 }

@@ -27,11 +27,14 @@ namespace Mixture::Vulkan
          * @param data Pointer to the shader bytecode.
          * @param size Size of the bytecode in bytes.
          * @param stage The shader stage.
+         * @param identity Stable logical identity and code version.
          */
-        Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage);
+        Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage,
+            RHI::ShaderIdentity identity);
         ~Shader();
 
         RHI::ShaderStage GetStage() const override { return m_Stage; }
+        RHI::ShaderIdentity GetIdentity() const override { return m_Identity; }
 
         /** @brief Gets the device that owns this shader module. */
         Device& GetDevice() const { return *m_Device; }
@@ -55,6 +58,7 @@ namespace Mixture::Vulkan
     private:
         Ref<Device> m_Device;
         RHI::ShaderStage m_Stage;
+        RHI::ShaderIdentity m_Identity;
         ShaderReflectionData m_ReflectionData;
         vk::ShaderModule m_Handle = nullptr;
     };

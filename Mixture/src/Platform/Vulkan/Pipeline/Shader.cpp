@@ -5,10 +5,14 @@
 
 namespace Mixture::Vulkan
 {
-    Shader::Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage)
-        : m_Device(std::move(device)), m_Stage(stage), m_ReflectionData(ShaderCompiler::ReflectSPIRV(data, size))
+    Shader::Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage,
+        RHI::ShaderIdentity identity)
+        : m_Device(std::move(device)), m_Stage(stage), m_Identity(identity),
+          m_ReflectionData(ShaderCompiler::ReflectSPIRV(data, size))
     {
         OPAL_ASSERT("Core/Vulkan", m_Device, "Shader requires an owning device");
+        OPAL_ASSERT("Core/Vulkan", m_Identity && m_Identity.Stage == stage,
+            "Shader requires a valid identity for the requested stage");
 
         vk::ShaderModuleCreateInfo createInfo;
         createInfo.setCodeSize(size);
