@@ -13,6 +13,13 @@ namespace Mixture
 {
     void AssetManager::Init()
     {
+        std::lock_guard<std::mutex> lifecycleLock(m_LifecycleMutex);
+        if (m_Initialized)
+        {
+            OPAL_LOG_DEBUG("AssetManager", "Init ignored because the service is already running.");
+            return;
+        }
+
         m_Serializers[AssetType::Shader] = CreateScope<ShaderSerializer>();
         m_Serializers[AssetType::Texture] = CreateScope<TextureSerializer>();
 
@@ -26,48 +33,61 @@ namespace Mixture
 
         // Start I/O Thread
         m_Running = true;
-        m_WorkerThread = std::thread([this]()
+        try
         {
-            Opal::LogRegistry::SetThreadName("I/O Thread");
-            OPAL_INFO("AssetManager", "I/O Thread Started.");
-
-            while (m_Running)
+            m_WorkerThread = std::thread([this]()
             {
-                LoadRequest request;
+                Opal::LogRegistry::SetThreadName("I/O Thread");
+                OPAL_INFO("AssetManager", "I/O Thread Started.");
+
+                while (m_Running)
                 {
-                    std::unique_lock<std::mutex> lock(m_QueueMutex);
+                    LoadRequest request;
+                    {
+                        std::unique_lock<std::mutex> lock(m_QueueMutex);
 
-                    m_QueueCV.wait(lock, [this] {
-                        return !m_LoadQueue.empty() || !m_Running;
-                    });
+                        m_QueueCV.wait(lock, [this] {
+                            return !m_LoadQueue.empty() || !m_Running;
+                        });
 
-                    if (!m_Running && m_LoadQueue.empty())
-                        return;
+                        if (!m_Running && m_LoadQueue.empty())
+                            return;
 
-                    if (m_LoadQueue.empty())
-                        continue;
+                        if (m_LoadQueue.empty())
+                            continue;
 
-                    request = m_LoadQueue.front();
-                    m_LoadQueue.pop();
+                        request = m_LoadQueue.front();
+                        m_LoadQueue.pop();
+                    }
+
+                    try
+                    {
+                        this->LoadAssetInternal(request.Type, request.Path, request.ID, request.Magic);
+                    }
+                    catch (const std::exception& e)
+                    {
+                        OPAL_ERROR("AssetManager", "Asset Load Dispatch Exception: {}", e.what());
+
+                        std::lock_guard<std::mutex> lock(m_CacheMutex);
+                        m_LoadingAssets.erase(request.ID);
+                    }
                 }
+            });
+        }
+        catch (...)
+        {
+            m_Running = false;
+            throw;
+        }
 
-                try
-                {
-                    this->LoadAssetInternal(request.Type, request.Path, request.ID, request.Magic);
-                }
-                catch (const std::exception& e)
-                {
-                    OPAL_ERROR("AssetManager", "Asset Load Dispatch Exception: {}", e.what());
-
-                    std::lock_guard<std::mutex> lock(m_CacheMutex);
-                    m_LoadingAssets.erase(request.ID);
-                }
-            }
-        });
+        m_Initialized = true;
     }
 
     void AssetManager::Shutdown()
     {
+        std::lock_guard<std::mutex> lifecycleLock(m_LifecycleMutex);
+        if (!m_Initialized) return;
+
         if (m_FileWatcher)
         {
             m_FileWatcher->Stop();
@@ -84,6 +104,27 @@ namespace Mixture
 
             OPAL_INFO("AssetManager", "I/O Thread Shutdown.");
         }
+
+        {
+            std::lock_guard<std::mutex> lock(m_QueueMutex);
+            std::queue<LoadRequest> emptyQueue;
+            m_LoadQueue.swap(emptyQueue);
+        }
+        {
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.clear();
+            m_AssetCache.Clear();
+        }
+        {
+            std::lock_guard<std::mutex> lock(m_CallbackMutex);
+            m_ReloadCallbacks.clear();
+            m_NextReloadCallbackHandle = 1;
+        }
+
+        AssetRegistry::Get().Clear();
+        m_RootDirectory.clear();
+        m_GraphicsAPI = RHI::GraphicsAPI::None;
+        m_Initialized = false;
     }
 
     void AssetManager::SetAssetRoot(const std::filesystem::path& rootPath)
@@ -115,10 +156,18 @@ namespace Mixture
         m_AssetCache.SetMaxMemory(sizeInBytes);
     }
 
-    void AssetManager::AddReloadCallback(AssetReloadCallback callback)
+    AssetManager::ReloadCallbackHandle AssetManager::AddReloadCallback(AssetReloadCallback callback)
     {
         std::lock_guard<std::mutex> lock(m_CallbackMutex);
-        m_ReloadCallbacks.push_back(std::move(callback));
+        const ReloadCallbackHandle handle = m_NextReloadCallbackHandle++;
+        m_ReloadCallbacks.emplace(handle, std::move(callback));
+        return handle;
+    }
+
+    bool AssetManager::RemoveReloadCallback(ReloadCallbackHandle handle)
+    {
+        std::lock_guard<std::mutex> lock(m_CallbackMutex);
+        return m_ReloadCallbacks.erase(handle) != 0;
     }
 
     void AssetManager::OnAssetChange(const std::filesystem::path& path, FileAction action)
@@ -327,6 +376,8 @@ namespace Mixture
                 OPAL_ERROR("AssetManager", "Exception deserializing {}: {}", path.string(), e.what());
             }
 
+            bool notifyReload = false;
+
             // Update Cache
             {
                 std::lock_guard<std::mutex> lock(m_CacheMutex);
@@ -337,19 +388,29 @@ namespace Mixture
                     asset->SetMagic(magic);
                     m_AssetCache.Put(id, asset, asset->GetMemoryUsage());
                     OPAL_LOG_DEBUG("AssetManager", "Async Loaded {} from '{}' (ID: {})", typeString, path.string(), (uint64_t)id);
-
-                    // Notify listeners
-                    {
-                        std::lock_guard<std::mutex> cbLock(m_CallbackMutex);
-                        for (const auto& callback : m_ReloadCallbacks)
-                        {
-                            callback(type, id);
-                        }
-                    }
+                    notifyReload = true;
                 }
                 else
                 {
                     OPAL_LOG_DEBUG("AssetManager", "Failed to reload asset: invalid data.");
+                }
+            }
+
+            if (notifyReload)
+            {
+                Vector<AssetReloadCallback> callbacks;
+                {
+                    std::lock_guard<std::mutex> lock(m_CallbackMutex);
+                    callbacks.reserve(m_ReloadCallbacks.size());
+                    for (const auto& [handle, callback] : m_ReloadCallbacks)
+                    {
+                        callbacks.push_back(callback);
+                    }
+                }
+
+                for (const auto& callback : callbacks)
+                {
+                    callback(type, id);
                 }
             }
         });

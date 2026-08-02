@@ -2,9 +2,6 @@
 #include "Platform/Vulkan/Context.hpp"
 
 #include "Mixture/Core/Application.hpp"
-#include "Mixture/Render/PipelineCache.hpp"
-#include "Mixture/Render/ShaderLibrary.hpp"
-
 #include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/Instance.hpp"
 #include "Platform/Vulkan/Surface.hpp"
@@ -62,17 +59,12 @@ namespace Mixture::Vulkan
         m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(*m_Device);
         m_DescriptorAllocators = CreateScope<DescriptorAllocators>(*m_Device, MAX_FRAMES_IN_FLIGHT);
 
-        PipelineCache::Init(*m_Device);
-        ShaderLibrary::Init(*m_Device);
-
         OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
     }
 
     Context::~Context()
     {
         m_Device->WaitForIdle();
-        PipelineCache::Shutdown();
-        ShaderLibrary::Shutdown();
         s_Instance = nullptr;
     }
 

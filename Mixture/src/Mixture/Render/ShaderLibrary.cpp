@@ -5,15 +5,24 @@
 namespace Mixture
 {
     RHI::IGraphicsDevice* ShaderLibrary::s_Device = nullptr;
+    AssetManager::ReloadCallbackHandle ShaderLibrary::s_ReloadCallbackHandle = 0;
     std::unordered_map<ShaderCacheKey, Ref<RHI::IShader>, ShaderCacheKeyHash> ShaderLibrary::s_Cache;
     std::mutex ShaderLibrary::s_Mutex;
 
     void ShaderLibrary::Init(RHI::IGraphicsDevice& device)
     {
+        std::lock_guard<std::mutex> lock(s_Mutex);
+        if (s_Device == &device) return;
+
+        s_Cache.clear();
         s_Device = &device;
 
         // Register reload callback
-        AssetManager::Get().AddReloadCallback([](AssetType type, UUID id)
+        if (s_ReloadCallbackHandle != 0)
+        {
+            AssetManager::Get().RemoveReloadCallback(s_ReloadCallbackHandle);
+        }
+        s_ReloadCallbackHandle = AssetManager::Get().AddReloadCallback([](AssetType type, UUID id)
         {
             if (type == AssetType::Shader)
             {
@@ -25,8 +34,25 @@ namespace Mixture
 
     void ShaderLibrary::Shutdown()
     {
-        Clear();
-        s_Device = nullptr;
+        AssetManager::ReloadCallbackHandle callbackHandle = 0;
+        {
+            std::lock_guard<std::mutex> lock(s_Mutex);
+            s_Cache.clear();
+            s_Device = nullptr;
+            callbackHandle = s_ReloadCallbackHandle;
+            s_ReloadCallbackHandle = 0;
+        }
+
+        if (callbackHandle != 0)
+        {
+            AssetManager::Get().RemoveReloadCallback(callbackHandle);
+        }
+    }
+
+    bool ShaderLibrary::IsInitialized()
+    {
+        std::lock_guard<std::mutex> lock(s_Mutex);
+        return s_Device != nullptr;
     }
 
     RHI::IShader* ShaderLibrary::GetShader(AssetHandle handle, RHI::ShaderStage stage)
@@ -40,6 +66,8 @@ namespace Mixture
             auto it = s_Cache.find(key);
             if (it != s_Cache.end())
                 return it->second.get();
+
+            if (!s_Device) return nullptr;
         }
 
         // Load and Create

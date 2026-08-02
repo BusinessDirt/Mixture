@@ -82,4 +82,19 @@ namespace Mixture::Tests {
         EXPECT_TRUE(future.get());
     }
 
+    TEST_F(TaskSystemTests, LifecycleIsIdempotent)
+    {
+        ASSERT_TRUE(TaskSystem::IsInitialized());
+
+        TaskSystem::Init(2);
+        EXPECT_TRUE(TaskSystem::IsInitialized());
+
+        TaskSystem::Shutdown();
+        EXPECT_FALSE(TaskSystem::IsInitialized());
+
+        TaskSystem::Shutdown();
+        TaskSystem::Init(2);
+        EXPECT_TRUE(TaskSystem::IsInitialized());
+    }
+
 }

@@ -3,6 +3,9 @@
 #include "Mixture/Render/Graph/RenderGraphDefinitions.hpp"
 #include "Mixture/Render/Graph/RenderGraphResourceCache.hpp"
 #include "Mixture/Render/Graph/RenderGraphRegistry.hpp"
+#include "Mixture/Render/PipelineCache.hpp"
+#include "Mixture/Render/ShaderLibrary.hpp"
+#include "Mixture/Assets/AssetManager.hpp"
 
 namespace Mixture::Tests
 {
@@ -305,5 +308,28 @@ namespace Mixture::Tests
         registry.UnregisterBuffer(bufferHandle);
         EXPECT_EQ(registry.GetTexture(textureHandle), nullptr);
         EXPECT_EQ(registry.GetBuffer(bufferHandle), nullptr);
+    }
+
+    TEST(RenderServiceLifecycleTests, InitializationAndShutdownAreIdempotent)
+    {
+        MockGraphicsDevice device;
+        AssetManager::Get().Init();
+
+        PipelineCache::Init(device);
+        PipelineCache::Init(device);
+        ShaderLibrary::Init(device);
+        ShaderLibrary::Init(device);
+
+        EXPECT_TRUE(PipelineCache::IsInitialized());
+        EXPECT_TRUE(ShaderLibrary::IsInitialized());
+
+        ShaderLibrary::Shutdown();
+        ShaderLibrary::Shutdown();
+        PipelineCache::Shutdown();
+        PipelineCache::Shutdown();
+
+        EXPECT_FALSE(PipelineCache::IsInitialized());
+        EXPECT_FALSE(ShaderLibrary::IsInitialized());
+        AssetManager::Get().Shutdown();
     }
 }

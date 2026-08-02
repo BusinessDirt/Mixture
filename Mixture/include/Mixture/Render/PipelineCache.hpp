@@ -30,6 +30,9 @@ namespace Mixture {
          */
         static void Shutdown();
 
+        /** @brief Returns whether the cache is bound to a graphics device. */
+        static bool IsInitialized();
+
         /**
          * @brief Retrieves a pipeline from the cache, or creates it if it doesn't exist.
          * 
@@ -84,6 +87,7 @@ namespace Mixture {
         };
 
         static RHI::IGraphicsDevice* s_Device;
+        static std::mutex s_Mutex;
         static std::unordered_map<RHI::PipelineDesc, Ref<RHI::IPipeline>, PipelineDescHash> s_Cache;
     };
 }
