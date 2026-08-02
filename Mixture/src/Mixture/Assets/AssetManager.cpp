@@ -6,8 +6,7 @@
 #include "Mixture/Assets/Shaders/ShaderSerializer.hpp"
 #include "Mixture/Assets/Textures/TextureSerializer.hpp"
 
-#include "Mixture/Util/AsyncFileReader.hpp"
-#include <future>
+#include <fstream>
 
 namespace Mixture
 {
@@ -40,7 +39,7 @@ namespace Mixture
                 Opal::LogRegistry::SetThreadName("I/O Thread");
                 OPAL_INFO("AssetManager", "I/O Thread Started.");
 
-                while (m_Running)
+                while (true)
                 {
                     LoadRequest request;
                     {
@@ -50,7 +49,7 @@ namespace Mixture
                             return !m_LoadQueue.empty() || !m_Running;
                         });
 
-                        if (!m_Running && m_LoadQueue.empty())
+                        if (!m_Running)
                             return;
 
                         if (m_LoadQueue.empty())
@@ -58,6 +57,8 @@ namespace Mixture
 
                         request = m_LoadQueue.front();
                         m_LoadQueue.pop();
+                        m_ActiveLoadID = request.ID;
+                        m_ActiveLoadCancellable = true;
                     }
 
                     try
@@ -70,6 +71,14 @@ namespace Mixture
 
                         std::lock_guard<std::mutex> lock(m_CacheMutex);
                         m_LoadingAssets.erase(request.ID);
+                    }
+
+                    {
+                        std::lock_guard<std::mutex> lock(m_QueueMutex);
+                        m_ActiveLoadID = UUID::Invalid();
+                        m_ActiveLoadCancellable = false;
+                        m_CancelledLoads.erase(request.ID);
+                        if (m_LoadQueue.empty()) m_IdleCV.notify_all();
                     }
                 }
             });
@@ -109,6 +118,10 @@ namespace Mixture
             std::lock_guard<std::mutex> lock(m_QueueMutex);
             std::queue<LoadRequest> emptyQueue;
             m_LoadQueue.swap(emptyQueue);
+            m_CancelledLoads.clear();
+            m_ActiveLoadID = UUID::Invalid();
+            m_ActiveLoadCancellable = false;
+            m_IdleCV.notify_all();
         }
         {
             std::lock_guard<std::mutex> lock(m_CacheMutex);
@@ -125,6 +138,55 @@ namespace Mixture
         m_RootDirectory.clear();
         m_GraphicsAPI = RHI::GraphicsAPI::None;
         m_Initialized = false;
+    }
+
+    void AssetManager::WaitForIdle()
+    {
+        std::unique_lock<std::mutex> lock(m_QueueMutex);
+        m_IdleCV.wait(lock, [this]
+        {
+            return m_LoadQueue.empty() && !m_ActiveLoadID.IsValid();
+        });
+    }
+
+    bool AssetManager::CancelLoad(UUID id)
+    {
+        if (!id.IsValid()) return false;
+
+        bool found = false;
+        bool removedFromQueue = false;
+        {
+            std::lock_guard<std::mutex> lock(m_QueueMutex);
+            found = m_ActiveLoadID == id && m_ActiveLoadCancellable;
+            if (found) m_CancelledLoads.insert(id);
+
+            std::queue<LoadRequest> retained;
+            while (!m_LoadQueue.empty())
+            {
+                LoadRequest request = std::move(m_LoadQueue.front());
+                m_LoadQueue.pop();
+                if (request.ID == id)
+                {
+                    found = true;
+                    removedFromQueue = true;
+                }
+                else
+                {
+                    retained.push(std::move(request));
+                }
+            }
+            m_LoadQueue.swap(retained);
+
+            if (m_LoadQueue.empty() && !m_ActiveLoadID.IsValid())
+                m_IdleCV.notify_all();
+        }
+
+        if (removedFromQueue)
+        {
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(id);
+        }
+        return found;
     }
 
     void AssetManager::SetAssetRoot(const std::filesystem::path& rootPath)
@@ -170,6 +232,28 @@ namespace Mixture
         return m_ReloadCallbacks.erase(handle) != 0;
     }
 
+    bool AssetManager::EnqueueLoad(LoadRequest request)
+    {
+        if (!m_Running) return false;
+
+        {
+            std::lock_guard<std::mutex> lock(m_QueueMutex);
+            if (!m_Running) return false;
+            m_CancelledLoads.erase(request.ID);
+            m_LoadQueue.push(std::move(request));
+        }
+        m_QueueCV.notify_one();
+        return true;
+    }
+
+    bool AssetManager::IsLoadCancelled(UUID id)
+    {
+        if (!m_Running) return true;
+
+        std::lock_guard<std::mutex> lock(m_QueueMutex);
+        return m_CancelledLoads.contains(id);
+    }
+
     void AssetManager::OnAssetChange(const std::filesystem::path& path, FileAction action)
     {
         // We only care about modifications for now
@@ -208,7 +292,17 @@ namespace Mixture
             {
                 OPAL_INFO("AssetManager", "Reactive Reloading asset: {}", path.string());
                 // Reuse existing magic to keep handles valid
-                LoadAssetInternal(assetType, relativePath, assetID, currentAsset->GetMagic());
+                {
+                    std::lock_guard<std::mutex> lock(m_CacheMutex);
+                    if (m_LoadingAssets.contains(assetID)) return;
+                    m_LoadingAssets[assetID] = currentAsset->GetMagic();
+                }
+
+                if (!EnqueueLoad({ assetType, relativePath, assetID, currentAsset->GetMagic() }))
+                {
+                    std::lock_guard<std::mutex> lock(m_CacheMutex);
+                    m_LoadingAssets.erase(assetID);
+                }
             }
         }
     }
@@ -299,12 +393,13 @@ namespace Mixture
             m_LoadingAssets[metadata.ID] = newMagic;
         }
 
+        if (!EnqueueLoad({ type, resolvedPath, metadata.ID, newMagic }))
         {
-            std::lock_guard<std::mutex> lock(m_QueueMutex);
-            m_LoadQueue.push({ type, resolvedPath, metadata.ID, newMagic });
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(metadata.ID);
+            OPAL_ERROR("AssetManager", "Cannot load asset while the I/O executor is stopped: {}", fullPath.string());
+            return AssetHandle{ UUID::Invalid(), 0 };
         }
-
-        m_QueueCV.notify_one();
 
         // Return 0 magic to indicate loading
         return AssetHandle{ metadata.ID, 0 };
@@ -313,106 +408,123 @@ namespace Mixture
     void AssetManager::LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic)
     {
         const char* typeString = Utils::AssetTypeToString(type);
-        if (m_Serializers.find(type) == m_Serializers.end())
+        auto serializerIt = m_Serializers.find(type);
+        if (serializerIt == m_Serializers.end())
         {
             OPAL_ERROR("AssetManager", "No serializer registered for AssetType='{}'", typeString);
-
-            {
-                 std::lock_guard<std::mutex> lock(m_CacheMutex);
-                 m_LoadingAssets.erase(id);
-            }
-
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(id);
             return;
         }
 
         std::filesystem::path fullPath = m_RootDirectory / typeString / path;
-
-        // Use shared_ptr to keep the reader (and its internal file handle) alive until the callback executes
-        auto reader = std::make_shared<AsyncFileReader>(fullPath);
-
-        if (!reader->IsOpen())
+        std::ifstream stream(fullPath, std::ios::binary | std::ios::ate);
+        if (!stream)
         {
             OPAL_ERROR("AssetManager", "Failed to open file {}", fullPath.string());
-
-            {
-                 std::lock_guard<std::mutex> lock(m_CacheMutex);
-                 m_LoadingAssets.erase(id);
-            }
-
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(id);
             return;
         }
 
-        // Initiate Async Read
-        // The callback captures 'this' and metadata, effectively processing deserialization on the I/O completion thread
-        reader->ReadBuffer([this, reader, type, path, id, magic, typeString](Vector<char> data)
+        const std::streampos end = stream.tellg();
+        if (end <= 0)
         {
-            // This callback is executed when the read is done.
-            // reader is captured to ensure it stays alive until here.
+            OPAL_ERROR("AssetManager", "Read empty data or failed from file: {}", path.string());
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(id);
+            return;
+        }
 
-            if (data.empty())
+        Vector<char> data(static_cast<size_t>(end));
+        stream.seekg(0, std::ios::beg);
+
+        constexpr size_t ReadChunkSize = 1024 * 1024;
+        size_t offset = 0;
+        while (offset < data.size())
+        {
+            if (IsLoadCancelled(id))
             {
-                OPAL_ERROR("AssetManager", "Read empty data or failed from file: {}", path.string());
                 std::lock_guard<std::mutex> lock(m_CacheMutex);
                 m_LoadingAssets.erase(id);
                 return;
             }
 
-            AssetMetadata metadata;
-            metadata.ID = id;
-            metadata.Type = type;
-            metadata.FilePath = path;
-
-            Ref<IAsset> asset = nullptr;
-
-            try
+            const size_t bytesToRead = std::min(ReadChunkSize, data.size() - offset);
+            stream.read(data.data() + offset, static_cast<std::streamsize>(bytesToRead));
+            if (stream.gcount() != static_cast<std::streamsize>(bytesToRead))
             {
-                // We assume serializers are thread-safe or we are the only one accessing this specific serializer instance via read-only map
-                // But Serializers themselves are stateless usually, except for base configuration.
-                AssetSerializer& serializer = *m_Serializers[type];
-                asset = serializer.Load(data, metadata);
-            }
-            catch (const std::exception& e)
-            {
-                OPAL_ERROR("AssetManager", "Exception deserializing {}: {}", path.string(), e.what());
-            }
-
-            bool notifyReload = false;
-
-            // Update Cache
-            {
+                OPAL_ERROR("AssetManager", "Failed while reading file: {}", fullPath.string());
                 std::lock_guard<std::mutex> lock(m_CacheMutex);
                 m_LoadingAssets.erase(id);
-
-                if (asset)
-                {
-                    asset->SetMagic(magic);
-                    m_AssetCache.Put(id, asset, asset->GetMemoryUsage());
-                    OPAL_LOG_DEBUG("AssetManager", "Async Loaded {} from '{}' (ID: {})", typeString, path.string(), (uint64_t)id);
-                    notifyReload = true;
-                }
-                else
-                {
-                    OPAL_LOG_DEBUG("AssetManager", "Failed to reload asset: invalid data.");
-                }
+                return;
             }
+            offset += bytesToRead;
+        }
 
-            if (notifyReload)
+        if (IsLoadCancelled(id))
+        {
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(id);
+            return;
+        }
+
+        AssetMetadata metadata;
+        metadata.ID = id;
+        metadata.Type = type;
+        metadata.FilePath = path;
+
+        Ref<IAsset> asset = nullptr;
+        try
+        {
+            asset = serializerIt->second->Load(data, metadata);
+        }
+        catch (const std::exception& e)
+        {
+            OPAL_ERROR("AssetManager", "Exception deserializing {}: {}", path.string(), e.what());
+        }
+
+        bool cancelled = false;
+        {
+            std::lock_guard<std::mutex> lock(m_QueueMutex);
+            cancelled = !m_Running || m_CancelledLoads.contains(id);
+            if (!cancelled) m_ActiveLoadCancellable = false;
+        }
+
+        bool notifyReload = false;
+        {
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(id);
+
+            if (asset && !cancelled)
             {
-                Vector<AssetReloadCallback> callbacks;
-                {
-                    std::lock_guard<std::mutex> lock(m_CallbackMutex);
-                    callbacks.reserve(m_ReloadCallbacks.size());
-                    for (const auto& [handle, callback] : m_ReloadCallbacks)
-                    {
-                        callbacks.push_back(callback);
-                    }
-                }
+                asset->SetMagic(magic);
+                m_AssetCache.Put(id, asset, asset->GetMemoryUsage());
+                OPAL_LOG_DEBUG("AssetManager", "Loaded {} from '{}' (ID: {})", typeString, path.string(), (uint64_t)id);
+                notifyReload = true;
+            }
+            else if (!cancelled)
+            {
+                OPAL_LOG_DEBUG("AssetManager", "Failed to reload asset: invalid data.");
+            }
+        }
 
-                for (const auto& callback : callbacks)
+        if (notifyReload && m_Running)
+        {
+            Vector<AssetReloadCallback> callbacks;
+            {
+                std::lock_guard<std::mutex> lock(m_CallbackMutex);
+                callbacks.reserve(m_ReloadCallbacks.size());
+                for (const auto& [handle, callback] : m_ReloadCallbacks)
                 {
-                    callback(type, id);
+                    callbacks.push_back(callback);
                 }
             }
-        });
+
+            for (const auto& callback : callbacks)
+            {
+                callback(type, id);
+            }
+        }
     }
 }
