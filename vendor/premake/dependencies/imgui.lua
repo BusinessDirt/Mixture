@@ -22,7 +22,16 @@ project "ImGui"
         "%{wks.location}/vendor/imgui/imstb_rectpack.h",
         "%{wks.location}/vendor/imgui/imstb_textedit.h",
         "%{wks.location}/vendor/imgui/imstb_truetype.h",
-        "%{wks.location}/vendor/imgui/imgui_demo.cpp"
+        "%{wks.location}/vendor/imgui/imgui_demo.cpp",
+        "%{wks.location}/vendor/imgui/backends/imgui_impl_glfw.h",
+        "%{wks.location}/vendor/imgui/backends/imgui_impl_glfw.cpp",
+        "%{wks.location}/vendor/imgui/backends/imgui_impl_vulkan.h",
+        "%{wks.location}/vendor/imgui/backends/imgui_impl_vulkan.cpp"
+    }
+
+    externalincludedirs {
+        "%{IncludeDir.glfw}",
+        "%{IncludeDir.vulkan}"
     }
 
     filter "system:linux"
