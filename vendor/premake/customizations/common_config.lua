@@ -33,11 +33,11 @@ end
 
 function application_links()
     return {
-        "GLFW",
-        "Opal",
         "Mixture",
         "ImGui",
-        "SPIRV-Reflect"
+        "SPIRV-Reflect",
+        "GLFW",
+        "Opal"
     }
 end
 

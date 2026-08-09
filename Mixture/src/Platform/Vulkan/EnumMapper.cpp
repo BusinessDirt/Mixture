@@ -110,7 +110,7 @@ namespace Mixture::Vulkan
             case RHI::LoadOp::Clear: return vk::AttachmentLoadOp::eClear;
             case RHI::LoadOp::Load:  return vk::AttachmentLoadOp::eLoad;
             case RHI::LoadOp::DontCare: return vk::AttachmentLoadOp::eDontCare;
-            case RHI::LoadOp::None: return vk::AttachmentLoadOp::eNone;
+            case RHI::LoadOp::None: return vk::AttachmentLoadOp::eNoneEXT;
         }
 
         return vk::AttachmentLoadOp::eDontCare;
@@ -122,7 +122,7 @@ namespace Mixture::Vulkan
         {
             case RHI::StoreOp::Store: return vk::AttachmentStoreOp::eStore;
             case RHI::StoreOp::DontCare: return vk::AttachmentStoreOp::eDontCare;
-            case RHI::StoreOp::None: return vk::AttachmentStoreOp::eNone;
+            case RHI::StoreOp::None: return vk::AttachmentStoreOp::eNoneEXT;
         }
 
         return vk::AttachmentStoreOp::eStore;

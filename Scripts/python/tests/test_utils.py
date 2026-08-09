@@ -135,7 +135,8 @@ class SafeArchiveExtractionTests(unittest.TestCase):
 
         target = self.root / "premake/bin/premake5"
         self.assertEqual(target.read_bytes(), contents)
-        self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o755)
+        if sys.platform != "win32":
+            self.assertEqual(stat.S_IMODE(target.stat().st_mode), 0o755)
 
     def test_rejects_tar_parent_traversal(self):
         archive = self.root / "traversal.tar.gz"

@@ -1,7 +1,7 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Surface.hpp"
 
-#include <glfw/glfw3.h>
+#include <GLFW/glfw3.h>
 
 namespace Mixture::Vulkan
 {

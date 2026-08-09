@@ -44,9 +44,9 @@ namespace Mixture::Vulkan
 
         // The actual callback function Vulkan will call
         static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
-            vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-            vk::DebugUtilsMessageTypeFlagsEXT messageType,
-            const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
+            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+            VkDebugUtilsMessageTypeFlagsEXT messageType,
+            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData
         );
 
