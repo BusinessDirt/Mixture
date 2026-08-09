@@ -30,8 +30,6 @@ namespace Mixture::Vulkan
 
     void Swapchain::Recreate(uint32_t width, uint32_t height)
     {
-        m_Device->WaitForIdle(); // Don't touch resources while GPU is using them
-
         // Cleanup old views
         for (auto imageView : m_ImageViews) m_Device->GetHandle().destroyImageView(imageView);
         m_ImageViews.clear();

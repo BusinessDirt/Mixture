@@ -10,6 +10,9 @@
 #include <spdlog/fmt/bundled/format.h>
 #pragma warning(pop)
 
+#include <atomic>
+#include <shared_mutex>
+
 namespace Opal
 {
     /**
@@ -84,7 +87,7 @@ namespace Opal
          *
          * @param sinks The vector of sinks to use.
          */
-        void Initialize(const std::vector<spdlog::sink_ptr>& sinks) { m_Sinks = sinks; }
+        void Initialize(const std::vector<spdlog::sink_ptr>& sinks);
 
         /**
          * @brief Retrieves or creates a logger with the specified name.
@@ -96,6 +99,11 @@ namespace Opal
          * @return std::shared_ptr<spdlog::logger> The logger instance.
          */
         std::shared_ptr<spdlog::logger> GetLogger(const std::string& name);
+
+        /** Flushes every cached logger. Normal messages flush only on errors. */
+        void FlushAll();
+
+        uint64_t GetRegistryLookupCount() const { return m_RegistryLookupCount.load(); }
 
         /**
          * @brief Sets the name of the current thread for logging purposes.
@@ -115,7 +123,8 @@ namespace Opal
         LogRegistry() = default; // Singleton
         std::vector<spdlog::sink_ptr> m_Sinks;
         std::unordered_map<std::string, std::shared_ptr<spdlog::logger>> m_Loggers;
-        std::mutex m_Mutex;
+        mutable std::shared_mutex m_Mutex;
+        std::atomic<uint64_t> m_RegistryLookupCount{ 0 };
     };
 }
 

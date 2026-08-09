@@ -89,6 +89,7 @@ namespace Mixture::Vulkan
             // Handle minimization (width=0) by skipping
             if (width == 0 || height == 0) return;
 
+            // Context owns swapchain synchronization; Recreate performs no wait.
             m_Device->WaitForIdle();
             m_Swapchain->Recreate(width, height);
 
@@ -139,6 +140,7 @@ namespace Mixture::Vulkan
         m_GraphicsQueue->ResetBuffer(m_CurrentFrame);
         m_TransferQueue->ResetBuffer(m_CurrentFrame);
         m_ComputeQueue->ResetBuffer(m_CurrentFrame);
+        m_QueueActivity[m_CurrentFrame] = {};
 
         m_IsFrameStarted = true;
 
@@ -153,19 +155,27 @@ namespace Mixture::Vulkan
             return;
         }
 
-        m_TransferQueue->Submit(m_CurrentFrame, { m_TransferFinishedSemaphores->Get(m_CurrentFrame) });
-        m_ComputeQueue->Submit(m_CurrentFrame, { m_ComputeFinishedSemaphores->Get(m_CurrentFrame) });
+        const auto plan = BuildFrameSubmissionPlan(m_QueueActivity[m_CurrentFrame]);
+        if (plan.SubmitTransfer)
+            m_TransferQueue->Submit(m_CurrentFrame, { m_TransferFinishedSemaphores->Get(m_CurrentFrame) });
+        if (plan.SubmitCompute)
+            m_ComputeQueue->Submit(m_CurrentFrame, { m_ComputeFinishedSemaphores->Get(m_CurrentFrame) });
+
+        Vector<vk::Semaphore> waitSemaphores{ m_ImageAvailableSemaphores->Get(m_CurrentFrame) };
+        Vector<vk::PipelineStageFlags> waitStages{ vk::PipelineStageFlagBits::eColorAttachmentOutput };
+        if (plan.WaitForTransfer)
+        {
+            waitSemaphores.push_back(m_TransferFinishedSemaphores->Get(m_CurrentFrame));
+            waitStages.push_back(vk::PipelineStageFlagBits::eVertexInput);
+        }
+        if (plan.WaitForCompute)
+        {
+            waitSemaphores.push_back(m_ComputeFinishedSemaphores->Get(m_CurrentFrame));
+            waitStages.push_back(vk::PipelineStageFlagBits::eVertexInput);
+        }
+
         m_GraphicsQueue->Submit(m_CurrentFrame, { m_RenderFinishedSemaphores->Get(m_ImageIndex) },
-            {
-                m_ImageAvailableSemaphores->Get(m_CurrentFrame),
-                m_TransferFinishedSemaphores->Get(m_CurrentFrame),
-                m_ComputeFinishedSemaphores->Get(m_CurrentFrame)
-            },
-            {
-                vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                vk::PipelineStageFlagBits::eVertexInput, // Wait for transfer before vertex input
-                vk::PipelineStageFlagBits::eVertexInput  // Wait for compute before vertex input (assumption)
-            },
+            std::move(waitSemaphores), std::move(waitStages),
             m_InFlightFences->Get(m_CurrentFrame)
         );
 
@@ -188,6 +198,7 @@ namespace Mixture::Vulkan
                 m_GraphicsQueue->GetBuffer(m_CurrentFrame),
                 m_TransferQueue->GetBuffer(m_CurrentFrame),
                 m_ComputeQueue->GetBuffer(m_CurrentFrame),
+                &m_QueueActivity[m_CurrentFrame],
             }, m_Swapchain->GetImages()[m_ImageIndex]
         );
     }

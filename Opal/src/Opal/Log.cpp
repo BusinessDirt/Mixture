@@ -25,6 +25,11 @@
 
 namespace Opal
 {
+    void LogRegistry::Initialize(const std::vector<spdlog::sink_ptr>& sinks)
+    {
+        std::unique_lock lock(m_Mutex);
+        m_Sinks = sinks;
+    }
 
     LogBuilder& LogBuilder::UseConsoleSink(spdlog::level::level_enum level)
     {
@@ -73,24 +78,62 @@ namespace Opal
 
     std::shared_ptr<spdlog::logger> LogRegistry::GetLogger(const std::string& name)
     {
-        std::lock_guard<std::mutex> lock(m_Mutex);
+        struct CachedLogger
+        {
+            const LogRegistry* Registry = nullptr;
+            std::string Name;
+            std::weak_ptr<spdlog::logger> Logger;
+        };
+        static thread_local CachedLogger cache;
 
-        // Check Cache
+        if (cache.Registry == this && cache.Name == name)
+        {
+            if (auto logger = cache.Logger.lock()) return logger;
+        }
+
+        m_RegistryLookupCount.fetch_add(1, std::memory_order_relaxed);
+        {
+            std::shared_lock lock(m_Mutex);
+            auto it = m_Loggers.find(name);
+            if (it != m_Loggers.end())
+            {
+                cache = { this, name, it->second };
+                return it->second;
+            }
+        }
+
+        std::unique_lock lock(m_Mutex);
+
         auto it = m_Loggers.find(name);
-        if (it != m_Loggers.end()) return it->second;
+        if (it != m_Loggers.end())
+        {
+            cache = { this, name, it->second };
+            return it->second;
+        }
 
         auto newLogger = std::make_shared<spdlog::logger>(name, begin(m_Sinks), end(m_Sinks));
 
         // Default settings for new loggers
         newLogger->set_level(spdlog::level::trace);
-        newLogger->flush_on(spdlog::level::trace);
+        newLogger->flush_on(spdlog::level::err);
 
         // Register with SPDLog global registry (optional, but good practice)
         spdlog::register_logger(newLogger);
 
         // Cache it
         m_Loggers[name] = newLogger;
+        cache = { this, name, newLogger };
         return newLogger;
+    }
+
+    void LogRegistry::FlushAll()
+    {
+        std::shared_lock lock(m_Mutex);
+        for (const auto& [name, logger] : m_Loggers)
+        {
+            (void)name;
+            logger->flush();
+        }
     }
 
     static thread_local std::string s_CurrentThreadName;

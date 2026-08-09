@@ -14,6 +14,7 @@
 #include "Mixture/Render/Graph/RenderGraphResourceCache.hpp"
 
 #include <filesystem>
+#include <unordered_map>
 
 namespace Mixture
 {
@@ -26,7 +27,12 @@ namespace Mixture
     public:
         RenderGraph(RHI::IGraphicsDevice& device) 
             : m_PassAllocator(64 * 1024), m_Cache(device) 
-        {}
+        {
+            m_Passes.reserve(64);
+            m_Resources.reserve(128);
+            m_ResourceLookup.reserve(128);
+            m_ResourcesEndingAtPass.reserve(64);
+        }
 
         /**
          * @brief Resets the render graph, clearing all passes and resources.
@@ -161,6 +167,8 @@ namespace Mixture
 
         Vector<RGPassNode> m_Passes;
         Vector<RGResourceNode> m_Resources;
+        std::unordered_map<std::string, RGResourceHandle> m_ResourceLookup;
+        Vector<Vector<RGResourceHandle>> m_ResourcesEndingAtPass;
 
         RenderGraphRegistry m_Registry;
         RenderGraphResourceCache m_Cache;
