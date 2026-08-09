@@ -30,7 +30,7 @@ namespace Mixture
     void LayerStack::PopLayer(Layer* layer)
     {
         if (const auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
-            it != m_Layers.begin() + m_LayerInsertIndex)
+            it != m_Layers.end() && it < m_Layers.begin() + m_LayerInsertIndex)
         {
             layer->OnDetach();
             m_Layers.erase(it);
@@ -41,7 +41,7 @@ namespace Mixture
     void LayerStack::PopOverlay(Layer* layer)
     {
         if (const auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
-            it != m_Layers.end())
+            it != m_Layers.end() && it >= m_Layers.begin() + m_LayerInsertIndex)
         {
             layer->OnDetach();
             m_Layers.erase(it);

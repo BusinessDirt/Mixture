@@ -50,9 +50,12 @@ namespace Mixture::Tests {
     class MockLayer : public Layer {
     public:
         MockLayer(const std::string& name) : Layer(name) {}
-        void OnAttach() override {}
-        void OnDetach() override {}
+        void OnAttach() override { AttachCount++; }
+        void OnDetach() override { DetachCount++; }
         void OnEvent(Event& event) override {}
+
+        int AttachCount = 0;
+        int DetachCount = 0;
     };
 
     TEST(CoreTests, LayerStackPushPop) {
@@ -94,6 +97,34 @@ namespace Mixture::Tests {
         delete layer1;
         delete layer2;
         delete overlay1;
+    }
+
+    TEST(CoreTests, LayerStackIgnoresInvalidRemoval) {
+        LayerStack stack;
+        auto* layer = new MockLayer("Layer");
+        auto* overlay = new MockLayer("Overlay");
+        auto* absent = new MockLayer("Absent");
+
+        stack.PushLayer(layer);
+        stack.PushOverlay(overlay);
+
+        stack.PopLayer(absent);
+        stack.PopOverlay(absent);
+        stack.PopLayer(overlay);
+        stack.PopOverlay(layer);
+
+        EXPECT_EQ(layer->DetachCount, 0);
+        EXPECT_EQ(overlay->DetachCount, 0);
+        EXPECT_EQ(std::distance(stack.begin(), stack.end()), 2);
+
+        stack.PopLayer(layer);
+        stack.PopOverlay(overlay);
+        EXPECT_EQ(layer->DetachCount, 1);
+        EXPECT_EQ(overlay->DetachCount, 1);
+
+        delete layer;
+        delete overlay;
+        delete absent;
     }
 
     // --- Application.hpp Tests ---

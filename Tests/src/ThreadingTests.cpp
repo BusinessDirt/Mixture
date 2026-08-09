@@ -97,4 +97,35 @@ namespace Mixture::Tests {
         EXPECT_TRUE(TaskSystem::IsInitialized());
     }
 
+    TEST_F(TaskSystemTests, ShutdownDrainsAcceptedTasks)
+    {
+        TaskSystem::Shutdown();
+        TaskSystem::Init(1);
+
+        std::promise<void> releaseWorker;
+        std::shared_future<void> release = releaseWorker.get_future().share();
+        std::atomic<int> completed = 0;
+        TaskSystem::Submit([release, &completed]() {
+            release.wait();
+            ++completed;
+        });
+        for (int i = 0; i < 32; ++i)
+            TaskSystem::Submit([&completed]() { ++completed; });
+
+        std::thread shutdownThread([]() { TaskSystem::Shutdown(); });
+        while (TaskSystem::IsInitialized())
+            std::this_thread::yield();
+        releaseWorker.set_value();
+        shutdownThread.join();
+
+        EXPECT_EQ(completed, 33);
+    }
+
+    TEST_F(TaskSystemTests, SubmissionWhileStoppedIsRejected)
+    {
+        TaskSystem::Shutdown();
+        EXPECT_THROW(TaskSystem::Submit([]() {}), std::runtime_error);
+        EXPECT_THROW(TaskSystem::SubmitFuture([]() { return 42; }), std::runtime_error);
+    }
+
 }

@@ -6,6 +6,7 @@
 #include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
 #include "Mixture/Assets/Textures/TextureAsset.hpp"
 #include <fstream>
+#include <thread>
 
 using namespace Mixture;
 
@@ -73,6 +74,37 @@ TEST_F(AssetRegistryTests, TypeSeparation)
     
     // Should affect Texture type
     EXPECT_EQ(AssetRegistry::Get().ResolvePath(AssetType::Texture, "X"), std::filesystem::path("Y"));
+}
+
+TEST_F(AssetRegistryTests, ConcurrentRegistrationAndReadsAreSafe)
+{
+    constexpr int threadCount = 8;
+    constexpr int assetsPerThread = 64;
+    std::array<std::vector<UUID>, threadCount> ids;
+    std::vector<std::thread> workers;
+
+    for (int threadIndex = 0; threadIndex < threadCount; ++threadIndex)
+    {
+        workers.emplace_back([threadIndex, &ids]() {
+            for (int assetIndex = 0; assetIndex < assetsPerThread; ++assetIndex)
+            {
+                AssetMetadata metadata;
+                metadata.ID = UUID(static_cast<uint64_t>(threadIndex * assetsPerThread + assetIndex + 1));
+                metadata.Type = AssetType::Texture;
+                metadata.FilePath = "Concurrent/" + std::to_string(threadIndex) + "/" + std::to_string(assetIndex);
+                ids[threadIndex].push_back(metadata.ID);
+                AssetRegistry::Get().RegisterAsset(metadata);
+                EXPECT_TRUE(AssetRegistry::Get().Contains(metadata.ID));
+                EXPECT_EQ(AssetRegistry::Get().GetPath(metadata.ID), metadata.FilePath);
+            }
+        });
+    }
+    for (auto& worker : workers) worker.join();
+
+    EXPECT_EQ(AssetRegistry::Get().GetAssets().size(), threadCount * assetsPerThread);
+    for (const auto& threadIDs : ids)
+        for (UUID id : threadIDs)
+            EXPECT_TRUE(AssetRegistry::Get().Contains(id));
 }
 
 // --- AssetManager Tests ---
@@ -180,6 +212,43 @@ TEST_F(AssetManagerTests, LoadsAssetsOnOwnedExecutorAndWaitsForIdle)
     std::filesystem::remove_all(root);
 }
 
+TEST_F(AssetManagerTests, ConcurrentRequestsShareOneCacheEntry)
+{
+    AssetManager& manager = AssetManager::Get();
+    const std::filesystem::path root = std::filesystem::temp_directory_path()
+        / ("MixtureAssetCache-" + std::to_string(static_cast<uint64_t>(UUID())));
+    const std::filesystem::path shaderDirectory = root / "Shader";
+    const std::filesystem::path shaderPath = shaderDirectory / "Shared.spv";
+    std::filesystem::create_directories(shaderDirectory);
+    {
+        const std::array<char, 4> bytecode{ 0x03, 0x02, 0x23, 0x07 };
+        std::ofstream stream(shaderPath, std::ios::binary);
+        stream.write(bytecode.data(), static_cast<std::streamsize>(bytecode.size()));
+    }
+    AssetMetadata metadata;
+    metadata.ID = UUID();
+    metadata.Type = AssetType::Shader;
+    metadata.FilePath = shaderPath;
+    AssetSerializer::WriteMetadata(metadata);
+
+    manager.SetAssetRoot(root);
+    std::array<AssetHandle, 16> handles;
+    std::vector<std::thread> workers;
+    for (auto& handle : handles)
+        workers.emplace_back([&manager, &handle, &shaderPath]() {
+            handle = manager.GetAsset(AssetType::Shader, shaderPath.filename());
+        });
+    for (auto& worker : workers) worker.join();
+
+    for (const AssetHandle handle : handles)
+        EXPECT_EQ(handle.ID, metadata.ID);
+    manager.WaitForIdle();
+    EXPECT_TRUE(manager.IsAssetLoaded(metadata.ID));
+
+    manager.Shutdown();
+    std::filesystem::remove_all(root);
+}
+
 // --- AssetSerializer Metadata Tests ---
 
 TEST(AssetSerializerTests, MetadataRoundTrip)
@@ -253,40 +322,31 @@ TEST(AssetTypeTests, ShaderAsset)
 
 // --- Shader Compiler Tests ---
 
-TEST(ShaderCompilerTests, BasicCompile)
+TEST_F(AssetManagerTests, ShaderCompilerProducesValidOutputWhenAvailable)
 {
-    // Simple Vertex Shader
+    if (!ShaderCompiler::IsAvailable())
+        GTEST_SKIP() << "DXC runtime is unavailable";
+
+    AssetManager::Get().SetGraphicsAPI(RHI::GraphicsAPI::Vulkan);
     std::string source = R"(
-        #version 450
-        void main() { gl_Position = vec4(0,0,0,1); }
+        [shader("vertex")]
+        float4 main(float4 position : POSITION) : SV_Position { return position; }
     )";
-    
-    // We expect this to either succeed or throw/return empty depending on implementation.
-    // Given we don't know if a compiler is linked, we wrap in try/catch or check size.
-    try {
-        auto spirv = ShaderCompiler::Compile(source);
-        if (!spirv.empty())
-        {
-            // If it compiled, it should be valid SPIR-V
-            EXPECT_GT(spirv.size(), 0);
-            EXPECT_EQ(spirv.size() % 4, 0); // SPIR-V is 32-bit words
-            
-            // Reflection Test
-            auto reflection = ShaderCompiler::ReflectSPIRV(spirv.data(), spirv.size());
-            // Should have entry point "main"
-            bool hasMain = false;
-            for(auto& [stage, name] : reflection.EntryPoints) {
-                if (name == "main") hasMain = true;
-            }
-            EXPECT_TRUE(hasMain);
-        }
-        else
-        {
-            // Warn if compilation returns empty but didn't throw (maybe mock compiler)
-            std::cout << "[WARNING] ShaderCompiler returned empty SPIR-V (Compiler might be missing/mocked)" << std::endl;
-        }
-    } catch (...) {
-        // If it throws, we can't easily test it here without more setup
-        std::cout << "[WARNING] ShaderCompiler threw exception" << std::endl;
-    }
+
+    const auto spirv = ShaderCompiler::Compile(source);
+    ASSERT_FALSE(spirv.empty());
+    ASSERT_EQ(spirv.size() % sizeof(uint32_t), 0u);
+    uint32_t magic = 0;
+    std::memcpy(&magic, spirv.data(), sizeof(magic));
+    EXPECT_EQ(magic, 0x07230203u);
+
+    const auto reflection = ShaderCompiler::ReflectSPIRV(spirv.data(), spirv.size());
+    ASSERT_TRUE(reflection.EntryPoints.contains(RHI::ShaderStage::Vertex));
+    EXPECT_EQ(reflection.EntryPoints.at(RHI::ShaderStage::Vertex), "main");
+}
+
+TEST_F(AssetManagerTests, ShaderCompilerPropagatesFailure)
+{
+    const auto result = ShaderCompiler::Compile("this is not valid HLSL");
+    EXPECT_TRUE(result.empty());
 }

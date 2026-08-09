@@ -265,7 +265,7 @@ namespace Mixture
         AssetType assetType = AssetType::None;
         std::filesystem::path relativePath;
 
-        const auto& assets = AssetRegistry::Get().GetAssets();
+        const auto assets = AssetRegistry::Get().GetAssets();
         for (const auto& [id, metadata] : assets)
         {
             const char* typeString = Utils::AssetTypeToString(metadata.Type);
