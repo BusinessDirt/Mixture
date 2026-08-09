@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Resources/Texture.hpp"
+#include "Platform/Vulkan/Resources/AllocationPolicy.hpp"
 
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/Queue.hpp"
@@ -26,9 +27,7 @@ namespace Mixture::Vulkan
             bufferInfo.size = imageSize;
             bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-            VmaAllocationCreateInfo allocInfo = {};
-            allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-            allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+            VmaAllocationCreateInfo allocInfo = AllocationPolicy::Upload(true);
 
             VkBuffer stagingBuffer;
             VmaAllocation stagingAllocation;
@@ -159,9 +158,7 @@ namespace Mixture::Vulkan
         imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
         // Allocation Info (VMA)
-        VmaAllocationCreateInfo allocInfo = {};
-        allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-        allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+        VmaAllocationCreateInfo allocInfo = AllocationPolicy::DeviceLocal();
 
         // Create Image
         // (Cast to C handles for VMA)
