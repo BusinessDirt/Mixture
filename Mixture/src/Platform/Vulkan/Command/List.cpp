@@ -45,6 +45,7 @@ namespace Mixture::Vulkan
     void CommandList::Begin()
     {
         m_IsPipelineBound = false;
+        if (m_CommandContext.Activity) m_CommandContext.Activity->Graphics = true;
 
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit; // Reset every frame

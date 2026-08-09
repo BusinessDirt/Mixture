@@ -329,6 +329,8 @@ namespace Mixture
         m_PassAllocator.Reset();
         m_Passes.clear();
         m_Resources.clear();
+        m_ResourceLookup.clear();
+        m_ResourcesEndingAtPass.clear();
         m_Registry.Clear();
         // Note: m_Cache is NOT cleared here, to support persistence across frames.
     }
@@ -339,6 +341,17 @@ namespace Mixture
         SortPasses();
         CalculateLifetimes();
         CalculateBarriers();
+
+        m_ResourcesEndingAtPass.clear();
+        m_ResourcesEndingAtPass.resize(m_Passes.size());
+        for (const auto& node : m_Resources)
+        {
+            const bool isTransient = node.Type == RGResourceType::Texture || node.Type == RGResourceType::Buffer;
+            if (isTransient && node.LastPassIndex >= 0)
+            {
+                m_ResourcesEndingAtPass[static_cast<size_t>(node.LastPassIndex)].push_back(node.Handle);
+            }
+        }
     }
 
     void RenderGraph::Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context)
@@ -369,16 +382,6 @@ namespace Mixture
                 // Get from Cache
                 auto buffer = m_Cache.GetOrCreateBuffer(node.BufferDesc);
                 m_Registry.RegisterBuffer(node.Handle, buffer.get());
-            }
-        }
-
-        Vector<Vector<const RGResourceNode*>> resourcesEndingAtPass(m_Passes.size());
-        for (const auto& node : m_Resources)
-        {
-            const bool isTransient = node.Type == RGResourceType::Texture || node.Type == RGResourceType::Buffer;
-            if (isTransient && node.LastPassIndex >= 0)
-            {
-                resourcesEndingAtPass[static_cast<size_t>(node.LastPassIndex)].push_back(&node);
             }
         }
 
@@ -482,12 +485,13 @@ namespace Mixture
 
             // Virtual handles are valid only through their calculated lifetime.
             // The frame-slot cache retains physical ownership until GPU-safe reuse.
-            for (const RGResourceNode* resource : resourcesEndingAtPass[passIndex])
+            for (const RGResourceHandle handle : m_ResourcesEndingAtPass[passIndex])
             {
-                if (resource->Type == RGResourceType::Texture)
-                    m_Registry.UnregisterTexture(resource->Handle);
+                const auto& resource = m_Resources[handle.ID];
+                if (resource.Type == RGResourceType::Texture)
+                    m_Registry.UnregisterTexture(handle);
                 else
-                    m_Registry.UnregisterBuffer(resource->Handle);
+                    m_Registry.UnregisterBuffer(handle);
             }
         }
     }
@@ -510,6 +514,7 @@ namespace Mixture
         node.ExternalTexture = resource;
 
         m_Resources.push_back(node);
+        m_ResourceLookup.try_emplace(name, handle);
         m_Registry.ImportTexture(handle, resource);
 
         return handle;
@@ -531,6 +536,7 @@ namespace Mixture
         node.ExternalBuffer = resource;
 
         m_Resources.push_back(node);
+        m_ResourceLookup.try_emplace(name, handle);
         m_Registry.ImportBuffer(handle, resource);
 
         return handle;
@@ -548,6 +554,7 @@ namespace Mixture
         node.TextureDesc = desc;
 
         m_Resources.push_back(node);
+        m_ResourceLookup.try_emplace(name, handle);
         return handle;
     }
 
@@ -563,18 +570,14 @@ namespace Mixture
         node.BufferDesc = desc;
 
         m_Resources.push_back(node);
+        m_ResourceLookup.try_emplace(name, handle);
         return handle;
     }
 
     RGResourceHandle RenderGraph::GetResource(const std::string& name) const
     {
-        for (const auto& node : m_Resources)
-        {
-            if (node.Name == name)
-            {
-                return node.Handle;
-            }
-        }
+        const auto resource = m_ResourceLookup.find(name);
+        if (resource != m_ResourceLookup.end()) return resource->second;
 
         OPAL_ERROR("Core/RenderGraph", "Resource not found: %s", name.c_str());
         return RGResourceHandle();

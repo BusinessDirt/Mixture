@@ -3,9 +3,41 @@
 #include "Mixture/Core/Time.hpp"
 #include "Mixture/Core/LayerStack.hpp"
 #include "Mixture/Core/Application.hpp"
+#include "Opal/Log.hpp"
 #include <thread>
 
 namespace Mixture::Tests {
+
+    TEST(CoreTests, LoggerLookupUsesThreadLocalFastPath) {
+        auto& registry = Opal::LogRegistry::Get();
+        const auto before = registry.GetRegistryLookupCount();
+        auto logger = registry.GetLogger("Tests/LoggingFastPath");
+        const auto afterFirst = registry.GetRegistryLookupCount();
+        for (size_t index = 0; index < 10000; ++index)
+            EXPECT_EQ(registry.GetLogger("Tests/LoggingFastPath"), logger);
+
+        EXPECT_EQ(afterFirst, before + 1);
+        EXPECT_EQ(registry.GetRegistryLookupCount(), afterFirst);
+    }
+
+    TEST(CoreTests, LoggerLookupScalesAcrossThreads) {
+        auto& registry = Opal::LogRegistry::Get();
+        constexpr size_t ThreadCount = 8;
+        constexpr size_t LookupsPerThread = 5000;
+        const auto before = registry.GetRegistryLookupCount();
+
+        std::vector<std::thread> threads;
+        threads.reserve(ThreadCount);
+        for (size_t threadIndex = 0; threadIndex < ThreadCount; ++threadIndex) {
+            threads.emplace_back([&registry] {
+                for (size_t lookup = 0; lookup < LookupsPerThread; ++lookup)
+                    registry.GetLogger("Tests/MultithreadedLogging");
+            });
+        }
+        for (auto& thread : threads) thread.join();
+
+        EXPECT_LE(registry.GetRegistryLookupCount() - before, ThreadCount);
+    }
 
     // --- Base.hpp Tests ---
 

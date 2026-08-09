@@ -15,10 +15,12 @@
 #include "Platform/Vulkan/Resources/Texture.hpp"
 #include "Platform/Vulkan/Resources/AllocationPolicy.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
+#include "Platform/Vulkan/FrameSubmission.hpp"
 
 #include <filesystem>
 #include <fstream>
 #include <type_traits>
+#include <chrono>
 
 namespace Mixture::Tests
 {
@@ -177,6 +179,41 @@ namespace Mixture::Tests
 
         ASSERT_TRUE(RenderGraphAlgorithms::SortPasses(passes));
         ExpectOrder(passes, { "First", "Second", "Third" });
+    }
+
+    TEST(VulkanSubmissionTests, SkipsEveryIdleQueueCombination)
+    {
+        for (int mask = 0; mask < 4; ++mask)
+        {
+            Vulkan::FrameQueueActivity activity;
+            activity.Graphics = true;
+            activity.Transfer = (mask & 1) != 0;
+            activity.Compute = (mask & 2) != 0;
+
+            const auto plan = Vulkan::BuildFrameSubmissionPlan(activity);
+            EXPECT_EQ(plan.SubmitTransfer, activity.Transfer);
+            EXPECT_EQ(plan.SubmitCompute, activity.Compute);
+            EXPECT_EQ(plan.WaitForTransfer, activity.Transfer);
+            EXPECT_EQ(plan.WaitForCompute, activity.Compute);
+        }
+    }
+
+    TEST(RenderGraphTests, IndexedLookupScalesAcrossRepresentativeGraphSizes)
+    {
+        MockGraphicsDevice device;
+        RenderGraph graph(device);
+        RHI::TextureDesc desc;
+
+        constexpr size_t ResourceCount = 10000;
+        for (size_t index = 0; index < ResourceCount; ++index)
+            graph.CreateResource("Resource-" + std::to_string(index), desc);
+
+        const auto start = std::chrono::steady_clock::now();
+        for (size_t index = 0; index < ResourceCount; ++index)
+            EXPECT_EQ(graph.GetResource("Resource-" + std::to_string(index)).ID, index);
+        const auto elapsed = std::chrono::steady_clock::now() - start;
+
+        EXPECT_LT(elapsed, std::chrono::seconds(2));
     }
 
     TEST(RenderGraphTests, PreservesReadAfterWriteDependency)

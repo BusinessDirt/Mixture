@@ -7,9 +7,11 @@
 
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/RHI.hpp"
+#include "Platform/Vulkan/FrameSubmission.hpp"
 
 #include <vector>
 #include <optional>
+#include <array>
 
 namespace Mixture::Vulkan
 {
@@ -196,5 +198,6 @@ namespace Mixture::Vulkan
         uint32_t m_CurrentFrame = 0;
         uint32_t m_ImageIndex = 0;
         bool m_IsFrameStarted = false;
+        std::array<FrameQueueActivity, 2> m_QueueActivity{};
     };
 }

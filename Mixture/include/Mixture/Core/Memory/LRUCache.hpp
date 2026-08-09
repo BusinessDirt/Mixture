@@ -57,7 +57,8 @@ namespace Mixture
          * @param value The value.
          * @param size The size of the item in bytes.
          */
-        void Put(const Key& key, const Value& value, size_t size)
+        template<typename V>
+        void Put(const Key& key, V&& value, size_t size)
         {
             auto it = m_Map.find(key);
             if (it != m_Map.end())
@@ -65,14 +66,14 @@ namespace Mixture
                 // Update existing
                 m_CurrentMemoryUsage -= it->second->Size;
                 m_CurrentMemoryUsage += size;
-                it->second->Val = value;
+                it->second->Val = std::forward<V>(value);
                 it->second->Size = size;
                 m_List.splice(m_List.begin(), m_List, it->second);
             }
             else
             {
                 // Insert new
-                m_List.push_front({ key, value, size });
+                m_List.push_front({ key, std::forward<V>(value), size });
                 m_Map[key] = m_List.begin();
                 m_CurrentMemoryUsage += size;
             }
@@ -121,14 +122,16 @@ namespace Mixture
         {
             while (m_CurrentMemoryUsage > m_MaxMemoryUsage && !m_List.empty())
             {
-                auto last = m_List.back();
+                auto last = std::prev(m_List.end());
 
+                // Invoke before mutation: if the callback throws, the entry and
+                // accounting remain intact and the caller may retry eviction.
                 if (m_EvictionCallback)
-                    m_EvictionCallback(last.K, last.Val);
+                    m_EvictionCallback(last->K, last->Val);
 
-                m_CurrentMemoryUsage -= last.Size;
-                m_Map.erase(last.K);
-                m_List.pop_back();
+                m_CurrentMemoryUsage -= last->Size;
+                m_Map.erase(last->K);
+                m_List.erase(last);
             }
         }
 

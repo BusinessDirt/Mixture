@@ -103,6 +103,31 @@ namespace Mixture::Tests {
         EXPECT_TRUE(cache.Contains(2));
         EXPECT_FALSE(cache.Contains(1));
     }
+
+    TEST(MemoryTests, LRUEvictionDoesNotCopyValue) {
+        struct CopyCounted {
+            int* Copies = nullptr;
+            explicit CopyCounted(int* copies = nullptr) : Copies(copies) {}
+            CopyCounted(const CopyCounted& other) : Copies(other.Copies) { if (Copies) ++*Copies; }
+            CopyCounted(CopyCounted&&) noexcept = default;
+            CopyCounted& operator=(const CopyCounted& other) {
+                Copies = other.Copies;
+                if (Copies) ++*Copies;
+                return *this;
+            }
+            CopyCounted& operator=(CopyCounted&&) noexcept = default;
+        };
+
+        int copies = 0;
+        LRUCache<int, CopyCounted> cache(1);
+        cache.SetEvictionCallback([](const int&, const CopyCounted&) {});
+        cache.Put(1, CopyCounted(&copies), 1);
+        cache.Put(2, CopyCounted(&copies), 1);
+
+        EXPECT_EQ(copies, 0);
+        EXPECT_FALSE(cache.Contains(1));
+        EXPECT_TRUE(cache.Contains(2));
+    }
     
     // --- ArenaAllocator Tests ---
 

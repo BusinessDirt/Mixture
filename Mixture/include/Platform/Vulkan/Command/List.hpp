@@ -6,6 +6,7 @@
  */
 
 #include "Platform/Vulkan/Definitions.hpp"
+#include "Platform/Vulkan/FrameSubmission.hpp"
 #include "Mixture/Render/RHI/ICommandList.hpp"
 
 namespace Mixture::Vulkan
@@ -15,6 +16,7 @@ namespace Mixture::Vulkan
         vk::CommandBuffer graphicsCommandBuffer;
         vk::CommandBuffer transferCommandBuffer;
         vk::CommandBuffer computeCommandBuffer;
+        FrameQueueActivity* Activity = nullptr;
     };
     /**
      * @brief Vulkan implementation of the CommandList.
@@ -54,6 +56,9 @@ namespace Mixture::Vulkan
 
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
+
+        void MarkTransferWork() { if (m_CommandContext.Activity) m_CommandContext.Activity->Transfer = true; }
+        void MarkComputeWork() { if (m_CommandContext.Activity) m_CommandContext.Activity->Compute = true; }
 
     private:
         void FlushDescriptors(); // The magic function
