@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
+#include "Platform/Vulkan/Resources/AllocationPolicy.hpp"
 
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/Queue.hpp"
@@ -20,9 +21,7 @@ namespace Mixture::Vulkan
         bufferInfo.usage = EnumMapper::MapBufferUsage(desc.Usage) |= vk::BufferUsageFlagBits::eTransferDst;
         bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-        VmaAllocationCreateInfo allocInfo = {};
-        allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-        allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+        VmaAllocationCreateInfo allocInfo = AllocationPolicy::DeviceLocal();
         // TODO: For frequent CPU updates (Uniforms), we might want VMA_MEMORY_USAGE_CPU_TO_GPU
         // and avoid staging, but for Vertex/Index, this is best.
 
@@ -43,9 +42,7 @@ namespace Mixture::Vulkan
             stagingInfo.size = desc.Size;
             stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
-            VmaAllocationCreateInfo stagingAllocInfo = {};
-            stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-            stagingAllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+            VmaAllocationCreateInfo stagingAllocInfo = AllocationPolicy::Upload();
 
             VkBuffer stagingBuffer;
             VmaAllocation stagingAlloc;
