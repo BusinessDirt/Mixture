@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <mutex>
 #include <shared_mutex>
+#include <array>
 
 namespace Mixture
 {
@@ -60,6 +61,9 @@ namespace Mixture
          */
         AssetMetadata GetMetadata(UUID id) const;
 
+        /** @brief Finds metadata by normalized type-relative path in constant time. */
+        AssetMetadata FindByPath(AssetType type, const std::filesystem::path& path) const;
+
         /**
          * @brief Retrieves the file path for a given asset ID.
          * 
@@ -99,8 +103,11 @@ namespace Mixture
         void Clear();
 
     private:
+        static std::string NormalizePath(const std::filesystem::path& path);
+
         mutable std::shared_mutex m_Mutex;
         std::unordered_map<UUID, AssetMetadata> m_Assets;
+        std::array<std::unordered_map<std::string, UUID>, static_cast<size_t>(AssetType::Count)> m_PathIndex;
         
         // AssetType -> (OldPathString -> NewPathString)
         std::unordered_map<AssetType, std::unordered_map<std::string, std::string>> m_Redirectors;

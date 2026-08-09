@@ -9,6 +9,7 @@
 
 #include "Mixture/Render/Graph/RenderGraphDefinitions.hpp"
 #include "Mixture/Render/RHI/IPipeline.hpp"
+#include "Mixture/Assets/IAsset.hpp"
 
 namespace Mixture
 {
@@ -81,6 +82,12 @@ namespace Mixture
          * @return RHI::IShader* Pointer to the loaded shader.
          */
         RHI::IShader* LoadShader(const std::string& path, RHI::ShaderStage stage);
+
+        /** @brief Resolves a shader handle for retention outside per-frame graph setup. */
+        AssetHandle ResolveShader(const std::string& path);
+
+        /** @brief Loads a shader from a previously resolved handle without path or metadata work. */
+        RHI::IShader* LoadShader(AssetHandle handle, RHI::ShaderStage stage);
 
         /**
          * @brief Creates (or retrieves from cache) a pipeline state object.

@@ -10,6 +10,7 @@
 
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
+#include <future>
 
 namespace Mixture::Vulkan
 {
@@ -96,6 +97,7 @@ namespace Mixture::Vulkan
 
         // Memory Management
         VmaAllocation m_Allocation = nullptr;
+        std::shared_future<void> m_UploadCompletion;
         bool m_OwnsImage = false; // <--- The Critical Flag
     };
 

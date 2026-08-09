@@ -90,6 +90,7 @@ namespace Mixture
         }
 
         m_Initialized = true;
+        m_MetadataFileAccessCount = 0;
     }
 
     void AssetManager::Shutdown()
@@ -256,52 +257,50 @@ namespace Mixture
 
     void AssetManager::OnAssetChange(const std::filesystem::path& path, FileAction action)
     {
-        // We only care about modifications for now
-        if (action != FileAction::Modified) return;
+        std::filesystem::path assetPath = path;
+        const bool metadataChanged = assetPath.extension() == ".meta";
+        if (metadataChanged) assetPath.replace_extension();
 
-        // Find the asset associated with this path
-        // Note: This iterates all registered assets. For a large DB, we might want a reverse lookup map.
-        UUID assetID = UUID(0);
-        AssetType assetType = AssetType::None;
-        std::filesystem::path relativePath;
-
-        const auto assets = AssetRegistry::Get().GetAssets();
-        for (const auto& [id, metadata] : assets)
+        AssetMetadata metadata;
+        for (uint8_t value = static_cast<uint8_t>(AssetType::None) + 1;
+             value < static_cast<uint8_t>(AssetType::Count); ++value)
         {
-            const char* typeString = Utils::AssetTypeToString(metadata.Type);
-            std::filesystem::path fullPath = m_RootDirectory / typeString / metadata.FilePath;
-
-            // Check if paths are equivalent (handles absolute/relative issues)
-            std::error_code ec;
-            if (std::filesystem::equivalent(fullPath, path, ec))
+            const AssetType type = static_cast<AssetType>(value);
+            const std::filesystem::path typeRoot = m_RootDirectory / Utils::AssetTypeToString(type);
+            const std::filesystem::path relative = assetPath.lexically_relative(typeRoot);
+            if (!relative.empty() && *relative.begin() != "..")
             {
-                assetID = id;
-                assetType = metadata.Type;
-                relativePath = metadata.FilePath;
-                break;
+                metadata = AssetRegistry::Get().FindByPath(type, relative);
+                if (metadata.ID.IsValid()) break;
             }
         }
 
-        if (!assetID.IsValid()) return;
+        if (!metadata.ID.IsValid()) return;
+        if (metadataChanged || action == FileAction::Deleted)
+        {
+            AssetRegistry::Get().UnregisterAsset(metadata.ID);
+            if (metadataChanged || action != FileAction::Modified) return;
+        }
+        if (action != FileAction::Modified) return;
 
         // If found, check if it's currently loaded
-        if (IsAssetLoaded(assetID))
+        if (IsAssetLoaded(metadata.ID))
         {
-            Ref<IAsset> currentAsset = GetAssetFromCache(assetID);
+            Ref<IAsset> currentAsset = GetAssetFromCache(metadata.ID);
             if (currentAsset)
             {
                 OPAL_INFO("AssetManager", "Reactive Reloading asset: {}", path.string());
                 // Reuse existing magic to keep handles valid
                 {
                     std::lock_guard<std::mutex> lock(m_CacheMutex);
-                    if (m_LoadingAssets.contains(assetID)) return;
-                    m_LoadingAssets[assetID] = currentAsset->GetMagic();
+                    if (m_LoadingAssets.contains(metadata.ID)) return;
+                    m_LoadingAssets[metadata.ID] = currentAsset->GetMagic();
                 }
 
-                if (!EnqueueLoad({ assetType, relativePath, assetID, currentAsset->GetMagic() }))
+                if (!EnqueueLoad({ metadata.Type, metadata.FilePath, metadata.ID, currentAsset->GetMagic() }))
                 {
                     std::lock_guard<std::mutex> lock(m_CacheMutex);
-                    m_LoadingAssets.erase(assetID);
+                    m_LoadingAssets.erase(metadata.ID);
                 }
             }
         }
@@ -324,6 +323,8 @@ namespace Mixture
         // Resolve path through redirectors in case the asset has moved
         std::filesystem::path resolvedPath = AssetRegistry::Get().ResolvePath(type, path);
 
+        AssetMetadata metadata = AssetRegistry::Get().FindByPath(type, resolvedPath);
+
         const char* typeString = Utils::AssetTypeToString(type);
         std::filesystem::path fullPath = m_RootDirectory / typeString / resolvedPath;
 
@@ -333,39 +334,39 @@ namespace Mixture
 
         // Try to load existing Metadata (Blocking I/O but small)
         // We do this BEFORE locking because it involves I/O.
-        AssetMetadata metadata;
-        metadata.Type = type;
-        metadata.FilePath = resolvedPath;
-
-        if (AssetSerializer::HasMetadata(fullPath))
-        {
-            AssetMetadata loadedMeta;
-            if (AssetSerializer::TryLoadMetadata(fullPath, loadedMeta))
-                metadata.ID = loadedMeta.ID;
-        }
-
-        // If no ID (no metadata), generate new and save it
         if (!metadata.ID.IsValid())
         {
-            // If file doesn't exist, we can't really load it.
-            if (!std::filesystem::exists(fullPath))
+            ++m_MetadataFileAccessCount;
+            metadata.Type = type;
+            metadata.FilePath = resolvedPath;
+
+            if (AssetSerializer::HasMetadata(fullPath))
             {
-                OPAL_ERROR("AssetManager", "Asset file not found: {}", fullPath.string());
-                return AssetHandle{ UUID(0), 0 };
+                AssetMetadata loadedMeta;
+                if (AssetSerializer::TryLoadMetadata(fullPath, loadedMeta))
+                    metadata.ID = loadedMeta.ID;
             }
 
-            metadata.ID = UUID(); // New Random UUID
+            // If no ID (no metadata), generate new and save it
+            if (!metadata.ID.IsValid())
+            {
+                if (!std::filesystem::exists(fullPath))
+                {
+                    OPAL_ERROR("AssetManager", "Asset file not found: {}", fullPath.string());
+                    return AssetHandle{ UUID(0), 0 };
+                }
 
-            // Need absolute path for writing sidecar
-            AssetMetadata writeMeta = metadata;
-            writeMeta.FilePath = fullPath;
+                metadata.ID = UUID();
 
-            AssetSerializer::WriteMetadata(writeMeta);
-            OPAL_INFO("AssetManager", "Generated new metadata for '{}' (ID: {})", resolvedPath.string(), (uint64_t)metadata.ID);
+                AssetMetadata writeMeta = metadata;
+                writeMeta.FilePath = fullPath;
+
+                AssetSerializer::WriteMetadata(writeMeta);
+                OPAL_INFO("AssetManager", "Generated new metadata for '{}' (ID: {})", resolvedPath.string(), (uint64_t)metadata.ID);
+            }
+
+            AssetRegistry::Get().RegisterAsset(metadata);
         }
-
-        // Register the asset in the registry so it can be found by path (e.g. for reactive reloading)
-        AssetRegistry::Get().RegisterAsset(metadata);
 
         // Check Cache & Loading Map
         {

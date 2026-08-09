@@ -154,6 +154,9 @@ namespace Mixture
          */
         bool IsAssetLoaded(UUID id);
 
+        /** @brief Number of slow metadata/filesystem lookup passes, for performance instrumentation. */
+        uint64_t GetMetadataFileAccessCount() const { return m_MetadataFileAccessCount.load(); }
+
     private:
         struct LoadRequest;
 
@@ -177,6 +180,7 @@ namespace Mixture
 
         std::mutex m_LifecycleMutex;
         std::atomic<bool> m_Initialized = false;
+        std::atomic<uint64_t> m_MetadataFileAccessCount = 0;
 
         // Cache State
         std::mutex m_CacheMutex;

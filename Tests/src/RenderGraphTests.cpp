@@ -14,6 +14,7 @@
 #include "Platform/Vulkan/Resources/Buffer.hpp"
 #include "Platform/Vulkan/Resources/Texture.hpp"
 #include "Platform/Vulkan/Resources/AllocationPolicy.hpp"
+#include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -486,6 +487,20 @@ namespace Mixture::Tests
         EXPECT_NE(mapped.flags & VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT, 0u);
         EXPECT_NE(mapped.flags & VMA_ALLOCATION_CREATE_MAPPED_BIT, 0u);
         EXPECT_EQ(mapped.flags & VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT, 0u);
+    }
+
+    TEST(VulkanUploadTests, UploadAPIIsAsynchronousAndInstrumented)
+    {
+        using SubmitResult = decltype(Vulkan::SingleTimeCommand::Submit(
+            std::declval<const std::function<void(vk::CommandBuffer)>&>()));
+        static_assert(std::is_same_v<SubmitResult, Vulkan::SingleTimeCommand::Completion>);
+        static_assert(std::is_same_v<Vulkan::SingleTimeCommand::Completion, std::shared_future<void>>);
+
+        Vulkan::SingleTimeCommand::Statistics statistics;
+        EXPECT_EQ(statistics.UploadCount, 0u);
+        EXPECT_EQ(statistics.BatchCount, 0u);
+        EXPECT_EQ(statistics.CommandBufferCount, 0u);
+        EXPECT_EQ(statistics.FenceCount, 0u);
     }
 
     TEST(GraphicsContextContractTests, SupportsAContextWithoutImGui)

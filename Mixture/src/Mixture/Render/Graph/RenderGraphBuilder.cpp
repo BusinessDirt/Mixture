@@ -91,9 +91,17 @@ namespace Mixture
 
     RHI::IShader* RenderGraphBuilder::LoadShader(const std::string& path, RHI::ShaderStage stage)
     {
-        AssetHandle handle = AssetManager::Get().GetAsset(AssetType::Shader, path);
-        RHI::IShader* shader = ShaderLibrary::GetShader(handle, stage);
-        return shader;
+        return LoadShader(ResolveShader(path), stage);
+    }
+
+    AssetHandle RenderGraphBuilder::ResolveShader(const std::string& path)
+    {
+        return AssetManager::Get().GetAsset(AssetType::Shader, path);
+    }
+
+    RHI::IShader* RenderGraphBuilder::LoadShader(AssetHandle handle, RHI::ShaderStage stage)
+    {
+        return ShaderLibrary::GetShader(handle, stage);
     }
 
     RHI::IPipeline* RenderGraphBuilder::CreatePipeline(RHI::PipelineDesc& desc)

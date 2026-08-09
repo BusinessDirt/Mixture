@@ -7,6 +7,8 @@
 #include "Mixture/Assets/Textures/TextureAsset.hpp"
 #include <fstream>
 #include <thread>
+#include <chrono>
+#include "Mixture/Util/FileSystemWatcher.hpp"
 
 using namespace Mixture;
 
@@ -105,6 +107,61 @@ TEST_F(AssetRegistryTests, ConcurrentRegistrationAndReadsAreSafe)
     for (const auto& threadIDs : ids)
         for (UUID id : threadIDs)
             EXPECT_TRUE(AssetRegistry::Get().Contains(id));
+}
+
+TEST_F(AssetRegistryTests, NormalizedPathIndexSupportsLargeRegistries)
+{
+    constexpr uint64_t assetCount = 10000;
+    for (uint64_t index = 1; index <= assetCount; ++index)
+    {
+        AssetMetadata metadata;
+        metadata.ID = UUID(index);
+        metadata.Type = AssetType::Shader;
+        metadata.FilePath = "Generated/" + std::to_string(index) + ".spv";
+        AssetRegistry::Get().RegisterAsset(metadata);
+    }
+
+    for (uint64_t index = 1; index <= assetCount; index += 97)
+    {
+        const auto metadata = AssetRegistry::Get().FindByPath(AssetType::Shader,
+            "Generated/./" + std::to_string(index) + ".spv");
+        EXPECT_EQ(metadata.ID, UUID(index));
+    }
+    EXPECT_FALSE(AssetRegistry::Get().FindByPath(AssetType::Texture, "Generated/1.spv").ID.IsValid());
+}
+
+TEST(FileSystemWatcherTests, LargeTreeScanTracksChangesWithoutSnapshotCopies)
+{
+    const std::filesystem::path root = std::filesystem::temp_directory_path()
+        / ("MixtureWatcher-" + std::to_string(static_cast<uint64_t>(UUID())));
+    std::filesystem::create_directories(root);
+    constexpr size_t fileCount = 1500;
+    for (size_t index = 0; index < fileCount; ++index)
+    {
+        std::ofstream stream(root / (std::to_string(index) + ".asset"));
+        stream << index;
+    }
+
+    std::atomic<size_t> eventCount = 0;
+    FileSystemWatcher watcher(root, [&eventCount](const std::filesystem::path&, FileAction) { ++eventCount; });
+    ASSERT_EQ(watcher.GetTrackedFileCount(), fileCount);
+
+    const auto start = std::chrono::steady_clock::now();
+    watcher.ScanOnce();
+    const auto elapsed = std::chrono::steady_clock::now() - start;
+    EXPECT_EQ(eventCount, 0u);
+    EXPECT_EQ(watcher.GetTrackedFileCount(), fileCount);
+    EXPECT_LT(elapsed, std::chrono::seconds(5));
+
+    std::filesystem::remove(root / "0.asset");
+    {
+        std::ofstream stream(root / "added.asset");
+        stream << "added";
+    }
+    watcher.ScanOnce();
+    EXPECT_EQ(eventCount, 2u);
+    EXPECT_EQ(watcher.GetTrackedFileCount(), fileCount);
+    std::filesystem::remove_all(root);
 }
 
 // --- AssetManager Tests ---
@@ -244,6 +301,34 @@ TEST_F(AssetManagerTests, ConcurrentRequestsShareOneCacheEntry)
         EXPECT_EQ(handle.ID, metadata.ID);
     manager.WaitForIdle();
     EXPECT_TRUE(manager.IsAssetLoaded(metadata.ID));
+
+    manager.Shutdown();
+    std::filesystem::remove_all(root);
+}
+
+TEST_F(AssetManagerTests, SteadyStateLookupAvoidsMetadataFileAccess)
+{
+    AssetManager& manager = AssetManager::Get();
+    const std::filesystem::path root = std::filesystem::temp_directory_path()
+        / ("MixtureAssetLookup-" + std::to_string(static_cast<uint64_t>(UUID())));
+    const std::filesystem::path shaderDirectory = root / "Shader";
+    const std::filesystem::path shaderPath = shaderDirectory / "Cached.spv";
+    std::filesystem::create_directories(shaderDirectory);
+    {
+        const std::array<char, 4> bytecode{ 0x03, 0x02, 0x23, 0x07 };
+        std::ofstream stream(shaderPath, std::ios::binary);
+        stream.write(bytecode.data(), static_cast<std::streamsize>(bytecode.size()));
+    }
+
+    manager.SetAssetRoot(root);
+    manager.GetAsset(AssetType::Shader, shaderPath.filename());
+    manager.WaitForIdle();
+    const uint64_t coldPathAccesses = manager.GetMetadataFileAccessCount();
+    ASSERT_GT(coldPathAccesses, 0u);
+
+    for (int frame = 0; frame < 1000; ++frame)
+        EXPECT_TRUE(manager.GetAsset(AssetType::Shader, shaderPath.filename()));
+    EXPECT_EQ(manager.GetMetadataFileAccessCount(), coldPathAccesses);
 
     manager.Shutdown();
     std::filesystem::remove_all(root);

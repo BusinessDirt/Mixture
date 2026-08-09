@@ -54,19 +54,23 @@ namespace Mixture::Vulkan
             memcpy(mappedData, initialData, desc.Size);
             vmaUnmapMemory(allocator, stagingAlloc);
 
-            SingleTimeCommand::Submit(m_Device->GetTransferQueue(), [&](vk::CommandBuffer cmd)
+            const vk::Buffer destination = m_Buffer;
+            m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
+                [stagingBuffer, destination, size = desc.Size](vk::CommandBuffer cmd)
             {
                 vk::BufferCopy copyRegion;
-                copyRegion.size = desc.Size;
-                cmd.copyBuffer(stagingBuffer, m_Buffer, 1, &copyRegion);
+                copyRegion.size = size;
+                cmd.copyBuffer(stagingBuffer, destination, 1, &copyRegion);
+            }, [allocator, stagingBuffer, stagingAlloc]()
+            {
+                vmaDestroyBuffer(allocator, stagingBuffer, stagingAlloc);
             });
-
-            vmaDestroyBuffer(allocator, stagingBuffer, stagingAlloc);
         }
     }
 
     Buffer::~Buffer()
     {
+        if (m_UploadCompletion.valid()) m_UploadCompletion.wait();
         if (m_Buffer)
         {
             vmaDestroyBuffer(m_Device->GetAllocator(), m_Buffer, m_Allocation);

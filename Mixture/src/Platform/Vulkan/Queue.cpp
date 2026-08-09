@@ -16,6 +16,7 @@ namespace Mixture::Vulkan
         }
 
         uint32_t index = queueIndex.has_value() ? queueIndex.value() : fallbackIndex.value();
+        m_FamilyIndex = index;
         m_Handle = m_Device->GetHandle().getQueue(index, 0);
 
         if (frameCount == 0) return;
@@ -46,7 +47,7 @@ namespace Mixture::Vulkan
             submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
             submitInfo.pWaitSemaphores = waitSemaphores.data();
             submitInfo.pWaitDstStageMask = waitStages.data();
-            m_Handle.submit(submitInfo, fence);
+            m_Device->Submit(m_Handle, submitInfo, fence);
         }
         catch (vk::SystemError& err)
         {
