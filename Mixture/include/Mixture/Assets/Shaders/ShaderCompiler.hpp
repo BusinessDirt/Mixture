@@ -72,6 +72,9 @@ namespace Mixture
     class ShaderCompiler
     {
     public:
+        /** @brief Returns whether the DXC runtime is available for compilation. */
+        static bool IsAvailable();
+
         /**
          * @brief Compiles shader source code into SPIR-V.
          *

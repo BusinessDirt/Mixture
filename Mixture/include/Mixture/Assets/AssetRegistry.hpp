@@ -10,6 +10,8 @@
 
 #include <unordered_map>
 #include <filesystem>
+#include <mutex>
+#include <shared_mutex>
 
 namespace Mixture
 {
@@ -54,24 +56,24 @@ namespace Mixture
          * @brief Retrieves metadata for a given asset ID.
          * 
          * @param id The UUID of the asset.
-         * @return const AssetMetadata& The metadata. Returns invalid metadata if not found.
+         * @return AssetMetadata A snapshot of the metadata, or invalid metadata if not found.
          */
-        const AssetMetadata& GetMetadata(UUID id) const;
+        AssetMetadata GetMetadata(UUID id) const;
 
         /**
          * @brief Retrieves the file path for a given asset ID.
          * 
          * @param id The UUID of the asset.
-         * @return const std::filesystem::path& The file path. Returns empty path if not found.
+         * @return std::filesystem::path A snapshot of the file path, or an empty path if not found.
          */
-        const std::filesystem::path& GetPath(UUID id) const;
+        std::filesystem::path GetPath(UUID id) const;
 
         /**
          * @brief Access the entire registry map.
          * 
-         * @return const std::unordered_map<UUID, AssetMetadata>& The registry.
+         * @return std::unordered_map<UUID, AssetMetadata> A thread-safe snapshot of the registry.
          */
-        const std::unordered_map<UUID, AssetMetadata>& GetAssets() const { return m_Assets; }
+        std::unordered_map<UUID, AssetMetadata> GetAssets() const;
 
         /**
          * @brief Adds a redirector for a moved/renamed asset.
@@ -97,6 +99,7 @@ namespace Mixture
         void Clear();
 
     private:
+        mutable std::shared_mutex m_Mutex;
         std::unordered_map<UUID, AssetMetadata> m_Assets;
         
         // AssetType -> (OldPathString -> NewPathString)

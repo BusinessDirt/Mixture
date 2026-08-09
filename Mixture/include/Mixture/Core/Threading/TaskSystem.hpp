@@ -26,7 +26,7 @@ namespace Mixture
         static void Init(uint32_t threadCount = 0);
 
         /**
-         * @brief Shuts down the task system, waiting for all tasks to finish (or cancelling them).
+         * @brief Shuts down the task system after draining all accepted tasks.
          */
         static void Shutdown();
 
@@ -37,6 +37,7 @@ namespace Mixture
          * @brief Submits a task to be executed asynchronously.
          * 
          * @param task The function to execute.
+         * @throws std::runtime_error If the task system is not running.
          */
         static void Submit(std::function<void()> task);
 

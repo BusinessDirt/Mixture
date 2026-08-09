@@ -7,6 +7,7 @@
 #include <condition_variable>
 #include <vector>
 #include <atomic>
+#include <stdexcept>
 
 namespace Mixture
 {
@@ -52,7 +53,7 @@ namespace Mixture
                     std::string threadName = "Worker Thread " + std::to_string(i);
                     Opal::LogRegistry::SetThreadName(threadName);
 
-                    while (s_TaskQueue.Running)
+                    while (true)
                     {
                         std::function<void()> task;
                         {
@@ -107,7 +108,11 @@ namespace Mixture
         std::lock_guard<std::mutex> lifecycleLock(s_LifecycleMutex);
         if (!s_Initialized) return;
 
-        s_TaskQueue.Running = false;
+        {
+            std::lock_guard<std::mutex> queueLock(s_TaskQueue.Mutex);
+            s_Initialized = false;
+            s_TaskQueue.Running = false;
+        }
         s_TaskQueue.Condition.notify_all();
 
         for (auto& thread : s_Threads)
@@ -117,7 +122,6 @@ namespace Mixture
         }
 
         s_Threads.clear();
-        s_Initialized = false;
         OPAL_INFO("Core/Threading", "TaskSystem Shutdown.");
     }
 
@@ -130,6 +134,8 @@ namespace Mixture
     {
         {
             std::lock_guard<std::mutex> lock(s_TaskQueue.Mutex);
+            if (!s_Initialized || !s_TaskQueue.Running)
+                throw std::runtime_error("Cannot submit a task while TaskSystem is stopped");
             s_TaskQueue.Queue.push(std::move(task));
         }
         s_TaskQueue.Condition.notify_one();

@@ -7,6 +7,7 @@ namespace Mixture
     {
         if (metadata.ID.IsValid())
         {
+            std::unique_lock lock(m_Mutex);
             m_Assets[metadata.ID] = metadata;
         }
         else
@@ -17,44 +18,54 @@ namespace Mixture
 
     void AssetRegistry::UnregisterAsset(UUID id)
     {
+        std::unique_lock lock(m_Mutex);
         m_Assets.erase(id);
     }
 
     bool AssetRegistry::Contains(UUID id) const
     {
+        std::shared_lock lock(m_Mutex);
         return m_Assets.find(id) != m_Assets.end();
     }
 
-    const AssetMetadata& AssetRegistry::GetMetadata(UUID id) const
+    AssetMetadata AssetRegistry::GetMetadata(UUID id) const
     {
-        static AssetMetadata s_NullMetadata;
+        std::shared_lock lock(m_Mutex);
         auto it = m_Assets.find(id);
         if (it != m_Assets.end())
         {
             return it->second;
         }
-        return s_NullMetadata;
+        return {};
     }
 
-    const std::filesystem::path& AssetRegistry::GetPath(UUID id) const
+    std::filesystem::path AssetRegistry::GetPath(UUID id) const
     {
-        static std::filesystem::path s_NullPath;
+        std::shared_lock lock(m_Mutex);
         auto it = m_Assets.find(id);
         if (it != m_Assets.end())
         {
             return it->second.FilePath;
         }
-        return s_NullPath;
+        return {};
+    }
+
+    std::unordered_map<UUID, AssetMetadata> AssetRegistry::GetAssets() const
+    {
+        std::shared_lock lock(m_Mutex);
+        return m_Assets;
     }
 
     void AssetRegistry::AddRedirector(AssetType type, const std::filesystem::path& oldPath, const std::filesystem::path& newPath)
     {
+        std::unique_lock lock(m_Mutex);
         // Store using generic_string to ensure consistency across platforms
         m_Redirectors[type][oldPath.generic_string()] = newPath.generic_string();
     }
 
     std::filesystem::path AssetRegistry::ResolvePath(AssetType type, const std::filesystem::path& path) const
     {
+        std::shared_lock lock(m_Mutex);
         auto typeIt = m_Redirectors.find(type);
         if (typeIt == m_Redirectors.end())
         {
@@ -89,6 +100,7 @@ namespace Mixture
 
     void AssetRegistry::Clear()
     {
+        std::unique_lock lock(m_Mutex);
         m_Assets.clear();
         m_Redirectors.clear();
     }

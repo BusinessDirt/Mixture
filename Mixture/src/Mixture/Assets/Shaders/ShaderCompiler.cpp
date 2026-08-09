@@ -17,6 +17,26 @@ namespace Mixture
 {
     namespace
     {
+        struct CompilerState
+        {
+            CComPtr<IDxcUtils> Utils;
+            CComPtr<IDxcCompiler3> Compiler;
+            bool Available = false;
+
+            CompilerState()
+            {
+                const HRESULT utilsResult = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&Utils));
+                const HRESULT compilerResult = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&Compiler));
+                Available = SUCCEEDED(utilsResult) && SUCCEEDED(compilerResult) && Utils && Compiler;
+            }
+        };
+
+        CompilerState& GetCompilerState()
+        {
+            static CompilerState state;
+            return state;
+        }
+
         namespace Util
         {
             // Helper to convert SPIRV-Reflect formats to our clean enum
@@ -35,28 +55,26 @@ namespace Mixture
         }
     }
 
+    bool ShaderCompiler::IsAvailable()
+    {
+        return GetCompilerState().Available;
+    }
+
     Vector<uint8_t> ShaderCompiler::Compile(const std::string& source)
     {
         auto graphicsAPI = AssetManager::Get().GetGraphicsAPI();
 
-        // These are initialized only ONCE the first time Compile is called.
-        // C++11 guarantees this initialization is thread-safe.
-        static CComPtr<IDxcUtils> pUtils;
-        static CComPtr<IDxcCompiler3> pCompiler;
-        static bool bInitialized = [&]() {
-            DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&pUtils));
-            DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&pCompiler));
-            return true;
-        }();
-        
-        if (!bInitialized)
+        CompilerState& state = GetCompilerState();
+        if (!state.Available)
         {
-            OPAL_ERROR("AssetManager", "DXC was not initialized!");
+            OPAL_ERROR("AssetManager", "DXC is unavailable; shader compilation cannot continue.");
+            return {};
         }
 
         // Create a blob from the source string
         CComPtr<IDxcBlobEncoding> pSource;
-        pUtils->CreateBlob(source.c_str(), static_cast<uint32_t>(source.length()), CP_UTF8, &pSource);
+        if (FAILED(state.Utils->CreateBlob(source.c_str(), static_cast<uint32_t>(source.length()), CP_UTF8, &pSource)) || !pSource)
+            return {};
 
         // Set up Compiler Arguments
         Vector<LPCWSTR> arguments;
@@ -91,16 +109,22 @@ namespace Mixture
         sourceBuffer.Encoding = DXC_CP_UTF8;
 
         CComPtr<IDxcResult> pResults;
-        pCompiler->Compile(&sourceBuffer, arguments.data(), (uint32_t)arguments.size(), nullptr, IID_PPV_ARGS(&pResults));
+        if (FAILED(state.Compiler->Compile(&sourceBuffer, arguments.data(), (uint32_t)arguments.size(), nullptr, IID_PPV_ARGS(&pResults))) || !pResults)
+            return {};
 
         // Check for Errors
         CComPtr<IDxcBlobUtf8> pErrors;
         pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
-        if (pErrors && pErrors->GetStringLength() != 0)
+        HRESULT compilationStatus = E_FAIL;
+        if (FAILED(pResults->GetStatus(&compilationStatus)) || FAILED(compilationStatus))
         {
-            OPAL_ERROR("AssetManager", "Shader Compile Errror: {}", pErrors->GetStringPointer());
+            if (pErrors && pErrors->GetStringLength() != 0)
+                OPAL_ERROR("AssetManager", "Shader compile error: {}", pErrors->GetStringPointer());
             return {};
         }
+
+        if (pErrors && pErrors->GetStringLength() != 0)
+            OPAL_WARN("AssetManager", "Shader compile diagnostics: {}", pErrors->GetStringPointer());
 
         // Get the Output Blob (DXIL or SPIR-V)
         CComPtr<IDxcBlob> pShaderBlob;
