@@ -14,6 +14,99 @@
 
 namespace Mixture
 {
+    namespace
+    {
+        class JSONWriter
+        {
+        public:
+            explicit JSONWriter(std::ostream& output) : m_Output(output) {}
+
+            void BeginObject() { BeforeValue(); m_Output << '{'; m_Contexts.push_back({ Type::Object }); }
+            void EndObject() { EndContainer('}'); }
+            void BeginArray() { BeforeValue(); m_Output << '['; m_Contexts.push_back({ Type::Array }); }
+            void EndArray() { EndContainer(']'); }
+
+            void Key(std::string_view key)
+            {
+                auto& context = m_Contexts.back();
+                WriteSeparator(context);
+                WriteString(key);
+                m_Output << ": ";
+                context.ExpectingValue = true;
+            }
+
+            void String(std::string_view value) { BeforeValue(); WriteString(value); }
+            void Number(uint64_t value) { BeforeValue(); m_Output << value; }
+
+        private:
+            enum class Type { Object, Array };
+            struct Context
+            {
+                Type ContainerType;
+                bool First = true;
+                bool ExpectingValue = false;
+            };
+
+            void BeforeValue()
+            {
+                if (m_Contexts.empty()) return;
+                auto& context = m_Contexts.back();
+                if (context.ContainerType == Type::Object && context.ExpectingValue)
+                {
+                    context.ExpectingValue = false;
+                    return;
+                }
+                WriteSeparator(context);
+            }
+
+            void WriteSeparator(Context& context)
+            {
+                if (!context.First) m_Output << ',';
+                m_Output << '\n' << std::string(m_Contexts.size() * 2, ' ');
+                context.First = false;
+            }
+
+            void EndContainer(char delimiter)
+            {
+                const bool hadValues = !m_Contexts.back().First;
+                m_Contexts.pop_back();
+                if (hadValues) m_Output << '\n' << std::string(m_Contexts.size() * 2, ' ');
+                m_Output << delimiter;
+            }
+
+            void WriteString(std::string_view value)
+            {
+                static constexpr char HexDigits[] = "0123456789abcdef";
+                m_Output << '"';
+                for (const unsigned char character : value)
+                {
+                    switch (character)
+                    {
+                        case '"': m_Output << "\\\""; break;
+                        case '\\': m_Output << "\\\\"; break;
+                        case '\b': m_Output << "\\b"; break;
+                        case '\f': m_Output << "\\f"; break;
+                        case '\n': m_Output << "\\n"; break;
+                        case '\r': m_Output << "\\r"; break;
+                        case '\t': m_Output << "\\t"; break;
+                        default:
+                            if (character < 0x20)
+                            {
+                                m_Output << "\\u00"
+                                         << HexDigits[(character >> 4) & 0x0f]
+                                         << HexDigits[character & 0x0f];
+                            }
+                            else m_Output << static_cast<char>(character);
+                    }
+                }
+                m_Output << '"';
+            }
+
+            std::ostream& m_Output;
+            Vector<Context> m_Contexts;
+        };
+    }
+
     void RenderGraphAlgorithms::CullPasses(Vector<RGPassNode>& passes, const Vector<RGResourceNode>& resources)
     {
         std::unordered_set<RGResourceHandle::IDType> requiredResources;
@@ -246,10 +339,6 @@ namespace Mixture
         SortPasses();
         CalculateLifetimes();
         CalculateBarriers();
-
-#ifdef OPAL_DEBUG
-        DumpGraphToJSON();
-#endif
     }
 
     void RenderGraph::Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context)
@@ -598,120 +687,74 @@ namespace Mixture
         }
     }
 
-    void RenderGraph::DumpGraphToJSON()
+    bool RenderGraph::DumpDiagnostics(const std::filesystem::path& outputPath) const
     {
-        static bool executed = false;
-        if (executed) return;
-
-        // Find the project root by looking for ".git"
-        std::filesystem::path currentPath = std::filesystem::current_path();
-        std::filesystem::path projectRoot = currentPath;
-        bool foundGit = false;
-
-        while (true)
+        std::error_code error;
+        const auto parentPath = outputPath.parent_path();
+        if (!parentPath.empty())
         {
-            if (std::filesystem::exists(projectRoot / ".git"))
-            {
-                foundGit = true;
-                break;
-            }
-
-            // Move up one level
-            if (projectRoot.has_parent_path() && projectRoot != projectRoot.parent_path())
-            {
-                projectRoot = projectRoot.parent_path();
-            }
-            else
-            {
-                break; // Reached system root (e.g., C:\ or /)
-            }
+            std::filesystem::create_directories(parentPath, error);
+            if (error) return false;
         }
 
-        // Construct the target path
-        std::filesystem::path outputDir;
+        std::ofstream out(outputPath, std::ios::trunc);
+        if (!out) return false;
 
-        if (foundGit)
-        {
-            outputDir = projectRoot / "docs" / "visualizers";
-        }
-        else
-        {
-            OPAL_WARN("Core/RenderGraph", ".git directory not found. Saving to build directory.");
-            outputDir = currentPath / "docs" / "visualizers";
-        }
-
-        // Create the 'docs' directory if it doesn't exist
-        if (!std::filesystem::exists(outputDir))
-        {
-            std::filesystem::create_directories(outputDir);
-        }
-
-        std::ofstream out(outputDir / "graph.json");
-
-        out << "{\n";
-        out << "  \"resources\": [\n";
+        JSONWriter json(out);
+        json.BeginObject();
+        json.Key("resources");
+        json.BeginArray();
         for (size_t i = 0; i < m_Resources.size(); ++i)
         {
-            std::string name = m_Resources[i].Name.empty() ? "Res_" + std::to_string(i) : m_Resources[i].Name;
-            std::string typeStr = (m_Resources[i].Type == RGResourceType::Texture) ? "Texture" : "Buffer";
-            out << "    { \"id\": " << i << ", \"name\": \"" << name << "\", \"type\": \"" << typeStr << "\" }";
-            if (i < m_Resources.size() - 1) out << ",";
-            out << "\n";
+            const auto& resource = m_Resources[i];
+            const std::string name = resource.Name.empty() ? "Res_" + std::to_string(i) : resource.Name;
+            const bool isTexture = resource.Type == RGResourceType::Texture ||
+                                   resource.Type == RGResourceType::ImportedTexture;
+            json.BeginObject();
+            json.Key("id"); json.Number(i);
+            json.Key("name"); json.String(name);
+            json.Key("type"); json.String(isTexture ? "Texture" : "Buffer");
+            json.EndObject();
         }
-        out << "  ],\n";
+        json.EndArray();
 
-        out << "  \"passes\": [\n";
+        json.Key("passes");
+        json.BeginArray();
         for (size_t i = 0; i < m_Passes.size(); ++i)
         {
             const auto& pass = m_Passes[i];
-            out << "    {\n";
-            out << "      \"id\": " << i << ",\n";
-            out << "      \"name\": \"" << pass.Name << "\",\n";
-
-            // --- NEW: Dump Barriers ---
-            out << "      \"barriers\": [\n";
-            for (size_t b = 0; b < pass.Barriers.size(); ++b)
+            json.BeginObject();
+            json.Key("id"); json.Number(i);
+            json.Key("name"); json.String(pass.Name);
+            json.Key("barriers");
+            json.BeginArray();
+            for (const auto& barrier : pass.Barriers)
             {
-                const auto& barrier = pass.Barriers[b];
-                std::string_view fromState = RHI::ToString(barrier.Before);
-                std::string_view toState   = RHI::ToString(barrier.After);
-
-                out << "        {";
-                out << " \"res\": " << barrier.Resource.ID << ",";
-                out << " \"from\": \"" << fromState << "\",";
-                out << " \"to\": \"" << toState << "\"";
-                out << " }";
-
-                if (b < pass.Barriers.size() - 1) out << ",";
-                out << "\n";
+                json.BeginObject();
+                json.Key("res"); json.Number(barrier.Resource.ID);
+                json.Key("from"); json.String(RHI::ToString(barrier.Before));
+                json.Key("to"); json.String(RHI::ToString(barrier.After));
+                json.EndObject();
             }
-            out << "      ],\n";
+            json.EndArray();
 
-            // Writes
-            out << "      \"writes\": [";
-            for (size_t k = 0; k < pass.Writes.size(); ++k) {
-                out << pass.Writes[k].Handle.ID;
-                if (k < pass.Writes.size() - 1) out << ", ";
-            }
-            out << "],\n";
+            json.Key("writes");
+            json.BeginArray();
+            for (const auto& write : pass.Writes) json.Number(write.Handle.ID);
+            json.EndArray();
 
-            // Reads
-            out << "      \"reads\": [";
-            for (size_t k = 0; k < pass.Reads.size(); ++k) {
-                out << pass.Reads[k].ID;
-                if (k < pass.Reads.size() - 1) out << ", ";
-            }
-            out << "]\n";
-
-            out << "    }";
-            if (i < m_Passes.size() - 1) out << ",";
-            out << "\n";
+            json.Key("reads");
+            json.BeginArray();
+            for (const auto read : pass.Reads) json.Number(read.ID);
+            json.EndArray();
+            json.EndObject();
         }
-        out << "  ]\n";
-        out << "}\n";
-        out << std::flush;
+        json.EndArray();
+        json.EndObject();
+        out << '\n';
 
-        OPAL_LOG_DEBUG("Core/RenderGraph", "Dumped Graph to JSON file: {}/graph.json", outputDir.string());
-        executed = true;
+        if (!out) return false;
+        OPAL_LOG_DEBUG("Core/RenderGraph", "Dumped graph diagnostics to '{}'", outputPath.string());
+        return true;
     }
 }

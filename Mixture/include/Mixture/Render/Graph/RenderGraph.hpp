@@ -13,6 +13,8 @@
 #include "Mixture/Render/Graph/RenderGraphRegistry.hpp"
 #include "Mixture/Render/Graph/RenderGraphResourceCache.hpp"
 
+#include <filesystem>
+
 namespace Mixture
 {
 
@@ -66,6 +68,9 @@ namespace Mixture
          * Calculates resource lifetimes, barriers, and optimizes the graph execution order.
          */
         void Compile();
+
+        /** Writes graph diagnostics as JSON to an explicit caller-selected path. */
+        bool DumpDiagnostics(const std::filesystem::path& outputPath) const;
 
         /**
          * @brief Executes the compiled render graph.
@@ -151,8 +156,6 @@ namespace Mixture
         void SortPasses();
         void CalculateLifetimes();
         void CalculateBarriers();
-        void DumpGraphToJSON();
-
     private:
         ArenaAllocator m_PassAllocator;
 

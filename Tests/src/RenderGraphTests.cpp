@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include "Mixture/Render/Graph/RenderGraph.hpp"
 #include "Mixture/Render/Graph/RenderGraphDefinitions.hpp"
 #include "Mixture/Render/Graph/RenderGraphResourceCache.hpp"
 #include "Mixture/Render/Graph/RenderGraphRegistry.hpp"
@@ -13,6 +14,8 @@
 #include "Platform/Vulkan/Resources/Buffer.hpp"
 #include "Platform/Vulkan/Resources/Texture.hpp"
 
+#include <filesystem>
+#include <fstream>
 #include <type_traits>
 
 namespace Mixture::Tests
@@ -298,6 +301,46 @@ namespace Mixture::Tests
         EXPECT_EQ(resources[0].LastPassIndex, 1);
         EXPECT_EQ(resources[1].FirstPassIndex, -1);
         EXPECT_EQ(resources[1].LastPassIndex, -1);
+    }
+
+    TEST(RenderGraphTests, DumpsEscapedDeterministicDiagnosticsForMultipleGraphs)
+    {
+        MockGraphicsDevice device;
+        RenderGraph firstGraph(device);
+        RenderGraph secondGraph(device);
+
+        RHI::BufferDesc bufferDesc;
+        bufferDesc.Size = 64;
+        firstGraph.CreateResource("Buffer \"one\"\\path", bufferDesc);
+        firstGraph.AddPass<int>("Pass \"one\"\nline",
+            [](RenderGraphBuilder& builder, int&) { builder.SetSideEffect(); },
+            [](const RenderGraphRegistry&, const int&, RHI::ICommandList*) {});
+        secondGraph.CreateResource("Second", bufferDesc);
+
+        const auto directory = std::filesystem::temp_directory_path() /
+            ("mixture-render-graph-" + std::to_string(reinterpret_cast<uintptr_t>(&device)));
+        const auto firstPath = directory / "first.json";
+        const auto secondPath = directory / "second.json";
+
+        ASSERT_TRUE(firstGraph.DumpDiagnostics(firstPath));
+        ASSERT_TRUE(secondGraph.DumpDiagnostics(secondPath));
+
+        auto readFile = [](const std::filesystem::path& path)
+        {
+            std::ifstream input(path);
+            return std::string(std::istreambuf_iterator<char>(input), {});
+        };
+
+        const std::string firstDump = readFile(firstPath);
+        EXPECT_NE(firstDump.find("Buffer \\\"one\\\"\\\\path"), std::string::npos);
+        EXPECT_NE(firstDump.find("Pass \\\"one\\\"\\nline"), std::string::npos);
+        EXPECT_NE(readFile(secondPath).find("\"name\": \"Second\""), std::string::npos);
+
+        ASSERT_TRUE(firstGraph.DumpDiagnostics(firstPath));
+        EXPECT_EQ(readFile(firstPath), firstDump);
+
+        std::error_code error;
+        std::filesystem::remove_all(directory, error);
     }
 
     TEST(RenderGraphResourceCacheTests, ReusesDescriptorsWithoutDependingOnLogicalNames)
