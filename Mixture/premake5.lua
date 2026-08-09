@@ -26,6 +26,12 @@ project "Mixture"
     targetdir ("%{wks.location}/bin/" .. outputdir .. "/%{prj.name}")
     objdir ("%{wks.location}/bin-int/" .. outputdir .. "/%{prj.name}")
 
+    filter "system:linux"
+        buildoptions { "-fms-extensions" }
+
+    filter "system:macosx"
+        buildoptions { "-fms-extensions" }
+
     filter "configurations:Debug"
         defines { "OPAL_DEBUG" }
         runtime "Debug"

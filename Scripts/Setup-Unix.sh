@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Get the directory where this script is actually saved
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"

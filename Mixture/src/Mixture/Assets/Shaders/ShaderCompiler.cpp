@@ -3,8 +3,13 @@
 
 #include "Mixture/Assets/AssetManager.hpp"
 
+#ifdef _WIN32
+    #include <Windows.h>
+    #include <atlbase.h>
+#else
+    #include <dxc/WinAdapter.h>
+#endif
 #include <dxc/dxcapi.h>
-#include <dxc/WinAdapter.h>
 #include <spirv_cross/spirv_msl.hpp>
 #include <spirv_reflect.h>
 

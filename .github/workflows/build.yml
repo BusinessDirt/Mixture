@@ -1,6 +1,8 @@
 name: Build
 
 on:
+  push:
+    branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
@@ -22,8 +24,8 @@ jobs:
           - os: ubuntu-latest
             name: Ubuntu 24.04
             setup_script: bash ./Scripts/Setup-Unix.sh
-            build_command: make config=release
-            dependency_command: sudo apt upgrade && sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libwayland-dev libxkbcommon-dev
+            build_command: make -j2 config=release
+            dependency_command: sudo apt upgrade && sudo apt install libgl1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libwayland-dev libxkbcommon-dev
 
           - os: windows-latest
             name: Windows
@@ -51,9 +53,6 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Test Setup Utilities
-      run: python -m unittest discover -s Scripts/python/tests -v
-
     # Universal SDK Installer
     - name: Install Vulkan SDK
       uses: jakoch/install-vulkan-sdk-action@v1
@@ -65,6 +64,9 @@ jobs:
     - name: Run Setup Script
       run: ${{ matrix.setup_script }}
 
+    - name: Test Setup Utilities
+      run: python -m unittest discover -s Scripts/python/tests -v
+
     - name: Setup MSBuild
       if: runner.os == 'Windows'
       uses: microsoft/setup-msbuild@v2
@@ -72,3 +74,13 @@ jobs:
     - name: Build
       run: ${{ matrix.build_command }}
 
+    - name: Run Tests
+      run: python Scripts/python/RunTests.py --configuration Release --output test-results/results.xml
+
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}
+        path: test-results/results.xml
+        if-no-files-found: warn

@@ -85,6 +85,11 @@ class PremakeConfiguration:
         try:
             Utils.download_file(f"{cls.premake_zip_url}{distribution}", premake_path, cls.premake_sha256[distribution])
             Utils.unzip_file(premake_path, delete_zip_file=True)
+
+            if platform.system() != "Windows":
+                premake_exe = cls.premake_directory / "premake5"
+                premake_exe.chmod(premake_exe.stat().st_mode | 0o111)
+
             logger.info(f"Premake {cls.premake_version} has been downloaded to '{cls.premake_directory}'")
 
             premake_license_path = cls.premake_directory / "LICENSE.txt"
@@ -95,5 +100,4 @@ class PremakeConfiguration:
         except Exception as e:
             logger.error(f"Failed to install Premake: {e}")
             return False
-
 

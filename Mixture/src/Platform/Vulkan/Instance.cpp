@@ -122,8 +122,6 @@ namespace Mixture::Vulkan
         createInfo.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
                                  vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
                                  vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-        createInfo.pfnUserCallback = DebugCallback;
-
         auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
             m_Handle, "vkCreateDebugUtilsMessengerEXT");
 
@@ -131,6 +129,7 @@ namespace Mixture::Vulkan
         {
             // Convert C++ struct to C struct for the raw function call
             VkDebugUtilsMessengerCreateInfoEXT vkCreateInfo = createInfo;
+            vkCreateInfo.pfnUserCallback = DebugCallback;
             VkDebugUtilsMessengerEXT vkMessenger;
 
             if (func(m_Handle, &vkCreateInfo, nullptr, &vkMessenger) != VK_SUCCESS)
@@ -148,12 +147,12 @@ namespace Mixture::Vulkan
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL Instance::DebugCallback(
-        vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        vk::DebugUtilsMessageTypeFlagsEXT messageType,
-        const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
+        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+        VkDebugUtilsMessageTypeFlagsEXT messageType,
+        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData)
     {
-        if (messageSeverity >= vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning)
+        if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         {
             OPAL_ERROR("Core/Vulkan", "[Validation Layer]: {}", pCallbackData->pMessage);
         }

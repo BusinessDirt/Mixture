@@ -7,12 +7,13 @@ include "./vendor/premake/customizations/solution_items.lua"
 include "./vendor/premake/customizations/vscode.lua"
 include "Dependencies.lua"
 
+target_architecture = _OPTIONS["arch"] or os.hostarch()
+
 workspace "Mixture"
-    architecture "x64"
+    architecture (target_architecture)
     configurations { "Debug", "Release", "Dist" }
     startproject "App"
-    -- multiprocessorcompile ("on")
-    flags { "MultiProcessorCompile" }
+    multiprocessorcompile "On"
 
     -- Workspace-wide build options for MSVC
     filter "system:windows"

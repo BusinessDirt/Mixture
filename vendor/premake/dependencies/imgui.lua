@@ -30,6 +30,7 @@ project "ImGui"
     }
 
     externalincludedirs {
+        "%{IncludeDir.imgui}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.vulkan}"
     }
