@@ -22,10 +22,16 @@ def run_premake(binary: str, args: list):
         sys.exit(process.returncode)
 
 class PremakeConfiguration:
-    premake_version = "5.0.0-beta7"
+    premake_version = "5.0.0-beta8"
     premake_zip_url = f"https://github.com/premake/premake-core/releases/download/v{premake_version}/premake-{premake_version}-"
     premake_license_url = "https://raw.githubusercontent.com/premake/premake-core/master/LICENSE.txt"
     premake_directory = Path("./vendor/premake/bin").resolve()
+
+    premake_sha256 = {
+        "linux.tar.gz": "63edd3e7461eebdd45b500a3c7e8ad4e7a67d68f230010f9a97cbb71b4ec59c8",
+        "macosx.tar.gz": "fa73a46f093fa6f17494a3d063421aa6cae3ea825a61c62dd59fc2f07a256d03",
+        "windows.zip": "e64ce2ed8778e0098f63674cca61fe33941b5f0c8d9a4afd651152bdea3758ab",
+    }
 
     @classmethod
     def validate(cls) -> bool:
@@ -77,7 +83,7 @@ class PremakeConfiguration:
         premake_path = cls.premake_directory / f"premake-{cls.premake_version}-{distribution}"
 
         try:
-            Utils.download_file(f"{cls.premake_zip_url}{distribution}", premake_path)
+            Utils.download_file(f"{cls.premake_zip_url}{distribution}", premake_path, cls.premake_sha256[distribution])
             Utils.unzip_file(premake_path, delete_zip_file=True)
             logger.info(f"Premake {cls.premake_version} has been downloaded to '{cls.premake_directory}'")
 
