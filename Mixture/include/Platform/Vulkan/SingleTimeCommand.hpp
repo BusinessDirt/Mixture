@@ -7,62 +7,40 @@
 
 #include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/Queue.hpp"
+#include <future>
 
 namespace Mixture::Vulkan
 {
     /**
-     * @brief Helper class to create and submit short-lived command buffers.
-     *
-     * Useful for resource transfers (staging buffers) or layout transitions during initialization.
+     * @brief Batches short-lived upload commands on a reusable asynchronous worker.
      */
     class SingleTimeCommand
     {
     public:
-        /**
-         * @brief Begins a single-time command buffer on the default graphics queue.
-         *
-         * @return vk::CommandBuffer The recorded command buffer.
-         */
-        static vk::CommandBuffer Begin();
+        struct Statistics
+        {
+            uint64_t UploadCount = 0;
+            uint64_t BatchCount = 0;
+            uint64_t CommandBufferCount = 0;
+            uint64_t FenceCount = 0;
+        };
 
-        /**
-         * @brief Begins a single-time command buffer using a specific pool.
-         * 
-         * @param commandPool The command pool to allocate from.
-         * @return vk::CommandBuffer The recorded command buffer.
-         */
-        static vk::CommandBuffer Begin(Queue& queue);
+        using Completion = std::shared_future<void>;
 
-        /**
-         * @brief Ends and submits the single-time command buffer to the default graphics queue, waiting for completion.
-         *
-         * @param commandBuffer The command buffer to submit.
-         */
-        static void End(const vk::CommandBuffer commandBuffer);
+        static Completion Submit(const std::function<void(vk::CommandBuffer)>& action,
+            std::function<void()> cleanup = {});
 
-        /**
-         * @brief Ends and submits the command buffer to a specific queue, waiting for completion.
-         * 
-         * @param commandBuffer The command buffer to submit.
-         * @param queue The queue to submit to.
-         * @param commandPool The pool the buffer was allocated from (for freeing).
-         */
-        static void End(vk::CommandBuffer commandBuffer, Queue& queue);
+        /** @brief Queues an upload command and optional post-completion cleanup. */
+        static Completion Submit(Queue& queue, const std::function<void(vk::CommandBuffer)>& action,
+            std::function<void()> cleanup = {});
 
-        /**
-         * @brief Convenience function to run a lambda within a single-time command buffer on the default graphics queue.
-         *
-         * @param action Lambda taking the command buffer to record commands into.
-         */
-        static void Submit(const std::function<void(vk::CommandBuffer)>& action);
+        /** @brief Ensures all currently queued uploads have been submitted. */
+        static void Flush(Queue& queue);
 
-        /**
-         * @brief Convenience function to run a lambda within a single-time command buffer on a specific queue.
-         * 
-         * @param queue The queue to submit to.
-         * @param commandPool The command pool to allocate from.
-         * @param action Lambda taking the command buffer to record commands into.
-         */
-        static void Submit(Queue& queue, const std::function<void(vk::CommandBuffer)>& action);
+        /** @brief Returns counters for validating batching and synchronization reuse. */
+        static Statistics GetStatistics(Queue& queue);
+
+        /** @brief Drains and destroys the reusable service for a queue. */
+        static void Shutdown(Queue& queue);
     };
 }

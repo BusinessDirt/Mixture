@@ -13,6 +13,7 @@
 #include "Platform/Vulkan/Command/Buffers.hpp"
 #include "Platform/Vulkan/Command/List.hpp"
 #include "Platform/Vulkan/Command/Pool.hpp"
+#include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 #include "Platform/Vulkan/Sync/Fences.hpp"
 #include "Platform/Vulkan/Sync/Semaphores.hpp"
@@ -48,7 +49,9 @@ namespace Mixture::Vulkan
         m_PresentQueue = CreateScope<Queue>(*m_Device, indices.Present, 0, "Present Queue");
         m_ComputeQueue = CreateScope<Queue>(*m_Device, indices.Compute, MAX_FRAMES_IN_FLIGHT, "Compute Queue", indices.Graphics);
         m_TransferQueue = CreateScope<Queue>(*m_Device, indices.Transfer, MAX_FRAMES_IN_FLIGHT, "Transfer Queue", indices.Graphics);
-        m_Device->SetTransferQueue(*m_TransferQueue);
+        // Upload batches use the graphics queue so subsequent frame submissions
+        // are naturally ordered after copies without cross-family ownership transfers.
+        m_Device->SetTransferQueue(*m_GraphicsQueue);
 
         uint32_t imagecount = m_Swapchain->GetImageCount();
         m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
@@ -65,6 +68,7 @@ namespace Mixture::Vulkan
 
     Context::~Context()
     {
+        SingleTimeCommand::Shutdown(*m_GraphicsQueue);
         m_Device->WaitForIdle();
         m_Device->ClearTransferQueue();
         s_Instance = nullptr;
@@ -103,6 +107,9 @@ namespace Mixture::Vulkan
             OPAL_ERROR("Core/Vulkan", "BeginFrame called but frame already started!");
             return nullptr;
         }
+
+        // Ensure pending upload batches are submitted before this frame is queued.
+        SingleTimeCommand::Flush(*m_GraphicsQueue);
 
         // Wait for the PREVIOUS frame (using this index) to finish
         if (m_InFlightFences->Wait(m_CurrentFrame) != vk::Result::eSuccess)

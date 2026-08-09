@@ -43,14 +43,16 @@ namespace Mixture::Vulkan
             memcpy(stagingAllocInfo.pMappedData, data, static_cast<size_t>(imageSize));
 
             // Upload to Image
-            SingleTimeCommand::Submit(m_Device->GetTransferQueue(), [&](vk::CommandBuffer cmd)
+            const vk::Image destinationImage = m_Image;
+            m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
+                [stagingBuffer, destinationImage, width = m_Width, height = m_Height](vk::CommandBuffer cmd)
             {
                 vk::ImageMemoryBarrier barrier{};
                 barrier.oldLayout = vk::ImageLayout::eUndefined;
                 barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
                 barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                barrier.image = m_Image;
+                barrier.image = destinationImage;
                 barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
                 barrier.subresourceRange.baseMipLevel = 0;
                 barrier.subresourceRange.levelCount = 1;
@@ -77,9 +79,9 @@ namespace Mixture::Vulkan
                 region.imageSubresource.baseArrayLayer = 0;
                 region.imageSubresource.layerCount = 1;
                 region.imageOffset = vk::Offset3D{0, 0, 0};
-                region.imageExtent = vk::Extent3D{static_cast<uint32_t>(m_Width), static_cast<uint32_t>(m_Height), 1};
+                region.imageExtent = vk::Extent3D{static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
 
-                cmd.copyBufferToImage(vk::Buffer(stagingBuffer), m_Image, vk::ImageLayout::eTransferDstOptimal, 1, &region);
+                cmd.copyBufferToImage(vk::Buffer(stagingBuffer), destinationImage, vk::ImageLayout::eTransferDstOptimal, 1, &region);
 
                 barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
                 barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -94,9 +96,10 @@ namespace Mixture::Vulkan
                     0, nullptr,
                     1, &barrier
                 );
+            }, [allocator, stagingBuffer, stagingAllocation]()
+            {
+                vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
             });
-
-            vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
         }
     }
 
@@ -116,6 +119,11 @@ namespace Mixture::Vulkan
 
     void Texture::Release()
     {
+        if (m_UploadCompletion.valid())
+        {
+            m_UploadCompletion.wait();
+            m_UploadCompletion = {};
+        }
         if (m_OwnsImage)
         {
             auto device = m_Device->GetHandle();

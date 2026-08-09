@@ -32,6 +32,8 @@ namespace Mixture::Vulkan
          * @return vk::Queue The raw handle.
          */
         vk::Queue GetHandle() const { return m_Handle; }
+        Device& GetDevice() const { return *m_Device; }
+        uint32_t GetFamilyIndex() const { return m_FamilyIndex; }
 
         /**
          * @brief Resets the command buffer for a specific frame index.
@@ -72,6 +74,7 @@ namespace Mixture::Vulkan
         Device* m_Device;
         vk::Queue m_Handle;
         std::string_view m_DebugName;
+        uint32_t m_FamilyIndex = 0;
 
         Scope<CommandPool> m_Pool;
         Scope<CommandBuffers> m_Buffers;

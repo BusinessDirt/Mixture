@@ -108,6 +108,12 @@ namespace Mixture::Vulkan
         return *m_TransferQueue;
     }
 
+    void Device::Submit(vk::Queue queue, const vk::SubmitInfo& submitInfo, vk::Fence fence)
+    {
+        std::lock_guard<std::mutex> lock(m_QueueSubmitMutex);
+        queue.submit(submitInfo, fence);
+    }
+
     Ref<RHI::IShader> Device::CreateShader(const void* data, size_t size, RHI::ShaderStage stage,
         RHI::ShaderIdentity identity)
     {

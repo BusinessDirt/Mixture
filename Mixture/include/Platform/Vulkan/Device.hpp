@@ -12,6 +12,7 @@
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
 #include <vma/vk_mem_alloc.h>
+#include <mutex>
 
 namespace Mixture::Vulkan
 {
@@ -57,6 +58,9 @@ namespace Mixture::Vulkan
 
         /** @brief Gets the queue used for immediate resource uploads. */
         Queue& GetTransferQueue() const;
+
+        /** @brief Serializes submissions that target Vulkan queues owned by this device. */
+        void Submit(vk::Queue queue, const vk::SubmitInfo& submitInfo, vk::Fence fence = {});
 
         /**
          * @brief Creates a Vulkan shader module.
@@ -105,5 +109,6 @@ namespace Mixture::Vulkan
 		vk::Device m_Device = nullptr;
 
         VmaAllocator m_Allocator = nullptr;
+        std::mutex m_QueueSubmitMutex;
 	};
 }

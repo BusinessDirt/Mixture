@@ -74,6 +74,11 @@ namespace Mixture
          */
         bool IsRunning() const { return m_Running; }
 
+        /** @brief Performs one polling scan. Exposed for deterministic tests and instrumentation. */
+        void ScanOnce();
+
+        size_t GetTrackedFileCount() const { return m_FilePaths.size(); }
+
     private:
         void WatchLoop();
 
@@ -86,6 +91,12 @@ namespace Mixture
         std::thread m_Thread;
 
         // Map of filepath string to last write time
-        std::unordered_map<std::string, std::filesystem::file_time_type> m_FilePaths;
+        struct TrackedFile
+        {
+            std::filesystem::file_time_type LastWriteTime;
+            uint64_t SeenGeneration = 0;
+        };
+        std::unordered_map<std::string, TrackedFile> m_FilePaths;
+        uint64_t m_ScanGeneration = 0;
     };
 }
