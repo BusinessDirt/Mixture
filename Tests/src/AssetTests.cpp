@@ -8,9 +8,39 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
+#include <mutex>
+#include <unordered_set>
 #include "Mixture/Util/FileSystemWatcher.hpp"
 
 using namespace Mixture;
+
+TEST(UUIDTests, ConcurrentGenerationIsSafeAndProducesValidValues)
+{
+    constexpr size_t threadCount = 8;
+    constexpr size_t idsPerThread = 1000;
+    std::unordered_set<uint64_t> values;
+    std::mutex valuesMutex;
+    std::vector<std::thread> workers;
+
+    for (size_t thread = 0; thread < threadCount; ++thread)
+    {
+        workers.emplace_back([&]() {
+            std::vector<uint64_t> localValues;
+            localValues.reserve(idsPerThread);
+            for (size_t index = 0; index < idsPerThread; ++index)
+            {
+                UUID id;
+                EXPECT_TRUE(id.IsValid());
+                localValues.push_back(static_cast<uint64_t>(id));
+            }
+            std::lock_guard<std::mutex> lock(valuesMutex);
+            values.insert(localValues.begin(), localValues.end());
+        });
+    }
+    for (auto& worker : workers) worker.join();
+
+    EXPECT_EQ(values.size(), threadCount * idsPerThread);
+}
 
 class AssetRegistryTests : public ::testing::Test
 {
@@ -266,6 +296,36 @@ TEST_F(AssetManagerTests, LoadsAssetsOnOwnedExecutorAndWaitsForIdle)
     EXPECT_FALSE(manager.IsAssetLoaded(cancelled.ID));
 
     manager.Shutdown();
+    std::filesystem::remove_all(root);
+}
+
+TEST_F(AssetManagerTests, ShutdownJoinsActiveReadsBeforeReturning)
+{
+    AssetManager& manager = AssetManager::Get();
+    const std::filesystem::path root = std::filesystem::temp_directory_path()
+        / ("MixtureAssetShutdown-" + std::to_string(static_cast<uint64_t>(UUID())));
+    const std::filesystem::path shaderDirectory = root / "Shader";
+    const std::filesystem::path shaderPath = shaderDirectory / "Large.spv";
+    std::filesystem::create_directories(shaderDirectory);
+    {
+        std::ofstream stream(shaderPath, std::ios::binary);
+        stream.seekp((32 * 1024 * 1024) - 1);
+        stream.put('\0');
+    }
+
+    std::atomic<size_t> callbackCount = 0;
+    manager.AddReloadCallback([&callbackCount](AssetType, UUID) { ++callbackCount; });
+    manager.SetAssetRoot(root);
+    const AssetHandle pending = manager.GetAsset(AssetType::Shader, shaderPath.filename());
+    ASSERT_TRUE(pending.ID.IsValid());
+
+    manager.Shutdown();
+    const size_t callbacksAtShutdown = callbackCount.load();
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+    EXPECT_FALSE(manager.IsInitialized());
+    EXPECT_FALSE(manager.IsAssetLoaded(pending.ID));
+    EXPECT_EQ(callbackCount.load(), callbacksAtShutdown);
     std::filesystem::remove_all(root);
 }
 

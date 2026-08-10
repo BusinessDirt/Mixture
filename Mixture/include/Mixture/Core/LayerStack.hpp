@@ -21,12 +21,12 @@ namespace Mixture
         OPAL_NON_COPIABLE(LayerStack);
 
         LayerStack() = default;
-        ~LayerStack() = default;
+        ~LayerStack();
 
         /**
          * @brief Shuts down the layer stack, detaching all layers.
          */
-        void Shutdown() const;
+        void Shutdown();
 
         /**
          * @brief Pushes a layer onto the stack.
@@ -35,7 +35,7 @@ namespace Mixture
          *
          * @param layer The layer to push.
          */
-        void PushLayer(Layer* layer);
+        Layer& PushLayer(Scope<Layer> layer);
 
         /**
          * @brief Pushes an overlay onto the stack.
@@ -44,64 +44,64 @@ namespace Mixture
          *
          * @param layer The overlay to push.
          */
-        void PushOverlay(Layer* layer);
+        Layer& PushOverlay(Scope<Layer> layer);
 
         /**
          * @brief Pops a layer from the stack.
          *
          * @param layer The layer to pop.
          */
-        void PopLayer(Layer* layer);
+        Scope<Layer> PopLayer(Layer* layer);
 
         /**
          * @brief Pops an overlay from the stack.
          *
          * @param layer The overlay to pop.
          */
-        void PopOverlay(Layer* layer);
+        Scope<Layer> PopOverlay(Layer* layer);
 
         /**
          * @brief Iterator to the beginning of the layer stack.
          */
-        Vector<Layer*>::iterator begin() { return m_Layers.begin(); }
+        Vector<Scope<Layer>>::iterator begin() { return m_Layers.begin(); }
 
         /**
          * @brief Iterator to the end of the layer stack.
          */
-        Vector<Layer*>::iterator end() { return m_Layers.end(); }
+        Vector<Scope<Layer>>::iterator end() { return m_Layers.end(); }
 
         /**
          * @brief Reverse iterator to the beginning of the layer stack.
          */
-        Vector<Layer*>::reverse_iterator rbegin() { return m_Layers.rbegin(); }
+        Vector<Scope<Layer>>::reverse_iterator rbegin() { return m_Layers.rbegin(); }
 
         /**
          * @brief Reverse iterator to the end of the layer stack.
          */
-        Vector<Layer*>::reverse_iterator rend() { return m_Layers.rend(); }
+        Vector<Scope<Layer>>::reverse_iterator rend() { return m_Layers.rend(); }
 
         /**
          * @brief Const iterator to the beginning of the layer stack.
          */
-        OPAL_NODISCARD Vector<Layer*>::const_iterator begin() const { return m_Layers.begin(); }
+        OPAL_NODISCARD Vector<Scope<Layer>>::const_iterator begin() const { return m_Layers.begin(); }
 
         /**
          * @brief Const iterator to the end of the layer stack.
          */
-        OPAL_NODISCARD Vector<Layer*>::const_iterator end() const { return m_Layers.end(); }
+        OPAL_NODISCARD Vector<Scope<Layer>>::const_iterator end() const { return m_Layers.end(); }
 
         /**
          * @brief Const reverse iterator to the beginning of the layer stack.
          */
-        OPAL_NODISCARD Vector<Layer*>::const_reverse_iterator rbegin() const { return m_Layers.rbegin(); }
+        OPAL_NODISCARD Vector<Scope<Layer>>::const_reverse_iterator rbegin() const { return m_Layers.rbegin(); }
 
         /**
          * @brief Const reverse iterator to the end of the layer stack.
          */
-        OPAL_NODISCARD Vector<Layer*>::const_reverse_iterator rend() const { return m_Layers.rend(); }
+        OPAL_NODISCARD Vector<Scope<Layer>>::const_reverse_iterator rend() const { return m_Layers.rend(); }
 
     private:
-        Vector<Layer*> m_Layers;
+        Vector<Scope<Layer>> m_Layers;
         unsigned int m_LayerInsertIndex = 0;
     };
 }

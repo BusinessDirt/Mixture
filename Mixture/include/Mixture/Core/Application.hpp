@@ -112,14 +112,14 @@ namespace Mixture
          *
          * @param layer The layer to push.
          */
-        void PushLayer(Layer* layer) { m_LayerStack.PushLayer(layer); }
+        void PushLayer(Scope<Layer> layer) { m_LayerStack.PushLayer(std::move(layer)); }
 
         /**
          * @brief Pushes an overlay onto the layer stack.
          *
          * @param layer The overlay to push.
          */
-        void PushOverlay(Layer* layer) { m_LayerStack.PushOverlay(layer); }
+        void PushOverlay(Scope<Layer> layer) { m_LayerStack.PushOverlay(std::move(layer)); }
 
     private:
         void Run() const;
