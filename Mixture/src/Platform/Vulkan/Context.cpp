@@ -31,39 +31,44 @@ namespace Mixture::Vulkan
 
     Context& Context::Get()
     {
+        if (!s_Instance) throw std::logic_error("No Vulkan context exists");
         return *s_Instance;
     }
 
     Context::Context(const ApplicationDescription& appDescription, void* windowHandle)
     {
         s_Instance = this;
+        try
+        {
+            m_Instance = CreateRef<Instance>(appDescription);
+            m_Surface = CreateScope<Surface>(*m_Instance, windowHandle);
+            m_PhysicalDevice = CreateRef<PhysicalDevice>(*m_Instance);
+            m_Device = CreateRef<Device>(m_Instance, m_PhysicalDevice);
+            m_Swapchain = CreateScope<Swapchain>(*m_PhysicalDevice, *m_Device, *m_Surface, appDescription.Width, appDescription.Height);
 
-        m_Instance = CreateRef<Instance>(appDescription);
-        m_Surface = CreateScope<Surface>(*m_Instance, windowHandle);
-        m_PhysicalDevice = CreateRef<PhysicalDevice>(*m_Instance);
-        m_Device = CreateRef<Device>(m_Instance, m_PhysicalDevice);
-        m_Swapchain = CreateScope<Swapchain>(*m_PhysicalDevice, *m_Device, *m_Surface, appDescription.Width, appDescription.Height);
+            QueueFamilyIndices indices = m_PhysicalDevice->GetQueueFamilies();
+            m_GraphicsQueue = CreateScope<Queue>(*m_Device, indices.Graphics, MAX_FRAMES_IN_FLIGHT, "Graphics Queue");
+            m_PresentQueue = CreateScope<Queue>(*m_Device, indices.Present, 0, "Present Queue");
+            m_ComputeQueue = CreateScope<Queue>(*m_Device, indices.Compute, MAX_FRAMES_IN_FLIGHT, "Compute Queue", indices.Graphics);
+            m_TransferQueue = CreateScope<Queue>(*m_Device, indices.Transfer, MAX_FRAMES_IN_FLIGHT, "Transfer Queue", indices.Graphics);
+            m_Device->SetTransferQueue(*m_GraphicsQueue);
 
-        QueueFamilyIndices indices = m_PhysicalDevice->GetQueueFamilies();
-        m_GraphicsQueue = CreateScope<Queue>(*m_Device, indices.Graphics, MAX_FRAMES_IN_FLIGHT, "Graphics Queue");
-        m_PresentQueue = CreateScope<Queue>(*m_Device, indices.Present, 0, "Present Queue");
-        m_ComputeQueue = CreateScope<Queue>(*m_Device, indices.Compute, MAX_FRAMES_IN_FLIGHT, "Compute Queue", indices.Graphics);
-        m_TransferQueue = CreateScope<Queue>(*m_Device, indices.Transfer, MAX_FRAMES_IN_FLIGHT, "Transfer Queue", indices.Graphics);
-        // Upload batches use the graphics queue so subsequent frame submissions
-        // are naturally ordered after copies without cross-family ownership transfers.
-        m_Device->SetTransferQueue(*m_GraphicsQueue);
+            const uint32_t imageCount = m_Swapchain->GetImageCount();
+            m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
+            m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imageCount);
+            m_TransferFinishedSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
+            m_ComputeFinishedSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
+            m_InFlightFences = CreateScope<Fences>(*m_Device, MAX_FRAMES_IN_FLIGHT, true);
 
-        uint32_t imagecount = m_Swapchain->GetImageCount();
-        m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
-        m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imagecount);
-        m_TransferFinishedSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
-        m_ComputeFinishedSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
-        m_InFlightFences = CreateScope<Fences>(*m_Device, MAX_FRAMES_IN_FLIGHT, true);
-
-        m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(*m_Device);
-        m_DescriptorAllocators = CreateScope<DescriptorAllocators>(*m_Device, MAX_FRAMES_IN_FLIGHT);
-
-        OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
+            m_DescriptorLayoutCache = CreateScope<DescriptorLayoutCache>(*m_Device);
+            m_DescriptorAllocators = CreateScope<DescriptorAllocators>(*m_Device, MAX_FRAMES_IN_FLIGHT);
+            OPAL_INFO("Core/Vulkan", "Vulkan Initialized.");
+        }
+        catch (...)
+        {
+            s_Instance = nullptr;
+            throw;
+        }
     }
 
     Context::~Context()

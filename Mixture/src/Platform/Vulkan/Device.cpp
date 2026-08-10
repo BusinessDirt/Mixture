@@ -117,7 +117,7 @@ namespace Mixture::Vulkan
 
     Queue& Device::GetTransferQueue() const
     {
-        OPAL_ASSERT("Core/Vulkan", m_TransferQueue, "Transfer queue has not been assigned to the device");
+        if (!m_TransferQueue) throw std::logic_error("Transfer queue has not been assigned to the device");
         return *m_TransferQueue;
     }
 

@@ -11,6 +11,7 @@
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
+#include <stdexcept>
 
 namespace Mixture
 {
@@ -501,8 +502,8 @@ namespace Mixture
 
     RGResourceHandle RenderGraph::ImportResource(const std::string& name, RHI::ITexture* resource)
     {
-        RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
-        RGResourceHandle handle = { id };
+        if (!resource) throw std::invalid_argument("Cannot import a null render-graph texture");
+        const RGResourceHandle handle = NextResourceHandle();
 
         RGResourceNode node;
         node.Handle = handle;
@@ -525,8 +526,8 @@ namespace Mixture
 
     RGResourceHandle RenderGraph::ImportResource(const std::string& name, RHI::IBuffer* resource)
     {
-        RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
-        RGResourceHandle handle = { id };
+        if (!resource) throw std::invalid_argument("Cannot import a null render-graph buffer");
+        const RGResourceHandle handle = NextResourceHandle();
 
         RGResourceNode node;
         node.Handle = handle;
@@ -547,8 +548,7 @@ namespace Mixture
 
     RGResourceHandle RenderGraph::CreateResource(const std::string& name, const RHI::TextureDesc& desc)
     {
-        RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
-        RGResourceHandle handle = { id };
+        const RGResourceHandle handle = NextResourceHandle();
 
         RGResourceNode node;
         node.Handle = handle;
@@ -563,8 +563,7 @@ namespace Mixture
 
     RGResourceHandle RenderGraph::CreateResource(const std::string& name, const RHI::BufferDesc& desc)
     {
-        RGResourceHandle::IDType id = static_cast<RGResourceHandle::IDType>(m_Resources.size());
-        RGResourceHandle handle = { id };
+        const RGResourceHandle handle = NextResourceHandle();
 
         RGResourceNode node;
         node.Handle = handle;
@@ -588,29 +587,46 @@ namespace Mixture
 
     const RHI::TextureDesc& RenderGraph::GetTextureDesc(RGResourceHandle handle) const
     {
-        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
-        // TODO: Assert type
+        if (!handle.IsValid() || handle.ID >= m_Resources.size())
+            throw std::out_of_range("Invalid render-graph texture handle");
+        const auto type = m_Resources[handle.ID].Type;
+        if (type != RGResourceType::Texture && type != RGResourceType::ImportedTexture)
+            throw std::invalid_argument("Render-graph handle does not refer to a texture");
         return m_Resources[handle.ID].TextureDesc;
     }
 
     const RHI::BufferDesc& RenderGraph::GetBufferDesc(RGResourceHandle handle) const
     {
-        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
-        // TODO: Assert type
+        if (!handle.IsValid() || handle.ID >= m_Resources.size())
+            throw std::out_of_range("Invalid render-graph buffer handle");
+        const auto type = m_Resources[handle.ID].Type;
+        if (type != RGResourceType::Buffer && type != RGResourceType::ImportedBuffer)
+            throw std::invalid_argument("Render-graph handle does not refer to a buffer");
         return m_Resources[handle.ID].BufferDesc;
     }
 
     const RGResourceNode& RenderGraph::GetResourceNode(RGResourceHandle handle) const
     {
-        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
+        if (!handle.IsValid() || handle.ID >= m_Resources.size())
+            throw std::out_of_range("Invalid render-graph resource handle");
         return m_Resources[handle.ID];
     }
 
     void RenderGraph::AddTextureUsage(RGResourceHandle handle, RHI::TextureUsage usage)
     {
-        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
+        if (!handle.IsValid() || handle.ID >= m_Resources.size())
+            throw std::out_of_range("Invalid render-graph resource handle");
         auto& node = m_Resources[handle.ID];
-        if (node.Type == RGResourceType::Texture) node.TextureDesc.Usage |= usage;
+        if (node.Type != RGResourceType::Texture && node.Type != RGResourceType::ImportedTexture)
+            throw std::invalid_argument("Cannot add texture usage to a buffer resource");
+        node.TextureDesc.Usage |= usage;
+    }
+
+    RGResourceHandle RenderGraph::NextResourceHandle() const
+    {
+        const RGResourceHandle handle = RGResourceHandle::FromIndex(m_Resources.size());
+        if (!handle.IsValid()) throw std::overflow_error("Render graph exhausted its resource handle space");
+        return handle;
     }
 
     void RenderGraph::SortPasses()

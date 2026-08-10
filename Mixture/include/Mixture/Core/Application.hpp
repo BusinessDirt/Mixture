@@ -14,6 +14,8 @@
 #include "Mixture/Events/Event.hpp"
 #include "Mixture/Events/ApplicationEvent.hpp"
 
+#include <stdexcept>
+
 
 int Entrypoint(int argc, char** argv);
 
@@ -35,7 +37,8 @@ namespace Mixture
          */
         const char* operator[](const int index) const
         {
-            OPAL_ASSERT("Core", index < Count)
+            if (index < 0 || index >= Count || !Args)
+                throw std::out_of_range("Application command-line argument index is out of range");
             return Args[index];
         }
     };
@@ -88,7 +91,11 @@ namespace Mixture
          *
          * @return Application& Reference to the application instance.
          */
-        static Application& Get() { return *s_Instance; }
+        static Application& Get()
+        {
+            if (!s_Instance) throw std::logic_error("No Mixture application exists");
+            return *s_Instance;
+        }
 
         /** @brief Returns whether an application currently owns engine services. */
         static bool IsCreated() { return s_Instance != nullptr; }

@@ -18,10 +18,15 @@ namespace Mixture
      */
     struct RGResourceHandle 
     {
-        using IDType = uint16_t;
+        using IDType = uint32_t;
         static constexpr IDType InvalidID = std::numeric_limits<IDType>::max();
 
         IDType ID = InvalidID;
+
+        static RGResourceHandle FromIndex(size_t index)
+        {
+            return index < InvalidID ? RGResourceHandle{ static_cast<IDType>(index) } : RGResourceHandle{};
+        }
 
         bool IsValid() const { return ID != InvalidID; }
         bool operator==(const RGResourceHandle& other) const { return ID == other.ID; }

@@ -6,6 +6,8 @@
 #include "Mixture/Render/ShaderLibrary.hpp"
 #include "Mixture/Assets/AssetManager.hpp"
 
+#include <stdexcept>
+
 namespace Mixture
 {
     RenderGraphBuilder::RenderGraphBuilder(RenderGraph& graph, RGPassNode& passNode)
@@ -15,10 +17,7 @@ namespace Mixture
     RGResourceHandle RenderGraphBuilder::Read(RGResourceHandle handle)
     {
         if (!handle.IsValid())
-        {
-            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Read - RGResourceHandle is invalid");
-            return handle;
-        }
+            throw std::out_of_range("RenderGraphBuilder::Read received an invalid handle");
 
         // Record that this pass READS this resource
         m_PassNode.Reads.push_back(handle);
@@ -29,10 +28,7 @@ namespace Mixture
     RGResourceHandle RenderGraphBuilder::Write(RGResourceHandle handle)
     {
         if (!handle.IsValid())
-        {
-            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Write - RGResourceHandle is invalid");
-            return handle;
-        }
+            throw std::out_of_range("RenderGraphBuilder::Write received an invalid handle");
 
         const auto& node = m_Graph.GetResourceNode(handle);
         if (node.Type == RGResourceType::Buffer || node.Type == RGResourceType::ImportedBuffer)
@@ -54,10 +50,7 @@ namespace Mixture
     RGResourceHandle RenderGraphBuilder::Write(const RGAttachmentInfo& info)
     {
         if (!info.Handle.IsValid())
-        {
-            OPAL_WARN("Core/RenderGraph", "RenderGraphBuilder::Write - RGResourceHandle is invalid");
-            return info.Handle;
-        }
+            throw std::out_of_range("RenderGraphBuilder::Write received an invalid attachment handle");
 
         m_PassNode.Writes.push_back(info);
         const RHI::TextureDesc& desc = m_Graph.GetTextureDesc(info.Handle);
