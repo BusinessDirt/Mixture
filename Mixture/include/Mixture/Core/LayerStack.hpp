@@ -7,6 +7,8 @@
 
 #include "Mixture/Core/Layer.hpp"
 
+#include <concepts>
+
 namespace Mixture
 {
     /**
@@ -38,6 +40,23 @@ namespace Mixture
         Layer& PushLayer(Scope<Layer> layer);
 
         /**
+         * @brief Constructs and pushes a layer directly into stack ownership.
+         *
+         * @tparam LayerT Concrete Layer-derived type to construct.
+         * @param args Arguments forwarded to LayerT's constructor.
+         * @return LayerT& Reference to the owned layer.
+         */
+        template<typename LayerT, typename... Args>
+            requires std::derived_from<LayerT, Layer>
+        LayerT& PushLayer(Args&&... args)
+        {
+            auto layer = CreateScope<LayerT>(std::forward<Args>(args)...);
+            LayerT& result = *layer;
+            PushLayer(std::move(layer));
+            return result;
+        }
+
+        /**
          * @brief Pushes an overlay onto the stack.
          *
          * It is pushed to the back of the list (rendered last).
@@ -45,6 +64,23 @@ namespace Mixture
          * @param layer The overlay to push.
          */
         Layer& PushOverlay(Scope<Layer> layer);
+
+        /**
+         * @brief Constructs and pushes an overlay directly into stack ownership.
+         *
+         * @tparam LayerT Concrete Layer-derived type to construct.
+         * @param args Arguments forwarded to LayerT's constructor.
+         * @return LayerT& Reference to the owned overlay.
+         */
+        template<typename LayerT, typename... Args>
+            requires std::derived_from<LayerT, Layer>
+        LayerT& PushOverlay(Args&&... args)
+        {
+            auto layer = CreateScope<LayerT>(std::forward<Args>(args)...);
+            LayerT& result = *layer;
+            PushOverlay(std::move(layer));
+            return result;
+        }
 
         /**
          * @brief Pops a layer from the stack.

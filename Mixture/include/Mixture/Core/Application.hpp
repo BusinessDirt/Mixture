@@ -127,12 +127,28 @@ namespace Mixture
          */
         void PushLayer(Scope<Layer> layer) { m_LayerStack.PushLayer(std::move(layer)); }
 
+        /** Constructs a concrete layer directly into application ownership. */
+        template<typename LayerT, typename... Args>
+            requires std::derived_from<LayerT, Layer>
+        LayerT& PushLayer(Args&&... args)
+        {
+            return m_LayerStack.PushLayer<LayerT>(std::forward<Args>(args)...);
+        }
+
         /**
          * @brief Pushes an overlay onto the layer stack.
          *
          * @param layer The overlay to push.
          */
         void PushOverlay(Scope<Layer> layer) { m_LayerStack.PushOverlay(std::move(layer)); }
+
+        /** Constructs a concrete overlay directly into application ownership. */
+        template<typename LayerT, typename... Args>
+            requires std::derived_from<LayerT, Layer>
+        LayerT& PushOverlay(Args&&... args)
+        {
+            return m_LayerStack.PushOverlay<LayerT>(std::forward<Args>(args)...);
+        }
 
     private:
         void Run() const;

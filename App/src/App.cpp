@@ -12,8 +12,8 @@ namespace Mixture
         explicit ExampleApp(const ApplicationDescription& appDescription)
             : Application(appDescription)
         {
-            PushLayer(CreateScope<MainLayer>());
-            PushOverlay(CreateScope<UILayer>());
+            PushLayer<MainLayer>();
+            PushOverlay<UILayer>();
         }
     };
 
