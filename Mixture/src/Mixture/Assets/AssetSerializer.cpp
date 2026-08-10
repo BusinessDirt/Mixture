@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <charconv>
 
 namespace Mixture
 {
@@ -24,6 +25,9 @@ namespace Mixture
         std::ifstream stream(metaPath);
         if (!stream.is_open()) return false;
 
+        AssetMetadata parsed;
+        bool foundGUID = false;
+        bool foundType = false;
         std::string line;
         while (std::getline(stream, line))
         {
@@ -37,18 +41,29 @@ namespace Mixture
 
             if (key == "GUID")
             {
-                uint64_t uuidVal = std::stoull(value);
-                outMetadata.ID = UUID(uuidVal);
+                uint64_t uuidValue = 0;
+                const auto [end, error] = std::from_chars(value.data(), value.data() + value.size(), uuidValue);
+                if (foundGUID || error != std::errc{} || end != value.data() + value.size() || uuidValue == 0)
+                    return false;
+                parsed.ID = UUID(uuidValue);
+                foundGUID = true;
             }
             else if (key == "Type")
             {
-                // Simple integer parsing for now, ideally string to enum
-                int typeVal = std::stoi(value);
-                outMetadata.Type = (AssetType)typeVal;
+                unsigned int typeValue = 0;
+                const auto [end, error] = std::from_chars(value.data(), value.data() + value.size(), typeValue);
+                if (foundType || error != std::errc{} || end != value.data() + value.size()
+                    || typeValue <= static_cast<unsigned int>(AssetType::None)
+                    || typeValue >= static_cast<unsigned int>(AssetType::Count))
+                    return false;
+                parsed.Type = static_cast<AssetType>(typeValue);
+                foundType = true;
             }
         }
 
-        outMetadata.FilePath = assetPath;
+        if (!foundGUID || !foundType || !stream.eof()) return false;
+        parsed.FilePath = assetPath;
+        outMetadata = std::move(parsed);
         return true;
     }
 

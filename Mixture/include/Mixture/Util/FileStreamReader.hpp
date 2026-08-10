@@ -38,7 +38,7 @@ namespace Mixture
          * 
          * @param buffer The destination buffer.
          */
-        void ReadBuffer(Vector<char>& buffer);
+        bool ReadBuffer(Vector<char>& buffer);
         
         /**
          * @brief Reads a specific number of bytes into a raw pointer.

@@ -7,9 +7,24 @@
 #include "Mixture/Assets/Textures/TextureSerializer.hpp"
 
 #include <fstream>
+#include <limits>
 
 namespace Mixture
 {
+    namespace
+    {
+        bool IsPathWithin(const std::filesystem::path& root, const std::filesystem::path& candidate)
+        {
+            auto rootIt = root.begin();
+            auto candidateIt = candidate.begin();
+            for (; rootIt != root.end(); ++rootIt, ++candidateIt)
+            {
+                if (candidateIt == candidate.end() || *candidateIt != *rootIt) return false;
+            }
+            return true;
+        }
+    }
+
     void AssetManager::Init()
     {
         std::lock_guard<std::mutex> lifecycleLock(m_LifecycleMutex);
@@ -192,7 +207,14 @@ namespace Mixture
 
     void AssetManager::SetAssetRoot(const std::filesystem::path& rootPath)
     {
-        m_RootDirectory = std::filesystem::absolute(rootPath);
+        std::error_code error;
+        m_RootDirectory = std::filesystem::weakly_canonical(std::filesystem::absolute(rootPath), error);
+        if (error)
+        {
+            OPAL_ERROR("AssetManager", "Failed to resolve asset directory '{}': {}", rootPath.string(), error.message());
+            m_RootDirectory.clear();
+            return;
+        }
         OPAL_INFO("AssetManager", "Asset Directory set to: {}", m_RootDirectory.string());
 
         if (!std::filesystem::exists(m_RootDirectory))
@@ -253,6 +275,23 @@ namespace Mixture
 
         std::lock_guard<std::mutex> lock(m_QueueMutex);
         return m_CancelledLoads.contains(id);
+    }
+
+    std::optional<std::filesystem::path> AssetManager::ResolveFullPath(
+        AssetType type, const std::filesystem::path& relativePath) const
+    {
+        if (m_RootDirectory.empty() || relativePath.empty() || relativePath.is_absolute()
+            || type <= AssetType::None || type >= AssetType::Count)
+            return std::nullopt;
+
+        std::error_code error;
+        const std::filesystem::path typeRoot = std::filesystem::weakly_canonical(
+            m_RootDirectory / Utils::AssetTypeToString(type), error);
+        if (error) return std::nullopt;
+
+        const std::filesystem::path candidate = std::filesystem::weakly_canonical(typeRoot / relativePath, error);
+        if (error || !IsPathWithin(typeRoot, candidate)) return std::nullopt;
+        return candidate;
     }
 
     void AssetManager::OnAssetChange(const std::filesystem::path& path, FileAction action)
@@ -326,7 +365,12 @@ namespace Mixture
         AssetMetadata metadata = AssetRegistry::Get().FindByPath(type, resolvedPath);
 
         const char* typeString = Utils::AssetTypeToString(type);
-        std::filesystem::path fullPath = m_RootDirectory / typeString / resolvedPath;
+        const auto fullPath = ResolveFullPath(type, resolvedPath);
+        if (!fullPath)
+        {
+            OPAL_ERROR("AssetManager", "Rejected asset path outside its type root: {}", path.string());
+            return AssetHandle{ UUID::Invalid(), 0 };
+        }
 
         // Note: Checking file existence on disk is slow and blocking.
         // Optimally, we would trust the registry or metadata, but for now we keep it.
@@ -340,32 +384,37 @@ namespace Mixture
             metadata.Type = type;
             metadata.FilePath = resolvedPath;
 
-            if (AssetSerializer::HasMetadata(fullPath))
+            if (AssetSerializer::HasMetadata(*fullPath))
             {
                 AssetMetadata loadedMeta;
-                if (AssetSerializer::TryLoadMetadata(fullPath, loadedMeta))
-                    metadata.ID = loadedMeta.ID;
+                if (!AssetSerializer::TryLoadMetadata(*fullPath, loadedMeta) || loadedMeta.Type != type)
+                {
+                    OPAL_ERROR("AssetManager", "Invalid or mismatched asset metadata: {}.meta", fullPath->string());
+                    return AssetHandle{ UUID::Invalid(), 0 };
+                }
+                metadata.ID = loadedMeta.ID;
             }
 
             // If no ID (no metadata), generate new and save it
             if (!metadata.ID.IsValid())
             {
-                if (!std::filesystem::exists(fullPath))
+                if (!std::filesystem::exists(*fullPath))
                 {
-                    OPAL_ERROR("AssetManager", "Asset file not found: {}", fullPath.string());
+                    OPAL_ERROR("AssetManager", "Asset file not found: {}", fullPath->string());
                     return AssetHandle{ UUID(0), 0 };
                 }
 
                 metadata.ID = UUID();
 
                 AssetMetadata writeMeta = metadata;
-                writeMeta.FilePath = fullPath;
+                writeMeta.FilePath = *fullPath;
 
                 AssetSerializer::WriteMetadata(writeMeta);
                 OPAL_INFO("AssetManager", "Generated new metadata for '{}' (ID: {})", resolvedPath.string(), (uint64_t)metadata.ID);
             }
 
-            AssetRegistry::Get().RegisterAsset(metadata);
+            if (!AssetRegistry::Get().RegisterAsset(metadata))
+                return AssetHandle{ UUID::Invalid(), 0 };
         }
 
         // Check Cache & Loading Map
@@ -398,7 +447,7 @@ namespace Mixture
         {
             std::lock_guard<std::mutex> lock(m_CacheMutex);
             m_LoadingAssets.erase(metadata.ID);
-            OPAL_ERROR("AssetManager", "Cannot load asset while the I/O executor is stopped: {}", fullPath.string());
+            OPAL_ERROR("AssetManager", "Cannot load asset while the I/O executor is stopped: {}", fullPath->string());
             return AssetHandle{ UUID::Invalid(), 0 };
         }
 
@@ -418,11 +467,19 @@ namespace Mixture
             return;
         }
 
-        std::filesystem::path fullPath = m_RootDirectory / typeString / path;
-        std::ifstream stream(fullPath, std::ios::binary | std::ios::ate);
+        const auto fullPath = ResolveFullPath(type, path);
+        if (!fullPath)
+        {
+            OPAL_ERROR("AssetManager", "Rejected asset load outside its type root: {}", path.string());
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(id);
+            return;
+        }
+
+        std::ifstream stream(*fullPath, std::ios::binary | std::ios::ate);
         if (!stream)
         {
-            OPAL_ERROR("AssetManager", "Failed to open file {}", fullPath.string());
+            OPAL_ERROR("AssetManager", "Failed to open file {}", fullPath->string());
             std::lock_guard<std::mutex> lock(m_CacheMutex);
             m_LoadingAssets.erase(id);
             return;
@@ -437,7 +494,18 @@ namespace Mixture
             return;
         }
 
-        Vector<char> data(static_cast<size_t>(end));
+        const auto endOffset = static_cast<std::streamoff>(end);
+        const uintmax_t fileSize = static_cast<uintmax_t>(endOffset);
+        if (fileSize > std::numeric_limits<size_t>::max()
+            || fileSize > static_cast<uintmax_t>(std::numeric_limits<std::streamsize>::max()))
+        {
+            OPAL_ERROR("AssetManager", "Asset file is too large to read safely: {}", fullPath->string());
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_LoadingAssets.erase(id);
+            return;
+        }
+
+        Vector<char> data(static_cast<size_t>(endOffset));
         stream.seekg(0, std::ios::beg);
 
         constexpr size_t ReadChunkSize = 1024 * 1024;
@@ -455,7 +523,7 @@ namespace Mixture
             stream.read(data.data() + offset, static_cast<std::streamsize>(bytesToRead));
             if (stream.gcount() != static_cast<std::streamsize>(bytesToRead))
             {
-                OPAL_ERROR("AssetManager", "Failed while reading file: {}", fullPath.string());
+                OPAL_ERROR("AssetManager", "Failed while reading file: {}", fullPath->string());
                 std::lock_guard<std::mutex> lock(m_CacheMutex);
                 m_LoadingAssets.erase(id);
                 return;

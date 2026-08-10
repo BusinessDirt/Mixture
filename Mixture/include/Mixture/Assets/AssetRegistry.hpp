@@ -36,7 +36,7 @@ namespace Mixture
          * 
          * @param metadata The metadata of the asset to register.
          */
-        void RegisterAsset(const AssetMetadata& metadata);
+        bool RegisterAsset(const AssetMetadata& metadata);
 
         /**
          * @brief Unregisters an asset from the registry.

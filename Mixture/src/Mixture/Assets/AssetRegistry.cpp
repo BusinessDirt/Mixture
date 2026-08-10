@@ -13,20 +13,38 @@ namespace Mixture
         return normalized;
     }
 
-    void AssetRegistry::RegisterAsset(const AssetMetadata& metadata)
+    bool AssetRegistry::RegisterAsset(const AssetMetadata& metadata)
     {
-        if (metadata.ID.IsValid() && metadata.Type < AssetType::Count)
+        if (metadata.ID.IsValid() && metadata.Type > AssetType::None && metadata.Type < AssetType::Count)
         {
             std::unique_lock lock(m_Mutex);
             if (auto existing = m_Assets.find(metadata.ID); existing != m_Assets.end())
-                m_PathIndex[static_cast<size_t>(existing->second.Type)].erase(NormalizePath(existing->second.FilePath));
+            {
+                if (existing->second.Type != metadata.Type
+                    || NormalizePath(existing->second.FilePath) != NormalizePath(metadata.FilePath))
+                {
+                    OPAL_ERROR("AssetManager", "Conflicting metadata for asset GUID {}", static_cast<uint64_t>(metadata.ID));
+                    return false;
+                }
+                return true;
+            }
+
+            auto& pathIndex = m_PathIndex[static_cast<size_t>(metadata.Type)];
+            const std::string normalizedPath = NormalizePath(metadata.FilePath);
+            if (const auto existingPath = pathIndex.find(normalizedPath);
+                existingPath != pathIndex.end() && existingPath->second != metadata.ID)
+            {
+                OPAL_ERROR("AssetManager", "Asset path '{}' already belongs to a different GUID", metadata.FilePath.string());
+                return false;
+            }
+
             m_Assets[metadata.ID] = metadata;
-            m_PathIndex[static_cast<size_t>(metadata.Type)][NormalizePath(metadata.FilePath)] = metadata.ID;
+            pathIndex[normalizedPath] = metadata.ID;
+            return true;
         }
-        else
-        {
-            OPAL_WARN("AssetManager", "Attempted to register invalid asset metadata: {0}", metadata.FilePath.string());
-        }
+
+        OPAL_WARN("AssetManager", "Attempted to register invalid asset metadata: {0}", metadata.FilePath.string());
+        return false;
     }
 
     void AssetRegistry::UnregisterAsset(UUID id)

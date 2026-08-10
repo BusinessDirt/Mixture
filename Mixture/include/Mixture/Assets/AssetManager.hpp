@@ -20,6 +20,7 @@
 #include <queue>
 #include <condition_variable>
 #include <unordered_set>
+#include <optional>
 
 namespace Mixture
 {
@@ -140,7 +141,7 @@ namespace Mixture
                     // Handle is stale (refers to an old instance of the asset)
                     return nullptr; 
                 }
-                return std::static_pointer_cast<T>(asset);
+                return std::dynamic_pointer_cast<T>(asset);
             }
 
             return nullptr;
@@ -163,6 +164,7 @@ namespace Mixture
         void OnAssetChange(const std::filesystem::path& path, FileAction action);
         bool EnqueueLoad(LoadRequest request);
         bool IsLoadCancelled(UUID id);
+        std::optional<std::filesystem::path> ResolveFullPath(AssetType type, const std::filesystem::path& relativePath) const;
         void LoadAssetInternal(AssetType type, const std::filesystem::path& path, UUID id, uint32_t magic);
         Ref<IAsset> GetAssetFromCache(UUID id);
 

@@ -5,6 +5,7 @@
 #include "Mixture/Assets/Shaders/ShaderAsset.hpp"
 #include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
 #include "Mixture/Assets/Textures/TextureAsset.hpp"
+#include "Mixture/Util/FileStreamReader.hpp"
 #include <fstream>
 #include <thread>
 #include <chrono>
@@ -160,6 +161,18 @@ TEST_F(AssetRegistryTests, NormalizedPathIndexSupportsLargeRegistries)
     EXPECT_FALSE(AssetRegistry::Get().FindByPath(AssetType::Texture, "Generated/1.spv").ID.IsValid());
 }
 
+TEST_F(AssetRegistryTests, RejectsConflictingGUIDsAndPaths)
+{
+    const AssetMetadata original{ UUID(101), AssetType::Texture, "Original.png" };
+    EXPECT_TRUE(AssetRegistry::Get().RegisterAsset(original));
+    EXPECT_TRUE(AssetRegistry::Get().RegisterAsset(original));
+
+    EXPECT_FALSE(AssetRegistry::Get().RegisterAsset({ UUID(101), AssetType::Shader, "Other.spv" }));
+    EXPECT_FALSE(AssetRegistry::Get().RegisterAsset({ UUID(202), AssetType::Texture, "Original.png" }));
+    EXPECT_EQ(AssetRegistry::Get().GetMetadata(UUID(101)).FilePath, original.FilePath);
+    EXPECT_FALSE(AssetRegistry::Get().Contains(UUID(202)));
+}
+
 TEST(FileSystemWatcherTests, LargeTreeScanTracksChangesWithoutSnapshotCopies)
 {
     const std::filesystem::path root = std::filesystem::temp_directory_path()
@@ -281,6 +294,7 @@ TEST_F(AssetManagerTests, LoadsAssetsOnOwnedExecutorAndWaitsForIdle)
     Ref<ShaderAsset> shader = manager.GetResource<ShaderAsset>(loaded);
     ASSERT_NE(shader, nullptr);
     EXPECT_EQ(shader->GetBufferSize(), 4u);
+    EXPECT_EQ(manager.GetResource<TextureAsset>(loaded), nullptr);
 
     const std::filesystem::path cancelledPath = shaderDirectory / "Cancelled.spv";
     {
@@ -366,6 +380,56 @@ TEST_F(AssetManagerTests, ConcurrentRequestsShareOneCacheEntry)
     std::filesystem::remove_all(root);
 }
 
+TEST_F(AssetManagerTests, RejectsPathsOutsideAssetTypeRoot)
+{
+    AssetManager& manager = AssetManager::Get();
+    const std::filesystem::path root = std::filesystem::temp_directory_path()
+        / ("MixtureAssetBoundary-" + std::to_string(static_cast<uint64_t>(UUID())));
+    const std::filesystem::path outside = root.parent_path() / (root.filename().string() + "-outside.spv");
+    std::filesystem::create_directories(root / "Shader");
+    {
+        std::ofstream stream(outside, std::ios::binary);
+        stream << "outside";
+    }
+
+    manager.SetAssetRoot(root);
+    EXPECT_FALSE(manager.GetAsset(AssetType::Shader, outside));
+    EXPECT_FALSE(manager.GetAsset(AssetType::Shader, "../../" + outside.filename().string()));
+
+    manager.Shutdown();
+    std::filesystem::remove_all(root);
+    std::filesystem::remove(outside);
+}
+
+TEST_F(AssetManagerTests, RejectsSymlinkEscapesWhenSupported)
+{
+    AssetManager& manager = AssetManager::Get();
+    const std::filesystem::path root = std::filesystem::temp_directory_path()
+        / ("MixtureAssetSymlink-" + std::to_string(static_cast<uint64_t>(UUID())));
+    const std::filesystem::path outside = root.parent_path() / (root.filename().string() + "-outside.spv");
+    const std::filesystem::path link = root / "Shader" / "Escaped.spv";
+    std::filesystem::create_directories(root / "Shader");
+    {
+        std::ofstream stream(outside, std::ios::binary);
+        stream << "outside";
+    }
+    std::error_code error;
+    std::filesystem::create_symlink(outside, link, error);
+    if (error)
+    {
+        std::filesystem::remove_all(root);
+        std::filesystem::remove(outside);
+        GTEST_SKIP() << "Symbolic links are unavailable: " << error.message();
+    }
+
+    manager.SetAssetRoot(root);
+    EXPECT_FALSE(manager.GetAsset(AssetType::Shader, link.filename()));
+
+    manager.Shutdown();
+    std::filesystem::remove_all(root);
+    std::filesystem::remove(outside);
+}
+
 TEST_F(AssetManagerTests, SteadyStateLookupAvoidsMetadataFileAccess)
 {
     AssetManager& manager = AssetManager::Get();
@@ -428,6 +492,62 @@ TEST(AssetSerializerTests, MetadataRoundTrip)
     // Cleanup
     if (std::filesystem::exists(metaFile))
         std::filesystem::remove(metaFile);
+}
+
+TEST(AssetSerializerTests, RejectsMalformedMissingAndOutOfRangeMetadata)
+{
+    const std::filesystem::path assetPath = std::filesystem::temp_directory_path()
+        / ("MixtureInvalidMetadata-" + std::to_string(static_cast<uint64_t>(UUID())));
+    const std::filesystem::path metadataPath = assetPath.string() + ".meta";
+    AssetMetadata metadata;
+
+    {
+        std::ofstream stream(metadataPath);
+        stream << "GUID=not-a-number\nType=1\n";
+    }
+    EXPECT_FALSE(AssetSerializer::TryLoadMetadata(assetPath, metadata));
+
+    {
+        std::ofstream stream(metadataPath);
+        stream << "GUID=42\n";
+    }
+    EXPECT_FALSE(AssetSerializer::TryLoadMetadata(assetPath, metadata));
+
+    {
+        std::ofstream stream(metadataPath);
+        stream << "GUID=42\nType=255\n";
+    }
+    EXPECT_FALSE(AssetSerializer::TryLoadMetadata(assetPath, metadata));
+
+    {
+        std::ofstream stream(metadataPath);
+        stream << "GUID=42\nGUID=43\nType=1\n";
+    }
+    EXPECT_FALSE(AssetSerializer::TryLoadMetadata(assetPath, metadata));
+    std::filesystem::remove(metadataPath);
+}
+
+TEST(FileStreamReaderTests, ReportsCompleteAndFailedReads)
+{
+    const std::filesystem::path path = std::filesystem::temp_directory_path()
+        / ("MixtureFileReader-" + std::to_string(static_cast<uint64_t>(UUID())));
+    {
+        std::ofstream stream(path, std::ios::binary);
+        stream << "abcd";
+    }
+
+    Vector<char> data;
+    {
+        FileStreamReader reader(path);
+        EXPECT_EQ(reader.GetFileSize(), 4u);
+        EXPECT_TRUE(reader.ReadBuffer(data));
+        EXPECT_EQ(data, (Vector<char>{ 'a', 'b', 'c', 'd' }));
+
+        FileStreamReader missing(path.string() + ".missing");
+        EXPECT_EQ(missing.GetFileSize(), 0u);
+        EXPECT_FALSE(missing.ReadBuffer(data));
+    }
+    std::filesystem::remove(path);
 }
 
 // --- Asset Types Tests ---
