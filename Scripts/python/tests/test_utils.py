@@ -11,7 +11,8 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import Utils
+from mixture_tools.downloads import archive as archive_utils
+from mixture_tools.downloads import download
 
 
 class FakeResponse:
@@ -40,14 +41,14 @@ class VerifiedDownloadTests(unittest.TestCase):
     def tearDown(self):
         self.temporary_directory.cleanup()
 
-    @mock.patch("Utils.requests.get")
+    @mock.patch("mixture_tools.downloads.download.requests.get")
     def test_verified_download_replaces_destination(self, get):
         contents = b"verified archive"
         get.return_value = FakeResponse([contents[:8], contents[8:]])
         destination = self.root / "archive.zip"
         destination.write_bytes(b"old contents")
 
-        Utils.download_file(
+        download.download_file(
             "https://example.test/archive.zip",
             destination,
             hashlib.sha256(contents).hexdigest(),
@@ -58,14 +59,14 @@ class VerifiedDownloadTests(unittest.TestCase):
         self.assertEqual(get.call_args.kwargs["timeout"], (10, 60))
         self.assertEqual(list(self.root.glob(".archive.zip.*")), [])
 
-    @mock.patch("Utils.requests.get")
+    @mock.patch("mixture_tools.downloads.download.requests.get")
     def test_checksum_mismatch_preserves_destination(self, get):
         get.return_value = FakeResponse([b"untrusted archive"])
         destination = self.root / "archive.zip"
         destination.write_bytes(b"known good archive")
 
         with self.assertRaisesRegex(RuntimeError, "SHA-256 verification"):
-            Utils.download_file(
+            download.download_file(
                 "https://example.test/archive.zip",
                 destination,
                 "0" * 64,
@@ -88,7 +89,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
         with zipfile.ZipFile(archive, "w") as output:
             output.writestr("premake/bin/premake5", b"binary")
 
-        Utils.unzip_file(archive, delete_zip_file=False)
+        archive_utils.unzip_file(archive, delete_zip_file=False)
 
         self.assertEqual((self.root / "premake/bin/premake5").read_bytes(), b"binary")
 
@@ -98,7 +99,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
             output.writestr("../outside.txt", b"malicious")
 
         with self.assertRaisesRegex(ValueError, "escapes extraction directory"):
-            Utils.unzip_file(archive)
+            archive_utils.unzip_file(archive)
 
         self.assertFalse((self.root.parent / "outside.txt").exists())
         self.assertTrue(archive.exists())
@@ -109,7 +110,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
             output.writestr("/outside.txt", b"malicious")
 
         with self.assertRaisesRegex(ValueError, "absolute path"):
-            Utils.unzip_file(archive)
+            archive_utils.unzip_file(archive)
 
     def test_rejects_zip_symlink(self):
         archive = self.root / "symlink.zip"
@@ -120,7 +121,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
             output.writestr(link, "../outside.txt")
 
         with self.assertRaisesRegex(ValueError, "symbolic link"):
-            Utils.unzip_file(archive)
+            archive_utils.unzip_file(archive)
 
     def test_extracts_valid_tar(self):
         archive = self.root / "valid.tar.gz"
@@ -131,7 +132,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
             member.mode = 0o755
             output.addfile(member, io.BytesIO(contents))
 
-        Utils.unzip_file(archive, delete_zip_file=False)
+        archive_utils.unzip_file(archive, delete_zip_file=False)
 
         target = self.root / "premake/bin/premake5"
         self.assertEqual(target.read_bytes(), contents)
@@ -146,7 +147,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
             output.addfile(member, io.BytesIO(b"x"))
 
         with self.assertRaisesRegex(ValueError, "escapes extraction directory"):
-            Utils.unzip_file(archive)
+            archive_utils.unzip_file(archive)
 
         self.assertFalse((self.root.parent / "outside.txt").exists())
         self.assertTrue(archive.exists())
@@ -159,7 +160,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
             output.addfile(member, io.BytesIO(b"x"))
 
         with self.assertRaisesRegex(ValueError, "absolute path"):
-            Utils.unzip_file(archive)
+            archive_utils.unzip_file(archive)
 
     def test_rejects_tar_links(self):
         for link_type in (tarfile.SYMTYPE, tarfile.LNKTYPE):
@@ -172,7 +173,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
                     output.addfile(member)
 
                 with self.assertRaisesRegex(ValueError, "contains a link"):
-                    Utils.unzip_file(archive)
+                    archive_utils.unzip_file(archive)
 
     def test_rejects_tar_special_file(self):
         archive = self.root / "fifo.tar.gz"
@@ -182,7 +183,7 @@ class SafeArchiveExtractionTests(unittest.TestCase):
             output.addfile(member)
 
         with self.assertRaisesRegex(ValueError, "special file"):
-            Utils.unzip_file(archive)
+            archive_utils.unzip_file(archive)
 
 
 if __name__ == "__main__":

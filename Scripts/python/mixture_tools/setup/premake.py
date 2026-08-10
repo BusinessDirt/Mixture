@@ -4,7 +4,8 @@ import sys
 import os
 import subprocess
 from pathlib import Path
-import Utils
+from ..downloads.archive import unzip_file
+from ..downloads.download import download_file
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +84,8 @@ class PremakeConfiguration:
         premake_path = cls.premake_directory / f"premake-{cls.premake_version}-{distribution}"
 
         try:
-            Utils.download_file(f"{cls.premake_zip_url}{distribution}", premake_path, cls.premake_sha256[distribution])
-            Utils.unzip_file(premake_path, delete_zip_file=True)
+            download_file(f"{cls.premake_zip_url}{distribution}", premake_path, cls.premake_sha256[distribution])
+            unzip_file(premake_path, delete_zip_file=True)
 
             if platform.system() != "Windows":
                 premake_exe = cls.premake_directory / "premake5"
@@ -93,11 +94,10 @@ class PremakeConfiguration:
             logger.info(f"Premake {cls.premake_version} has been downloaded to '{cls.premake_directory}'")
 
             premake_license_path = cls.premake_directory / "LICENSE.txt"
-            Utils.download_file(cls.premake_license_url, premake_license_path)
+            download_file(cls.premake_license_url, premake_license_path)
             logger.info(f"Premake License has been downloaded to '{cls.premake_directory}'")
 
             return True
         except Exception as e:
             logger.error(f"Failed to install Premake: {e}")
             return False
-
