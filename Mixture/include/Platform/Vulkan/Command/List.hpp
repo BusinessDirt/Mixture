@@ -61,6 +61,7 @@ namespace Mixture::Vulkan
 
         void MarkTransferWork() { if (m_CommandContext.Activity) m_CommandContext.Activity->Transfer = true; }
         void MarkComputeWork() { if (m_CommandContext.Activity) m_CommandContext.Activity->Compute = true; }
+        vk::CommandBuffer GetGraphicsCommandBuffer() const { return m_CommandContext.graphicsCommandBuffer; }
 
     private:
         void FlushDescriptors(); // The magic function

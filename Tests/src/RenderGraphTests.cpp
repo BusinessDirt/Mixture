@@ -175,6 +175,20 @@ namespace Mixture::Tests
             context.EndImGuiFrame();
             context.RenderImGui(commandList);
         };
+
+        class StatefulTestPass final : public RenderPass
+        {
+        public:
+            explicit StatefulTestPass(int& executions) : m_Executions(&executions) {}
+
+            void Setup(RenderGraphBuilder& builder) override { builder.SetSideEffect(); }
+            void Execute(const RenderGraphRegistry&, RHI::ICommandList*) const override { ++*m_Executions; }
+
+        private:
+            int* m_Executions;
+        };
+
+        static_assert(std::is_trivially_destructible_v<StatefulTestPass>);
     }
 
     TEST(RenderGraphTests, PreservesIndependentPassOrder)
@@ -186,6 +200,20 @@ namespace Mixture::Tests
 
         ASSERT_TRUE(RenderGraphAlgorithms::SortPasses(passes));
         ExpectOrder(passes, { "First", "Second", "Third" });
+    }
+
+    TEST(RenderGraphTests, ExecutesClassBasedPasses)
+    {
+        MockGraphicsDevice device;
+        HeadlessGraphicsContext context;
+        RenderGraph graph(device);
+        int executions = 0;
+
+        graph.AddPass<StatefulTestPass>("Stateful", executions);
+        graph.Compile();
+        graph.Execute(nullptr, &context);
+
+        EXPECT_EQ(executions, 1);
     }
 
     TEST(VulkanSubmissionTests, SkipsEveryIdleQueueCombination)

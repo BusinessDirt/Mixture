@@ -18,6 +18,6 @@ namespace Mixture
 
         void OnUpdate(float dt) override;
         void OnRender(RenderGraph& graph) override;
+        void OnDrawImGui() override;
     };
 }
-
