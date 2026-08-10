@@ -2,12 +2,24 @@ import hashlib
 import hmac
 import logging
 import os
+import ssl
 import tempfile
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import List, Union
 
 logger = logging.getLogger(__name__)
+
+
+def _create_ssl_context() -> ssl.SSLContext:
+    """Create a verified TLS context, preferring certifi when installed."""
+    try:
+        import certifi
+    except ImportError:
+        return ssl.create_default_context()
+
+    return ssl.create_default_context(cafile=certifi.where())
 
 
 def download_file(
@@ -46,10 +58,24 @@ def download_file(
         ) as temp:
             temp_path = Path(temp.name)
             request = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(request, timeout=60) as response:
-                while chunk := response.read(64 * 1024):
-                    temp.write(chunk)
-                    hasher.update(chunk)
+            try:
+                response_context = urllib.request.urlopen(
+                    request,
+                    timeout=60,
+                    context=_create_ssl_context(),
+                )
+                with response_context as response:
+                    while chunk := response.read(64 * 1024):
+                        temp.write(chunk)
+                        hasher.update(chunk)
+            except urllib.error.URLError as error:
+                if isinstance(error.reason, ssl.SSLCertVerificationError):
+                    raise RuntimeError(
+                        "TLS certificate verification failed. Install or update "
+                        "the Python 'certifi' package, or repair this Python "
+                        "installation's CA certificates."
+                    ) from error
+                raise
 
         if expected_sha256 is not None and not hmac.compare_digest(
             hasher.hexdigest(), expected_sha256.lower()

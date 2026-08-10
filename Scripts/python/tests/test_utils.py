@@ -1,5 +1,6 @@
 import io
 import hashlib
+import ssl
 import stat
 import sys
 import tarfile
@@ -53,6 +54,7 @@ class VerifiedDownloadTests(unittest.TestCase):
         self.assertEqual(destination.read_bytes(), contents)
         self.assertEqual(urlopen.call_count, 1)
         self.assertEqual(urlopen.call_args.kwargs["timeout"], 60)
+        self.assertIsInstance(urlopen.call_args.kwargs["context"], ssl.SSLContext)
         self.assertEqual(
             urlopen.call_args.args[0].full_url,
             "https://example.test/archive.zip",
