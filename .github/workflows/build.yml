@@ -24,7 +24,7 @@ jobs:
           - os: ubuntu-latest
             name: Ubuntu 24.04
             setup_script: bash ./Scripts/Setup-Unix.sh
-            build_command: make -j2 config=release
+            build_command: make -j$(nproc) config=release
             dependency_command: sudo apt upgrade && sudo apt install libgl1-mesa-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev libwayland-dev libxkbcommon-dev
 
           - os: windows-latest
