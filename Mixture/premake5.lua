@@ -16,6 +16,7 @@ project "Mixture"
         "../Opal/include",
 
         "%{IncludeDir.spdlog}",
+        "%{IncludeDir.imgui}",
         "%{IncludeDir.vulkan}",
         "%{IncludeDir.glfw}",
         "%{IncludeDir.glm}",

@@ -21,6 +21,8 @@ int Entrypoint(int argc, char** argv);
 
 namespace Mixture
 {
+    class ImGuiContext;
+
     /**
      * @brief Structure to hold command line arguments passed to the application.
      */
@@ -51,6 +53,7 @@ namespace Mixture
 
         std::string Version = "1.0.0";
         RHI::GraphicsAPI API = RHI::GraphicsAPI::None;
+        bool EnableImGui = false;
 
         ApplicationCommandLineArgs Args = ApplicationCommandLineArgs();
     };
@@ -114,6 +117,9 @@ namespace Mixture
          */
         OPAL_NODISCARD const RHI::IGraphicsContext& GetContext() const { return *m_Context; }
 
+        /** Returns the optional application-owned ImGui integration. */
+        OPAL_NODISCARD ImGuiContext& GetImGuiContext() const;
+
         /**
          * @brief Pushes a layer onto the layer stack.
          *
@@ -142,6 +148,7 @@ namespace Mixture
 
         Scope<Window> m_Window;
         Scope<RHI::IGraphicsContext> m_Context;
+        Scope<ImGuiContext> m_ImGuiContext;
         Scope<RenderGraph> m_RenderGraph;
     private:
         static Application* s_Instance;

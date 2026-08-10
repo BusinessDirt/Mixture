@@ -13,7 +13,7 @@ namespace Mixture
             : Application(appDescription)
         {
             PushLayer(CreateScope<MainLayer>());
-            //PushOverlay(CreateScope<UILayer>());
+            PushOverlay(CreateScope<UILayer>());
         }
     };
 
@@ -25,10 +25,10 @@ namespace Mixture
         desc.Height = 720;
         desc.Version = "1.0.0";
         desc.API = RHI::GraphicsAPI::Vulkan;
+        desc.EnableImGui = true;
         desc.Args = args;
 
         const auto app = new ExampleApp(desc);
         return app;
     }
 }
-

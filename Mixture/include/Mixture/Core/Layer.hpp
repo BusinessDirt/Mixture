@@ -60,6 +60,9 @@ namespace Mixture
          */
         virtual void OnRender(RenderGraph& graph) {};
 
+        /** Called every frame to populate application-owned ImGui draw data. */
+        virtual void OnDrawImGui() {};
+
         /**
          * @brief Gets the debug name of the layer.
          * 

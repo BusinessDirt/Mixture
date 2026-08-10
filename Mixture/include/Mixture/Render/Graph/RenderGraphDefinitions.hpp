@@ -23,6 +23,20 @@ namespace Mixture
     }
 
     class RenderGraphRegistry; // Forward Declaration
+    class RenderGraphBuilder; // Forward Declaration
+
+    /**
+     * @brief Interface for stateful render-graph passes allocated from the graph arena.
+     *
+     * Implementations must be trivially destructible because the arena releases all
+     * pass storage at once when the graph is cleared.
+     */
+    class RenderPass
+    {
+    public:
+        virtual void Setup(RenderGraphBuilder& builder) = 0;
+        virtual void Execute(const RenderGraphRegistry& registry, RHI::ICommandList* commandList) const = 0;
+    };
 
     /**
      * @brief Represents a resource barrier to transition resource states between passes.

@@ -6,6 +6,7 @@
 #include "Mixture/Core/Threading/TaskSystem.hpp"
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
+#include "Mixture/Render/ImGui/Context.hpp"
 
 #include <Opal/Base.hpp>
 
@@ -46,6 +47,11 @@ namespace Mixture
                 throw std::runtime_error("Failed to create graphics context");
             }
 
+            if (appDescription.EnableImGui)
+            {
+                m_ImGuiContext = CreateScope<ImGuiContext>(m_Window->GetNativeWindow(), *m_Context);
+            }
+
             PipelineCache::Init(m_Context->GetDevice());
             ShaderLibrary::Init(m_Context->GetDevice());
             m_RenderGraph = CreateScope<RenderGraph>(m_Context->GetDevice());
@@ -71,6 +77,7 @@ namespace Mixture
 
         m_LayerStack.Shutdown();
         m_RenderGraph.reset();
+        m_ImGuiContext.reset();
 
         // Renderer services own device resources and must stop before the device.
         ShaderLibrary::Shutdown();
@@ -86,6 +93,12 @@ namespace Mixture
     void Application::Close()
     {
         m_Running = false;
+    }
+
+    ImGuiContext& Application::GetImGuiContext() const
+    {
+        if (!m_ImGuiContext) throw std::logic_error("ImGui is not enabled for this application");
+        return *m_ImGuiContext;
     }
 
     void Application::Run() const
@@ -105,6 +118,13 @@ namespace Mixture
             if (RHI::ITexture* backbufferTex = m_Context->BeginFrame())
             {
                 m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
+
+                if (m_ImGuiContext)
+                {
+                    m_ImGuiContext->BeginFrame();
+                    for (const auto& layer : m_LayerStack) layer->OnDrawImGui();
+                    m_ImGuiContext->EndFrame();
+                }
 
                 for (const auto& layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
 

@@ -14,6 +14,7 @@
 #include "Mixture/Render/Graph/RenderGraphResourceCache.hpp"
 
 #include <filesystem>
+#include <concepts>
 #include <unordered_map>
 
 namespace Mixture
@@ -40,6 +41,36 @@ namespace Mixture
          */
         void Clear();
 
+        /** Adds a stateful, class-based pass while retaining arena ownership. */
+        template<typename PassT, typename... Args>
+            requires std::derived_from<PassT, RenderPass>
+        void AddPass(const std::string& name, Args&&... args)
+        {
+            static_assert(std::is_trivially_destructible_v<PassT>,
+                "RenderGraph pass classes must be trivially destructible");
+
+            PassT* data = m_PassAllocator.Alloc<PassT>(std::forward<Args>(args)...);
+            if (!data) throw std::bad_alloc();
+
+            auto& pass = m_Passes.emplace_back();
+            pass.Name = name;
+            try
+            {
+                RenderGraphBuilder builder(*this, pass);
+                data->Setup(builder);
+            }
+            catch (...)
+            {
+                m_Passes.pop_back();
+                throw;
+            }
+
+            pass.Execute = [data](RenderGraphRegistry& registry, RHI::ICommandList* commandList)
+            {
+                data->Execute(registry, commandList);
+            };
+        }
+
         /**
          * @brief Adds a new render pass to the graph.
          *
@@ -49,6 +80,7 @@ namespace Mixture
          * @param execute The execution function where commands are recorded.
          */
         template<typename PassData>
+            requires (!std::derived_from<PassData, RenderPass>)
         void AddPass(const std::string& name,
              std::function<void(RenderGraphBuilder&, PassData&)> setup,
              std::function<void(const RenderGraphRegistry&, const PassData&, RHI::ICommandList*)> execute)
