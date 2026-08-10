@@ -116,6 +116,8 @@ def main(arguments: Sequence[str] | None = None) -> int:
     handler.setFormatter(LogFormatter(datefmt='%H:%M:%S'))
     logging.basicConfig(level=logging.INFO, handlers=[handler])
 
+    logger = logging.getLogger(__name__)
+
     parser = create_parser()
     options = parser.parse_args(arguments)
     try:
@@ -134,7 +136,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
 
                 match options.version_command:
                     case "show":
-                        print(current)
+                        logger.info(current)
                         return 0
 
                     case "set":
@@ -144,7 +146,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
                         updated = current.bump(options.part)
 
                 write_version(context.configuration_file, updated)
-                print(f"{current} -> {updated}")
+                logger.info(f"{current} -> {updated}")
                 return 0
     except MixtureToolsError as error:
         logging.getLogger("Setup").error("%s", error)
