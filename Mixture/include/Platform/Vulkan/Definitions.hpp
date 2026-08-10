@@ -12,6 +12,8 @@
 #include "Platform/Vulkan/EnumMapper.hpp"
 
 #include <optional>
+#include <array>
+#include <algorithm>
 
 namespace Mixture::Vulkan
 {
@@ -38,4 +40,13 @@ namespace Mixture::Vulkan
                 && Compute.has_value();
         }
     };
+
+    inline Vector<uint32_t> CollectQueueFamilyIndices(const QueueFamilyIndices& indices)
+    {
+        Vector<uint32_t> result;
+        for (const auto& index : std::array{ indices.Graphics, indices.Present, indices.Transfer, indices.Compute })
+            if (index && std::find(result.begin(), result.end(), *index) == result.end()) result.push_back(*index);
+        std::sort(result.begin(), result.end());
+        return result;
+    }
 }

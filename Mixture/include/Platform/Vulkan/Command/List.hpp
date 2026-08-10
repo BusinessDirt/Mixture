@@ -11,6 +11,7 @@
 
 namespace Mixture::Vulkan
 {
+    class Pipeline;
     struct FrameCommandContext
     {
         vk::CommandBuffer graphicsCommandBuffer;
@@ -50,9 +51,10 @@ namespace Mixture::Vulkan
         void BindIndexBuffer(RHI::IBuffer* buffer) override;
 
         void PipelineBarrier(RHI::ITexture* texture, RHI::ResourceState oldState, RHI::ResourceState newState) override;
+        void PipelineBarrier(RHI::IBuffer* buffer, RHI::ResourceState oldState, RHI::ResourceState newState) override;
         void PushConstants(RHI::IPipeline* pipeline, RHI::ShaderStage stage, const void* data, uint32_t size) override;
-        void SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer) override;
-        void SetTexture(uint32_t binding, RHI::ITexture* texture) override;
+        void SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer, uint32_t set = 0) override;
+        void SetTexture(uint32_t binding, RHI::ITexture* texture, uint32_t set = 0) override;
 
         void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) override;
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) override;
@@ -75,8 +77,9 @@ namespace Mixture::Vulkan
         FrameCommandContext m_CommandContext;
         vk::Image m_SwapchainImage;
         vk::PipelineLayout m_CurrentPipelineLayout;
+        Pipeline* m_CurrentPipeline = nullptr;
 
-        std::map<uint32_t, BindingState> m_Bindings;
+        std::map<std::pair<uint32_t, uint32_t>, BindingState> m_Bindings;
         bool m_DescriptorsDirty = false;
         bool m_IsPipelineBound = false;
     };

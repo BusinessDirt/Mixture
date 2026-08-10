@@ -88,6 +88,7 @@ namespace Mixture::Vulkan
         uint32_t m_Width = 0;
         uint32_t m_Height = 0;
         RHI::Format m_Format;
+        RHI::TextureUsage m_Usage = RHI::TextureUsage::None;
         std::string_view m_DebugName;
 
         // Vulkan Handles

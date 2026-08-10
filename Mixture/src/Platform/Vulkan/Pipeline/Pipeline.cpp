@@ -7,6 +7,74 @@
 
 namespace Mixture::Vulkan
 {
+    namespace
+    {
+        vk::DescriptorType MapDescriptorType(ShaderReflectionData::ResourceType type)
+        {
+            switch (type)
+            {
+                case ShaderReflectionData::ResourceType::UniformBuffer: return vk::DescriptorType::eUniformBuffer;
+                case ShaderReflectionData::ResourceType::StorageBuffer: return vk::DescriptorType::eStorageBuffer;
+                case ShaderReflectionData::ResourceType::StorageImage: return vk::DescriptorType::eStorageImage;
+                case ShaderReflectionData::ResourceType::Sampler: return vk::DescriptorType::eSampler;
+                case ShaderReflectionData::ResourceType::InputAttachment: return vk::DescriptorType::eInputAttachment;
+                default: return vk::DescriptorType::eCombinedImageSampler;
+            }
+        }
+    }
+
+    PipelineLayoutDescription BuildPipelineLayoutDescription(
+        const Vector<std::pair<const ShaderReflectionData*, RHI::ShaderStage>>& shaders)
+    {
+        PipelineLayoutDescription result;
+        for (const auto& [reflection, stage] : shaders)
+        {
+            if (!reflection) continue;
+            const vk::ShaderStageFlags stageFlags = EnumMapper::MapShaderStage(stage);
+            auto addResources = [&](const auto& resources)
+            {
+                for (const auto& resource : resources)
+                {
+                    if (result.Sets.size() <= resource.Set) result.Sets.resize(resource.Set + 1);
+                    auto& bindings = result.Sets[resource.Set];
+                    const auto existing = std::find_if(bindings.begin(), bindings.end(),
+                        [&](const auto& binding) { return binding.binding == resource.Binding; });
+                    const vk::DescriptorType type = MapDescriptorType(resource.Type);
+                    if (existing == bindings.end())
+                    {
+                        bindings.push_back(vk::DescriptorSetLayoutBinding(
+                            resource.Binding, type, std::max(1u, resource.Count), stageFlags));
+                    }
+                    else
+                    {
+                        OPAL_ASSERT("Core/Vulkan", existing->descriptorType == type,
+                            "Reflected descriptor binding type mismatch across shader stages");
+                        existing->stageFlags |= stageFlags;
+                        existing->descriptorCount = std::max(existing->descriptorCount, std::max(1u, resource.Count));
+                    }
+                }
+            };
+            addResources(reflection->UniformBuffers);
+            addResources(reflection->StorageBuffers);
+            addResources(reflection->Textures);
+            addResources(reflection->StorageImages);
+            addResources(reflection->Samplers);
+
+            for (const auto& reflectedRange : reflection->PushConstants)
+            {
+                const auto existing = std::find_if(result.PushConstants.begin(), result.PushConstants.end(),
+                    [&](const auto& range) { return range.offset == reflectedRange.Offset && range.size == reflectedRange.Size; });
+                if (existing == result.PushConstants.end())
+                    result.PushConstants.push_back(vk::PushConstantRange(stageFlags, reflectedRange.Offset, reflectedRange.Size));
+                else
+                    existing->stageFlags |= stageFlags;
+            }
+        }
+        for (auto& set : result.Sets)
+            std::sort(set.begin(), set.end(), [](const auto& a, const auto& b) { return a.binding < b.binding; });
+        return result;
+    }
+
     Pipeline::Pipeline(Ref<Device> device, const RHI::PipelineDesc& desc)
         : m_Device(std::move(device))
     {
@@ -134,19 +202,23 @@ namespace Mixture::Vulkan
         colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.setAttachments(blendAttachments);
 
-        // TODO: A robust engine would merge reflection data from VS and FS here
-        // and create DescriptorSetLayouts. For now, we will assume an empty layout
-        // or a PushConstant-only layout for the simple triangle case.
+        Vector<std::pair<const ShaderReflectionData*, RHI::ShaderStage>> reflectedShaders{
+            { &vertexShader->GetReflectionData(), RHI::ShaderStage::Vertex }
+        };
+        if (fragmentShader)
+            reflectedShaders.push_back({ &fragmentShader->GetReflectionData(), RHI::ShaderStage::Fragment });
+        const auto layoutDescription = BuildPipelineLayoutDescription(reflectedShaders);
 
-        // If you have a DescriptorLayoutCache, use it here.
+        for (const auto& bindings : layoutDescription.Sets)
+        {
+            vk::DescriptorSetLayoutCreateInfo setInfo({}, bindings);
+            m_DescriptorSetLayouts.push_back(vkDevice.createDescriptorSetLayout(setInfo));
+        }
+
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
-
-        // Add push constants from reflection
-        Vector<vk::PushConstantRange> pushConstants;
-        // TODO: iterate vsReflection.PushConstants and convert to vk::PushConstantRange ...
-
-        pipelineLayoutInfo.setPushConstantRanges(pushConstants);
-        pipelineLayoutInfo.setLayoutCount = 0; // Set to actual descriptor set count
+        pipelineLayoutInfo.setSetLayouts(m_DescriptorSetLayouts);
+        m_PushConstantRanges = layoutDescription.PushConstants;
+        pipelineLayoutInfo.setPushConstantRanges(m_PushConstantRanges);
 
         try
         {
@@ -198,5 +270,13 @@ namespace Mixture::Vulkan
 
         if (m_Handle) vkDevice.destroyPipeline(m_Handle);
         if (m_Layout) vkDevice.destroyPipelineLayout(m_Layout);
+        for (const auto layout : m_DescriptorSetLayouts) vkDevice.destroyDescriptorSetLayout(layout);
+    }
+
+    const vk::PushConstantRange* Pipeline::FindPushConstantRange(vk::ShaderStageFlags stage, uint32_t size) const
+    {
+        const auto range = std::find_if(m_PushConstantRanges.begin(), m_PushConstantRanges.end(),
+            [&](const auto& candidate) { return (candidate.stageFlags & stage) == stage && size <= candidate.size; });
+        return range == m_PushConstantRanges.end() ? nullptr : &*range;
     }
 }

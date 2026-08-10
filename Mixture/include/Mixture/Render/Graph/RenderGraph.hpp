@@ -156,6 +156,7 @@ namespace Mixture
         const RHI::BufferDesc& GetBufferDesc(RGResourceHandle handle) const;
         
         const RGResourceNode& GetResourceNode(RGResourceHandle handle) const;
+        void AddTextureUsage(RGResourceHandle handle, RHI::TextureUsage usage);
 
     private:
         void CullPasses();

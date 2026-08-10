@@ -8,14 +8,15 @@ namespace Mixture::Vulkan
         return DescriptorBuilder(allocator, cache);
     }
 
-    DescriptorBuilder& DescriptorBuilder::BindBuffer(uint32_t binding, vk::DescriptorBufferInfo* bufferInfo, vk::DescriptorType type, vk::ShaderStageFlags stageFlags)
+    DescriptorBuilder& DescriptorBuilder::BindBuffer(uint32_t binding, const vk::DescriptorBufferInfo& bufferInfo, vk::DescriptorType type, vk::ShaderStageFlags stageFlags)
     {
         vk::WriteDescriptorSet write;
         write.dstBinding = binding;
         write.descriptorCount = 1;
         write.descriptorType = type;
-        write.pBufferInfo = bufferInfo;
+        write.pBufferInfo = nullptr;
         m_Writes.push_back(write);
+        m_BufferInfos.push_back(bufferInfo);
 
         vk::DescriptorSetLayoutBinding layoutBinding;
         layoutBinding.binding = binding;
@@ -27,14 +28,15 @@ namespace Mixture::Vulkan
         return *this;
     }
 
-    DescriptorBuilder& DescriptorBuilder::BindImage(uint32_t binding, vk::DescriptorImageInfo* imageInfo, vk::DescriptorType type, vk::ShaderStageFlags stageFlags)
+    DescriptorBuilder& DescriptorBuilder::BindImage(uint32_t binding, const vk::DescriptorImageInfo& imageInfo, vk::DescriptorType type, vk::ShaderStageFlags stageFlags)
     {
         vk::WriteDescriptorSet write;
         write.dstBinding = binding;
         write.descriptorCount = 1;
         write.descriptorType = type;
-        write.pImageInfo = imageInfo;
+        write.pImageInfo = nullptr;
         m_Writes.push_back(write);
+        m_ImageInfos.push_back(imageInfo);
 
         vk::DescriptorSetLayoutBinding layoutBinding;
         layoutBinding.binding = binding;
@@ -56,11 +58,25 @@ namespace Mixture::Vulkan
         // Ask Cache for Layout
         outLayout = m_LayoutCache->CreateDescriptorLayout(&layoutInfo);
 
-        // Allocate Set (using the layout we just got)
-        bool success = m_Allocator->Allocate(outLayout, outSet);
+        return BuildWithLayout(outSet, outLayout);
+    }
+
+    bool DescriptorBuilder::BuildWithLayout(vk::DescriptorSet& outSet, vk::DescriptorSetLayout layout)
+    {
+        bool success = m_Allocator->Allocate(layout, outSet);
         if (!success) return false;
 
-        for (auto& w : m_Writes) w.dstSet = outSet;
+        size_t bufferIndex = 0;
+        size_t imageIndex = 0;
+        for (auto& write : m_Writes)
+        {
+            write.dstSet = outSet;
+            if (write.descriptorType == vk::DescriptorType::eUniformBuffer
+                || write.descriptorType == vk::DescriptorType::eStorageBuffer)
+                write.pBufferInfo = &m_BufferInfos[bufferIndex++];
+            else
+                write.pImageInfo = &m_ImageInfos[imageIndex++];
+        }
         m_Allocator->GetDevice()->GetHandle().updateDescriptorSets(m_Writes, {});
 
         return true;

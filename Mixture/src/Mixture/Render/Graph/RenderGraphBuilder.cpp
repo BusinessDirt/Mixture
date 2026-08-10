@@ -22,6 +22,7 @@ namespace Mixture
 
         // Record that this pass READS this resource
         m_PassNode.Reads.push_back(handle);
+        m_Graph.AddTextureUsage(handle, RHI::TextureUsage::Sampled);
         return handle;
     }
 
@@ -63,10 +64,12 @@ namespace Mixture
 
         if (RHI::IsDepthFormat(desc.PixelFormat))
         {
+            m_Graph.AddTextureUsage(info.Handle, RHI::TextureUsage::DepthStencilAttachment);
             m_CurrentDepthFormat = desc.PixelFormat;
         }
         else
         {
+            m_Graph.AddTextureUsage(info.Handle, RHI::TextureUsage::ColorAttachment);
             m_CurrentColorFormats.push_back(desc.PixelFormat);
         }
 

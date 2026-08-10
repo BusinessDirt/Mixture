@@ -21,11 +21,11 @@ namespace Mixture::Vulkan
 		auto indices = m_PhysicalDevice->GetQueueFamilies();
 
 		float queuePriority = 1.0f;
-		vk::DeviceQueueCreateInfo queueCreateInfo(
-			vk::DeviceQueueCreateFlags(),
-			indices.Graphics.value(),
-			1, &queuePriority
-		);
+		const auto queueFamilies = CollectQueueFamilyIndices(indices);
+		Vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+		queueCreateInfos.reserve(queueFamilies.size());
+		for (const uint32_t family : queueFamilies)
+			queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), family, 1, &queuePriority);
 
 		Vector<const char*> deviceExtensions = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -55,8 +55,7 @@ namespace Mixture::Vulkan
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
         vk::DeviceCreateInfo createInfo;
-        createInfo.queueCreateInfoCount = 1;
-        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.setQueueCreateInfos(queueCreateInfos);
         createInfo.pEnabledFeatures = &deviceFeatures;
         createInfo.pNext = &dynamicRenderingFeatures;
         createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());

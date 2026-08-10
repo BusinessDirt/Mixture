@@ -5,14 +5,16 @@
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/Queue.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
+#include "Platform/Vulkan/ResourcePolicy.hpp"
 
 namespace Mixture::Vulkan
 {
     Texture::Texture(Ref<Device> device, const RHI::TextureDesc& spec, const void* data)
         : m_Device(std::move(device)), m_Width(spec.Width), m_Height(spec.Height), m_Format(spec.PixelFormat),
-          m_DebugName(spec.DebugName), m_OwnsImage(true)
+          m_Usage(spec.Usage), m_DebugName(spec.DebugName), m_OwnsImage(true)
     {
         OPAL_ASSERT("Core/Vulkan", m_Device, "Texture requires an owning device");
+        if (data) m_Usage |= RHI::TextureUsage::TransferDestination;
         Invalidate();
 
         if (data)
@@ -44,8 +46,18 @@ namespace Mixture::Vulkan
 
             // Upload to Image
             const vk::Image destinationImage = m_Image;
+            const vk::ImageAspectFlags aspect = GetImageAspect(m_Format);
+            RHI::ResourceState finalState = spec.InitialState;
+            if (finalState == RHI::ResourceState::Undefined)
+            {
+                if (RHI::HasUsage(m_Usage, RHI::TextureUsage::Storage)) finalState = RHI::ResourceState::UnorderedAccess;
+                else if (RHI::HasUsage(m_Usage, RHI::TextureUsage::DepthStencilAttachment)) finalState = RHI::ResourceState::DepthStencilWrite;
+                else if (RHI::HasUsage(m_Usage, RHI::TextureUsage::ColorAttachment)) finalState = RHI::ResourceState::RenderTarget;
+                else finalState = RHI::ResourceState::ShaderResource;
+            }
+            const ResourceStateMapping finalMapping = MapResourceState(finalState);
             m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
-                [stagingBuffer, destinationImage, width = m_Width, height = m_Height](vk::CommandBuffer cmd)
+                [stagingBuffer, destinationImage, width = m_Width, height = m_Height, aspect, finalMapping](vk::CommandBuffer cmd)
             {
                 vk::ImageMemoryBarrier barrier{};
                 barrier.oldLayout = vk::ImageLayout::eUndefined;
@@ -53,7 +65,7 @@ namespace Mixture::Vulkan
                 barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                 barrier.image = destinationImage;
-                barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+                barrier.subresourceRange.aspectMask = aspect;
                 barrier.subresourceRange.baseMipLevel = 0;
                 barrier.subresourceRange.levelCount = 1;
                 barrier.subresourceRange.baseArrayLayer = 0;
@@ -74,7 +86,7 @@ namespace Mixture::Vulkan
                 region.bufferOffset = 0;
                 region.bufferRowLength = 0;
                 region.bufferImageHeight = 0;
-                region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+                region.imageSubresource.aspectMask = aspect;
                 region.imageSubresource.mipLevel = 0;
                 region.imageSubresource.baseArrayLayer = 0;
                 region.imageSubresource.layerCount = 1;
@@ -84,13 +96,13 @@ namespace Mixture::Vulkan
                 cmd.copyBufferToImage(vk::Buffer(stagingBuffer), destinationImage, vk::ImageLayout::eTransferDstOptimal, 1, &region);
 
                 barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-                barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+                barrier.newLayout = finalMapping.Layout;
                 barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-                barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+                barrier.dstAccessMask = finalMapping.Access;
 
                 cmd.pipelineBarrier(
                     vk::PipelineStageFlagBits::eTransfer,
-                    vk::PipelineStageFlagBits::eFragmentShader,
+                    finalMapping.Stages,
                     vk::DependencyFlags(),
                     0, nullptr,
                     0, nullptr,
@@ -163,7 +175,7 @@ namespace Mixture::Vulkan
         imageInfo.arrayLayers = 1;
         imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        imageInfo.usage = static_cast<VkImageUsageFlags>(MapTextureUsage(m_Usage));
 
         // Allocation Info (VMA)
         VmaAllocationCreateInfo allocInfo = AllocationPolicy::DeviceLocal();
@@ -184,7 +196,7 @@ namespace Mixture::Vulkan
         viewInfo.image = m_Image;
         viewInfo.viewType = vk::ImageViewType::e2D;
         viewInfo.format = vk::Format(imageInfo.format);
-        viewInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        viewInfo.subresourceRange.aspectMask = GetImageAspect(m_Format);
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
@@ -212,7 +224,8 @@ namespace Mixture::Vulkan
     vk::DescriptorImageInfo Texture::GetDescriptorInfo() const
     {
         vk::DescriptorImageInfo info;
-        info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+        info.imageLayout = RHI::HasUsage(m_Usage, RHI::TextureUsage::Storage)
+            ? vk::ImageLayout::eGeneral : vk::ImageLayout::eShaderReadOnlyOptimal;
         info.imageView = m_ImageView;
         info.sampler = m_Sampler;
         return info;

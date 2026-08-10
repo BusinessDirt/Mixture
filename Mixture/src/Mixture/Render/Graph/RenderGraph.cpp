@@ -404,8 +404,11 @@ namespace Mixture
                 }
                 else
                 {
-                    // Buffer Barriers
-                    // TODO: cmdList->BufferBarrier(...)
+                    cmdList->PipelineBarrier(
+                        m_Registry.GetBuffer(barrier.Resource),
+                        barrier.Before,
+                        barrier.After
+                    );
                 }
             }
 
@@ -601,6 +604,13 @@ namespace Mixture
     {
         OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
         return m_Resources[handle.ID];
+    }
+
+    void RenderGraph::AddTextureUsage(RGResourceHandle handle, RHI::TextureUsage usage)
+    {
+        OPAL_ASSERT("Core/RenderGraph", handle.IsValid() && handle.ID < m_Resources.size(), "Invalid Handle!");
+        auto& node = m_Resources[handle.ID];
+        if (node.Type == RGResourceType::Texture) node.TextureDesc.Usage |= usage;
     }
 
     void RenderGraph::SortPasses()

@@ -16,6 +16,8 @@
 #include "Platform/Vulkan/Resources/AllocationPolicy.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 #include "Platform/Vulkan/FrameSubmission.hpp"
+#include "Platform/Vulkan/ResourcePolicy.hpp"
+#include "Platform/Vulkan/Descriptors/Builder.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -196,6 +198,87 @@ namespace Mixture::Tests
             EXPECT_EQ(plan.WaitForTransfer, activity.Transfer);
             EXPECT_EQ(plan.WaitForCompute, activity.Compute);
         }
+    }
+
+    TEST(VulkanDescriptorTests, BuilderOwnsCopiedDescriptorInformation)
+    {
+        static_assert(std::is_same_v<decltype(std::declval<Vulkan::DescriptorBuilder&>().BindBuffer(
+            0, std::declval<const vk::DescriptorBufferInfo&>())), Vulkan::DescriptorBuilder&>);
+        static_assert(std::is_same_v<decltype(std::declval<Vulkan::DescriptorBuilder&>().BindImage(
+            0, std::declval<const vk::DescriptorImageInfo&>())), Vulkan::DescriptorBuilder&>);
+        SUCCEED();
+    }
+
+    TEST(VulkanPipelineLayoutTests, MergesGraphicsAndComputeReflectionBySetAndBinding)
+    {
+        ShaderReflectionData vertex;
+        vertex.UniformBuffers.push_back({ "Globals", ShaderReflectionData::ResourceType::UniformBuffer, 0, 0, 64, 1 });
+        vertex.PushConstants.push_back({ "Draw", 0, 16, 0 });
+
+        ShaderReflectionData fragment;
+        fragment.UniformBuffers.push_back({ "Globals", ShaderReflectionData::ResourceType::UniformBuffer, 0, 0, 64, 1 });
+        fragment.Textures.push_back({ "Albedo", ShaderReflectionData::ResourceType::SampledImage, 1, 2, 0, 1 });
+
+        ShaderReflectionData compute;
+        compute.StorageImages.push_back({ "Output", ShaderReflectionData::ResourceType::StorageImage, 2, 1, 0, 1 });
+
+        const auto layout = Vulkan::BuildPipelineLayoutDescription({
+            { &vertex, RHI::ShaderStage::Vertex },
+            { &fragment, RHI::ShaderStage::Fragment },
+            { &compute, RHI::ShaderStage::Compute }
+        });
+
+        ASSERT_EQ(layout.Sets.size(), 3u);
+        ASSERT_EQ(layout.Sets[0].size(), 1u);
+        EXPECT_EQ(layout.Sets[0][0].stageFlags,
+            vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+        EXPECT_EQ(layout.Sets[1][0].descriptorType, vk::DescriptorType::eCombinedImageSampler);
+        EXPECT_EQ(layout.Sets[2][0].descriptorType, vk::DescriptorType::eStorageImage);
+        ASSERT_EQ(layout.PushConstants.size(), 1u);
+        EXPECT_EQ(layout.PushConstants[0].size, 16u);
+    }
+
+    TEST(VulkanSynchronizationTests, MapsEveryResourceStateToConcreteSynchronization)
+    {
+        const auto renderTarget = Vulkan::MapResourceState(RHI::ResourceState::RenderTarget);
+        EXPECT_EQ(renderTarget.Layout, vk::ImageLayout::eColorAttachmentOptimal);
+        EXPECT_TRUE(static_cast<bool>(renderTarget.Access & vk::AccessFlagBits::eColorAttachmentWrite));
+
+        const auto copyDestination = Vulkan::MapResourceState(RHI::ResourceState::CopyDest);
+        EXPECT_EQ(copyDestination.Layout, vk::ImageLayout::eTransferDstOptimal);
+        EXPECT_EQ(copyDestination.Stages, vk::PipelineStageFlagBits::eTransfer);
+
+        const auto shaderResource = Vulkan::MapResourceState(RHI::ResourceState::ShaderResource);
+        EXPECT_EQ(shaderResource.Layout, vk::ImageLayout::eShaderReadOnlyOptimal);
+        EXPECT_TRUE(static_cast<bool>(shaderResource.Access & vk::AccessFlagBits::eShaderRead));
+    }
+
+    TEST(VulkanQueueTests, DeduplicatesDistinctQueueFamilyConfigurations)
+    {
+        Vulkan::QueueFamilyIndices indices;
+        indices.Graphics = 3;
+        indices.Present = 7;
+        indices.Transfer = 5;
+        indices.Compute = 3;
+        EXPECT_EQ(Vulkan::CollectQueueFamilyIndices(indices), (Vector<uint32_t>{ 3, 5, 7 }));
+    }
+
+    TEST(VulkanTexturePolicyTests, SupportsAllUsageAndAspectClasses)
+    {
+        const auto usage = Vulkan::MapTextureUsage(
+            RHI::TextureUsage::Sampled | RHI::TextureUsage::Storage |
+            RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::DepthStencilAttachment |
+            RHI::TextureUsage::TransferSource | RHI::TextureUsage::TransferDestination);
+        EXPECT_TRUE(static_cast<bool>(usage & vk::ImageUsageFlagBits::eSampled));
+        EXPECT_TRUE(static_cast<bool>(usage & vk::ImageUsageFlagBits::eStorage));
+        EXPECT_TRUE(static_cast<bool>(usage & vk::ImageUsageFlagBits::eColorAttachment));
+        EXPECT_TRUE(static_cast<bool>(usage & vk::ImageUsageFlagBits::eDepthStencilAttachment));
+        EXPECT_TRUE(static_cast<bool>(usage & vk::ImageUsageFlagBits::eTransferSrc));
+        EXPECT_TRUE(static_cast<bool>(usage & vk::ImageUsageFlagBits::eTransferDst));
+        EXPECT_EQ(Vulkan::GetImageAspect(RHI::Format::R8G8B8A8_UNORM), vk::ImageAspectFlagBits::eColor);
+        EXPECT_EQ(Vulkan::GetImageAspect(RHI::Format::D32_FLOAT), vk::ImageAspectFlagBits::eDepth);
+        EXPECT_EQ(Vulkan::GetImageAspect(RHI::Format::D24_UNORM_S8_UINT),
+            vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil);
     }
 
     TEST(RenderGraphTests, IndexedLookupScalesAcrossRepresentativeGraphSizes)

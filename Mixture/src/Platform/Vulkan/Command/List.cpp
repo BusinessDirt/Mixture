@@ -5,7 +5,10 @@
 #include "Platform/Vulkan/Resources/Texture.hpp"
 #include "Platform/Vulkan/Resources/Buffer.hpp"
 #include "Platform/Vulkan/Descriptors/Builder.hpp"
+
+#include <set>
 #include "Platform/Vulkan/Pipeline/Pipeline.hpp"
+#include "Platform/Vulkan/ResourcePolicy.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -191,11 +194,13 @@ namespace Mixture::Vulkan
         if (!pipeline)
         {
             m_IsPipelineBound = false;
+            m_CurrentPipeline = nullptr;
             return;
         }
 
         m_IsPipelineBound = true;
         auto* vkPipeline = static_cast<Pipeline*>(pipeline);
+        m_CurrentPipeline = vkPipeline;
         m_CurrentPipelineLayout = vkPipeline->GetLayout();
         m_CommandContext.graphicsCommandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, vkPipeline->GetHandle());
     }
@@ -233,28 +238,74 @@ namespace Mixture::Vulkan
 
     void CommandList::PipelineBarrier(RHI::ITexture* texture, RHI::ResourceState oldState, RHI::ResourceState newState)
     {
+        if (!texture || oldState == newState) return;
+        const auto before = MapResourceState(oldState);
+        const auto after = MapResourceState(newState);
+        auto* vulkanTexture = static_cast<Texture*>(texture);
 
+        vk::ImageMemoryBarrier barrier;
+        barrier.srcAccessMask = before.Access;
+        barrier.dstAccessMask = after.Access;
+        barrier.oldLayout = before.Layout;
+        barrier.newLayout = after.Layout;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = vulkanTexture->GetImage();
+        barrier.subresourceRange = vk::ImageSubresourceRange(
+            GetImageAspect(texture->GetFormat()), 0, 1, 0, 1);
+
+        m_CommandContext.graphicsCommandBuffer.pipelineBarrier(
+            before.Stages, after.Stages, {}, {}, {}, barrier);
+    }
+
+    void CommandList::PipelineBarrier(RHI::IBuffer* buffer, RHI::ResourceState oldState, RHI::ResourceState newState)
+    {
+        if (!buffer || oldState == newState) return;
+        const auto before = MapResourceState(oldState);
+        const auto after = MapResourceState(newState);
+        auto* vulkanBuffer = static_cast<Buffer*>(buffer);
+
+        vk::BufferMemoryBarrier barrier;
+        barrier.srcAccessMask = before.Access;
+        barrier.dstAccessMask = after.Access;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.buffer = vulkanBuffer->GetHandle();
+        barrier.offset = 0;
+        barrier.size = VK_WHOLE_SIZE;
+        m_CommandContext.graphicsCommandBuffer.pipelineBarrier(
+            before.Stages, after.Stages, {}, {}, barrier, {});
     }
 
     void CommandList::PushConstants(RHI::IPipeline* pipeline, RHI::ShaderStage stage, const void* data, uint32_t size)
     {
-
+        if (!pipeline || !data || size == 0) return;
+        auto* vulkanPipeline = static_cast<Pipeline*>(pipeline);
+        const vk::ShaderStageFlags stages = EnumMapper::MapShaderStage(stage);
+        const auto* range = vulkanPipeline->FindPushConstantRange(stages, size);
+        if (!range)
+        {
+            OPAL_ERROR("Core/Vulkan", "Push constant write is not covered by the pipeline layout");
+            return;
+        }
+        m_CommandContext.graphicsCommandBuffer.pushConstants(
+            vulkanPipeline->GetLayout(), stages, range->offset, size, data);
     }
 
-    void CommandList::SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer)
+    void CommandList::SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer, uint32_t set)
     {
-        m_Bindings[binding].Buffer = buffer;
-        m_Bindings[binding].Texture = nullptr;
-        m_Bindings[binding].Type = vk::DescriptorType::eUniformBuffer;
+        m_Bindings[{ set, binding }].Buffer = buffer;
+        m_Bindings[{ set, binding }].Texture = nullptr;
+        m_Bindings[{ set, binding }].Type = vk::DescriptorType::eUniformBuffer;
 
         m_DescriptorsDirty = true;
     }
 
-    void CommandList::SetTexture(uint32_t binding, RHI::ITexture* texture)
+    void CommandList::SetTexture(uint32_t binding, RHI::ITexture* texture, uint32_t set)
     {
-        m_Bindings[binding].Buffer = nullptr;
-        m_Bindings[binding].Texture = texture;
-        m_Bindings[binding].Type = vk::DescriptorType::eCombinedImageSampler;
+        m_Bindings[{ set, binding }].Buffer = nullptr;
+        m_Bindings[{ set, binding }].Texture = texture;
+        m_Bindings[{ set, binding }].Type = vk::DescriptorType::eCombinedImageSampler;
 
         m_DescriptorsDirty = true;
     }
@@ -286,48 +337,42 @@ namespace Mixture::Vulkan
         auto* allocator = context.GetCurrentDescriptorAllocator();
         auto* cache = context.GetDescriptorLayoutCache();
 
-        // Start Building
-        auto builder = DescriptorBuilder::Begin(allocator, cache);
-
-        // Iterate over our saved bindings and feed the builder
-        for (auto& [binding, state] : m_Bindings)
+        std::set<uint32_t> usedSets;
+        for (const auto& [location, state] : m_Bindings)
         {
-            if (state.Buffer)
-            {
-                auto* vkBuf = static_cast<Buffer*>(state.Buffer);
-                vk::DescriptorBufferInfo info{};
-                info.buffer = vkBuf->GetHandle();
-                info.offset = 0;
-                info.range = vkBuf->GetSize();
-
-                builder.BindBuffer(binding, &info, state.Type, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
-            }
-            else if (state.Texture)
-            {
-                auto* vkTex = static_cast<Texture*>(state.Texture); // Assuming Texture class exists
-                auto vkTexInfo = vkTex->GetDescriptorInfo();
-                builder.BindImage(binding, &vkTexInfo, state.Type, vk::ShaderStageFlagBits::eFragment);
-            }
+            (void)state;
+            usedSets.insert(location.first);
         }
 
-        // Build the Set!
-        vk::DescriptorSet newSet;
-        vk::DescriptorSetLayout newLayout;
-
-        if (builder.Build(newSet, newLayout))
+        for (const uint32_t set : usedSets)
         {
-            // Bind it immediately
-            // We assume Set 1 is for dynamic material data.
-            // Set 0 is usually Global (Camera/Scene), bound elsewhere.
-            const uint32_t DYNAMIC_SET_INDEX = 1;
+            auto builder = DescriptorBuilder::Begin(allocator, cache);
+            for (auto& [location, state] : m_Bindings)
+            {
+                if (location.first != set) continue;
+                const uint32_t binding = location.second;
+                if (state.Buffer)
+                {
+                    auto* vkBuf = static_cast<Buffer*>(state.Buffer);
+                    vk::DescriptorBufferInfo info(vkBuf->GetHandle(), 0, vkBuf->GetSize());
+                    builder.BindBuffer(binding, info, state.Type,
+                        vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+                }
+                else if (state.Texture)
+                {
+                    auto* vkTex = static_cast<Texture*>(state.Texture);
+                    builder.BindImage(binding, vkTex->GetDescriptorInfo(), state.Type, vk::ShaderStageFlagBits::eFragment);
+                }
+            }
 
-            m_CommandContext.graphicsCommandBuffer.bindDescriptorSets(
-                vk::PipelineBindPoint::eGraphics,
-                m_CurrentPipelineLayout,
-                DYNAMIC_SET_INDEX,
-                1, &newSet,
-                0, nullptr
-            );
+            vk::DescriptorSet newSet;
+            const auto setLayout = m_CurrentPipeline ? m_CurrentPipeline->GetDescriptorSetLayout(set) : vk::DescriptorSetLayout{};
+            if (setLayout && builder.BuildWithLayout(newSet, setLayout))
+            {
+                m_CommandContext.graphicsCommandBuffer.bindDescriptorSets(
+                    vk::PipelineBindPoint::eGraphics, m_CurrentPipelineLayout,
+                    set, 1, &newSet, 0, nullptr);
+            }
         }
 
         // Reset dirty flag so we don't rebuild if nothing changed next draw
