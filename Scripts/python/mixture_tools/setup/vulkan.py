@@ -3,20 +3,19 @@ import os
 import re
 import platform
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 class VulkanConfiguration:
     version_pattern = r"v?(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)"
-    required_vulkan_version: Tuple[int, int, int] = (1, 3, 216)
 
     @classmethod
-    def validate(cls) -> bool:
+    def validate(cls, required_version: tuple[int, int, int]) -> bool:
         if platform.system() == "Linux":
             return True
 
-        if not cls.check_vulkan_sdk():
+        if not cls.check_vulkan_sdk(required_version):
             logger.error("Vulkan SDK not installed correctly.")
             return False
 
@@ -27,7 +26,7 @@ class VulkanConfiguration:
         return True
 
     @classmethod
-    def check_vulkan_sdk(cls) -> bool:
+    def check_vulkan_sdk(cls, required_version: tuple[int, int, int]) -> bool:
         vulkan_sdk_env = os.environ.get("VULKAN_SDK")
         if vulkan_sdk_env is None:
             logger.error("You don't have the Vulkan SDK installed!")
@@ -48,8 +47,8 @@ class VulkanConfiguration:
                 int(match.group("patch"))
             )
 
-            if found_version < cls.required_vulkan_version:
-                logger.error(f"You don't have a valid Vulkan SDK version! (Minimum {cls.required_vulkan_version} is required)")
+            if found_version < required_version:
+                logger.error(f"You don't have a valid Vulkan SDK version! (Minimum {required_version} is required)")
                 return False
 
         return True
@@ -80,4 +79,4 @@ class VulkanConfiguration:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    VulkanConfiguration.validate()
+    VulkanConfiguration.validate((1, 3, 216))

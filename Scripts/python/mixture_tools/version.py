@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from .errors import ConfigurationError
+
 
 VERSION_PATTERN = re.compile(
     r"^(?P<major>0|[1-9]\d*)\."
@@ -51,27 +53,35 @@ class Version:
 
 
 def read_version(configuration_file: Path) -> Version:
-    with configuration_file.open("rb") as file:
-        configuration = tomllib.load(file)
+    try:
+        with configuration_file.open("rb") as file:
+            configuration = tomllib.load(file)
+    except FileNotFoundError as error:
+        raise ConfigurationError(f"Configuration file not found: {configuration_file}") from error
+    except tomllib.TOMLDecodeError as error:
+        raise ConfigurationError(f"Invalid TOML in {configuration_file}: {error}") from error
 
     try:
         value = configuration["engine"]["version"]
     except (KeyError, TypeError) as error:
-        raise ValueError(
+        raise ConfigurationError(
             f"{configuration_file} does not contain engine.version"
         ) from error
 
     if not isinstance(value, str):
-        raise ValueError("engine.version must be a string")
+        raise ConfigurationError("engine.version must be a string")
 
-    return Version.parse(value)
+    try:
+        return Version.parse(value)
+    except ValueError as error:
+        raise ConfigurationError(str(error)) from error
 
 
 def write_version(configuration_file: Path, version: Version) -> None:
     contents = configuration_file.read_text(encoding="utf-8")
 
     pattern = re.compile(
-        r'(?m)^(version\s*=\s*")[^"]*(")\s*$'
+        r'(?ms)(^\[engine\]\s*.*?^version\s*=\s*")[^"]*(")'
     )
 
     updated, replacements = pattern.subn(
@@ -81,7 +91,7 @@ def write_version(configuration_file: Path, version: Version) -> None:
     )
 
     if replacements != 1:
-        raise ValueError(
+        raise ConfigurationError(
             f"Could not uniquely locate the version in {configuration_file}"
         )
 

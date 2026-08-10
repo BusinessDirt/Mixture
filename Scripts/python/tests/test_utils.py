@@ -17,7 +17,7 @@ from mixture_tools.downloads import download
 
 class FakeResponse:
     def __init__(self, chunks):
-        self.chunks = chunks
+        self.contents = io.BytesIO(b"".join(chunks))
 
     def __enter__(self):
         return self
@@ -25,12 +25,8 @@ class FakeResponse:
     def __exit__(self, *_args):
         return False
 
-    def raise_for_status(self):
-        pass
-
-    def iter_content(self, chunk_size):
-        self.chunk_size = chunk_size
-        return iter(self.chunks)
+    def read(self, chunk_size):
+        return self.contents.read(chunk_size)
 
 
 class VerifiedDownloadTests(unittest.TestCase):
@@ -41,10 +37,10 @@ class VerifiedDownloadTests(unittest.TestCase):
     def tearDown(self):
         self.temporary_directory.cleanup()
 
-    @mock.patch("mixture_tools.downloads.download.requests.get")
-    def test_verified_download_replaces_destination(self, get):
+    @mock.patch("mixture_tools.downloads.download.urllib.request.urlopen")
+    def test_verified_download_replaces_destination(self, urlopen):
         contents = b"verified archive"
-        get.return_value = FakeResponse([contents[:8], contents[8:]])
+        urlopen.return_value = FakeResponse([contents[:8], contents[8:]])
         destination = self.root / "archive.zip"
         destination.write_bytes(b"old contents")
 
@@ -55,13 +51,17 @@ class VerifiedDownloadTests(unittest.TestCase):
         )
 
         self.assertEqual(destination.read_bytes(), contents)
-        self.assertEqual(get.call_count, 1)
-        self.assertEqual(get.call_args.kwargs["timeout"], (10, 60))
+        self.assertEqual(urlopen.call_count, 1)
+        self.assertEqual(urlopen.call_args.kwargs["timeout"], 60)
+        self.assertEqual(
+            urlopen.call_args.args[0].full_url,
+            "https://example.test/archive.zip",
+        )
         self.assertEqual(list(self.root.glob(".archive.zip.*")), [])
 
-    @mock.patch("mixture_tools.downloads.download.requests.get")
-    def test_checksum_mismatch_preserves_destination(self, get):
-        get.return_value = FakeResponse([b"untrusted archive"])
+    @mock.patch("mixture_tools.downloads.download.urllib.request.urlopen")
+    def test_checksum_mismatch_preserves_destination(self, urlopen):
+        urlopen.return_value = FakeResponse([b"untrusted archive"])
         destination = self.root / "archive.zip"
         destination.write_bytes(b"known good archive")
 

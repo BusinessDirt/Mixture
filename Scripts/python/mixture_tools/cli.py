@@ -3,6 +3,8 @@ import logging
 from collections.abc import Sequence
 
 from .context import Context
+from .errors import MixtureToolsError
+from .prompting import PromptPolicy
 from .setup.runner import run_setup
 from .version import Version, read_version, write_version
 
@@ -63,9 +65,17 @@ def create_parser() -> argparse.ArgumentParser:
 
     commands = parser.add_subparsers(dest="command", required=True)
 
-    commands.add_parser(
+    setup = commands.add_parser(
         "setup",
         help="Validate dependencies and generate project files",
+    )
+    setup.add_argument(
+        "-y", "--yes", action="store_true",
+        help="Automatically approve downloads and installations",
+    )
+    setup.add_argument(
+        "--non-interactive", action="store_true",
+        help="Fail instead of requesting user input",
     )
 
     version = commands.add_parser(
@@ -108,28 +118,36 @@ def main(arguments: Sequence[str] | None = None) -> int:
 
     parser = create_parser()
     options = parser.parse_args(arguments)
-    context = Context.discover()
+    try:
+        context = Context.discover()
 
-    match options.command:
-        case "setup":
-            return run_setup(context.repository_root)
+        match options.command:
+            case "setup":
+                prompts = PromptPolicy.from_environment(
+                    assume_yes=options.yes,
+                    interactive=not options.non_interactive,
+                )
+                return run_setup(context, prompts)
 
-        case "version":
-            current = read_version(context.configuration_file)
+            case "version":
+                current = read_version(context.configuration_file)
 
-            match options.version_command:
-                case "show":
-                    print(current)
-                    return 0
+                match options.version_command:
+                    case "show":
+                        print(current)
+                        return 0
 
-                case "set":
-                    updated = options.value
+                    case "set":
+                        updated = options.value
 
-                case "bump":
-                    updated = current.bump(options.part)
+                    case "bump":
+                        updated = current.bump(options.part)
 
-            write_version(context.configuration_file, updated)
-            print(f"{current} -> {updated}")
-            return 0
+                write_version(context.configuration_file, updated)
+                print(f"{current} -> {updated}")
+                return 0
+    except MixtureToolsError as error:
+        logging.getLogger("Setup").error("%s", error)
+        return 1
 
     parser.error("Unknown command")

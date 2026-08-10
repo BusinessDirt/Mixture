@@ -9,7 +9,7 @@ PYTHON_DIR="$SCRIPT_DIR/python"
 if pushd "$PYTHON_DIR" > /dev/null; then
 
     if [ -f "Setup.py" ]; then
-        python3 Setup.py
+        python3 Setup.py "$@"
     else
         echo -e "\033[0;31mError: Setup.py not found in $PYTHON_DIR\033[0m" >&2
     fi

@@ -3,10 +3,9 @@ import hmac
 import logging
 import os
 import tempfile
+import urllib.request
 from pathlib import Path
 from typing import List, Union
-
-import requests
 
 logger = logging.getLogger(__name__)
 
@@ -46,17 +45,11 @@ def download_file(
             delete=False,
         ) as temp:
             temp_path = Path(temp.name)
-            with requests.get(
-                url,
-                headers=headers,
-                stream=True,
-                timeout=(10, 60),
-            ) as response:
-                response.raise_for_status()
-                for chunk in response.iter_content(chunk_size=64 * 1024):
-                    if chunk:
-                        temp.write(chunk)
-                        hasher.update(chunk)
+            request = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(request, timeout=60) as response:
+                while chunk := response.read(64 * 1024):
+                    temp.write(chunk)
+                    hasher.update(chunk)
 
         if expected_sha256 is not None and not hmac.compare_digest(
             hasher.hexdigest(), expected_sha256.lower()

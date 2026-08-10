@@ -4,7 +4,7 @@ Push-Location $PythonDir
 
 if (Test-Path "Setup.py")
 {
-    python Setup.py
+    python Setup.py @args
 }
 else
 {

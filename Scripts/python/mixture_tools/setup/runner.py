@@ -1,58 +1,56 @@
 import logging
 import os
 import platform
-from pathlib import Path
 
+from ..context import Context
+from ..errors import SetupError
+from ..prompting import PromptPolicy
 from .git import update_submodules
-from .premake import PremakeConfiguration, run_premake
+from .premake import ensure_premake, run_premake
 from .python import PythonConfiguration
 from .visual_studio import get_premake_target
 from .vulkan import VulkanConfiguration
 
 
-# Configure logging
 logger = logging.getLogger(__name__)
 
-def run_setup(repository_root: Path) -> int:
-    os.chdir(repository_root)
-    logger.info("Working in: %s", repository_root)
 
-    if not PythonConfiguration.validate():
-        logger.error("Python setup failed.")
-        return 1
+def run_setup(context: Context, prompts: PromptPolicy) -> int:
+    logger.info("Working in: %s", context.repository_root)
 
-    premake_installed = PremakeConfiguration.validate()
-
-    if not VulkanConfiguration.validate():
-        logger.error("Vulkan setup failed.")
-        return 1
-
-    update_submodules(repository_root)
-
-    if not premake_installed:
-        logger.error("Project requires Premake to generate project files.")
-        return 1
+    requirements = context.configuration.requirements
+    if not PythonConfiguration.validate(requirements.python):
+        raise SetupError("Python setup failed.")
 
     system = platform.system()
-    binary_directory = repository_root / "vendor" / "premake" / "bin"
+    premake_binary = ensure_premake(
+        context.repository_root,
+        context.configuration.premake,
+        prompts,
+        system=system,
+    )
+
+    if not VulkanConfiguration.validate(requirements.vulkan):
+        raise SetupError("Vulkan setup failed.")
+
+    update_submodules(context.repository_root)
+
+    if premake_binary is None:
+        raise SetupError("Project requires Premake to generate project files.")
 
     match system:
         case "Windows":
-            binary = binary_directory / "premake5.exe"
-            arguments = [get_premake_target()]
+            arguments = [get_premake_target(context.repository_root)]
         case "Linux":
-            binary = binary_directory / "premake5"
             arguments = ["--cc=gcc", "gmake2"]
         case "Darwin":
-            binary = binary_directory / "premake5"
             arguments = ["--cc=clang", "xcode4"]
         case _:
-            logger.error("Unsupported system: %s", system)
-            return 1
+            raise SetupError(f"Unsupported system: {system}")
 
-    run_premake(binary, arguments)
+    run_premake(premake_binary, arguments, context.repository_root)
 
     if os.environ.get("TERM_PROGRAM") == "vscode":
-        run_premake(binary, ["vscode"])
+        run_premake(premake_binary, ["vscode"], context.repository_root)
 
     return 0

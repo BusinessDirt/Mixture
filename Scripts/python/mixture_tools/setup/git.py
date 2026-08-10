@@ -1,36 +1,20 @@
 import logging
-import subprocess
-import sys
+from pathlib import Path
+
+from ..process import run
+
 
 logger = logging.getLogger(__name__)
 
-def update_submodules(repo_root: str):
-    commands = [
+
+def update_submodules(repository_root: Path) -> None:
+    for command in (
         ["git", "submodule", "sync"],
-        ["git", "submodule", "update", "--init", "--recursive"]
-    ]
-
-    for cmd in commands:
-        logger.info(f"Running: {' '.join(cmd)}...")
-        try:
-            # Run inside the repo root!
-            result = subprocess.run(
-                cmd,
-                cwd=repo_root,
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            # If successful, print stdout (might be empty if up to date)
-            if result.stdout.strip():
-                for line in result.stdout.splitlines():
-                    logger.info(" - " + line)
-            else:
-                logger.info(" - Done. No changes needed")
-
-        except subprocess.CalledProcessError:
-            logger.exception(f"Error running command: {' '.join(cmd)}")
-            sys.exit(1)
-
-if __name__ == "__main__":
-    update_submodules()
+        ["git", "submodule", "update", "--init", "--recursive"],
+    ):
+        result = run(command, cwd=repository_root)
+        if result.stdout.strip():
+            for line in result.stdout.splitlines():
+                logger.info(" - %s", line)
+        else:
+            logger.info(" - Done. No changes needed")
