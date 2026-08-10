@@ -2,6 +2,34 @@
 rootdir = path.getabsolute(".")
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
+local version_file = path.join(rootdir, "VERSION")
+local version_contents = io.readfile(version_file)
+
+if not version_contents then
+    error("Could not read engine version from " .. version_file)
+end
+
+version_major, version_minor, version_patch =
+    version_contents:match("^%s*(%d+)%.(%d+)%.(%d+)%s*$")
+
+if not version_major then
+    error(
+        "Invalid engine version in VERSION. "
+        .. "Expected MAJOR.MINOR.PATCH, for example 0.1.0"
+    )
+end
+
+version_major = tonumber(version_major)
+version_minor = tonumber(version_minor)
+version_patch = tonumber(version_patch)
+
+engine_version = string.format(
+    "%d.%d.%d",
+    version_major,
+    version_minor,
+    version_patch
+)
+
 include "./vendor/premake/customizations/common_config.lua"
 include "./vendor/premake/customizations/solution_items.lua"
 include "./vendor/premake/customizations/vscode.lua"

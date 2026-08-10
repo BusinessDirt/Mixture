@@ -8,6 +8,13 @@ project "Mixture"
 
     files { "include/**.hpp", "src/**.cpp", "include/**.h", "src/**.mm" }
 
+    defines {
+        'MIXTURE_VERSION="' .. engine_version .. '"',
+        "MIXTURE_VERSION_MAJOR=" .. version_major,
+        "MIXTURE_VERSION_MINOR=" .. version_minor,
+        "MIXTURE_VERSION_PATCH=" .. version_patch
+    }
+
     includedirs {
         "include"
     }
