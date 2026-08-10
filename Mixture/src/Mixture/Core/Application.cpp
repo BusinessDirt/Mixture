@@ -2,8 +2,9 @@
 #include "Mixture/Core/Application.hpp"
 
 #include "Mixture/Core/Time.hpp"
-#include "Mixture/Assets/AssetManager.hpp"
+#include "Mixture/Core/Version.hpp"
 #include "Mixture/Core/Threading/TaskSystem.hpp"
+#include "Mixture/Assets/AssetManager.hpp"
 #include "Mixture/Render/PipelineCache.hpp"
 #include "Mixture/Render/ShaderLibrary.hpp"
 #include "Mixture/Render/ImGui/Context.hpp"
@@ -61,6 +62,8 @@ namespace Mixture
             ShutdownOwnedServices();
             throw;
         }
+
+        OPAL_INFO("Core", "Successfully initialized Mixture v{0}", GetVersionString());
     }
 
     Application::~Application()

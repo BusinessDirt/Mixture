@@ -1,12 +1,13 @@
 import logging
 import os
-import subprocess
 import json
 from pathlib import Path
 
+from ..process import run
+
 logger = logging.getLogger(__name__)
 
-def get_premake_target() -> str:
+def get_premake_target(repository_root: Path) -> str:
     """
     Detects the latest installed Visual Studio version and returns
     the corresponding Premake target string (e.g., 'vs2022').
@@ -34,9 +35,9 @@ def get_premake_target() -> str:
     ]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = run(cmd, cwd=repository_root, check=False)
 
-        if result.returncode != 0:
+        if result.return_code != 0:
             return "vs2022"
 
         data = json.loads(result.stdout)
@@ -66,5 +67,5 @@ def get_premake_target() -> str:
 
 
 if __name__ == "__main__":
-    target = get_premake_target()
+    target = get_premake_target(Path.cwd())
     logger.info(target)
