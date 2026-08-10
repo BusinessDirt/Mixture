@@ -486,6 +486,39 @@ namespace Mixture::Tests
         std::filesystem::remove_all(directory, error);
     }
 
+    TEST(RenderGraphTests, RejectsInvalidHandlesAndHandleOverflow)
+    {
+        MockGraphicsDevice device;
+        RenderGraph graph(device);
+        EXPECT_FALSE(RGResourceHandle::FromIndex(RGResourceHandle::InvalidID).IsValid());
+        EXPECT_TRUE(RGResourceHandle::FromIndex(RGResourceHandle::InvalidID - 1).IsValid());
+        EXPECT_THROW(graph.GetResourceNode({}), std::out_of_range);
+        EXPECT_THROW(graph.ImportResource("NullTexture", static_cast<RHI::ITexture*>(nullptr)), std::invalid_argument);
+
+        const auto buffer = graph.CreateResource("Buffer", RHI::BufferDesc{ 16, RHI::BufferUsage::Storage });
+        EXPECT_THROW(graph.GetTextureDesc(buffer), std::invalid_argument);
+
+        RGPassNode pass;
+        RenderGraphBuilder builder(graph, pass);
+        EXPECT_THROW(builder.Read(RGResourceHandle{}), std::out_of_range);
+        EXPECT_THROW(builder.Write(RGResourceHandle{}), std::out_of_range);
+    }
+
+    TEST(RenderGraphTests, PropagatesPassArenaExhaustion)
+    {
+        struct LargePassData
+        {
+            std::array<std::byte, 40 * 1024> Payload{};
+        };
+
+        MockGraphicsDevice device;
+        RenderGraph graph(device);
+        auto setup = [](RenderGraphBuilder&, LargePassData&) {};
+        auto execute = [](const RenderGraphRegistry&, const LargePassData&, RHI::ICommandList*) {};
+        graph.AddPass<LargePassData>("Fits", setup, execute);
+        EXPECT_THROW(graph.AddPass<LargePassData>("Exhausts", setup, execute), std::bad_alloc);
+    }
+
     TEST(RenderGraphResourceCacheTests, ReusesDescriptorsWithoutDependingOnLogicalNames)
     {
         MockGraphicsDevice device;

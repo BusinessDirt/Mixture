@@ -55,10 +55,11 @@ namespace Mixture
         {
             static_assert(std::is_trivially_destructible<PassData>::value, "RenderGraph PassData must be trivially destructible (POD). Do not use std::vector or std::string inside PassData!");
 
+            auto data = m_PassAllocator.Alloc<PassData>();
+            if (!data) throw std::bad_alloc();
+
             auto& pass = m_Passes.emplace_back();
             pass.Name = name;
-
-            auto data = m_PassAllocator.Alloc<PassData>();
 
             RenderGraphBuilder builder(*this, pass);
             setup(builder, *data);
@@ -163,6 +164,7 @@ namespace Mixture
         void SortPasses();
         void CalculateLifetimes();
         void CalculateBarriers();
+        RGResourceHandle NextResourceHandle() const;
     private:
         ArenaAllocator m_PassAllocator;
 

@@ -8,7 +8,7 @@
 #include "Mixture/Core/Base.hpp"
 
 #include <vector>
-#include <cassert>
+#include <stdexcept>
 
 namespace Mixture
 {
@@ -49,7 +49,7 @@ namespace Mixture
          * 
          * @param ptr Pointer to the block to free.
          */
-        void Free(void* ptr);
+        bool Free(void* ptr);
 
         /**
          * @brief Resets the pool, marking all blocks as free.
@@ -68,13 +68,20 @@ namespace Mixture
         template<typename T, typename... Args>
         T* Create(Args&&... args)
         {
-            // Verify size matches roughly (can't be exact due to alignment padding potentially)
-            // But strict check:
-            assert(sizeof(T) <= m_BlockSize && "Object too large for this pool!");
+            if (sizeof(T) > m_BlockSize || alignof(T) > m_Alignment)
+                throw std::invalid_argument("Object size or alignment exceeds the pool block contract");
 
             void* mem = Allocate();
             if (!mem) return nullptr;
-            return new (mem) T(std::forward<Args>(args)...);
+            try
+            {
+                return new (mem) T(std::forward<Args>(args)...);
+            }
+            catch (...)
+            {
+                Free(mem);
+                throw;
+            }
         }
 
         /**
@@ -85,6 +92,11 @@ namespace Mixture
         {
             if (ptr)
             {
+                if (!IsAllocated(ptr))
+                {
+                    Free(ptr);
+                    return;
+                }
                 ptr->~T();
                 Free(ptr);
             }
@@ -96,6 +108,8 @@ namespace Mixture
             Node* Next;
         };
 
+        bool IsAllocated(const void* ptr) const;
+
         size_t m_BlockSize;
         size_t m_Alignment;
         size_t m_BlockCount;
@@ -103,5 +117,6 @@ namespace Mixture
 
         void* m_MemoryBlock = nullptr;
         Node* m_FreeList = nullptr;
+        Vector<bool> m_Allocated;
     };
 }

@@ -46,32 +46,18 @@ namespace Mixture
         template<typename T, typename... Args>
         T* Alloc(Args&&... args)
         {
-            // Calculate required alignment
-            size_t size = sizeof(T);
-            size_t alignment = alignof(T);
-
-            // Calculate current address as integer
-            uintptr_t currentAddress = (uintptr_t)m_Current;
-
-            // Align the address (move forward to next multiple of alignment)
-            size_t padding = (alignment - (currentAddress % alignment)) % alignment;
-            uintptr_t nextAddress = currentAddress + padding;
-
-            // Check overflow
-            if (nextAddress + size > (uintptr_t)m_Start + m_TotalSize)
+            void* previous = m_Current;
+            void* memory = AllocRaw(sizeof(T), alignof(T));
+            if (!memory) return nullptr;
+            try
             {
-                OPAL_CRITICAL("Core", "ArenaAllocator overflow! Allocated: {}KB. Total: {}KB", 
-                    (GetUsedMemory() / 1024.0f), (m_TotalSize / 1024.0f));
-                // In a robust engine, we might want to resize or return nullptr, but for now we crash.
-                return nullptr;
+                return new (memory) T(std::forward<Args>(args)...);
             }
-
-            // Update bump pointer
-            m_Current = (void*)(nextAddress + size);
-
-            // Construct the object in the reserved memory
-            T* result = new ((void*)nextAddress) T(std::forward<Args>(args)...);
-            return result;
+            catch (...)
+            {
+                m_Current = previous;
+                throw;
+            }
         }
 
         /**
@@ -79,18 +65,19 @@ namespace Mixture
          */
         void* AllocRaw(size_t size, size_t alignment = 8)
         {
-            uintptr_t currentAddress = (uintptr_t)m_Current;
-            size_t padding = (alignment - (currentAddress % alignment)) % alignment;
-            uintptr_t nextAddress = currentAddress + padding;
+            if (alignment == 0 || (alignment & (alignment - 1)) != 0)
+                throw std::invalid_argument("ArenaAllocator alignment must be a nonzero power of two");
+            if (!m_Start) return nullptr;
 
-            if (nextAddress + size > (uintptr_t)m_Start + m_TotalSize)
-            {
-                OPAL_CRITICAL("Core", "ArenaAllocator overflow in AllocRaw!");
-                return nullptr;
-            }
+            const uintptr_t currentAddress = reinterpret_cast<uintptr_t>(m_Current);
+            const size_t used = GetUsedMemory();
+            const size_t remaining = m_TotalSize - used;
+            const size_t padding = (alignment - (currentAddress & (alignment - 1))) & (alignment - 1);
+            if (padding > remaining || size > remaining - padding) return nullptr;
 
-            m_Current = (void*)(nextAddress + size);
-            return (void*)nextAddress;
+            auto* result = static_cast<std::byte*>(m_Current) + padding;
+            m_Current = result + size;
+            return result;
         }
 
         /**

@@ -8,6 +8,7 @@
 #include "Mixture/Events/MouseEvent.hpp"
 
 #include <GLFW/glfw3.h>
+#include <stdexcept>
 
 namespace Mixture
 {
@@ -21,6 +22,8 @@ namespace Mixture
 
     Window::Window(const WindowProps& props)
     {
+        if (props.Width <= 0 || props.Height <= 0)
+            throw std::invalid_argument("Window dimensions must be greater than zero");
 		m_Data.Title = props.Title;
 		m_Data.Width = props.Width;
 		m_Data.Height = props.Height;
@@ -29,7 +32,7 @@ namespace Mixture
 		{
 			OPAL_INFO("Core/Window", "Initializing GLFW");
 			const int success = glfwInit();
-			OPAL_ASSERT("Core/Window", success, "Could not initialize GLFW!")
+			if (success != GLFW_TRUE) throw std::runtime_error("Could not initialize GLFW");
 			glfwSetErrorCallback(GlfwErrorCallback);
 		}
 
@@ -37,6 +40,11 @@ namespace Mixture
 			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 			glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 			m_WindowHandle = glfwCreateWindow(props.Width, props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+			if (!m_WindowHandle)
+            {
+                glfwTerminate();
+                throw std::runtime_error("Could not create a GLFW window");
+            }
 		}
 
 		glfwSetWindowUserPointer(m_WindowHandle, &m_Data);
@@ -48,9 +56,9 @@ namespace Mixture
 					WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
 					data.Width = width;
 					data.Height = height;
-                    data.AspectRatio = static_cast<float>(width) / static_cast<float>(height);
-
-					if (width == 0 || height == 0) data.Minimized = true;
+                    data.Minimized = width == 0 || height == 0;
+                    if (!data.Minimized)
+                        data.AspectRatio = static_cast<float>(width) / static_cast<float>(height);
 
 					WindowResizeEvent event(width, height);
 					data.EventCallback(event);
@@ -59,7 +67,7 @@ namespace Mixture
             glfwSetFramebufferSizeCallback(m_WindowHandle, [](GLFWwindow* window, const int width, const int height)
                 {
                     WindowData& data = *static_cast<WindowData*>(glfwGetWindowUserPointer(window));
-                    if (width == 0 || height == 0) data.Minimized = true;
+                    data.Minimized = width == 0 || height == 0;
 
                     FramebufferResizeEvent event(width, height);
                     data.EventCallback(event);
@@ -150,7 +158,7 @@ namespace Mixture
 
     Window::~Window()
     {
-		glfwDestroyWindow(m_WindowHandle);
+		if (m_WindowHandle) glfwDestroyWindow(m_WindowHandle);
 		glfwTerminate();
     }
 

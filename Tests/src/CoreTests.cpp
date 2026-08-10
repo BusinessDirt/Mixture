@@ -173,4 +173,19 @@ namespace Mixture::Tests {
         EXPECT_STREQ(args[2], "value1");
     }
 
+    TEST(CoreTests, CommandLineArgsRejectInvalidIndicesInReleaseBuilds)
+    {
+        char arg0[] = "app";
+        char* values[] = { arg0 };
+        ApplicationCommandLineArgs args{ 1, values };
+        EXPECT_THROW(args[-1], std::out_of_range);
+        EXPECT_THROW(args[1], std::out_of_range);
+        EXPECT_THROW((ApplicationCommandLineArgs{ 1, nullptr }[0]), std::out_of_range);
+    }
+
+    TEST(CoreTests, WindowRejectsInvalidDimensionsBeforePlatformStartup)
+    {
+        EXPECT_THROW(Window(WindowProps("Invalid", 0, 480)), std::invalid_argument);
+    }
+
 }

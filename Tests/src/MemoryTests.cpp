@@ -155,6 +155,15 @@ namespace Mixture::Tests {
         EXPECT_EQ((void*)val3, (void*)val1);
     }
 
+    TEST(MemoryTests, ArenaAllocatorRejectsInvalidAlignmentAndExhaustion)
+    {
+        EXPECT_THROW(ArenaAllocator(0), std::invalid_argument);
+        ArenaAllocator arena(32);
+        EXPECT_THROW(arena.AllocRaw(1, 3), std::invalid_argument);
+        EXPECT_NE(arena.AllocRaw(16, 16), nullptr);
+        EXPECT_EQ(arena.AllocRaw(32, 8), nullptr);
+    }
+
     // --- PoolAllocator Tests ---
 
     struct TestObject {
@@ -184,6 +193,36 @@ namespace Mixture::Tests {
         
         pool.Reset();
         EXPECT_EQ(pool.GetUsedCount(), 0);
+    }
+
+    TEST(MemoryTests, PoolAllocatorValidatesConfigurationAndFrees)
+    {
+        EXPECT_THROW(PoolAllocator(8, 3, 1), std::invalid_argument);
+        EXPECT_THROW(PoolAllocator(std::numeric_limits<size_t>::max(), 8, 2), std::overflow_error);
+
+        PoolAllocator pool(sizeof(TestObject), alignof(TestObject), 1);
+        void* block = pool.Allocate();
+        ASSERT_NE(block, nullptr);
+        EXPECT_EQ(pool.Allocate(), nullptr);
+        EXPECT_FALSE(pool.Free(static_cast<std::byte*>(block) + 1));
+        int foreign = 0;
+        EXPECT_FALSE(pool.Free(&foreign));
+        EXPECT_TRUE(pool.Free(block));
+        EXPECT_FALSE(pool.Free(block));
+        EXPECT_EQ(pool.GetUsedCount(), 0u);
+    }
+
+    TEST(MemoryTests, PoolAllocatorHonorsOverAlignmentAndObjectContract)
+    {
+        struct alignas(64) AlignedObject { int Value = 7; };
+        PoolAllocator alignedPool(sizeof(AlignedObject), alignof(AlignedObject), 1);
+        AlignedObject* object = alignedPool.Create<AlignedObject>();
+        ASSERT_NE(object, nullptr);
+        EXPECT_EQ(reinterpret_cast<uintptr_t>(object) % alignof(AlignedObject), 0u);
+        alignedPool.Destroy(object);
+
+        PoolAllocator smallPool(8, 8, 1);
+        EXPECT_THROW(smallPool.Create<AlignedObject>(), std::invalid_argument);
     }
 
 }
