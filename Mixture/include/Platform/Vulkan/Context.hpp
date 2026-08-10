@@ -175,6 +175,9 @@ namespace Mixture::Vulkan
          */
         static Context& Get();
     private:
+        bool RecreateSwapchain(uint32_t width, uint32_t height);
+        bool RecreateSwapchainFromWindow();
+
         Ref<Instance> m_Instance;
         Scope<Surface> m_Surface;
         Ref<PhysicalDevice> m_PhysicalDevice;

@@ -4,6 +4,8 @@
 #include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Surface.hpp"
 
+#include <stdexcept>
+
 namespace Mixture::Vulkan
 {
     namespace
@@ -22,10 +24,7 @@ namespace Mixture::Vulkan
     {
         auto devices = instance.GetHandle().enumeratePhysicalDevices();
         if (devices.empty())
-        {
-            OPAL_CRITICAL("Core/Vulkan", "Failed to find GPUs with Vulkan support!");
-            exit(-1);
-        }
+            throw std::runtime_error("No Vulkan-capable physical devices were found");
 
         m_PhysicalDevice = SelectBestDevice(devices);
         m_Indices = FindQueueFamilies(m_PhysicalDevice);
@@ -38,7 +37,26 @@ namespace Mixture::Vulkan
 
     std::string_view PhysicalDevice::GetDeviceName() const
     {
-        return std::string_view(m_PhysicalDevice.getProperties().deviceName);
+        return std::string_view(m_Properties.deviceName);
+    }
+
+    bool PhysicalDevice::HasRequiredExtensions(const Vector<vk::ExtensionProperties>& extensions)
+    {
+        return std::any_of(extensions.begin(), extensions.end(), [](const vk::ExtensionProperties& extension) {
+            return std::strcmp(extension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0;
+        });
+    }
+
+    bool PhysicalDevice::HasRequiredFeatures(
+        bool samplerAnisotropy, bool dynamicRendering, bool bufferDeviceAddress)
+    {
+        return samplerAnisotropy && dynamicRendering && bufferDeviceAddress;
+    }
+
+    bool PhysicalDevice::HasUsableSurface(const Vector<vk::SurfaceFormatKHR>& formats,
+        const Vector<vk::PresentModeKHR>& presentModes)
+    {
+        return !formats.empty() && !presentModes.empty();
     }
 
     vk::PhysicalDevice PhysicalDevice::SelectBestDevice(const Vector<vk::PhysicalDevice>& devices)
@@ -57,10 +75,7 @@ namespace Mixture::Vulkan
         }
 
         if (!bestDevice || bestScore < 0)
-        {
-            OPAL_CRITICAL("Core/Vulkan", "No suitable GPU found!");
-            exit(-1);
-        }
+            throw std::runtime_error("No Vulkan device satisfies the required queues, extensions, features, and surface support");
 
         return bestDevice;
     }
@@ -68,7 +83,12 @@ namespace Mixture::Vulkan
     int PhysicalDevice::RateDeviceSuitability(vk::PhysicalDevice device)
     {
         auto props = device.getProperties();
-        auto features = device.getFeatures();
+        vk::PhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures;
+        vk::PhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures;
+        dynamicRenderingFeatures.pNext = &bufferDeviceAddressFeatures;
+        vk::PhysicalDeviceFeatures2 features;
+        features.pNext = &dynamicRenderingFeatures;
+        device.getFeatures2(&features);
 
         int score = 0;
 
@@ -77,11 +97,17 @@ namespace Mixture::Vulkan
 
         if (props.apiVersion < VK_API_VERSION_1_3)
         {
-            OPAL_WARN("Core/Vulkan", "[Skipped] {} does not support Vulkan 1.3", GetDeviceName());
+            OPAL_WARN("Core/Vulkan", "[Skipped] {} does not support Vulkan 1.3", std::string_view(props.deviceName));
             return -1;
         }
 
-        if (!features.samplerAnisotropy) return -1;
+        const auto extensions = device.enumerateDeviceExtensionProperties();
+        if (!HasRequiredExtensions(extensions)) return -1;
+        if (!HasRequiredFeatures(features.features.samplerAnisotropy,
+            dynamicRenderingFeatures.dynamicRendering, bufferDeviceAddressFeatures.bufferDeviceAddress)) return -1;
+
+        const auto surface = Context::Get().GetSurface().GetHandle();
+        if (!HasUsableSurface(device.getSurfaceFormatsKHR(surface), device.getSurfacePresentModesKHR(surface))) return -1;
 
         // Big Score for Discrete GPU (Dedicated Card)
         if (props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu) score += 1000;

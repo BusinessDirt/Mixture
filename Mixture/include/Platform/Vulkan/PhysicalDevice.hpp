@@ -58,6 +58,12 @@ namespace Mixture::Vulkan
          */
         std::string_view GetDeviceName() const;
 
+        /** @brief Testable validation for mandatory logical-device capabilities. */
+        static bool HasRequiredExtensions(const Vector<vk::ExtensionProperties>& extensions);
+        static bool HasRequiredFeatures(bool samplerAnisotropy, bool dynamicRendering, bool bufferDeviceAddress);
+        static bool HasUsableSurface(const Vector<vk::SurfaceFormatKHR>& formats,
+            const Vector<vk::PresentModeKHR>& presentModes);
+
     private:
         vk::PhysicalDevice SelectBestDevice(const Vector<vk::PhysicalDevice>& devices);
         int RateDeviceSuitability(vk::PhysicalDevice device);

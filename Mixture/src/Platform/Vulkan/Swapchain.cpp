@@ -3,6 +3,8 @@
 
 #include "Platform/Vulkan/Resources/Texture.hpp"
 
+#include <stdexcept>
+
 namespace Mixture::Vulkan
 {
     Swapchain::Swapchain(PhysicalDevice& physicalDevice, Device& device,
@@ -30,6 +32,9 @@ namespace Mixture::Vulkan
 
     void Swapchain::Recreate(uint32_t width, uint32_t height)
     {
+        if (width == 0 || height == 0) return;
+
+        m_SwapchainTextures.clear();
         // Cleanup old views
         for (auto imageView : m_ImageViews) m_Device->GetHandle().destroyImageView(imageView);
         m_ImageViews.clear();
@@ -58,15 +63,12 @@ namespace Mixture::Vulkan
             m_Swapchain, UINT64_MAX, semaphore,
             nullptr, outImageIndex);
 
-        if (result == vk::Result::eErrorOutOfDateKHR)
+        if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR)
         {
             return false; // Resize required
         }
-        else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR)
-        {
-            OPAL_CRITICAL("Core/Vulkan", "Failed to acquire swapchain image!");
-            return false;
-        }
+        else if (result != vk::Result::eSuccess)
+            throw std::runtime_error("Failed to acquire a Vulkan swapchain image: " + vk::to_string(result));
 
         return true;
     }
@@ -104,6 +106,9 @@ namespace Mixture::Vulkan
             return false;
         }
 
+        if (result != vk::Result::eSuccess)
+            throw std::runtime_error("Failed to present a Vulkan swapchain image: " + vk::to_string(result));
+
         return true;
     }
 
@@ -115,6 +120,8 @@ namespace Mixture::Vulkan
         vk::SurfaceCapabilitiesKHR capabilities = physicalDevice.getSurfaceCapabilitiesKHR(m_Surface->GetHandle());
         Vector<vk::SurfaceFormatKHR> formats = physicalDevice.getSurfaceFormatsKHR(m_Surface->GetHandle());
         Vector<vk::PresentModeKHR> presentModes = physicalDevice.getSurfacePresentModesKHR(m_Surface->GetHandle());
+        if (!PhysicalDevice::HasUsableSurface(formats, presentModes))
+            throw std::runtime_error("Vulkan surface has no usable formats or presentation modes");
 
         // Choose Settings
         vk::SurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(formats);
@@ -159,8 +166,7 @@ namespace Mixture::Vulkan
         }
         catch (vk::SystemError& err)
         {
-            OPAL_CRITICAL("Core/Vulkan", "Failed to create Swapchain!");
-            exit(-1);
+            throw std::runtime_error(std::string("Failed to create Vulkan swapchain: ") + err.what());
         }
 
         // Store selected properties
@@ -171,6 +177,7 @@ namespace Mixture::Vulkan
 
         // Retrieve Images
         m_Images = m_Device->GetHandle().getSwapchainImagesKHR(m_Swapchain);
+        if (m_Images.empty()) throw std::runtime_error("Vulkan swapchain returned no images");
     }
 
     void Swapchain::CreateImageViews()
