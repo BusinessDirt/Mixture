@@ -8,6 +8,8 @@ from .prompting import PromptPolicy
 from .setup.runner import run_setup
 from .version import Version, read_version, write_version
 
+from .visualizers import render_graph
+
 class LogFormatter(logging.Formatter):
     # ANSI Escape Codes
     grey = "\x1b[38;20m"
@@ -108,6 +110,21 @@ def create_parser() -> argparse.ArgumentParser:
         choices=("major", "minor", "patch"),
     )
 
+    visualizer = commands.add_parser(
+        "visualizer",
+        help="Start a visualizer",
+    )
+
+    visualizer_commands = visualizer.add_subparsers(
+        dest="visualizer_commands",
+        required=True,
+    )
+
+    visualizer_commands.add_parser(
+        "render_graph",
+        help="Shows a render graph visualization (Application has to have run at least once)",
+    )
+
     return parser
 
 
@@ -148,6 +165,13 @@ def main(arguments: Sequence[str] | None = None) -> int:
                 write_version(context.configuration_file, updated)
                 logger.info(f"{current} -> {updated}")
                 return 0
+
+            case "visualizer":
+                match options.visualizer_commands:
+                    case "render_graph":
+                        render_graph.visualize(context.repository_root, "docs/visualizers/graph.json")
+                        return 0
+
     except MixtureToolsError as error:
         logging.getLogger("Setup").error("%s", error)
         return 1
