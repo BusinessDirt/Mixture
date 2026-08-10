@@ -536,15 +536,17 @@ TEST(FileStreamReaderTests, ReportsCompleteAndFailedReads)
         stream << "abcd";
     }
 
-    FileStreamReader reader(path);
-    EXPECT_EQ(reader.GetFileSize(), 4u);
     Vector<char> data;
-    EXPECT_TRUE(reader.ReadBuffer(data));
-    EXPECT_EQ(data, (Vector<char>{ 'a', 'b', 'c', 'd' }));
+    {
+        FileStreamReader reader(path);
+        EXPECT_EQ(reader.GetFileSize(), 4u);
+        EXPECT_TRUE(reader.ReadBuffer(data));
+        EXPECT_EQ(data, (Vector<char>{ 'a', 'b', 'c', 'd' }));
 
-    FileStreamReader missing(path.string() + ".missing");
-    EXPECT_EQ(missing.GetFileSize(), 0u);
-    EXPECT_FALSE(missing.ReadBuffer(data));
+        FileStreamReader missing(path.string() + ".missing");
+        EXPECT_EQ(missing.GetFileSize(), 0u);
+        EXPECT_FALSE(missing.ReadBuffer(data));
+    }
     std::filesystem::remove(path);
 }
 
