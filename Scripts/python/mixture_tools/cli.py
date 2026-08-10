@@ -9,8 +9,6 @@ from .prompting import PromptPolicy
 from .setup.runner import run_setup
 from .version import Version, read_version, write_version
 
-from .visualizers import render_graph
-
 def _add_setup_parser(subparsers) -> None:
     """Scope for the 'setup' command."""
     setup = subparsers.add_parser(
@@ -119,6 +117,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
             case "visualizer":
                 match options.visualizer_commands:
                     case "render_graph":
+                        from .visualizers import render_graph
                         render_graph.visualize(context.repository_root, "docs/visualizers/graph.json")
                         return 0
 

@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-late1st
             name: Ubuntu 24.04
             setup_script: bash ./Scripts/Setup-Unix.sh
             build_command: make -j$(nproc) config=release
