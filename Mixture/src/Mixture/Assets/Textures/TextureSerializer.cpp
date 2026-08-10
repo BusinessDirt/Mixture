@@ -3,6 +3,7 @@
 #include "Mixture/Assets/Textures/TextureAsset.hpp"
 
 #include <stb_image.h>
+#include <limits>
 
 namespace Mixture
 {
@@ -11,6 +12,12 @@ namespace Mixture
         if (data.empty())
         {
             OPAL_ERROR("AssetManager", "Failed to load texture content: {}", metadata.FilePath.string());
+            return nullptr;
+        }
+
+        if (data.size() > static_cast<size_t>(std::numeric_limits<int>::max()))
+        {
+            OPAL_ERROR("AssetManager", "Texture file is too large for the decoder: {}", metadata.FilePath.string());
             return nullptr;
         }
 
@@ -26,8 +33,17 @@ namespace Mixture
             return nullptr;
         }
 
+        if (width <= 0 || height <= 0
+            || static_cast<size_t>(width) > std::numeric_limits<size_t>::max() / static_cast<size_t>(height)
+            || static_cast<size_t>(width) * static_cast<size_t>(height) > std::numeric_limits<size_t>::max() / 4)
+        {
+            stbi_image_free(pixels);
+            OPAL_ERROR("AssetManager", "Decoded texture dimensions overflow: {}", metadata.FilePath.string());
+            return nullptr;
+        }
+
         // Copy to vector
-        size_t dataSize = width * height * 4;
+        const size_t dataSize = static_cast<size_t>(width) * static_cast<size_t>(height) * 4;
         Vector<uint8_t> textureData(pixels, pixels + dataSize);
 
         stbi_image_free(pixels);
