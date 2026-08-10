@@ -4,6 +4,8 @@
 #include "Mixture/Core/Application.hpp"
 #include "Mixture/Core/Version.hpp"
 
+#include "Platform/Vulkan/Util.hpp"
+
 #include <GLFW/glfw3.h>
 #include <stdexcept>
 
@@ -63,11 +65,11 @@ namespace Mixture::Vulkan
     {
         Version version = GetVersion();
         vk::ApplicationInfo appInfo(
-            appDescription.Name.data(),                                     // App Name
-            VK_MAKE_VERSION(1, 0, 0),                                       // App Version
-            "Mixture Engine",                                               // Engine Name
-            VK_MAKE_VERSION(version.Major, version.Minor, version.Patch),   // Engine Version
-            VK_API_VERSION_1_3                                              // API Version
+            appDescription.Name.data(),                                             // App Name
+            ParseVulkanVersion(appDescription.Version).value(),                     // App Version
+            "Mixture Engine",                                                       // Engine Name
+            VK_MAKE_API_VERSION(0, version.Major, version.Minor, version.Patch),    // Engine Version
+            VK_API_VERSION_1_3                                                      // API Version
         );
 
         uint32_t glfwExtensionCount = 0;
