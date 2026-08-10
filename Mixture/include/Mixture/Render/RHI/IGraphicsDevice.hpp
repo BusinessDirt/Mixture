@@ -12,9 +12,35 @@
 #include "Mixture/Render/RHI/ITexture.hpp"
 
 #include <string>
+#include <span>
+#include <optional>
+#include <limits>
 
 namespace Mixture::RHI
 {
+    inline std::optional<size_t> GetTextureUploadSize(const TextureDesc& desc)
+    {
+        const size_t stride = GetFormatStride(desc.PixelFormat);
+        if (desc.Width == 0 || desc.Height == 0 || stride == 0) return std::nullopt;
+        if (static_cast<size_t>(desc.Width) > std::numeric_limits<size_t>::max() / static_cast<size_t>(desc.Height))
+            return std::nullopt;
+        const size_t pixels = static_cast<size_t>(desc.Width) * static_cast<size_t>(desc.Height);
+        if (pixels > std::numeric_limits<size_t>::max() / stride) return std::nullopt;
+        return pixels * stride;
+    }
+
+    inline bool IsBufferUploadValid(const BufferDesc& desc, std::span<const std::byte> data)
+    {
+        return desc.Size > 0 && desc.Size <= std::numeric_limits<size_t>::max()
+            && (data.empty() || data.size() == desc.Size);
+    }
+
+    inline bool IsTextureUploadValid(const TextureDesc& desc, std::span<const std::byte> data)
+    {
+        const auto requiredSize = GetTextureUploadSize(desc);
+        return requiredSize && (data.empty() || data.size() == *requiredSize);
+    }
+
     /**
      * Interface for the graphics device.
      */
@@ -49,7 +75,8 @@ namespace Mixture::RHI
          * @param initialData Optional pointer to data to upload to the buffer.
          * @return A reference to the created buffer.
          */
-        virtual Ref<IBuffer> CreateBuffer(const BufferDesc& desc, const void* initialData = nullptr) = 0;
+        virtual Ref<IBuffer> CreateBuffer(const BufferDesc& desc,
+            std::span<const std::byte> initialData = {}) = 0;
 
         /**
          * Creates a texture (Empty or from data).
@@ -58,7 +85,8 @@ namespace Mixture::RHI
          * @param initialData Optional pointer to raw pixel data (must match format/size).
          * @return A reference to the created texture.
          */
-        virtual Ref<ITexture> CreateTexture(const TextureDesc& desc, const void* initialData = nullptr) = 0;
+        virtual Ref<ITexture> CreateTexture(const TextureDesc& desc,
+            std::span<const std::byte> initialData = {}) = 0;
 
         /**
          * Creates the PSO (Pipeline State Object).

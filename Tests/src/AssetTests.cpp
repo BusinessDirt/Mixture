@@ -598,8 +598,9 @@ TEST_F(AssetManagerTests, ShaderCompilerProducesValidOutputWhenAvailable)
         float4 main(float4 position : POSITION) : SV_Position { return position; }
     )";
 
-    const auto spirv = ShaderCompiler::Compile(source);
-    ASSERT_FALSE(spirv.empty());
+    const auto result = ShaderCompiler::CompileDetailed(source);
+    ASSERT_TRUE(result.Succeeded()) << result.Diagnostics;
+    const auto& spirv = result.Bytecode;
     ASSERT_EQ(spirv.size() % sizeof(uint32_t), 0u);
     uint32_t magic = 0;
     std::memcpy(&magic, spirv.data(), sizeof(magic));
@@ -610,8 +611,20 @@ TEST_F(AssetManagerTests, ShaderCompilerProducesValidOutputWhenAvailable)
     EXPECT_EQ(reflection.EntryPoints.at(RHI::ShaderStage::Vertex), "main");
 }
 
+TEST(ShaderCompilerTests, RejectsMalformedSPIRVWithoutDereferencingIt)
+{
+    const Vector<uint8_t> truncated{ 0x03, 0x02, 0x23 };
+    EXPECT_TRUE(ShaderCompiler::ConvertToMSL(truncated).empty());
+    EXPECT_TRUE(ShaderCompiler::ReflectSPIRV(truncated.data(), truncated.size()).EntryPoints.empty());
+
+    alignas(uint32_t) const std::array<uint32_t, 2> wrongMagic{ 0xDEADBEEF, 0 };
+    EXPECT_TRUE(ShaderCompiler::ReflectSPIRV(wrongMagic.data(), sizeof(wrongMagic)).EntryPoints.empty());
+}
+
 TEST_F(AssetManagerTests, ShaderCompilerPropagatesFailure)
 {
-    const auto result = ShaderCompiler::Compile("this is not valid HLSL");
-    EXPECT_TRUE(result.empty());
+    const auto result = ShaderCompiler::CompileDetailed("this is not valid HLSL");
+    EXPECT_FALSE(result.Succeeded());
+    EXPECT_TRUE(result.Bytecode.empty());
+    EXPECT_FALSE(result.Diagnostics.empty());
 }

@@ -3,16 +3,28 @@
 
 #include "Platform/Vulkan/Device.hpp"
 
+#include <stdexcept>
+#include <cstring>
+
 namespace Mixture::Vulkan
 {
     Shader::Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage,
         RHI::ShaderIdentity identity)
-        : m_Device(std::move(device)), m_Stage(stage), m_Identity(identity),
-          m_ReflectionData(ShaderCompiler::ReflectSPIRV(data, size))
+        : m_Device(std::move(device)), m_Stage(stage), m_Identity(identity)
     {
-        OPAL_ASSERT("Core/Vulkan", m_Device, "Shader requires an owning device");
-        OPAL_ASSERT("Core/Vulkan", m_Identity && m_Identity.Stage == stage,
-            "Shader requires a valid identity for the requested stage");
+        if (!m_Device) throw std::invalid_argument("Shader requires an owning device");
+        if (!m_Identity || m_Identity.Stage != stage)
+            throw std::invalid_argument("Shader requires a valid identity for the requested stage");
+        if (!data || size < sizeof(uint32_t) || size % sizeof(uint32_t) != 0
+            || reinterpret_cast<uintptr_t>(data) % alignof(uint32_t) != 0)
+            throw std::invalid_argument("SPIR-V bytecode must be nonempty, word-sized, and uint32-aligned");
+
+        uint32_t magic = 0;
+        std::memcpy(&magic, data, sizeof(magic));
+        if (magic != 0x07230203u)
+            throw std::invalid_argument("Shader bytecode does not contain a SPIR-V header");
+
+        m_ReflectionData = ShaderCompiler::ReflectSPIRV(data, size);
 
         vk::ShaderModuleCreateInfo createInfo;
         createInfo.setCodeSize(size);
@@ -26,8 +38,7 @@ namespace Mixture::Vulkan
         }
         catch (const vk::SystemError& e)
         {
-            OPAL_ERROR("Core/Vulkan", "Shader creation failed: {}", e.what());
-            OPAL_ASSERT("Core", false);
+            throw std::runtime_error(std::string("Vulkan shader creation failed: ") + e.what());
         }
 
         OPAL_LOG_DEBUG("Core/Vulkan", "Created Shader: stage='{}' size={}", EnumMapper::MapShaderStage(m_Stage), size);

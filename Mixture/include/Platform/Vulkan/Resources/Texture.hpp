@@ -31,7 +31,7 @@ namespace Mixture::Vulkan
          * @param spec The texture description.
          * @param data Optional initial data to upload.
          */
-        Texture(Ref<Device> device, const RHI::TextureDesc& spec, const void* data = nullptr);
+        Texture(Ref<Device> device, const RHI::TextureDesc& spec, std::span<const std::byte> data = {});
 
         /**
          * @brief Constructs a wrapper around an existing Vulkan Image (e.g., Swapchain Image).

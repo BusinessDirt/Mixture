@@ -133,13 +133,23 @@ namespace Mixture::Vulkan
         return CreateRef<Shader>(shared_from_this(), data, size, stage, identity);
     }
 
-    Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc, const void* initialData)
+    Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc, std::span<const std::byte> initialData)
     {
+        if (!RHI::IsBufferUploadValid(desc, initialData))
+        {
+            OPAL_ERROR("Core/Vulkan", "Rejected buffer '{}' with invalid size or initial-data length", desc.DebugName);
+            return nullptr;
+        }
         return CreateRef<Buffer>(shared_from_this(), desc, initialData);
     }
 
-    Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc, const void* initialData)
+    Ref<RHI::ITexture> Device::CreateTexture(const RHI::TextureDesc& desc, std::span<const std::byte> initialData)
     {
+        if (!RHI::IsTextureUploadValid(desc, initialData))
+        {
+            OPAL_ERROR("Core/Vulkan", "Rejected texture '{}' with invalid dimensions, format, or initial-data length", desc.DebugName);
+            return nullptr;
+        }
         return CreateRef<Texture>(shared_from_this(), desc, initialData);
     }
 

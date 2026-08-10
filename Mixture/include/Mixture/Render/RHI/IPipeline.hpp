@@ -150,6 +150,9 @@ namespace Mixture::RHI
          */
         virtual ~IPipeline() = default;
 
+        /** @brief Returns whether backend pipeline construction completed successfully. */
+        virtual bool IsValid() const = 0;
+
         // Later add methods here to get the "Layout"
         // (i.e., what descriptors does this pipeline need?)
     };

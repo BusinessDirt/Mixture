@@ -35,6 +35,7 @@ namespace Mixture::Vulkan
 
         RHI::ShaderStage GetStage() const override { return m_Stage; }
         RHI::ShaderIdentity GetIdentity() const override { return m_Identity; }
+        bool IsValid() const { return static_cast<bool>(m_Handle); }
 
         /** @brief Gets the device that owns this shader module. */
         Device& GetDevice() const { return *m_Device; }

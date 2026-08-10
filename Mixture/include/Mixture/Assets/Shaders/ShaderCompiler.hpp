@@ -11,6 +11,14 @@
 
 namespace Mixture
 {
+    struct ShaderCompileResult
+    {
+        Vector<uint8_t> Bytecode;
+        std::string Diagnostics;
+
+        bool Succeeded() const { return !Bytecode.empty(); }
+    };
+
     /**
      * @brief Contains reflection data extracted from a compiled shader.
      */
@@ -82,6 +90,9 @@ namespace Mixture
          * @return Vector<uint8_t> The compiled SPIR-V bytecode.
          */
         static Vector<uint8_t> Compile(const std::string& source);
+
+        /** @brief Compiles source and returns bytecode plus structured diagnostics. */
+        static ShaderCompileResult CompileDetailed(const std::string& source);
 
         /**
          * @brief Converts SPIR-V bytecode to Metal Shading Language (MSL).

@@ -38,6 +38,8 @@ namespace Mixture::Vulkan
         Pipeline(Ref<Device> device, const RHI::PipelineDesc& desc);
         ~Pipeline();
 
+        bool IsValid() const override { return static_cast<bool>(m_Handle) && static_cast<bool>(m_Layout); }
+
         /**
          * @brief Gets the Vulkan Pipeline handle.
          * 
