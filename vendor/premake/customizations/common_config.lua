@@ -88,7 +88,7 @@ function windows_settings()
 end
 
 function linux_settings()
-    links { "%{Library.vulkan}" }
+    links { "%{Library.vulkan}", "X11" }
 end
 
 function xcode_settings()
