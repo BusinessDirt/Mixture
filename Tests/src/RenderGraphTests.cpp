@@ -103,14 +103,16 @@ namespace Mixture::Tests
         class MockPipeline final : public RHI::IPipeline
         {
         public:
-            explicit MockPipeline(size_t& destructionCount)
-                : m_DestructionCount(destructionCount)
+            MockPipeline(size_t& destructionCount, bool valid)
+                : m_DestructionCount(destructionCount), m_Valid(valid)
             {}
 
             ~MockPipeline() override { ++m_DestructionCount; }
+            bool IsValid() const override { return m_Valid; }
 
         private:
             size_t& m_DestructionCount;
+            bool m_Valid;
         };
 
         class MockGraphicsDevice final : public RHI::IGraphicsDevice
@@ -122,13 +124,13 @@ namespace Mixture::Tests
                 return CreateRef<MockShader>(identity);
             }
 
-            Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc, const void*) override
+            Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc, std::span<const std::byte>) override
             {
                 ++BufferCreationCount;
                 return CreateRef<MockBuffer>(desc);
             }
 
-            Ref<RHI::ITexture> CreateTexture(const RHI::TextureDesc& desc, const void*) override
+            Ref<RHI::ITexture> CreateTexture(const RHI::TextureDesc& desc, std::span<const std::byte>) override
             {
                 ++TextureCreationCount;
                 return CreateRef<MockTexture>(desc);
@@ -137,7 +139,7 @@ namespace Mixture::Tests
             Ref<RHI::IPipeline> CreatePipeline(const RHI::PipelineDesc&) override
             {
                 ++PipelineCreationCount;
-                return CreateRef<MockPipeline>(PipelineDestructionCount);
+                return CreateRef<MockPipeline>(PipelineDestructionCount, NextPipelineValid);
             }
 
             void WaitForIdle() override {}
@@ -146,6 +148,7 @@ namespace Mixture::Tests
             size_t TextureCreationCount = 0;
             size_t PipelineCreationCount = 0;
             size_t PipelineDestructionCount = 0;
+            bool NextPipelineValid = true;
         };
 
         class HeadlessGraphicsContext final : public RHI::IGraphicsContext
@@ -588,11 +591,11 @@ namespace Mixture::Tests
         static_assert(std::is_constructible_v<Device, Ref<Instance>, Ref<PhysicalDevice>>);
         static_assert(!std::is_constructible_v<Device, Instance&, PhysicalDevice&>);
 
-        static_assert(std::is_constructible_v<Buffer, Ref<Device>, const RHI::BufferDesc&, const void*>);
-        static_assert(!std::is_constructible_v<Buffer, const RHI::BufferDesc&, const void*>);
+        static_assert(std::is_constructible_v<Buffer, Ref<Device>, const RHI::BufferDesc&, std::span<const std::byte>>);
+        static_assert(!std::is_constructible_v<Buffer, const RHI::BufferDesc&, std::span<const std::byte>>);
 
-        static_assert(std::is_constructible_v<Texture, Ref<Device>, const RHI::TextureDesc&, const void*>);
-        static_assert(!std::is_constructible_v<Texture, const RHI::TextureDesc&, const void*>);
+        static_assert(std::is_constructible_v<Texture, Ref<Device>, const RHI::TextureDesc&, std::span<const std::byte>>);
+        static_assert(!std::is_constructible_v<Texture, const RHI::TextureDesc&, std::span<const std::byte>>);
 
         static_assert(std::is_constructible_v<Shader, Ref<Device>, const void*, size_t,
             RHI::ShaderStage, RHI::ShaderIdentity>);
@@ -641,6 +644,27 @@ namespace Mixture::Tests
         EXPECT_EQ(statistics.FenceCount, 0u);
     }
 
+    TEST(VulkanUploadTests, RejectsMismatchedAndOverflowingUploadSizes)
+    {
+        RHI::BufferDesc buffer;
+        buffer.Size = 8;
+        std::array<std::byte, 4> shortBuffer{};
+        EXPECT_FALSE(RHI::IsBufferUploadValid(buffer, shortBuffer));
+        EXPECT_TRUE(RHI::IsBufferUploadValid(buffer, {}));
+
+        RHI::TextureDesc texture;
+        texture.Width = 2;
+        texture.Height = 2;
+        texture.PixelFormat = RHI::Format::R8G8B8A8_UNORM;
+        std::array<std::byte, 15> shortTexture{};
+        EXPECT_FALSE(RHI::IsTextureUploadValid(texture, shortTexture));
+        EXPECT_EQ(RHI::GetTextureUploadSize(texture), 16u);
+
+        texture.Width = std::numeric_limits<uint32_t>::max();
+        texture.Height = std::numeric_limits<uint32_t>::max();
+        EXPECT_FALSE(RHI::GetTextureUploadSize(texture).has_value());
+    }
+
     TEST(GraphicsContextContractTests, SupportsAContextWithoutImGui)
     {
         static_assert(!HasImGuiLifecycle<RHI::IGraphicsContext>);
@@ -685,6 +709,25 @@ namespace Mixture::Tests
         ShaderLibrary::Shutdown();
         PipelineCache::Shutdown();
         EXPECT_EQ(device.PipelineDestructionCount, 2u);
+    }
+
+    TEST(PipelineCacheTests, DoesNotCacheInvalidPipelines)
+    {
+        MockGraphicsDevice device;
+        device.NextPipelineValid = false;
+        PipelineCache::Init(device);
+
+        MockShader shader({ 42, 1, RHI::ShaderStage::Vertex });
+        RHI::PipelineDesc desc;
+        desc.VertexShader = &shader;
+        EXPECT_EQ(PipelineCache::GetPipeline(desc), nullptr);
+        EXPECT_EQ(device.PipelineCreationCount, 1u);
+        EXPECT_EQ(device.PipelineDestructionCount, 1u);
+
+        device.NextPipelineValid = true;
+        EXPECT_NE(PipelineCache::GetPipeline(desc), nullptr);
+        EXPECT_EQ(device.PipelineCreationCount, 2u);
+        PipelineCache::Shutdown();
     }
 
 }

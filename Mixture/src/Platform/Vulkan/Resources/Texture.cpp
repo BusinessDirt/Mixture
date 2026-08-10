@@ -7,19 +7,21 @@
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 #include "Platform/Vulkan/ResourcePolicy.hpp"
 
+#include <stdexcept>
+
 namespace Mixture::Vulkan
 {
-    Texture::Texture(Ref<Device> device, const RHI::TextureDesc& spec, const void* data)
+    Texture::Texture(Ref<Device> device, const RHI::TextureDesc& spec, std::span<const std::byte> data)
         : m_Device(std::move(device)), m_Width(spec.Width), m_Height(spec.Height), m_Format(spec.PixelFormat),
           m_Usage(spec.Usage), m_DebugName(spec.DebugName), m_OwnsImage(true)
     {
-        OPAL_ASSERT("Core/Vulkan", m_Device, "Texture requires an owning device");
-        if (data) m_Usage |= RHI::TextureUsage::TransferDestination;
+        if (!m_Device) throw std::invalid_argument("Texture requires an owning device");
+        if (!data.empty()) m_Usage |= RHI::TextureUsage::TransferDestination;
         Invalidate();
 
-        if (data)
+        if (!data.empty())
         {
-            VkDeviceSize imageSize = m_Width * m_Height * RHI::GetFormatStride(m_Format);
+            const VkDeviceSize imageSize = data.size();
 
             auto allocator = m_Device->GetAllocator();
 
@@ -37,12 +39,18 @@ namespace Mixture::Vulkan
 
             if (vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &stagingBuffer, &stagingAllocation, &stagingAllocInfo) != VK_SUCCESS)
             {
-                OPAL_ERROR("Core/Vulkan", "Failed to create staging buffer for texture: {0}", m_DebugName);
-                return;
+                Release();
+                throw std::runtime_error("Failed to create Vulkan texture upload staging buffer");
             }
 
             // Copy data to staging buffer
-            memcpy(stagingAllocInfo.pMappedData, data, static_cast<size_t>(imageSize));
+            if (!stagingAllocInfo.pMappedData)
+            {
+                vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
+                Release();
+                throw std::runtime_error("Vulkan texture upload staging buffer was not mapped");
+            }
+            memcpy(stagingAllocInfo.pMappedData, data.data(), data.size());
 
             // Upload to Image
             const vk::Image destinationImage = m_Image;
@@ -56,62 +64,53 @@ namespace Mixture::Vulkan
                 else finalState = RHI::ResourceState::ShaderResource;
             }
             const ResourceStateMapping finalMapping = MapResourceState(finalState);
-            m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
-                [stagingBuffer, destinationImage, width = m_Width, height = m_Height, aspect, finalMapping](vk::CommandBuffer cmd)
+            try
             {
-                vk::ImageMemoryBarrier barrier{};
-                barrier.oldLayout = vk::ImageLayout::eUndefined;
-                barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
-                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                barrier.image = destinationImage;
-                barrier.subresourceRange.aspectMask = aspect;
-                barrier.subresourceRange.baseMipLevel = 0;
-                barrier.subresourceRange.levelCount = 1;
-                barrier.subresourceRange.baseArrayLayer = 0;
-                barrier.subresourceRange.layerCount = 1;
-                barrier.srcAccessMask = vk::AccessFlagBits::eNone;
-                barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+                m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
+                    [stagingBuffer, destinationImage, width = m_Width, height = m_Height, aspect, finalMapping](vk::CommandBuffer cmd)
+                {
+                    vk::ImageMemoryBarrier barrier{};
+                    barrier.oldLayout = vk::ImageLayout::eUndefined;
+                    barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+                    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                    barrier.image = destinationImage;
+                    barrier.subresourceRange.aspectMask = aspect;
+                    barrier.subresourceRange.baseMipLevel = 0;
+                    barrier.subresourceRange.levelCount = 1;
+                    barrier.subresourceRange.baseArrayLayer = 0;
+                    barrier.subresourceRange.layerCount = 1;
+                    barrier.srcAccessMask = vk::AccessFlagBits::eNone;
+                    barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+                    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eTransfer,
+                        vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
 
-                cmd.pipelineBarrier(
-                    vk::PipelineStageFlagBits::eTopOfPipe,
-                    vk::PipelineStageFlagBits::eTransfer,
-                    vk::DependencyFlags(),
-                    0, nullptr,
-                    0, nullptr,
-                    1, &barrier
-                );
+                    vk::BufferImageCopy region{};
+                    region.imageSubresource.aspectMask = aspect;
+                    region.imageSubresource.mipLevel = 0;
+                    region.imageSubresource.baseArrayLayer = 0;
+                    region.imageSubresource.layerCount = 1;
+                    region.imageExtent = vk::Extent3D{width, height, 1};
+                    cmd.copyBufferToImage(vk::Buffer(stagingBuffer), destinationImage,
+                        vk::ImageLayout::eTransferDstOptimal, 1, &region);
 
-                vk::BufferImageCopy region{};
-                region.bufferOffset = 0;
-                region.bufferRowLength = 0;
-                region.bufferImageHeight = 0;
-                region.imageSubresource.aspectMask = aspect;
-                region.imageSubresource.mipLevel = 0;
-                region.imageSubresource.baseArrayLayer = 0;
-                region.imageSubresource.layerCount = 1;
-                region.imageOffset = vk::Offset3D{0, 0, 0};
-                region.imageExtent = vk::Extent3D{static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
-
-                cmd.copyBufferToImage(vk::Buffer(stagingBuffer), destinationImage, vk::ImageLayout::eTransferDstOptimal, 1, &region);
-
-                barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-                barrier.newLayout = finalMapping.Layout;
-                barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-                barrier.dstAccessMask = finalMapping.Access;
-
-                cmd.pipelineBarrier(
-                    vk::PipelineStageFlagBits::eTransfer,
-                    finalMapping.Stages,
-                    vk::DependencyFlags(),
-                    0, nullptr,
-                    0, nullptr,
-                    1, &barrier
-                );
-            }, [allocator, stagingBuffer, stagingAllocation]()
+                    barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+                    barrier.newLayout = finalMapping.Layout;
+                    barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+                    barrier.dstAccessMask = finalMapping.Access;
+                    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, finalMapping.Stages,
+                        vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
+                }, [allocator, stagingBuffer, stagingAllocation]()
+                {
+                    vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
+                });
+            }
+            catch (...)
             {
                 vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
-            });
+                Release();
+                throw;
+            }
         }
     }
 
@@ -121,7 +120,8 @@ namespace Mixture::Vulkan
         , m_ImageView(imageView), m_Width(width), m_Height(height)
         , m_OwnsImage(false)
     {
-        OPAL_ASSERT("Core/Vulkan", m_Device, "Texture requires an owning device");
+        if (!m_Device || !m_Image || !m_ImageView || width == 0 || height == 0)
+            throw std::invalid_argument("Swapchain texture wrapper requires valid device, image, view, and dimensions");
     }
 
     Texture::~Texture()
@@ -184,10 +184,7 @@ namespace Mixture::Vulkan
         // (Cast to C handles for VMA)
         VkImage rawImage;
         if (vmaCreateImage(allocator, &imageInfo, &allocInfo, &rawImage, &m_Allocation, nullptr) != VK_SUCCESS)
-        {
-            OPAL_ERROR("Core/Vulkan", "Failed to allocate texture image!");
-            return;
-        }
+            throw std::runtime_error("Failed to allocate Vulkan texture image");
 
         m_Image = rawImage;
 
@@ -202,7 +199,17 @@ namespace Mixture::Vulkan
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
 
-        m_ImageView = device.GetHandle().createImageView(viewInfo);
+        try
+        {
+            m_ImageView = device.GetHandle().createImageView(viewInfo);
+        }
+        catch (...)
+        {
+            vmaDestroyImage(allocator, m_Image, m_Allocation);
+            m_Image = nullptr;
+            m_Allocation = nullptr;
+            throw;
+        }
 
         // Create Sampler (Optional, but usually needed for textures)
         vk::SamplerCreateInfo samplerInfo;
@@ -218,7 +225,19 @@ namespace Mixture::Vulkan
         samplerInfo.compareEnable = VK_FALSE;
         samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
 
-        m_Sampler = device.GetHandle().createSampler(samplerInfo);
+        try
+        {
+            m_Sampler = device.GetHandle().createSampler(samplerInfo);
+        }
+        catch (...)
+        {
+            device.GetHandle().destroyImageView(m_ImageView);
+            vmaDestroyImage(allocator, m_Image, m_Allocation);
+            m_Image = nullptr;
+            m_ImageView = nullptr;
+            m_Allocation = nullptr;
+            throw;
+        }
     }
 
     vk::DescriptorImageInfo Texture::GetDescriptorInfo() const

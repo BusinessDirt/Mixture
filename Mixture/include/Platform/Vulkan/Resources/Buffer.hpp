@@ -31,7 +31,7 @@ namespace Mixture::Vulkan
          * @param desc The buffer description.
          * @param initialData Optional pointer to data to upload on creation.
          */
-        Buffer(Ref<Device> device, const RHI::BufferDesc& desc, const void* initialData = nullptr);
+        Buffer(Ref<Device> device, const RHI::BufferDesc& desc, std::span<const std::byte> initialData = {});
         virtual ~Buffer();
 
         // IBuffer Interface

@@ -64,7 +64,7 @@ namespace Mixture {
         }
 
         Ref<RHI::IPipeline> pipeline = s_Device->CreatePipeline(desc);
-        if (!pipeline) return nullptr;
+        if (!pipeline || !pipeline->IsValid()) return nullptr;
 
         s_Cache[key] = pipeline;
         return pipeline.get();

@@ -81,7 +81,8 @@ namespace Mixture::Vulkan
          * @param initialData Optional pointer to data to upload.
          * @return Ref<RHI::IBuffer> The created buffer.
          */
-        Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc, const void* initialData = nullptr) override;
+        Ref<RHI::IBuffer> CreateBuffer(const RHI::BufferDesc& desc,
+            std::span<const std::byte> initialData = {}) override;
 
         /**
          * @brief Creates a Vulkan texture.
@@ -90,7 +91,8 @@ namespace Mixture::Vulkan
          * @param initialData Optional pointer to raw pixel data.
          * @return Ref<RHI::ITexture> The created texture.
          */
-        Ref<RHI::ITexture> CreateTexture(const RHI::TextureDesc& desc, const void* initialData = nullptr) override;
+        Ref<RHI::ITexture> CreateTexture(const RHI::TextureDesc& desc,
+            std::span<const std::byte> initialData = {}) override;
 
         /**
          * @brief Creates a Vulkan pipeline.

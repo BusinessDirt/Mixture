@@ -26,7 +26,8 @@ namespace Mixture
         desc.Usage = RHI::BufferUsage::Vertex;
         desc.DebugName = "TriangleVB";
 
-        m_VertexBuffer = Application::Get().GetContext().GetDevice().CreateBuffer(desc, vertices);
+        m_VertexBuffer = Application::Get().GetContext().GetDevice().CreateBuffer(
+            desc, std::as_bytes(std::span(vertices)));
     }
 
     void MainLayer::OnDetach()

@@ -62,19 +62,36 @@ namespace Mixture
 
     Vector<uint8_t> ShaderCompiler::Compile(const std::string& source)
     {
+        return CompileDetailed(source).Bytecode;
+    }
+
+    ShaderCompileResult ShaderCompiler::CompileDetailed(const std::string& source)
+    {
+        ShaderCompileResult result;
+        if (source.size() > std::numeric_limits<uint32_t>::max())
+        {
+            result.Diagnostics = "Shader source exceeds the DXC input-size limit";
+            return result;
+        }
         auto graphicsAPI = AssetManager::Get().GetGraphicsAPI();
 
         CompilerState& state = GetCompilerState();
         if (!state.Available)
         {
             OPAL_ERROR("AssetManager", "DXC is unavailable; shader compilation cannot continue.");
-            return {};
+            result.Diagnostics = "DXC is unavailable";
+            return result;
         }
 
         // Create a blob from the source string
         CComPtr<IDxcBlobEncoding> pSource;
-        if (FAILED(state.Utils->CreateBlob(source.c_str(), static_cast<uint32_t>(source.length()), CP_UTF8, &pSource)) || !pSource)
-            return {};
+        const HRESULT blobResult = state.Utils->CreateBlob(
+            source.c_str(), static_cast<uint32_t>(source.length()), CP_UTF8, &pSource);
+        if (FAILED(blobResult) || !pSource)
+        {
+            result.Diagnostics = "DXC failed to create a source blob";
+            return result;
+        }
 
         // Set up Compiler Arguments
         Vector<LPCWSTR> arguments;
@@ -109,60 +126,72 @@ namespace Mixture
         sourceBuffer.Encoding = DXC_CP_UTF8;
 
         CComPtr<IDxcResult> pResults;
-        if (FAILED(state.Compiler->Compile(&sourceBuffer, arguments.data(), (uint32_t)arguments.size(), nullptr, IID_PPV_ARGS(&pResults))) || !pResults)
-            return {};
+        const HRESULT compileResult = state.Compiler->Compile(&sourceBuffer, arguments.data(),
+            static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&pResults));
+        if (FAILED(compileResult) || !pResults)
+        {
+            result.Diagnostics = "DXC failed to start compilation";
+            return result;
+        }
 
         // Check for Errors
         CComPtr<IDxcBlobUtf8> pErrors;
-        pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
-        HRESULT compilationStatus = E_FAIL;
-        if (FAILED(pResults->GetStatus(&compilationStatus)) || FAILED(compilationStatus))
+        const HRESULT errorsResult = pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
+        if (FAILED(errorsResult))
         {
-            if (pErrors && pErrors->GetStringLength() != 0)
-                OPAL_ERROR("AssetManager", "Shader compile error: {}", pErrors->GetStringPointer());
-            return {};
+            result.Diagnostics = "DXC failed to retrieve compiler diagnostics";
+            return result;
+        }
+        if (pErrors && pErrors->GetStringLength() != 0)
+            result.Diagnostics.assign(pErrors->GetStringPointer(), pErrors->GetStringLength());
+
+        HRESULT compilationStatus = E_FAIL;
+        const HRESULT statusResult = pResults->GetStatus(&compilationStatus);
+        if (FAILED(statusResult) || FAILED(compilationStatus))
+        {
+            if (!result.Diagnostics.empty())
+                OPAL_ERROR("AssetManager", "Shader compile error: {}", result.Diagnostics);
+            else
+                result.Diagnostics = "DXC compilation failed without diagnostics";
+            return result;
         }
 
-        if (pErrors && pErrors->GetStringLength() != 0)
-            OPAL_WARN("AssetManager", "Shader compile diagnostics: {}", pErrors->GetStringPointer());
+        if (!result.Diagnostics.empty())
+            OPAL_WARN("AssetManager", "Shader compile diagnostics: {}", result.Diagnostics);
 
         // Get the Output Blob (DXIL or SPIR-V)
         CComPtr<IDxcBlob> pShaderBlob;
-        pResults->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShaderBlob), nullptr);
+        const HRESULT objectResult = pResults->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShaderBlob), nullptr);
+        if (FAILED(objectResult) || !pShaderBlob || pShaderBlob->GetBufferSize() == 0)
+        {
+            result.Diagnostics = "DXC reported success but returned no shader object";
+            return result;
+        }
 
-        if (!pShaderBlob) return {};
-
-        Vector<uint8_t> nativeBlob(pShaderBlob->GetBufferSize());
-        memcpy(nativeBlob.data(), pShaderBlob->GetBufferPointer(), pShaderBlob->GetBufferSize());
-        return nativeBlob;
+        result.Bytecode.resize(pShaderBlob->GetBufferSize());
+        memcpy(result.Bytecode.data(), pShaderBlob->GetBufferPointer(), pShaderBlob->GetBufferSize());
+        return result;
     }
 
     Vector<uint8_t> ShaderCompiler::ConvertToMSL(const Vector<uint8_t>& spv)
     {
-        // Check if we have data
-        if (spv.empty()) return {};
+        if (spv.size() < sizeof(uint32_t) || spv.size() % sizeof(uint32_t) != 0) return {};
 
-        // Cast the raw bytes (uint8) to SPIR-V words (uint32).
-        // Note: This reinterpret_cast assumes 'spv.data()' is 4-byte aligned.
-        // Standard vector allocators usually guarantee this, but be aware.
-        const uint32_t* spirvData = reinterpret_cast<const uint32_t*>(spv.data());
-        size_t wordCount = spv.size() / sizeof(uint32_t);
+        Vector<uint32_t> spirvWords(spv.size() / sizeof(uint32_t));
+        std::memcpy(spirvWords.data(), spv.data(), spv.size());
+        if (spirvWords.front() != 0x07230203u) return {};
 
-        // Initialize the Cross Compiler
-        // (This parses the SPIR-V immediately)
-        spirv_cross::CompilerMSL mslCompiler(spirvData, wordCount);
-
-        // Set Options
-        spirv_cross::CompilerMSL::Options mslOptions;
-        mslOptions.set_msl_version(2, 3); // Metal 2.3 is a safe modern default
-        mslOptions.argument_buffers_tier = spirv_cross::CompilerMSL::Options::ArgumentBuffersTier::Tier2;
-        mslOptions.enable_decoration_binding = true;
-        mslCompiler.set_msl_options(mslOptions);
-
-        std::string mslSource;
         try
         {
-            mslSource = mslCompiler.compile();
+            spirv_cross::CompilerMSL mslCompiler(spirvWords.data(), spirvWords.size());
+            spirv_cross::CompilerMSL::Options mslOptions;
+            mslOptions.set_msl_version(2, 3);
+            mslOptions.argument_buffers_tier = spirv_cross::CompilerMSL::Options::ArgumentBuffersTier::Tier2;
+            mslOptions.enable_decoration_binding = true;
+            mslCompiler.set_msl_options(mslOptions);
+
+            const std::string mslSource = mslCompiler.compile();
+            return Vector<uint8_t>(mslSource.begin(), mslSource.end());
         }
         catch (const std::exception& e)
         {
@@ -170,12 +199,20 @@ namespace Mixture
             return {};
         }
 
-        return Vector<uint8_t>(mslSource.begin(), mslSource.end());
+        return {};
     }
 
     ShaderReflectionData ShaderCompiler::ReflectSPIRV(const void* binaryData, size_t binarySize)
     {
         ShaderReflectionData data;
+        if (!binaryData || binarySize < sizeof(uint32_t) || binarySize % sizeof(uint32_t) != 0
+            || reinterpret_cast<uintptr_t>(binaryData) % alignof(uint32_t) != 0)
+            return data;
+
+        uint32_t magic = 0;
+        std::memcpy(&magic, binaryData, sizeof(magic));
+        if (magic != 0x07230203u) return data;
+
         SpvReflectShaderModule module;
 
         if (spvReflectCreateShaderModule(binarySize, binaryData, &module) != SPV_REFLECT_RESULT_SUCCESS)

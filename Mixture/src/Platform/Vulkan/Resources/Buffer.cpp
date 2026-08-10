@@ -6,12 +6,14 @@
 #include "Platform/Vulkan/Queue.hpp"
 #include "Platform/Vulkan/SingleTimeCommand.hpp"
 
+#include <stdexcept>
+
 namespace Mixture::Vulkan
 {
-    Buffer::Buffer(Ref<Device> device, const RHI::BufferDesc& desc, const void* initialData)
+    Buffer::Buffer(Ref<Device> device, const RHI::BufferDesc& desc, std::span<const std::byte> initialData)
         : m_Device(std::move(device)), m_Desc(desc)
     {
-        OPAL_ASSERT("Core/Vulkan", m_Device, "Buffer requires an owning device");
+        if (!m_Device) throw std::invalid_argument("Buffer requires an owning device");
         auto allocator = m_Device->GetAllocator();
 
         // Create the GPU Buffer
@@ -28,13 +30,12 @@ namespace Mixture::Vulkan
         VkBuffer rawBuffer;
         if (vmaCreateBuffer(allocator, reinterpret_cast<VkBufferCreateInfo*>(&bufferInfo), &allocInfo, &rawBuffer, &m_Allocation, nullptr) != VK_SUCCESS)
         {
-            OPAL_ERROR("Core/Vulkan", "Failed to allocate Buffer!");
-            return;
+            throw std::runtime_error("Failed to allocate Vulkan buffer");
         }
 
         m_Buffer = rawBuffer;
 
-        if (initialData)
+        if (!initialData.empty())
         {
             // Create Staging Buffer (CPU Visible)
             VkBufferCreateInfo stagingInfo = {};
@@ -46,25 +47,49 @@ namespace Mixture::Vulkan
 
             VkBuffer stagingBuffer;
             VmaAllocation stagingAlloc;
-            vmaCreateBuffer(allocator, &stagingInfo, &stagingAllocInfo, &stagingBuffer, &stagingAlloc, nullptr);
+            if (vmaCreateBuffer(allocator, &stagingInfo, &stagingAllocInfo, &stagingBuffer, &stagingAlloc, nullptr) != VK_SUCCESS)
+            {
+                vmaDestroyBuffer(allocator, m_Buffer, m_Allocation);
+                m_Buffer = nullptr;
+                m_Allocation = nullptr;
+                throw std::runtime_error("Failed to allocate Vulkan buffer upload staging memory");
+            }
 
             // Map & Copy
             void* mappedData;
-            vmaMapMemory(allocator, stagingAlloc, &mappedData);
-            memcpy(mappedData, initialData, desc.Size);
+            if (vmaMapMemory(allocator, stagingAlloc, &mappedData) != VK_SUCCESS || !mappedData)
+            {
+                vmaDestroyBuffer(allocator, stagingBuffer, stagingAlloc);
+                vmaDestroyBuffer(allocator, m_Buffer, m_Allocation);
+                m_Buffer = nullptr;
+                m_Allocation = nullptr;
+                throw std::runtime_error("Failed to map Vulkan buffer upload staging memory");
+            }
+            memcpy(mappedData, initialData.data(), initialData.size());
             vmaUnmapMemory(allocator, stagingAlloc);
 
             const vk::Buffer destination = m_Buffer;
-            m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
-                [stagingBuffer, destination, size = desc.Size](vk::CommandBuffer cmd)
+            try
             {
-                vk::BufferCopy copyRegion;
-                copyRegion.size = size;
-                cmd.copyBuffer(stagingBuffer, destination, 1, &copyRegion);
-            }, [allocator, stagingBuffer, stagingAlloc]()
+                m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
+                    [stagingBuffer, destination, size = desc.Size](vk::CommandBuffer cmd)
+                {
+                    vk::BufferCopy copyRegion;
+                    copyRegion.size = size;
+                    cmd.copyBuffer(stagingBuffer, destination, 1, &copyRegion);
+                }, [allocator, stagingBuffer, stagingAlloc]()
+                {
+                    vmaDestroyBuffer(allocator, stagingBuffer, stagingAlloc);
+                });
+            }
+            catch (...)
             {
                 vmaDestroyBuffer(allocator, stagingBuffer, stagingAlloc);
-            });
+                vmaDestroyBuffer(allocator, m_Buffer, m_Allocation);
+                m_Buffer = nullptr;
+                m_Allocation = nullptr;
+                throw;
+            }
         }
     }
 

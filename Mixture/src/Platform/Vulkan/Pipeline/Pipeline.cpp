@@ -5,6 +5,8 @@
 
 #include "Platform/Vulkan/Device.hpp"
 
+#include <stdexcept>
+
 namespace Mixture::Vulkan
 {
     namespace
@@ -47,8 +49,8 @@ namespace Mixture::Vulkan
                     }
                     else
                     {
-                        OPAL_ASSERT("Core/Vulkan", existing->descriptorType == type,
-                            "Reflected descriptor binding type mismatch across shader stages");
+                        if (existing->descriptorType != type)
+                            throw std::invalid_argument("Reflected descriptor binding type mismatch across shader stages");
                         existing->stageFlags |= stageFlags;
                         existing->descriptorCount = std::max(existing->descriptorCount, std::max(1u, resource.Count));
                     }
@@ -78,24 +80,22 @@ namespace Mixture::Vulkan
     Pipeline::Pipeline(Ref<Device> device, const RHI::PipelineDesc& desc)
         : m_Device(std::move(device))
     {
-        OPAL_ASSERT("Core/Vulkan", m_Device, "Pipeline requires an owning device");
+        if (!m_Device) throw std::invalid_argument("Pipeline requires an owning device");
         vk::Device vkDevice = m_Device->GetHandle();
 
         Vector<vk::PipelineShaderStageCreateInfo> shaderStages;
-        auto* vertexShader = static_cast<Shader*>(desc.VertexShader);
-        auto* fragmentShader = static_cast<Shader*>(desc.FragmentShader);
+        auto* vertexShader = dynamic_cast<Shader*>(desc.VertexShader);
+        auto* fragmentShader = dynamic_cast<Shader*>(desc.FragmentShader);
 
-        if (!vertexShader)
-        {
-            OPAL_ERROR("Core/Vulkan", "Vertex Shader is required!");
-            return;
-        }
+        if (!vertexShader || !vertexShader->IsValid())
+            throw std::invalid_argument("A valid Vulkan vertex shader is required");
+        if (desc.FragmentShader && (!fragmentShader || !fragmentShader->IsValid()))
+            throw std::invalid_argument("The fragment shader is not a valid Vulkan shader");
 
         if (&vertexShader->GetDevice() != m_Device.get()
             || (fragmentShader && &fragmentShader->GetDevice() != m_Device.get()))
         {
-            OPAL_ERROR("Core/Vulkan", "Pipeline shaders must belong to the pipeline's device!");
-            return;
+            throw std::invalid_argument("Pipeline shaders must belong to the pipeline device");
         }
 
         shaderStages.push_back(vertexShader->CreateInfo());
@@ -209,25 +209,20 @@ namespace Mixture::Vulkan
             reflectedShaders.push_back({ &fragmentShader->GetReflectionData(), RHI::ShaderStage::Fragment });
         const auto layoutDescription = BuildPipelineLayoutDescription(reflectedShaders);
 
-        for (const auto& bindings : layoutDescription.Sets)
+        try
         {
-            vk::DescriptorSetLayoutCreateInfo setInfo({}, bindings);
-            m_DescriptorSetLayouts.push_back(vkDevice.createDescriptorSetLayout(setInfo));
-        }
+            for (const auto& bindings : layoutDescription.Sets)
+            {
+                vk::DescriptorSetLayoutCreateInfo setInfo({}, bindings);
+                m_DescriptorSetLayouts.push_back(vkDevice.createDescriptorSetLayout(setInfo));
+            }
 
         vk::PipelineLayoutCreateInfo pipelineLayoutInfo;
         pipelineLayoutInfo.setSetLayouts(m_DescriptorSetLayouts);
         m_PushConstantRanges = layoutDescription.PushConstants;
         pipelineLayoutInfo.setPushConstantRanges(m_PushConstantRanges);
 
-        try
-        {
             m_Layout = vkDevice.createPipelineLayout(pipelineLayoutInfo);
-        }
-        catch (...)
-        {
-            OPAL_ERROR("Core/Vulkan", "Failed to create Pipeline Layout!");
-        }
 
         vk::PipelineRenderingCreateInfo renderingInfo;
         Vector<vk::Format> colorFormats;
@@ -255,12 +250,19 @@ namespace Mixture::Vulkan
         auto result = vkDevice.createGraphicsPipeline(nullptr, pipelineInfo);
 
         if (result.result != vk::Result::eSuccess)
-        {
-            OPAL_ERROR("Core/Vulkan", "Failed to create Graphics Pipeline!");
-        }
+            throw std::runtime_error("Failed to create Vulkan graphics pipeline: " + vk::to_string(result.result));
         else
-        {
             m_Handle = result.value;
+        }
+        catch (...)
+        {
+            if (m_Handle) vkDevice.destroyPipeline(m_Handle);
+            if (m_Layout) vkDevice.destroyPipelineLayout(m_Layout);
+            for (const auto layout : m_DescriptorSetLayouts) vkDevice.destroyDescriptorSetLayout(layout);
+            m_Handle = nullptr;
+            m_Layout = nullptr;
+            m_DescriptorSetLayouts.clear();
+            throw;
         }
     }
 
