@@ -92,71 +92,72 @@ namespace Mixture::Tests {
 
     TEST(CoreTests, LayerStackPushPop) {
         LayerStack stack;
-        auto* layer1 = new MockLayer("Layer1");
-        auto* layer2 = new MockLayer("Layer2");
-        auto* overlay1 = new MockLayer("Overlay1");
+        auto layer1Owner = CreateScope<MockLayer>("Layer1");
+        auto layer2Owner = CreateScope<MockLayer>("Layer2");
+        auto overlay1Owner = CreateScope<MockLayer>("Overlay1");
+        auto* layer1 = layer1Owner.get();
+        auto* layer2 = layer2Owner.get();
+        auto* overlay1 = overlay1Owner.get();
 
-        stack.PushLayer(layer1);
-        stack.PushLayer(layer2);
-        stack.PushOverlay(overlay1);
+        stack.PushLayer(std::move(layer1Owner));
+        stack.PushLayer(std::move(layer2Owner));
+        stack.PushOverlay(std::move(overlay1Owner));
 
         // Order should be: Layer1, Layer2, Overlay1
         // Vector: [Layer1, Layer2, Overlay1]
         // LayerInsertIndex should point to Overlay1 (index 2)
         
         auto it = stack.begin();
-        EXPECT_EQ(*it, layer1);
-        EXPECT_EQ(*(++it), layer2);
-        EXPECT_EQ(*(++it), overlay1);
+        EXPECT_EQ(it->get(), layer1);
+        EXPECT_EQ((++it)->get(), layer2);
+        EXPECT_EQ((++it)->get(), overlay1);
 
-        stack.PopLayer(layer1);
+        auto removedLayer = stack.PopLayer(layer1);
         // Expect: Layer2, Overlay1
         it = stack.begin();
-        EXPECT_EQ(*it, layer2);
-        EXPECT_EQ(*(++it), overlay1);
+        EXPECT_EQ(it->get(), layer2);
+        EXPECT_EQ((++it)->get(), overlay1);
 
-        stack.PopOverlay(overlay1);
+        auto removedOverlay = stack.PopOverlay(overlay1);
         // Expect: Layer2
         it = stack.begin();
-        EXPECT_EQ(*it, layer2);
+        EXPECT_EQ(it->get(), layer2);
         EXPECT_EQ(stack.end(), ++it);
-        
-        // Cleanup (LayerStack doesn't own memory in this implementation usually, 
-        // but typically Application owns it. In this test, we must delete if LayerStack doesn't delete on Pop.
-        // Looking at LayerStack.cpp (not provided but implied), Pop usually just removes from vector.
-        // User is responsible for deletion if they allocated with new.
-        // Wait, LayerStack::Shutdown usually deletes. But we popped them.
-        delete layer1;
-        delete layer2;
-        delete overlay1;
+
+        EXPECT_EQ(removedLayer.get(), layer1);
+        EXPECT_EQ(removedOverlay.get(), overlay1);
+        stack.Shutdown();
+        stack.Shutdown();
     }
 
     TEST(CoreTests, LayerStackIgnoresInvalidRemoval) {
         LayerStack stack;
-        auto* layer = new MockLayer("Layer");
-        auto* overlay = new MockLayer("Overlay");
-        auto* absent = new MockLayer("Absent");
+        auto layerOwner = CreateScope<MockLayer>("Layer");
+        auto overlayOwner = CreateScope<MockLayer>("Overlay");
+        auto absent = CreateScope<MockLayer>("Absent");
+        auto* layer = layerOwner.get();
+        auto* overlay = overlayOwner.get();
 
-        stack.PushLayer(layer);
-        stack.PushOverlay(overlay);
+        stack.PushLayer(std::move(layerOwner));
+        stack.PushOverlay(std::move(overlayOwner));
 
-        stack.PopLayer(absent);
-        stack.PopOverlay(absent);
-        stack.PopLayer(overlay);
-        stack.PopOverlay(layer);
+        EXPECT_EQ(stack.PopLayer(absent.get()), nullptr);
+        EXPECT_EQ(stack.PopOverlay(absent.get()), nullptr);
+        EXPECT_EQ(stack.PopLayer(overlay), nullptr);
+        EXPECT_EQ(stack.PopOverlay(layer), nullptr);
 
         EXPECT_EQ(layer->DetachCount, 0);
         EXPECT_EQ(overlay->DetachCount, 0);
         EXPECT_EQ(std::distance(stack.begin(), stack.end()), 2);
 
-        stack.PopLayer(layer);
-        stack.PopOverlay(overlay);
+        auto removedLayer = stack.PopLayer(layer);
+        auto removedOverlay = stack.PopOverlay(overlay);
         EXPECT_EQ(layer->DetachCount, 1);
         EXPECT_EQ(overlay->DetachCount, 1);
-
-        delete layer;
-        delete overlay;
-        delete absent;
+        EXPECT_NE(removedLayer, nullptr);
+        EXPECT_NE(removedOverlay, nullptr);
+        EXPECT_THROW(stack.PushLayer(nullptr), std::invalid_argument);
+        EXPECT_THROW(stack.PushOverlay(nullptr), std::invalid_argument);
     }
 
     // --- Application.hpp Tests ---

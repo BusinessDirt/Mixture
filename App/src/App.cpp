@@ -12,8 +12,8 @@ namespace Mixture
         explicit ExampleApp(const ApplicationDescription& appDescription)
             : Application(appDescription)
         {
-            PushLayer(new MainLayer());
-            //PushOverlay(new UILayer());
+            PushLayer(CreateScope<MainLayer>());
+            //PushOverlay(CreateScope<UILayer>());
         }
     };
 
@@ -31,5 +31,4 @@ namespace Mixture
         return app;
     }
 }
-
 

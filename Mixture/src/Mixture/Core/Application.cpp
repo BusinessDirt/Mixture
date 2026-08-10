@@ -98,7 +98,7 @@ namespace Mixture
             m_Window->OnUpdate();
 
             // CPU Logic
-            for (Layer* layer : m_LayerStack) layer->OnUpdate(timestep);
+            for (const auto& layer : m_LayerStack) layer->OnUpdate(timestep);
 
             m_RenderGraph->Clear();
 
@@ -106,7 +106,7 @@ namespace Mixture
             {
                 m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
 
-                for (Layer* layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
+                for (const auto& layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
 
                 m_RenderGraph->Compile();
 

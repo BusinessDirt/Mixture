@@ -121,6 +121,21 @@ namespace Mixture::Tests {
         EXPECT_EQ(completed, 33);
     }
 
+    TEST_F(TaskSystemTests, ShutdownResolvesEveryAcceptedFuture)
+    {
+        std::vector<std::future<int>> futures;
+        for (int value = 0; value < 64; ++value)
+            futures.push_back(TaskSystem::SubmitFuture([value]() { return value * 2; }));
+
+        TaskSystem::Shutdown();
+
+        for (int value = 0; value < 64; ++value)
+        {
+            EXPECT_EQ(futures[value].wait_for(std::chrono::seconds(0)), std::future_status::ready);
+            EXPECT_EQ(futures[value].get(), value * 2);
+        }
+    }
+
     TEST_F(TaskSystemTests, SubmissionWhileStoppedIsRejected)
     {
         TaskSystem::Shutdown();
