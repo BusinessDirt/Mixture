@@ -1,5 +1,5 @@
 [engine]
-version = "0.1.0"
+version = "0.1.1"
 
 [tools.premake]
 version = "5.0.0-beta8"

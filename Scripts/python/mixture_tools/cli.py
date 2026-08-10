@@ -4,70 +4,16 @@ from collections.abc import Sequence
 
 from .context import Context
 from .errors import MixtureToolsError
+from .log import LogFormatter
 from .prompting import PromptPolicy
 from .setup.runner import run_setup
 from .version import Version, read_version, write_version
 
 from .visualizers import render_graph
 
-class LogFormatter(logging.Formatter):
-    # ANSI Escape Codes
-    grey = "\x1b[38;20m"
-    blue = "\x1b[34;20m"
-    green = "\x1b[32;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    bold_red = "\x1b[31;1m"
-    bold_pink = "\x1b[1;35m" # For logger name (markers)
-    reset = "\x1b[0m"
-
-    LEVEL_COLORS = {
-        logging.DEBUG: blue,
-        logging.INFO: green,
-        logging.WARNING: yellow,
-        logging.ERROR: red,
-        logging.CRITICAL: bold_red
-    }
-
-    def format(self, record):
-        # Ensure time is formatted
-        record.asctime = self.formatTime(record, self.datefmt)
-
-        # Determine colors
-        level_color = self.LEVEL_COLORS.get(record.levelno, self.grey)
-
-        # Format Logger Name (Base.Marker)
-        # "marker only things after the . should be marked"
-        name = record.name
-        if "." in name:
-            base, marker = name.split(".", 1)
-            # Base (Default) + .Marker (Pink)
-            fmt_name = f"{base}{self.bold_pink}/{marker}{self.reset}"
-        else:
-            fmt_name = name
-
-        # Format Message
-        message = record.getMessage()
-
-        log_str = (
-            f"[{record.asctime}] "
-            f"[{record.threadName}/{level_color}{record.levelname}{self.reset}] "
-            f"({fmt_name}): "
-            f"{level_color}{message}{self.reset}"
-        )
-
-        return log_str
-
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="mixture",
-        description="Mixture engine development tools",
-    )
-
-    commands = parser.add_subparsers(dest="command", required=True)
-
-    setup = commands.add_parser(
+def _add_setup_parser(subparsers) -> None:
+    """Scope for the 'setup' command."""
+    setup = subparsers.add_parser(
         "setup",
         help="Validate dependencies and generate project files",
     )
@@ -80,41 +26,31 @@ def create_parser() -> argparse.ArgumentParser:
         help="Fail instead of requesting user input",
     )
 
-    version = commands.add_parser(
+def _add_version_parser(subparsers) -> None:
+    """Scope for the 'version' command and its subcommands."""
+    version = subparsers.add_parser(
         "version",
         help="Read or update the engine version",
     )
-
     version_commands = version.add_subparsers(
         dest="version_command",
         required=True,
     )
 
-    version_commands.add_parser(
-        "show",
-        help="Print the current engine version",
-    )
+    version_commands.add_parser("show", help="Print the current engine version")
 
-    set_version = version_commands.add_parser(
-        "set",
-        help="Set an explicit engine version",
-    )
+    set_version = version_commands.add_parser("set", help="Set an explicit engine version")
     set_version.add_argument("value", type=Version.parse)
 
-    bump_version = version_commands.add_parser(
-        "bump",
-        help="Increment part of the engine version",
-    )
-    bump_version.add_argument(
-        "part",
-        choices=("major", "minor", "patch"),
-    )
+    bump_version = version_commands.add_parser("bump", help="Increment part of the engine version")
+    bump_version.add_argument("part", choices=("major", "minor", "patch"))
 
-    visualizer = commands.add_parser(
+def _add_visualizer_parser(subparsers) -> None:
+    """Scope for the 'visualizer' command and its subcommands."""
+    visualizer = subparsers.add_parser(
         "visualizer",
         help="Start a visualizer",
     )
-
     visualizer_commands = visualizer.add_subparsers(
         dest="visualizer_commands",
         required=True,
@@ -124,6 +60,20 @@ def create_parser() -> argparse.ArgumentParser:
         "render_graph",
         help="Shows a render graph visualization (Application has to have run at least once)",
     )
+
+def create_parser() -> argparse.ArgumentParser:
+    """Main parser entry point."""
+    parser = argparse.ArgumentParser(
+        prog="mixture",
+        description="Mixture engine development tools",
+    )
+
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    # Attach the scoped subparsers
+    _add_setup_parser(commands)
+    _add_version_parser(commands)
+    _add_visualizer_parser(commands)
 
     return parser
 
