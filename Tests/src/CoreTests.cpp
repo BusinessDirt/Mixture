@@ -160,6 +160,33 @@ namespace Mixture::Tests {
         EXPECT_THROW(stack.PushOverlay(nullptr), std::invalid_argument);
     }
 
+    TEST(CoreTests, LayerStackConstructsOwnedLayersAndOverlays)
+    {
+        LayerStack stack;
+
+        MockLayer& layer = stack.PushLayer<MockLayer>("ConstructedLayer");
+        MockLayer& overlay = stack.PushOverlay<MockLayer>("ConstructedOverlay");
+
+        EXPECT_EQ(layer.GetName(), "ConstructedLayer");
+        EXPECT_EQ(overlay.GetName(), "ConstructedOverlay");
+        EXPECT_EQ(layer.AttachCount, 1);
+        EXPECT_EQ(overlay.AttachCount, 1);
+
+        auto it = stack.begin();
+        EXPECT_EQ(it->get(), &layer);
+        EXPECT_EQ((++it)->get(), &overlay);
+    }
+
+    TEST(CoreTests, ApplicationExposesTypedLayerConstruction)
+    {
+        static_assert(requires(Application& application)
+        {
+            { application.PushLayer<MockLayer>("Layer") } -> std::same_as<MockLayer&>;
+            { application.PushOverlay<MockLayer>("Overlay") } -> std::same_as<MockLayer&>;
+        });
+        SUCCEED();
+    }
+
     // --- Application.hpp Tests ---
     
     TEST(CoreTests, CommandLineArgs) {
