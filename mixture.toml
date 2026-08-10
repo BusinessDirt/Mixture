@@ -1,0 +1,9 @@
+[engine]
+version = "0.1.0"
+
+[tools.premake]
+version = "5.0.0-beta8"
+
+[requirements]
+vulkan = "1.3.216"
+python = "3.11"
