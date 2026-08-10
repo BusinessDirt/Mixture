@@ -13,6 +13,26 @@
 
 namespace Mixture::RHI
 {
+    enum class TextureUsage : uint32_t
+    {
+        None = 0,
+        Sampled = 1u << 0,
+        Storage = 1u << 1,
+        ColorAttachment = 1u << 2,
+        DepthStencilAttachment = 1u << 3,
+        TransferSource = 1u << 4,
+        TransferDestination = 1u << 5
+    };
+
+    inline TextureUsage operator|(TextureUsage lhs, TextureUsage rhs)
+    {
+        return static_cast<TextureUsage>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+    }
+    inline TextureUsage& operator|=(TextureUsage& lhs, TextureUsage rhs) { return lhs = lhs | rhs; }
+    inline bool HasUsage(TextureUsage value, TextureUsage flag)
+    {
+        return (static_cast<uint32_t>(value) & static_cast<uint32_t>(flag)) != 0;
+    }
 
     /**
      * @brief Descriptor structure used to create a texture.
@@ -35,6 +55,7 @@ namespace Mixture::RHI
         Format PixelFormat = Format::R8G8B8A8_UNORM;
 
         RHI::ResourceState InitialState = RHI::ResourceState::Undefined;
+        TextureUsage Usage = TextureUsage::Sampled | TextureUsage::TransferDestination;
 
         /**
          * @brief Debug name for the texture.
@@ -47,7 +68,8 @@ namespace Mixture::RHI
             return Width == other.Width &&
                    Height == other.Height &&
                    PixelFormat == other.PixelFormat &&
-                   InitialState == other.InitialState;
+                   InitialState == other.InitialState &&
+                   Usage == other.Usage;
         }
     };
 

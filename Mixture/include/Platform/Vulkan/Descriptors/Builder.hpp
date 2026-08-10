@@ -38,7 +38,7 @@ namespace Mixture::Vulkan
          * @param stageFlags The shader stages that access this resource.
          * @return DescriptorBuilder& Reference to the builder for chaining.
          */
-        DescriptorBuilder& BindBuffer(uint32_t binding, vk::DescriptorBufferInfo* bufferInfo, vk::DescriptorType type = vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlags stageFlags = vk::ShaderStageFlagBits::eAllGraphics);
+        DescriptorBuilder& BindBuffer(uint32_t binding, const vk::DescriptorBufferInfo& bufferInfo, vk::DescriptorType type = vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlags stageFlags = vk::ShaderStageFlagBits::eAllGraphics);
 
         /**
          * @brief Binds an image to a specific binding slot.
@@ -49,7 +49,7 @@ namespace Mixture::Vulkan
          * @param stageFlags The shader stages that access this resource.
          * @return DescriptorBuilder& Reference to the builder for chaining.
          */
-        DescriptorBuilder& BindImage(uint32_t binding, vk::DescriptorImageInfo* imageInfo, vk::DescriptorType type = vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlags stageFlags = vk::ShaderStageFlagBits::eFragment);
+        DescriptorBuilder& BindImage(uint32_t binding, const vk::DescriptorImageInfo& imageInfo, vk::DescriptorType type = vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlags stageFlags = vk::ShaderStageFlagBits::eFragment);
 
         /**
          * @brief Builds the descriptor set and layout.
@@ -60,6 +60,7 @@ namespace Mixture::Vulkan
          * @return false If failed.
          */
         bool Build(vk::DescriptorSet& outSet, vk::DescriptorSetLayout& outLayout);
+        bool BuildWithLayout(vk::DescriptorSet& outSet, vk::DescriptorSetLayout layout);
 
     private:
         DescriptorBuilder(DescriptorAllocator* allocator, DescriptorLayoutCache* cache)
@@ -71,7 +72,7 @@ namespace Mixture::Vulkan
 
         Vector<vk::DescriptorSetLayoutBinding> m_Bindings;
         Vector<vk::WriteDescriptorSet> m_Writes;
-        Vector<vk::DescriptorBufferInfo*> m_BufferInfos;
-        Vector<vk::DescriptorImageInfo*> m_ImageInfos;
+        Vector<vk::DescriptorBufferInfo> m_BufferInfos;
+        Vector<vk::DescriptorImageInfo> m_ImageInfos;
     };
 }

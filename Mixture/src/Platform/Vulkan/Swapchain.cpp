@@ -135,7 +135,18 @@ namespace Mixture::Vulkan
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1; // Always 1 unless VR (stereoscopic)
         createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment; // We render directly to it
-        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+        const auto queueFamilies = m_PhysicalDevice->GetQueueFamilies();
+        const uint32_t sharingFamilies[] = { *queueFamilies.Graphics, *queueFamilies.Present };
+        if (queueFamilies.Graphics != queueFamilies.Present)
+        {
+            createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
+            createInfo.queueFamilyIndexCount = 2;
+            createInfo.pQueueFamilyIndices = sharingFamilies;
+        }
+        else
+        {
+            createInfo.imageSharingMode = vk::SharingMode::eExclusive;
+        }
         createInfo.preTransform = capabilities.currentTransform;
         createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
         createInfo.presentMode = presentMode;

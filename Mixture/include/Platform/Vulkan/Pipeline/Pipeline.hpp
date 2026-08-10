@@ -8,9 +8,19 @@
 #include "Platform/Vulkan/Definitions.hpp"
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
+#include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
 
 namespace Mixture::Vulkan
 {
+    struct PipelineLayoutDescription
+    {
+        Vector<Vector<vk::DescriptorSetLayoutBinding>> Sets;
+        Vector<vk::PushConstantRange> PushConstants;
+    };
+
+    PipelineLayoutDescription BuildPipelineLayoutDescription(
+        const Vector<std::pair<const ShaderReflectionData*, RHI::ShaderStage>>& shaders);
+
     class Device;
 
     /**
@@ -41,10 +51,17 @@ namespace Mixture::Vulkan
          * @return vk::PipelineLayout The layout handle.
          */
         vk::PipelineLayout GetLayout() const { return m_Layout; }
+        vk::DescriptorSetLayout GetDescriptorSetLayout(uint32_t set) const
+        {
+            return set < m_DescriptorSetLayouts.size() ? m_DescriptorSetLayouts[set] : vk::DescriptorSetLayout{};
+        }
+        const vk::PushConstantRange* FindPushConstantRange(vk::ShaderStageFlags stage, uint32_t size) const;
 
     private:
         Ref<Device> m_Device;
         vk::Pipeline m_Handle = nullptr;
         vk::PipelineLayout m_Layout = nullptr;
+        Vector<vk::DescriptorSetLayout> m_DescriptorSetLayouts;
+        Vector<vk::PushConstantRange> m_PushConstantRanges;
     };
 }

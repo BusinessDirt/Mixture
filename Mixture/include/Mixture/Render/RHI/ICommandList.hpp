@@ -178,6 +178,7 @@ namespace Mixture::RHI
          * @param newState the new state of the layout
          */
         virtual void PipelineBarrier(ITexture* texture, ResourceState oldState, ResourceState newState) = 0;
+        virtual void PipelineBarrier(IBuffer* buffer, ResourceState oldState, ResourceState newState) = 0;
 
         // ---------------------------------------------------------------------
         // Push Constants (Fast, small data upload)
@@ -199,7 +200,7 @@ namespace Mixture::RHI
          * @param binding The binding index.
          * @param buffer The buffer to bind.
          */
-        virtual void SetUniformBuffer(uint32_t binding, IBuffer* buffer) = 0;
+        virtual void SetUniformBuffer(uint32_t binding, IBuffer* buffer, uint32_t set = 0) = 0;
 
         /**
          * @brief Binds a texture to a specific binding point.
@@ -207,7 +208,7 @@ namespace Mixture::RHI
          * @param binding The binding index.
          * @param texture The texture to bind.
          */
-        virtual void SetTexture(uint32_t binding, ITexture* texture) = 0;
+        virtual void SetTexture(uint32_t binding, ITexture* texture, uint32_t set = 0) = 0;
 
         // ---------------------------------------------------------------------
         // Drawing
