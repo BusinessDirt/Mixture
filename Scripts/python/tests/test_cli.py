@@ -30,13 +30,25 @@ class CliTests(unittest.TestCase):
         context = SimpleNamespace()
         with mock.patch.object(cli.Context, "discover", return_value=context), mock.patch.object(
             cli, "run_setup", return_value=0
-        ) as run_setup:
+        ) as run_setup, mock.patch.dict("os.environ", {}, clear=True):
             result = cli.main(["setup", "--non-interactive"])
 
         self.assertEqual(result, 0)
         prompts = run_setup.call_args.args[1]
         self.assertFalse(prompts.interactive)
         self.assertFalse(prompts.assume_yes)
+
+    def test_setup_auto_approves_in_ci(self):
+        context = SimpleNamespace()
+        with mock.patch.object(cli.Context, "discover", return_value=context), mock.patch.object(
+            cli, "run_setup", return_value=0
+        ) as run_setup, mock.patch.dict("os.environ", {"CI": "true"}, clear=True):
+            result = cli.main(["setup", "--non-interactive"])
+
+        self.assertEqual(result, 0)
+        prompts = run_setup.call_args.args[1]
+        self.assertFalse(prompts.interactive)
+        self.assertTrue(prompts.assume_yes)
 
 
 if __name__ == "__main__":
