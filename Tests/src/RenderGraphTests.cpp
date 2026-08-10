@@ -18,6 +18,8 @@
 #include "Platform/Vulkan/FrameSubmission.hpp"
 #include "Platform/Vulkan/ResourcePolicy.hpp"
 #include "Platform/Vulkan/Descriptors/Builder.hpp"
+#include "Platform/Vulkan/Instance.hpp"
+#include "Platform/Vulkan/PhysicalDevice.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -261,6 +263,22 @@ namespace Mixture::Tests
         indices.Transfer = 5;
         indices.Compute = 3;
         EXPECT_EQ(Vulkan::CollectQueueFamilyIndices(indices), (Vector<uint32_t>{ 3, 5, 7 }));
+    }
+
+    TEST(VulkanCapabilityTests, RejectsMissingRequiredCapabilities)
+    {
+        Vector<vk::ExtensionProperties> noExtensions;
+        EXPECT_FALSE(Vulkan::Instance::HasRequiredExtensions(noExtensions, { VK_KHR_SURFACE_EXTENSION_NAME }));
+        EXPECT_FALSE(Vulkan::PhysicalDevice::HasRequiredExtensions(noExtensions));
+        EXPECT_FALSE(Vulkan::PhysicalDevice::HasRequiredFeatures(true, false, true));
+        EXPECT_FALSE(Vulkan::PhysicalDevice::HasUsableSurface({}, {}));
+
+        vk::ExtensionProperties swapchainExtension;
+        std::strncpy(swapchainExtension.extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_MAX_EXTENSION_NAME_SIZE - 1);
+        EXPECT_TRUE(Vulkan::PhysicalDevice::HasRequiredExtensions({ swapchainExtension }));
+        EXPECT_TRUE(Vulkan::PhysicalDevice::HasRequiredFeatures(true, true, true));
+        EXPECT_TRUE(Vulkan::PhysicalDevice::HasUsableSurface(
+            { vk::SurfaceFormatKHR{} }, { vk::PresentModeKHR::eFifo }));
     }
 
     TEST(VulkanTexturePolicyTests, SupportsAllUsageAndAspectClasses)

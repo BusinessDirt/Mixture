@@ -10,13 +10,15 @@
 
 #include <vector>
 #include <set>
+#include <stdexcept>
 
 namespace Mixture::Vulkan
 {
 	Device::Device(Ref<Instance> instance, Ref<PhysicalDevice> physicalDevice)
 		: m_Instance(std::move(instance)), m_PhysicalDevice(std::move(physicalDevice))
 	{
-		OPAL_ASSERT("Core/Vulkan", m_Instance && m_PhysicalDevice, "Device requires explicit instance and physical-device ownership");
+		if (!m_Instance || !m_PhysicalDevice)
+            throw std::invalid_argument("Device requires explicit instance and physical-device ownership");
 
 		auto indices = m_PhysicalDevice->GetQueueFamilies();
 
@@ -34,6 +36,8 @@ namespace Mixture::Vulkan
         // Check for Portability Subset (MacOS / MoltenVK)
         std::vector<vk::ExtensionProperties> availableExtensions =
             m_PhysicalDevice->GetHandle().enumerateDeviceExtensionProperties();
+        if (!PhysicalDevice::HasRequiredExtensions(availableExtensions))
+            throw std::runtime_error("Selected Vulkan device does not support VK_KHR_swapchain");
 
         for (const auto& ext : availableExtensions)
         {
@@ -54,6 +58,16 @@ namespace Mixture::Vulkan
         vk::PhysicalDeviceFeatures deviceFeatures;
         deviceFeatures.samplerAnisotropy = VK_TRUE;
 
+        vk::PhysicalDeviceBufferDeviceAddressFeatures availableBufferDeviceAddress;
+        vk::PhysicalDeviceDynamicRenderingFeatures availableDynamicRendering;
+        availableDynamicRendering.pNext = &availableBufferDeviceAddress;
+        vk::PhysicalDeviceFeatures2 availableFeatures;
+        availableFeatures.pNext = &availableDynamicRendering;
+        m_PhysicalDevice->GetHandle().getFeatures2(&availableFeatures);
+        if (!PhysicalDevice::HasRequiredFeatures(availableFeatures.features.samplerAnisotropy,
+            availableDynamicRendering.dynamicRendering, availableBufferDeviceAddress.bufferDeviceAddress))
+            throw std::runtime_error("Selected Vulkan device is missing required anisotropy, dynamic-rendering, or buffer-address features");
+
         vk::DeviceCreateInfo createInfo;
         createInfo.setQueueCreateInfos(queueCreateInfos);
         createInfo.pEnabledFeatures = &deviceFeatures;
@@ -67,8 +81,7 @@ namespace Mixture::Vulkan
         }
         catch (vk::SystemError& err)
         {
-            OPAL_CRITICAL("Core/Vulkan", "Failed to create logical device!");
-            exit(-1);
+            throw std::runtime_error(std::string("Failed to create Vulkan logical device: ") + err.what());
         }
 
         VmaVulkanFunctions vulkanFunctions = {};
@@ -85,8 +98,9 @@ namespace Mixture::Vulkan
 
         if (vmaCreateAllocator(&allocatorInfo, &m_Allocator) != VK_SUCCESS)
         {
-            OPAL_CRITICAL("Core/Vulkan", "Failed to create VMA Allocator!");
-            exit(-1);
+            m_Device.destroy();
+            m_Device = nullptr;
+            throw std::runtime_error("Failed to create the Vulkan memory allocator");
         }
 
         OPAL_INFO("Core/Vulkan", "VMA Initialized.");

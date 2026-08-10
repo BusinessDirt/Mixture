@@ -4,6 +4,7 @@
 #include "Mixture/Core/Application.hpp"
 
 #include <GLFW/glfw3.h>
+#include <stdexcept>
 
 #ifndef OPAL_DEBUG
     const bool g_EnableValidationLayers = false;
@@ -15,13 +16,22 @@ namespace Mixture::Vulkan
 {
     Instance::Instance(const ApplicationDescription& appDescription)
     {
-        CreateInstance(appDescription);
-        SetupDebugMessenger();
+        try
+        {
+            CreateInstance(appDescription);
+            SetupDebugMessenger();
+        }
+        catch (...)
+        {
+            if (m_Handle) m_Handle.destroy();
+            m_Handle = nullptr;
+            throw;
+        }
     }
 
     Instance::~Instance()
     {
-        if (g_EnableValidationLayers)
+        if (g_EnableValidationLayers && m_Handle && m_DebugMessenger)
         {
             // We also need to look up the Destroy function manually!
             auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
@@ -35,7 +45,17 @@ namespace Mixture::Vulkan
             }
         }
 
-        m_Handle.destroy();
+        if (m_Handle) m_Handle.destroy();
+    }
+
+    bool Instance::HasRequiredExtensions(const Vector<vk::ExtensionProperties>& available,
+        const Vector<const char*>& required)
+    {
+        return std::all_of(required.begin(), required.end(), [&](const char* requiredName) {
+            return std::any_of(available.begin(), available.end(), [&](const vk::ExtensionProperties& extension) {
+                return std::strcmp(requiredName, extension.extensionName) == 0;
+            });
+        });
     }
 
     void Instance::CreateInstance(const ApplicationDescription& appDescription)
@@ -50,22 +70,26 @@ namespace Mixture::Vulkan
 
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        if (!glfwExtensions || glfwExtensionCount == 0)
+            throw std::runtime_error("GLFW did not provide required Vulkan instance extensions");
         std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-        // Add Portability bit for macOS support
+#ifdef __APPLE__
         extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        extensions.push_back("VK_KHR_get_physical_device_properties2"); // Often needed for 1.3 features
+#endif
 
         if (g_EnableValidationLayers)
         {
             if (!CheckValidationLayerSupport())
-            {
-                OPAL_ERROR("Core/Vulkan", "Validation layers requested, but not available!");
-                return;
-            }
+                throw std::runtime_error("Vulkan validation layers were requested but are unavailable");
 
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
+
+
+        const Vector<vk::ExtensionProperties> availableExtensions = vk::enumerateInstanceExtensionProperties();
+        if (!HasRequiredExtensions(availableExtensions, extensions))
+            throw std::runtime_error("A required Vulkan instance extension is unavailable");
 
         vk::InstanceCreateInfo createInfo;
         createInfo.pApplicationInfo = &appInfo;
@@ -81,8 +105,10 @@ namespace Mixture::Vulkan
             createInfo.enabledLayerCount = 0;
         }
 
-        // Flags (Required for MacOS/MoltenVK)
+        // Required by MoltenVK when enumerating portability devices.
+#ifdef __APPLE__
         createInfo.flags |= vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
+#endif
 
         m_Handle = vk::createInstance(createInfo);
     }
@@ -133,16 +159,13 @@ namespace Mixture::Vulkan
             VkDebugUtilsMessengerEXT vkMessenger;
 
             if (func(m_Handle, &vkCreateInfo, nullptr, &vkMessenger) != VK_SUCCESS)
-            {
-                OPAL_ERROR("Core/Vulkan", "Failed to set up debug messenger!");
-                return;
-            }
+                throw std::runtime_error("Failed to create the Vulkan debug messenger");
 
             m_DebugMessenger = vkMessenger;
         }
         else
         {
-            OPAL_ERROR("Core/Vulkan", "vkCreateDebugUtilsMessengerEXT not found!");
+            throw std::runtime_error("vkCreateDebugUtilsMessengerEXT is unavailable");
         }
     }
 

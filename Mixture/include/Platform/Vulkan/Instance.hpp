@@ -37,6 +37,10 @@ namespace Mixture::Vulkan
          */
         vk::Instance GetHandle() const { return m_Handle; }
 
+        /** @brief Checks that every requested instance extension is advertised. */
+        static bool HasRequiredExtensions(const Vector<vk::ExtensionProperties>& available,
+            const Vector<const char*>& required);
+
     private:
         void CreateInstance(const ApplicationDescription& appDescription);
         bool CheckValidationLayerSupport();

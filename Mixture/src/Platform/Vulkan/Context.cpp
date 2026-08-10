@@ -84,21 +84,26 @@ namespace Mixture::Vulkan
 
     void Context::OnResize(uint32_t width, uint32_t height)
     {
-        if (m_Swapchain)
-        {
-            // Handle minimization (width=0) by skipping
-            if (width == 0 || height == 0) return;
+        RecreateSwapchain(width, height);
+    }
 
-            // Context owns swapchain synchronization; Recreate performs no wait.
-            m_Device->WaitForIdle();
-            m_Swapchain->Recreate(width, height);
+    bool Context::RecreateSwapchain(uint32_t width, uint32_t height)
+    {
+        if (!m_Swapchain || width == 0 || height == 0) return false;
+        m_Device->WaitForIdle();
+        m_Swapchain->Recreate(width, height);
+        m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, m_Swapchain->GetImageCount());
+        OPAL_LOG_DEBUG("Core/Vulkan", "Swapchain Resized to {} x {}", width, height);
+        return true;
+    }
 
-            uint32_t imagecount = m_Swapchain->GetImageCount();
-            m_RenderFinishedSemaphores.reset();
-            m_RenderFinishedSemaphores = CreateScope<Semaphores>(*m_Device, imagecount);
-
-            OPAL_LOG_DEBUG("Core/Vulkan", "Swapchain Resized to {} x {}", width, height);
-        }
+    bool Context::RecreateSwapchainFromWindow()
+    {
+        int width = 0;
+        int height = 0;
+        Application::Get().GetWindow().GetFramebufferSize(&width, &height);
+        if (width <= 0 || height <= 0) return false;
+        return RecreateSwapchain(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
     }
 
     RHI::ITexture* Context::BeginFrame()
@@ -125,8 +130,7 @@ namespace Mixture::Vulkan
         bool acquired = m_Swapchain->AcquireNextImage(&imageIndex, m_ImageAvailableSemaphores->Get(m_CurrentFrame));
         if (!acquired)
         {
-            // TODO: Handle resize...
-            OPAL_LOG_DEBUG("Core/Vulkan", "Failed to acquire swapchain image");
+            RecreateSwapchainFromWindow();
             return nullptr;
         }
 
@@ -182,9 +186,7 @@ namespace Mixture::Vulkan
         // Present
         bool success = m_Swapchain->Present(m_ImageIndex, m_RenderFinishedSemaphores->Get(m_ImageIndex), m_PresentQueue->GetHandle());
         if (!success)
-        {
-            // TODO: Handle resize
-        }
+            RecreateSwapchainFromWindow();
 
         // ADVANCE FRAME: 0 -> 1 -> 0 -> 1
         m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
