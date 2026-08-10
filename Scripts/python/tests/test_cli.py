@@ -18,13 +18,14 @@ class CliTests(unittest.TestCase):
             configuration = Path(directory) / "mixture.toml"
             configuration.write_text('[engine]\nversion = "1.2.3"\n', encoding="utf-8")
             context = SimpleNamespace(configuration_file=configuration)
-            output = io.StringIO()
 
-            with mock.patch.object(cli.Context, "discover", return_value=context), redirect_stdout(output):
-                result = cli.main(["version", "show"])
+            with mock.patch.object(cli.Context, "discover", return_value=context):
+                # Capture logs from the 'cli' module (or use level='INFO' to capture all)
+                with self.assertLogs(cli.__name__, level="INFO") as log_capture:
+                    result = cli.main(["version", "show"])
 
         self.assertEqual(result, 0)
-        self.assertEqual(output.getvalue().strip(), "1.2.3")
+        self.assertEqual(log_capture.records[0].message, "1.2.3")
 
     def test_setup_passes_non_interactive_prompt_policy(self):
         context = SimpleNamespace()
