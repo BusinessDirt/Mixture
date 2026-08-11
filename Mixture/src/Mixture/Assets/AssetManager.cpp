@@ -364,7 +364,6 @@ namespace Mixture
 
         AssetMetadata metadata = AssetRegistry::Get().FindByPath(type, resolvedPath);
 
-        const char* typeString = Utils::AssetTypeToString(type);
         const auto fullPath = ResolveFullPath(type, resolvedPath);
         if (!fullPath)
         {
