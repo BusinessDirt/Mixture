@@ -25,14 +25,14 @@ namespace Mixture
     class ShaderCompiler
     {
     public:
-        /** @brief Returns whether the DXC runtime is available for compilation. */
+        /** @brief Returns whether the Slang runtime is available for compilation. */
         static bool IsAvailable();
 
         /**
-         * @brief Compiles shader source code into SPIR-V.
+         * @brief Compiles shader source code for the active graphics API.
          *
          * @param source The shader source code.
-         * @return Vector<uint8_t> The compiled SPIR-V bytecode.
+         * @return Vector<uint8_t> The compiled target bytecode.
          */
         static Vector<uint8_t> Compile(const std::string& source);
 

@@ -4,6 +4,7 @@
 #include "Mixture/Core/LayerStack.hpp"
 #include "Mixture/Core/Application.hpp"
 #include "Opal/Log.hpp"
+#include <cstdlib>
 #include <filesystem>
 #include <thread>
 
@@ -11,7 +12,14 @@ namespace Mixture::Tests {
 
     TEST(CoreTests, DefaultLogFileResolverPreservesLogsDirectory) {
         auto resolver = Opal::ILogFileResolver::Create();
+#if defined(OPAL_PLATFORM_DARWIN)
+        const char* homeDir = std::getenv("HOME");
+        ASSERT_NE(homeDir, nullptr);
+        EXPECT_EQ(resolver->Resolve("latest.log"),
+            std::filesystem::path(homeDir) / "Library" / "Logs" / "MixtureEngine" / "latest.log");
+#else
         EXPECT_EQ(resolver->Resolve("latest.log"), std::filesystem::path("logs/latest.log"));
+#endif
     }
 
     TEST(CoreTests, LogBuilderDelegatesFilePathResolutionToConfiguredResolver) {
