@@ -43,7 +43,7 @@ end
 
 function application_debug_links()
     return {
-        "%{Library.dxc_debug}",
+        "%{Library.slang_debug}",
         "%{Library.spirv_cross_debug}",
         "%{Library.spirv_cross_glsl_debug}",
         "%{Library.spirv_cross_msl_debug}"
@@ -52,7 +52,7 @@ end
 
 function application_ndebug_links()
     return {
-        "%{Library.dxc_release}",
+        "%{Library.slang_release}",
         "%{Library.spirv_cross_release}",
         "%{Library.spirv_cross_glsl_release}",
         "%{Library.spirv_cross_msl_release}"

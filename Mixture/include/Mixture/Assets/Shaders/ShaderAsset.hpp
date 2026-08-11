@@ -62,7 +62,6 @@ namespace Mixture
     private:
         UUID m_ID;
         std::string m_Name;
-        // Generic storage for DXIL, DXBC, or SPIR-V
         std::vector<uint8_t> m_ByteCode;
     };
 }

@@ -34,8 +34,8 @@ end
 Library["molten_vk"] = "MoltenVK"
 
 if os.istarget("windows") then
-    Library["dxc_debug"] = "%{LibraryDir.vulkan}/dxcompiler.lib"
-    Library["dxc_release"] = "%{LibraryDir.vulkan}/dxcompiler.lib"
+    Library["slang_debug"] = "%{LibraryDir.vulkan}/slang.lib"
+    Library["slang_release"] = "%{LibraryDir.vulkan}/slang.lib"
 
     Library["spirv_cross_debug"] = "%{LibraryDir.vulkan}/spirv-cross-cored.lib"
     Library["spirv_cross_glsl_debug"] = "%{LibraryDir.vulkan}/spirv-cross-glsld.lib"
@@ -46,8 +46,8 @@ if os.istarget("windows") then
     Library["spirv_cross_msl_release"] = "%{LibraryDir.vulkan}/spirv-cross-msl.lib"
 
 else
-    Library["dxc_debug"] = "dxcompiler"
-    Library["dxc_release"] = "dxcompiler"
+    Library["slang_debug"] = "slang"
+    Library["slang_release"] = "slang"
 
     Library["spirv_cross_debug"] = "spirv-cross-core"
     Library["spirv_cross_glsl_debug"] = "spirv-cross-glsl"

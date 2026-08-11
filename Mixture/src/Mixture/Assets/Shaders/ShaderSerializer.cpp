@@ -15,7 +15,7 @@ namespace Mixture
         std::vector<uint8_t> compiledBlob;
         std::string ext = metadata.FilePath.extension().string();
 
-        if (ext == ".hlsl")
+        if (ext == ".slang")
         {
             // --- PATH: COMPILE SOURCE ---
             // Construct string from data (careful if not null terminated)

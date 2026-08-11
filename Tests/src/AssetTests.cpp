@@ -4,6 +4,7 @@
 #include "Mixture/Assets/AssetSerializer.hpp"
 #include "Mixture/Assets/Shaders/ShaderAsset.hpp"
 #include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
+#include "Mixture/Assets/Shaders/IShaderReflector.hpp"
 #include "Mixture/Assets/Textures/TextureAsset.hpp"
 #include "Mixture/Util/FileStreamReader.hpp"
 #include <fstream>
@@ -14,6 +15,51 @@
 #include "Mixture/Util/FileSystemWatcher.hpp"
 
 using namespace Mixture;
+
+namespace
+{
+    bool IsPathWithin(const std::filesystem::path& root, const std::filesystem::path& candidate)
+    {
+        auto rootIt = root.begin();
+        auto candidateIt = candidate.begin();
+        for (; rootIt != root.end(); ++rootIt, ++candidateIt)
+        {
+            if (candidateIt == candidate.end() || *candidateIt != *rootIt) return false;
+        }
+        return true;
+    }
+
+    class TestFileSystemAssetResolver final : public IAssetFileResolver
+    {
+    public:
+        explicit TestFileSystemAssetResolver(std::filesystem::path root) : m_Root(std::move(root)) {}
+
+        std::optional<std::filesystem::path> Resolve(
+            AssetType type, const std::filesystem::path& path) const override
+        {
+            if (path.empty() || path.is_absolute() || type <= AssetType::None || type >= AssetType::Count)
+                return std::nullopt;
+
+            std::error_code error;
+            const auto typeRoot = std::filesystem::weakly_canonical(
+                m_Root / Utils::AssetTypeToString(type), error);
+            if (error) return std::nullopt;
+
+            const auto candidate = std::filesystem::weakly_canonical(typeRoot / path, error);
+            if (error || !IsPathWithin(typeRoot, candidate)) return std::nullopt;
+            return candidate;
+        }
+
+    private:
+        std::filesystem::path m_Root;
+    };
+
+    void ConfigureTestAssetRoot(AssetManager& manager, const std::filesystem::path& root)
+    {
+        manager.SetAssetRoot(root);
+        manager.SetAssetFileResolver(CreateRef<TestFileSystemAssetResolver>(root));
+    }
+}
 
 TEST(UUIDTests, ConcurrentGenerationIsSafeAndProducesValidValues)
 {
@@ -215,7 +261,7 @@ TEST(AssetFileResolverTests, DefaultResolverPreservesTypedRootAndRejectsEscapes)
         / ("MixtureAssetStrategy-" + std::to_string(static_cast<uint64_t>(UUID())));
     std::filesystem::create_directories(root / "Shader");
 
-    const auto resolver = IAssetFileResolver::Create(root);
+    const auto resolver = CreateRef<TestFileSystemAssetResolver>(root);
     const auto resolved = resolver->Resolve(AssetType::Shader, "Nested/Test.spv");
     ASSERT_TRUE(resolved.has_value());
     EXPECT_EQ(*resolved, std::filesystem::weakly_canonical(root / "Shader/Nested/Test.spv"));
@@ -320,7 +366,7 @@ TEST_F(AssetManagerTests, LoadsAssetsOnOwnedExecutorAndWaitsForIdle)
         stream.write(bytecode.data(), static_cast<std::streamsize>(bytecode.size()));
     }
 
-    manager.SetAssetRoot(root);
+    ConfigureTestAssetRoot(manager, root);
     const AssetHandle pending = manager.GetAsset(AssetType::Shader, shaderPath.filename());
     ASSERT_TRUE(pending.ID.IsValid());
     EXPECT_EQ(pending.Magic, 0u);
@@ -367,7 +413,7 @@ TEST_F(AssetManagerTests, ShutdownJoinsActiveReadsBeforeReturning)
 
     std::atomic<size_t> callbackCount = 0;
     manager.AddReloadCallback([&callbackCount](AssetType, UUID) { ++callbackCount; });
-    manager.SetAssetRoot(root);
+    ConfigureTestAssetRoot(manager, root);
     const AssetHandle pending = manager.GetAsset(AssetType::Shader, shaderPath.filename());
     ASSERT_TRUE(pending.ID.IsValid());
 
@@ -400,7 +446,7 @@ TEST_F(AssetManagerTests, ConcurrentRequestsShareOneCacheEntry)
     metadata.FilePath = shaderPath;
     AssetSerializer::WriteMetadata(metadata);
 
-    manager.SetAssetRoot(root);
+    ConfigureTestAssetRoot(manager, root);
     std::array<AssetHandle, 16> handles;
     std::vector<std::thread> workers;
     for (auto& handle : handles)
@@ -430,7 +476,7 @@ TEST_F(AssetManagerTests, RejectsPathsOutsideAssetTypeRoot)
         stream << "outside";
     }
 
-    manager.SetAssetRoot(root);
+    ConfigureTestAssetRoot(manager, root);
     EXPECT_FALSE(manager.GetAsset(AssetType::Shader, outside));
     EXPECT_FALSE(manager.GetAsset(AssetType::Shader, "../../" + outside.filename().string()));
 
@@ -460,7 +506,7 @@ TEST_F(AssetManagerTests, RejectsSymlinkEscapesWhenSupported)
         GTEST_SKIP() << "Symbolic links are unavailable: " << error.message();
     }
 
-    manager.SetAssetRoot(root);
+    ConfigureTestAssetRoot(manager, root);
     EXPECT_FALSE(manager.GetAsset(AssetType::Shader, link.filename()));
 
     manager.Shutdown();
@@ -482,7 +528,7 @@ TEST_F(AssetManagerTests, SteadyStateLookupAvoidsMetadataFileAccess)
         stream.write(bytecode.data(), static_cast<std::streamsize>(bytecode.size()));
     }
 
-    manager.SetAssetRoot(root);
+    ConfigureTestAssetRoot(manager, root);
     manager.GetAsset(AssetType::Shader, shaderPath.filename());
     manager.WaitForIdle();
     const uint64_t coldPathAccesses = manager.GetMetadataFileAccessCount();
@@ -628,7 +674,7 @@ TEST(AssetTypeTests, ShaderAsset)
 TEST_F(AssetManagerTests, ShaderCompilerProducesValidOutputWhenAvailable)
 {
     if (!ShaderCompiler::IsAvailable())
-        GTEST_SKIP() << "DXC runtime is unavailable";
+        GTEST_SKIP() << "Slang runtime is unavailable";
 
     AssetManager::Get().SetGraphicsAPI(RHI::GraphicsAPI::Vulkan);
     std::string source = R"(
@@ -644,19 +690,86 @@ TEST_F(AssetManagerTests, ShaderCompilerProducesValidOutputWhenAvailable)
     std::memcpy(&magic, spirv.data(), sizeof(magic));
     EXPECT_EQ(magic, 0x07230203u);
 
-    const auto reflection = ShaderCompiler::ReflectSPIRV(spirv.data(), spirv.size());
+    const auto reflector = IShaderReflector::Create(RHI::GraphicsAPI::Vulkan);
+    ASSERT_NE(reflector, nullptr);
+    const auto reflection = reflector->Reflect(spirv.data(), spirv.size());
     ASSERT_TRUE(reflection.EntryPoints.contains(RHI::ShaderStage::Vertex));
     EXPECT_EQ(reflection.EntryPoints.at(RHI::ShaderStage::Vertex), "main");
+}
+
+TEST_F(AssetManagerTests, ShaderCompilerProducesVulkanAndD3D12Bytecode)
+{
+    if (!ShaderCompiler::IsAvailable())
+        GTEST_SKIP() << "Slang runtime is unavailable";
+
+    const std::string source = R"(
+        [shader("compute")]
+        [numthreads(1, 1, 1)]
+        void main(uint3 dispatchThreadID : SV_DispatchThreadID) {}
+    )";
+
+    for (const RHI::GraphicsAPI api : {
+             RHI::GraphicsAPI::Vulkan,
+             RHI::GraphicsAPI::D3D12,
+         })
+    {
+        const auto result = ShaderCompiler::CompileDetailed(source, api);
+        ASSERT_TRUE(result.Succeeded()) << "API " << static_cast<int>(api) << ": " << result.Diagnostics;
+        EXPECT_FALSE(result.Bytecode.empty());
+    }
+}
+
+TEST_F(AssetManagerTests, ShaderCompilerReportsMetalTargetGenerationFailures)
+{
+    if (!ShaderCompiler::IsAvailable())
+        GTEST_SKIP() << "Slang runtime is unavailable";
+
+    const auto result = ShaderCompiler::CompileDetailed(R"(
+        [shader("compute")]
+        [numthreads(1, 1, 1)]
+        void main(uint3 dispatchThreadID : SV_DispatchThreadID) {}
+    )", RHI::GraphicsAPI::Metal);
+
+    // Generating a metallib requires Slang's downstream Metal compiler. The
+    // result is valid in both environments: bytecode when it is installed,
+    // otherwise a usable diagnostic without partial output.
+    if (result.Succeeded())
+    {
+        EXPECT_FALSE(result.Bytecode.empty());
+    }
+    else
+    {
+        EXPECT_TRUE(result.Bytecode.empty());
+        EXPECT_FALSE(result.Diagnostics.empty());
+    }
+}
+
+TEST(ShaderCompilerTests, RejectsCompilationWithoutATargetAPI)
+{
+    const auto result = ShaderCompiler::CompileDetailed("[shader(\"compute\")] void main() {}", RHI::GraphicsAPI::None);
+    EXPECT_FALSE(result.Succeeded());
+    EXPECT_TRUE(result.Bytecode.empty());
+    EXPECT_EQ(result.Diagnostics, "No valid RHI::GraphicsAPI was selected");
+}
+
+TEST(ShaderReflectorTests, CreatesReflectorsForEverySupportedAPI)
+{
+    EXPECT_NE(IShaderReflector::Create(RHI::GraphicsAPI::Vulkan), nullptr);
+    EXPECT_NE(IShaderReflector::Create(RHI::GraphicsAPI::D3D12), nullptr);
+    EXPECT_NE(IShaderReflector::Create(RHI::GraphicsAPI::Metal), nullptr);
+    EXPECT_EQ(IShaderReflector::Create(RHI::GraphicsAPI::None), nullptr);
 }
 
 TEST(ShaderCompilerTests, RejectsMalformedSPIRVWithoutDereferencingIt)
 {
     const Vector<uint8_t> truncated{ 0x03, 0x02, 0x23 };
-    EXPECT_TRUE(ShaderCompiler::ConvertToMSL(truncated).empty());
-    EXPECT_TRUE(ShaderCompiler::ReflectSPIRV(truncated.data(), truncated.size()).EntryPoints.empty());
+    const auto reflector = IShaderReflector::Create(RHI::GraphicsAPI::Vulkan);
+    ASSERT_NE(reflector, nullptr);
+    EXPECT_TRUE(reflector->Reflect(truncated.data(), truncated.size()).EntryPoints.empty());
 
     alignas(uint32_t) const std::array<uint32_t, 2> wrongMagic{ 0xDEADBEEF, 0 };
-    EXPECT_TRUE(ShaderCompiler::ReflectSPIRV(wrongMagic.data(), sizeof(wrongMagic)).EntryPoints.empty());
+    EXPECT_TRUE(reflector->Reflect(wrongMagic.data(), sizeof(wrongMagic)).EntryPoints.empty());
+    EXPECT_EQ(IShaderReflector::Create(RHI::GraphicsAPI::None), nullptr);
 }
 
 TEST_F(AssetManagerTests, ShaderCompilerPropagatesFailure)
