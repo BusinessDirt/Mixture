@@ -4,6 +4,7 @@
 #include "Mixture/Assets/AssetSerializer.hpp"
 #include "Mixture/Assets/Shaders/ShaderAsset.hpp"
 #include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
+#include "Mixture/Assets/Shaders/IShaderReflector.hpp"
 #include "Mixture/Assets/Textures/TextureAsset.hpp"
 #include "Mixture/Util/FileStreamReader.hpp"
 #include <fstream>
@@ -644,7 +645,9 @@ TEST_F(AssetManagerTests, ShaderCompilerProducesValidOutputWhenAvailable)
     std::memcpy(&magic, spirv.data(), sizeof(magic));
     EXPECT_EQ(magic, 0x07230203u);
 
-    const auto reflection = ShaderCompiler::ReflectSPIRV(spirv.data(), spirv.size());
+    const auto reflector = IShaderReflector::Create(RHI::GraphicsAPI::Vulkan);
+    ASSERT_NE(reflector, nullptr);
+    const auto reflection = reflector->Reflect(spirv.data(), spirv.size());
     ASSERT_TRUE(reflection.EntryPoints.contains(RHI::ShaderStage::Vertex));
     EXPECT_EQ(reflection.EntryPoints.at(RHI::ShaderStage::Vertex), "main");
 }
@@ -652,11 +655,13 @@ TEST_F(AssetManagerTests, ShaderCompilerProducesValidOutputWhenAvailable)
 TEST(ShaderCompilerTests, RejectsMalformedSPIRVWithoutDereferencingIt)
 {
     const Vector<uint8_t> truncated{ 0x03, 0x02, 0x23 };
-    EXPECT_TRUE(ShaderCompiler::ConvertToMSL(truncated).empty());
-    EXPECT_TRUE(ShaderCompiler::ReflectSPIRV(truncated.data(), truncated.size()).EntryPoints.empty());
+    const auto reflector = IShaderReflector::Create(RHI::GraphicsAPI::Vulkan);
+    ASSERT_NE(reflector, nullptr);
+    EXPECT_TRUE(reflector->Reflect(truncated.data(), truncated.size()).EntryPoints.empty());
 
     alignas(uint32_t) const std::array<uint32_t, 2> wrongMagic{ 0xDEADBEEF, 0 };
-    EXPECT_TRUE(ShaderCompiler::ReflectSPIRV(wrongMagic.data(), sizeof(wrongMagic)).EntryPoints.empty());
+    EXPECT_TRUE(reflector->Reflect(wrongMagic.data(), sizeof(wrongMagic)).EntryPoints.empty());
+    EXPECT_EQ(IShaderReflector::Create(RHI::GraphicsAPI::None), nullptr);
 }
 
 TEST_F(AssetManagerTests, ShaderCompilerPropagatesFailure)

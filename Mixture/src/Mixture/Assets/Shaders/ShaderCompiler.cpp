@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
+#include "Mixture/Assets/Shaders/IShaderReflector.hpp"
 
 #include "Mixture/Assets/AssetManager.hpp"
 
@@ -10,7 +11,6 @@
     #include <dxc/WinAdapter.h>
 #endif
 #include <dxc/dxcapi.h>
-#include <spirv_cross/spirv_msl.hpp>
 #include <spirv_reflect.h>
 
 namespace Mixture
@@ -53,6 +53,23 @@ namespace Mixture
                 }
             }
         }
+
+        class SPIRVShaderReflector : public IShaderReflector
+        {
+        public:
+            ShaderReflectionData Reflect(const void* binaryData, size_t binarySize) const override;
+        };
+
+        // These remain distinct API seams even while DXC produces SPIR-V for
+        // both backends. Slang can replace Metal's implementation independently.
+        class VulkanShaderReflector final : public SPIRVShaderReflector {};
+        class MetalShaderReflector final : public SPIRVShaderReflector {};
+
+        class DXILShaderReflector final : public IShaderReflector
+        {
+        public:
+            ShaderReflectionData Reflect(const void*, size_t) const override { return {}; }
+        };
     }
 
     bool ShaderCompiler::IsAvailable()
@@ -65,7 +82,17 @@ namespace Mixture
         return CompileDetailed(source).Bytecode;
     }
 
+    Vector<uint8_t> ShaderCompiler::Compile(const std::string& source, RHI::GraphicsAPI graphicsAPI)
+    {
+        return CompileDetailed(source, graphicsAPI).Bytecode;
+    }
+
     ShaderCompileResult ShaderCompiler::CompileDetailed(const std::string& source)
+    {
+        return CompileDetailed(source, AssetManager::Get().GetGraphicsAPI());
+    }
+
+    ShaderCompileResult ShaderCompiler::CompileDetailed(const std::string& source, RHI::GraphicsAPI graphicsAPI)
     {
         ShaderCompileResult result;
         if (source.size() > std::numeric_limits<uint32_t>::max())
@@ -73,8 +100,6 @@ namespace Mixture
             result.Diagnostics = "Shader source exceeds the DXC input-size limit";
             return result;
         }
-        auto graphicsAPI = AssetManager::Get().GetGraphicsAPI();
-
         CompilerState& state = GetCompilerState();
         if (!state.Available)
         {
@@ -173,36 +198,7 @@ namespace Mixture
         return result;
     }
 
-    Vector<uint8_t> ShaderCompiler::ConvertToMSL(const Vector<uint8_t>& spv)
-    {
-        if (spv.size() < sizeof(uint32_t) || spv.size() % sizeof(uint32_t) != 0) return {};
-
-        Vector<uint32_t> spirvWords(spv.size() / sizeof(uint32_t));
-        std::memcpy(spirvWords.data(), spv.data(), spv.size());
-        if (spirvWords.front() != 0x07230203u) return {};
-
-        try
-        {
-            spirv_cross::CompilerMSL mslCompiler(spirvWords.data(), spirvWords.size());
-            spirv_cross::CompilerMSL::Options mslOptions;
-            mslOptions.set_msl_version(2, 3);
-            mslOptions.argument_buffers_tier = spirv_cross::CompilerMSL::Options::ArgumentBuffersTier::Tier2;
-            mslOptions.enable_decoration_binding = true;
-            mslCompiler.set_msl_options(mslOptions);
-
-            const std::string mslSource = mslCompiler.compile();
-            return Vector<uint8_t>(mslSource.begin(), mslSource.end());
-        }
-        catch (const std::exception& e)
-        {
-            OPAL_ERROR("AssetManager", "SPIRV-Cross compilation failed: {}", e.what());
-            return {};
-        }
-
-        return {};
-    }
-
-    ShaderReflectionData ShaderCompiler::ReflectSPIRV(const void* binaryData, size_t binarySize)
+    ShaderReflectionData SPIRVShaderReflector::Reflect(const void* binaryData, size_t binarySize) const
     {
         ShaderReflectionData data;
         if (!binaryData || binarySize < sizeof(uint32_t) || binarySize % sizeof(uint32_t) != 0
@@ -349,9 +345,23 @@ namespace Mixture
         return data;
     }
 
-    ShaderReflectionData ShaderCompiler::ReflectDXIL(const void* binaryData, size_t binarySize)
+    Scope<IShaderReflector> IShaderReflector::Create(RHI::GraphicsAPI graphicsAPI)
     {
-        ShaderReflectionData data{};
-        return data;
+        switch (graphicsAPI)
+        {
+            case RHI::GraphicsAPI::Vulkan:
+            // DXC currently emits SPIR-V for Vulkan.
+            return CreateScope<VulkanShaderReflector>();
+            case RHI::GraphicsAPI::Metal:
+            // The current compiler path also emits SPIR-V for Metal. Slang can
+            // replace this with a Metal-specific reflector when it emits Metal bytecode.
+            return CreateScope<MetalShaderReflector>();
+            case RHI::GraphicsAPI::D3D12:
+            return CreateScope<DXILShaderReflector>();
+            case RHI::GraphicsAPI::None:
+            return nullptr;
+        }
+
+        return nullptr;
     }
 }

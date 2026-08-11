@@ -24,7 +24,10 @@ namespace Mixture::Vulkan
         if (magic != 0x07230203u)
             throw std::invalid_argument("Shader bytecode does not contain a SPIR-V header");
 
-        m_ReflectionData = ShaderCompiler::ReflectSPIRV(data, size);
+        const auto reflector = IShaderReflector::Create(RHI::GraphicsAPI::Vulkan);
+        if (!reflector)
+            throw std::runtime_error("Vulkan shader reflection is unavailable");
+        m_ReflectionData = reflector->Reflect(data, size);
 
         vk::ShaderModuleCreateInfo createInfo;
         createInfo.setCodeSize(size);

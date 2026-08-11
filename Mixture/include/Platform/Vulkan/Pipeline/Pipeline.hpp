@@ -8,7 +8,7 @@
 #include "Platform/Vulkan/Definitions.hpp"
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
-#include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
+#include "Mixture/Assets/Shaders/IShaderReflector.hpp"
 
 namespace Mixture::Vulkan
 {
