@@ -83,8 +83,8 @@ namespace Mixture
 
     Ref<IAssetFileResolver> IAssetFileResolver::Create(const std::filesystem::path& root)
     {
-#if defined(OPAL_PLATFORM_DARWIN) && defined(OPAL_DIST)
-        return CreateRef<FileSystemAssetFileResolver>(root);
+#if defined(OPAL_PLATFORM_DARWIN)
+        return CreateRef<AppBundleAssetFileResolver>();
 #else
         return CreateRef<FileSystemAssetFileResolver>(root);
 #endif

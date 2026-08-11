@@ -1,5 +1,7 @@
 #include "Opal/LogFileResolver.hpp"
 
+#include "Opal/PlatformDetection.hpp"
+
 namespace Opal
 {
     namespace
@@ -33,7 +35,7 @@ namespace Opal
 
     std::shared_ptr<ILogFileResolver> ILogFileResolver::Create()
     {
-#if defined(OPAL_PLATFORM_DARWIN) && defined(OPAL_DIST)
+#if defined(OPAL_PLATFORM_DARWIN)
         return std::make_shared<DarwinHomeDirectoryLogFileResolver>();
 #else
         return std::make_shared<DirectoryLogFileResolver>();
