@@ -27,5 +27,9 @@ project "App"
 
     filter "action:xcode4"
         xcode_settings()
+        xcodebuildsettings {
+            ["INFOPLIST_FILE"] = "Info.plist",
+            ["PRODUCT_BUNDLE_IDENTIFIER"] = "com.mixture.app"
+        }
 
     filter {}

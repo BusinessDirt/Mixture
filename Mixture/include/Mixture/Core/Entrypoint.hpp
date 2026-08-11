@@ -22,8 +22,7 @@ extern Mixture::Application* Mixture::CreateApplication(ApplicationCommandLineAr
 inline int Entrypoint(const int argc, char** argv)
 {
     Opal::LogBuilder builder;
-    builder.UseConsoleSink()
-           .UseFileSink("logs/latest.log");
+    builder.UseConsoleSink().UseFileSink("latest.log");
 
     Opal::LogRegistry::Get().SetThreadName("Main Thread");
     Opal::LogRegistry::Get().Initialize(builder.Build());
@@ -35,30 +34,29 @@ inline int Entrypoint(const int argc, char** argv)
     return 0;
 }
 
-#ifdef OPAL_DIST
+#if defined(OPAL_DIST) && defined(OPAL_PLATFORM_WINDOWS)
 
-#if defined(OPAL_PLATFORM_WINDOWS)
-
+// ---------------------------------------------------------
+// WINDOWS DISTRIBUTION ENTRY POINT (Hides the console)
+// ---------------------------------------------------------
 #include <Windows.h>
 
 int APIENTRY WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PSTR cmdline, int cmdshow)
 {
+    // __argc and __argv are MSVC compiler extensions that fetch
+    // the command line arguments without needing standard main()
     return Entrypoint(__argc, __argv);
 }
 
-#elif defined(OPAL_PLATFORM_MACOSX)
-
-
-
-#else
-#error OS not supported
-#endif // MX_PLATFORM_WINDOWS
-
 #else
 
+// ---------------------------------------------------------
+// STANDARD ENTRY POINT
+// (Used for all Mac/Linux builds, and Windows Debug builds)
+// ---------------------------------------------------------
 int main(const int argc, char** argv)
 {
     return Entrypoint(argc, argv);
 }
 
-#endif // MX_DIST
+#endif // OPAL_DIST && OPAL_PLATFORM_WINDOWS

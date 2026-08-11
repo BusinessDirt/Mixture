@@ -34,11 +34,11 @@ namespace Opal
         /**
          * @brief Adds a file sink to the builder.
          *
-         * @param filepath The path to the log file.
+         * @param filename The name of the log file.
          * @param level The log level for this sink (default: trace).
          * @return LogBuilder& Reference to this builder for chaining.
          */
-        LogBuilder& UseFileSink(const std::string& filepath, spdlog::level::level_enum level = spdlog::level::trace);
+        LogBuilder& UseFileSink(const std::string& filename, spdlog::level::level_enum level = spdlog::level::trace);
 
         /**
          * @brief Adds a custom sink to the builder.
