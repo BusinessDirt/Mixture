@@ -1,6 +1,8 @@
 #include "mxpch.hpp"
 #include "Mixture/Assets/Shaders/SPIRVShaderReflector.hpp"
 
+#include <spirv_reflect.h>
+
 namespace Mixture
 {
     namespace

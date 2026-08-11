@@ -4,14 +4,8 @@
 
 #include "Mixture/Assets/AssetManager.hpp"
 
-#ifdef _WIN32
-    #include <Windows.h>
-    #include <atlbase.h>
-#else
-    #include <dxc/WinAdapter.h>
-#endif
-#include <dxc/dxcapi.h>
-#include <spirv_reflect.h>
+#include <slang/slang.h>
+#include <slang/slang-com-ptr.h>
 
 namespace Mixture
 {
@@ -19,15 +13,14 @@ namespace Mixture
     {
         struct CompilerState
         {
-            CComPtr<IDxcUtils> Utils;
-            CComPtr<IDxcCompiler3> Compiler;
+            Slang::ComPtr<slang::IGlobalSession> GlobalSession;
             bool Available = false;
 
             CompilerState()
             {
-                const HRESULT utilsResult = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&Utils));
-                const HRESULT compilerResult = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&Compiler));
-                Available = SUCCEEDED(utilsResult) && SUCCEEDED(compilerResult) && Utils && Compiler;
+                // Create the Slang global session once during engine initialization
+                const SlangResult res = slang::createGlobalSession(GlobalSession.writeRef());
+                Available = SLANG_SUCCEEDED(res) && GlobalSession != nullptr;
             }
         };
 
@@ -63,104 +56,112 @@ namespace Mixture
         ShaderCompileResult result;
         if (source.size() > std::numeric_limits<uint32_t>::max())
         {
-            result.Diagnostics = "Shader source exceeds the DXC input-size limit";
-            return result;
-        }
-        CompilerState& state = GetCompilerState();
-        if (!state.Available)
-        {
-            OPAL_ERROR("AssetManager", "DXC is unavailable; shader compilation cannot continue.");
-            result.Diagnostics = "DXC is unavailable";
+            result.Diagnostics = "Shader source exceeds size limit";
             return result;
         }
 
-        // Create a blob from the source string
-        CComPtr<IDxcBlobEncoding> pSource;
-        const HRESULT blobResult = state.Utils->CreateBlob(
-            source.c_str(), static_cast<uint32_t>(source.length()), CP_UTF8, &pSource);
-        if (FAILED(blobResult) || !pSource)
+        // Initialize Global Session
+        Slang::ComPtr<slang::IGlobalSession> globalSession;
+        if (SLANG_FAILED(slang::createGlobalSession(globalSession.writeRef())))
         {
-            result.Diagnostics = "DXC failed to create a source blob";
+            result.Diagnostics = "Failed to create Slang Global Session";
             return result;
         }
 
-        // Set up Compiler Arguments
-        Vector<LPCWSTR> arguments;
+        // Configure the Target
+        slang::TargetDesc targetDesc = {};
+        targetDesc.profile = globalSession->findProfile("sm_6_5"); // Shader Model 6.5
 
-        // Use Library profile (lib_6_x) to support multiple undefined entry points
-        arguments.push_back(L"-T");
-        arguments.push_back(L"lib_6_5"); // Shader Model 6.5
-
-#ifdef OPAL_DEBUG
-        arguments.push_back(L"-Od");
-        arguments.push_back(L"-Zi");
-        arguments.push_back(L"-Qembed_debug");
-#else
-        arguments.push_back(L"-O3");
-#endif
-
-        // API-Specific Flags
-        if (graphicsAPI == RHI::GraphicsAPI::Vulkan || graphicsAPI == RHI::GraphicsAPI::Metal)
+        switch (graphicsAPI)
         {
-            // Both Vulkan and Metal start with SPIR-V
-            arguments.push_back(L"-spirv");
-            arguments.push_back(L"-fspv-target-env=vulkan1.3");
+            case RHI::GraphicsAPI::Vulkan: targetDesc.format = SLANG_SPIRV;     break;
+            case RHI::GraphicsAPI::Metal:  targetDesc.format = SLANG_METAL_LIB; break;
+            case RHI::GraphicsAPI::D3D12:  targetDesc.format = SLANG_DXIL;      break;
 
-            // Important: Preserve bindings so SPIRV-Cross can reflect them later
-            arguments.push_back(L"-fvk-use-dx-layout");
+            case RHI::GraphicsAPI::None:
+            default:
+                result.Diagnostics = "No valid RHI::GraphicsAPI was selected";
+                return result;
         }
 
-        // Run Compilation
-        DxcBuffer sourceBuffer;
-        sourceBuffer.Ptr = pSource->GetBufferPointer();
-        sourceBuffer.Size = pSource->GetBufferSize();
-        sourceBuffer.Encoding = DXC_CP_UTF8;
+        targetDesc.flags = 0;
+    #ifdef OPAL_DEBUG
+        targetDesc.flags |= SLANG_TARGET_FLAG_GENERATE_WHOLE_PROGRAM;
+    #endif
 
-        CComPtr<IDxcResult> pResults;
-        const HRESULT compileResult = state.Compiler->Compile(&sourceBuffer, arguments.data(),
-            static_cast<uint32_t>(arguments.size()), nullptr, IID_PPV_ARGS(&pResults));
-        if (FAILED(compileResult) || !pResults)
+        // Configure and Create the Compilation Session
+        slang::SessionDesc sessionDesc = {};
+        sessionDesc.targets = &targetDesc;
+        sessionDesc.targetCount = 1;
+        sessionDesc.defaultMatrixLayoutMode = SLANG_MATRIX_LAYOUT_COLUMN_MAJOR;
+
+        Slang::ComPtr<slang::ISession> session;
+        globalSession->createSession(sessionDesc, session.writeRef());
+
+        // Load and Compile the Shader Module
+        Slang::ComPtr<slang::IBlob> diagnosticsBlob;
+        slang::IModule* module = session->loadModuleFromSourceString(
+            "ShaderModule",
+            "Shader.slang",
+            source.c_str(),
+            diagnosticsBlob.writeRef()
+        );
+
+        if (diagnosticsBlob && diagnosticsBlob->getBufferSize() > 0)
         {
-            result.Diagnostics = "DXC failed to start compilation";
-            return result;
+            result.Diagnostics.assign(
+                (const char*)diagnosticsBlob->getBufferPointer(),
+                diagnosticsBlob->getBufferSize()
+            );
         }
 
-        // Check for Errors
-        CComPtr<IDxcBlobUtf8> pErrors;
-        const HRESULT errorsResult = pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
-        if (FAILED(errorsResult))
-        {
-            result.Diagnostics = "DXC failed to retrieve compiler diagnostics";
-            return result;
-        }
-        if (pErrors && pErrors->GetStringLength() != 0)
-            result.Diagnostics.assign(pErrors->GetStringPointer(), pErrors->GetStringLength());
-
-        HRESULT compilationStatus = E_FAIL;
-        const HRESULT statusResult = pResults->GetStatus(&compilationStatus);
-        if (FAILED(statusResult) || FAILED(compilationStatus))
+        if (!module)
         {
             if (!result.Diagnostics.empty())
                 OPAL_ERROR("AssetManager", "Shader compile error: {}", result.Diagnostics);
             else
-                result.Diagnostics = "DXC compilation failed without diagnostics";
+                result.Diagnostics = "Slang failed to compile the module without diagnostics";
             return result;
         }
 
-        if (!result.Diagnostics.empty())
-            OPAL_WARN("AssetManager", "Shader compile diagnostics: {}", result.Diagnostics);
+        // Generate Target Code
+        Slang::ComPtr<slang::IBlob> codeBlob;
+        Slang::ComPtr<slang::IBlob> targetDiagnosticsBlob;
 
-        // Get the Output Blob (DXIL or SPIR-V)
-        CComPtr<IDxcBlob> pShaderBlob;
-        const HRESULT objectResult = pResults->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShaderBlob), nullptr);
-        if (FAILED(objectResult) || !pShaderBlob || pShaderBlob->GetBufferSize() == 0)
+        const SlangResult targetResult = module->getTargetCode(
+            0,
+            codeBlob.writeRef(),
+            targetDiagnosticsBlob.writeRef()
+        );
+
+        if (targetDiagnosticsBlob && targetDiagnosticsBlob->getBufferSize() > 0)
         {
-            result.Diagnostics = "DXC reported success but returned no shader object";
+            std::string targetDiag(
+                (const char*)targetDiagnosticsBlob->getBufferPointer(),
+                targetDiagnosticsBlob->getBufferSize()
+            );
+
+            if (result.Diagnostics.empty())
+                result.Diagnostics = targetDiag;
+            else
+                result.Diagnostics += "\n" + targetDiag;
+        }
+
+        if (SLANG_FAILED(targetResult) || !codeBlob)
+        {
+            if (!result.Diagnostics.empty())
+                OPAL_ERROR("AssetManager", "Shader target generation error: {}", result.Diagnostics);
+            else
+                result.Diagnostics = "Slang failed to generate target bytecode";
             return result;
         }
 
-        result.Bytecode.resize(pShaderBlob->GetBufferSize());
-        memcpy(result.Bytecode.data(), pShaderBlob->GetBufferPointer(), pShaderBlob->GetBufferSize());
+        if (!result.Diagnostics.empty()) OPAL_WARN("AssetManager", "Shader compile diagnostics: {}", result.Diagnostics);
+
+        // Copy Bytecode to Result
+        result.Bytecode.resize(codeBlob->getBufferSize());
+        memcpy(result.Bytecode.data(), codeBlob->getBufferPointer(), codeBlob->getBufferSize());
+
         return result;
     }
 }
