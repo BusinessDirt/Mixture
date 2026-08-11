@@ -4,6 +4,7 @@ from collections.abc import Sequence
 
 from .context import Context
 from .errors import MixtureToolsError
+from .git import update, upgrade
 from .log import LogFormatter
 from .prompting import PromptPolicy
 from .setup.runner import run_setup
@@ -59,6 +60,35 @@ def _add_visualizer_parser(subparsers) -> None:
         help="Shows a render graph visualization (Application has to have run at least once)",
     )
 
+def _add_git_parser(subparsers) -> None:
+    """Scope for the 'git' command and its subcommands."""
+    git_parser = subparsers.add_parser(
+        "git",
+        help="Manage git submodules",
+    )
+
+    git_commands = git_parser.add_subparsers(
+        dest="git_command",
+        required=True,
+    )
+
+    # Subcommand: mixture git update
+    git_commands.add_parser(
+        "update",
+        help="List all available updates to git submodules",
+    )
+
+    # Subcommand: mixture git upgrade [submodules...]
+    upgrade_parser = git_commands.add_parser(
+        "upgrade",
+        help="Update specified submodules (or all if none are specified) to the newest version",
+    )
+    upgrade_parser.add_argument(
+        "submodules",
+        nargs="*",  # Accepts zero or more arguments
+        help="Specific submodules to upgrade (leave empty to upgrade all)",
+    )
+
 def create_parser() -> argparse.ArgumentParser:
     """Main parser entry point."""
     parser = argparse.ArgumentParser(
@@ -72,6 +102,7 @@ def create_parser() -> argparse.ArgumentParser:
     _add_setup_parser(commands)
     _add_version_parser(commands)
     _add_visualizer_parser(commands)
+    _add_git_parser(commands)
 
     return parser
 
@@ -119,6 +150,16 @@ def main(arguments: Sequence[str] | None = None) -> int:
                     case "render_graph":
                         from .visualizers import render_graph
                         render_graph.visualize(context.repository_root, "docs/visualizers/graph.json")
+                        return 0
+
+            case "git":
+                match options.git_command:
+                    case "update":
+                        update()
+                        return 0
+
+                    case "upgrade":
+                        upgrade(options.submodules)
                         return 0
 
     except MixtureToolsError as error:

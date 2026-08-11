@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def update_submodules(repository_root: Path) -> None:
     for command in (
         ["git", "submodule", "sync"],
-        ["git", "submodule", "update", "--init", "--recursive"],
+        ["git", "submodule", "update", "--init", "--recursive", "--merge"],
     ):
         result = run(command, cwd=repository_root)
         if result.stdout.strip():
