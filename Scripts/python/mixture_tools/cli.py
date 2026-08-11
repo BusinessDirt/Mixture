@@ -4,68 +4,15 @@ from collections.abc import Sequence
 
 from .context import Context
 from .errors import MixtureToolsError
+from .git import update, upgrade
+from .log import LogFormatter
 from .prompting import PromptPolicy
 from .setup.runner import run_setup
 from .version import Version, read_version, write_version
 
-class LogFormatter(logging.Formatter):
-    # ANSI Escape Codes
-    grey = "\x1b[38;20m"
-    blue = "\x1b[34;20m"
-    green = "\x1b[32;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    bold_red = "\x1b[31;1m"
-    bold_pink = "\x1b[1;35m" # For logger name (markers)
-    reset = "\x1b[0m"
-
-    LEVEL_COLORS = {
-        logging.DEBUG: blue,
-        logging.INFO: green,
-        logging.WARNING: yellow,
-        logging.ERROR: red,
-        logging.CRITICAL: bold_red
-    }
-
-    def format(self, record):
-        # Ensure time is formatted
-        record.asctime = self.formatTime(record, self.datefmt)
-
-        # Determine colors
-        level_color = self.LEVEL_COLORS.get(record.levelno, self.grey)
-
-        # Format Logger Name (Base.Marker)
-        # "marker only things after the . should be marked"
-        name = record.name
-        if "." in name:
-            base, marker = name.split(".", 1)
-            # Base (Default) + .Marker (Pink)
-            fmt_name = f"{base}{self.bold_pink}/{marker}{self.reset}"
-        else:
-            fmt_name = name
-
-        # Format Message
-        message = record.getMessage()
-
-        log_str = (
-            f"[{record.asctime}] "
-            f"[{record.threadName}/{level_color}{record.levelname}{self.reset}] "
-            f"({fmt_name}): "
-            f"{level_color}{message}{self.reset}"
-        )
-
-        return log_str
-
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="mixture",
-        description="Mixture engine development tools",
-    )
-
-    commands = parser.add_subparsers(dest="command", required=True)
-
-    setup = commands.add_parser(
+def _add_setup_parser(subparsers) -> None:
+    """Scope for the 'setup' command."""
+    setup = subparsers.add_parser(
         "setup",
         help="Validate dependencies and generate project files",
     )
@@ -78,35 +25,84 @@ def create_parser() -> argparse.ArgumentParser:
         help="Fail instead of requesting user input",
     )
 
-    version = commands.add_parser(
+def _add_version_parser(subparsers) -> None:
+    """Scope for the 'version' command and its subcommands."""
+    version = subparsers.add_parser(
         "version",
         help="Read or update the engine version",
     )
-
     version_commands = version.add_subparsers(
         dest="version_command",
         required=True,
     )
 
-    version_commands.add_parser(
-        "show",
-        help="Print the current engine version",
-    )
+    version_commands.add_parser("show", help="Print the current engine version")
 
-    set_version = version_commands.add_parser(
-        "set",
-        help="Set an explicit engine version",
-    )
+    set_version = version_commands.add_parser("set", help="Set an explicit engine version")
     set_version.add_argument("value", type=Version.parse)
 
-    bump_version = version_commands.add_parser(
-        "bump",
-        help="Increment part of the engine version",
+    bump_version = version_commands.add_parser("bump", help="Increment part of the engine version")
+    bump_version.add_argument("part", choices=("major", "minor", "patch"))
+
+def _add_visualizer_parser(subparsers) -> None:
+    """Scope for the 'visualizer' command and its subcommands."""
+    visualizer = subparsers.add_parser(
+        "visualizer",
+        help="Start a visualizer",
     )
-    bump_version.add_argument(
-        "part",
-        choices=("major", "minor", "patch"),
+    visualizer_commands = visualizer.add_subparsers(
+        dest="visualizer_commands",
+        required=True,
     )
+
+    visualizer_commands.add_parser(
+        "render_graph",
+        help="Shows a render graph visualization (Application has to have run at least once)",
+    )
+
+def _add_git_parser(subparsers) -> None:
+    """Scope for the 'git' command and its subcommands."""
+    git_parser = subparsers.add_parser(
+        "git",
+        help="Manage git submodules",
+    )
+
+    git_commands = git_parser.add_subparsers(
+        dest="git_command",
+        required=True,
+    )
+
+    # Subcommand: mixture git update
+    git_commands.add_parser(
+        "update",
+        help="List all available updates to git submodules",
+    )
+
+    # Subcommand: mixture git upgrade [submodules...]
+    upgrade_parser = git_commands.add_parser(
+        "upgrade",
+        help="Update specified submodules (or all if none are specified) to the newest version",
+    )
+    upgrade_parser.add_argument(
+        "submodules",
+        nargs="*",  # Accepts zero or more arguments
+        help="Specific submodules to upgrade (leave empty to upgrade all)",
+    )
+
+def create_parser() -> argparse.ArgumentParser:
+    """Main parser entry point."""
+    parser = argparse.ArgumentParser(
+        prog="mixture",
+        description="Mixture engine development tools",
+    )
+
+    commands = parser.add_subparsers(dest="command", required=True)
+
+    # Attach the scoped subparsers
+    _add_setup_parser(commands)
+    _add_version_parser(commands)
+    _add_visualizer_parser(commands)
+    _add_git_parser(commands)
 
     return parser
 
@@ -115,6 +111,8 @@ def main(arguments: Sequence[str] | None = None) -> int:
     handler = logging.StreamHandler()
     handler.setFormatter(LogFormatter(datefmt='%H:%M:%S'))
     logging.basicConfig(level=logging.INFO, handlers=[handler])
+
+    logger = logging.getLogger(__name__)
 
     parser = create_parser()
     options = parser.parse_args(arguments)
@@ -134,7 +132,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
 
                 match options.version_command:
                     case "show":
-                        print(current)
+                        logger.info(current)
                         return 0
 
                     case "set":
@@ -144,8 +142,26 @@ def main(arguments: Sequence[str] | None = None) -> int:
                         updated = current.bump(options.part)
 
                 write_version(context.configuration_file, updated)
-                print(f"{current} -> {updated}")
+                logger.info(f"{current} -> {updated}")
                 return 0
+
+            case "visualizer":
+                match options.visualizer_commands:
+                    case "render_graph":
+                        from .visualizers import render_graph
+                        render_graph.visualize(context.repository_root, "docs/visualizers/graph.json")
+                        return 0
+
+            case "git":
+                match options.git_command:
+                    case "update":
+                        update()
+                        return 0
+
+                    case "upgrade":
+                        upgrade(options.submodules)
+                        return 0
+
     except MixtureToolsError as error:
         logging.getLogger("Setup").error("%s", error)
         return 1

@@ -209,6 +209,22 @@ TEST(FileSystemWatcherTests, LargeTreeScanTracksChangesWithoutSnapshotCopies)
 
 // --- AssetManager Tests ---
 
+TEST(AssetFileResolverTests, DefaultResolverPreservesTypedRootAndRejectsEscapes)
+{
+    const std::filesystem::path root = std::filesystem::temp_directory_path()
+        / ("MixtureAssetStrategy-" + std::to_string(static_cast<uint64_t>(UUID())));
+    std::filesystem::create_directories(root / "Shader");
+
+    const auto resolver = IAssetFileResolver::Create(root);
+    const auto resolved = resolver->Resolve(AssetType::Shader, "Nested/Test.spv");
+    ASSERT_TRUE(resolved.has_value());
+    EXPECT_EQ(*resolved, std::filesystem::weakly_canonical(root / "Shader/Nested/Test.spv"));
+    EXPECT_FALSE(resolver->Resolve(AssetType::Shader, "../../Outside.spv").has_value());
+    EXPECT_FALSE(resolver->Resolve(AssetType::Shader, root / "Shader/Test.spv").has_value());
+
+    std::filesystem::remove_all(root);
+}
+
 class AssetManagerTests : public ::testing::Test
 {
 protected:
@@ -230,6 +246,28 @@ TEST_F(AssetManagerTests, SingletonAccess)
 {
     AssetManager& am = AssetManager::Get();
     EXPECT_EQ(&am, &AssetManager::Get());
+}
+
+TEST_F(AssetManagerTests, DelegatesPathResolutionToConfiguredResolver)
+{
+    class RejectingResolver final : public IAssetFileResolver
+    {
+    public:
+        std::optional<std::filesystem::path> Resolve(
+            AssetType, const std::filesystem::path&) const override
+        {
+            ++Calls;
+            return std::nullopt;
+        }
+
+        mutable size_t Calls = 0;
+    };
+
+    auto resolver = CreateRef<RejectingResolver>();
+    AssetManager::Get().SetAssetFileResolver(resolver);
+
+    EXPECT_FALSE(AssetManager::Get().GetAsset(AssetType::Shader, "Test.spv"));
+    EXPECT_EQ(resolver->Calls, 1u);
 }
 
 TEST_F(AssetManagerTests, GraphicsAPI)

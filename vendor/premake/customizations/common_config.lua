@@ -112,7 +112,7 @@ function xcode_settings()
     }
 
     xcodebuildsettings {
-        ["LD_RUNPATH_SEARCH_PATHS"] = "@executable_path/../Frameworks @loader_path/../Frameworks " .. vulkanFW .. " " .. vulkanLibs
+        ["LD_RUNPATH_SEARCH_PATHS"] = "@executable_path/../Frameworks @loader_path/../Frameworks " .. vulkanFW .. " " .. vulkanLibs,
     }
 
     buildoutputs { "%{cfg.targetdir}/Assets" }

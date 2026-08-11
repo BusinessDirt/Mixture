@@ -9,6 +9,7 @@
 
 #include "Mixture/Assets/IAsset.hpp"
 #include "Mixture/Assets/AssetSerializer.hpp"
+#include "Mixture/Assets/AssetFileResolver.hpp"
 #include "Mixture/Core/Memory/LRUCache.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
@@ -21,6 +22,7 @@
 #include <condition_variable>
 #include <unordered_set>
 #include <optional>
+#include <stdexcept>
 
 namespace Mixture
 {
@@ -70,6 +72,9 @@ namespace Mixture
          * @param rootPath The root directory path.
          */
         void SetAssetRoot(const std::filesystem::path& rootPath);
+
+        /** Selects the resolver used for logical asset paths. */
+        void SetAssetFileResolver(Ref<IAssetFileResolver> resolver);
 
         /**
          * @brief Sets the memory limit for the asset cache.
@@ -178,6 +183,7 @@ namespace Mixture
         };
 
         std::filesystem::path m_RootDirectory;
+        Ref<IAssetFileResolver> m_AssetFileResolver;
         RHI::GraphicsAPI m_GraphicsAPI = RHI::GraphicsAPI::None;
 
         std::mutex m_LifecycleMutex;

@@ -2,6 +2,7 @@
 
 #include "Opal/Base.hpp"
 #include "Opal/Formatters/GLMFormatters.hpp"
+#include "Opal/LogFileResolver.hpp"
 
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>
@@ -12,6 +13,7 @@
 
 #include <atomic>
 #include <shared_mutex>
+#include <stdexcept>
 
 namespace Opal
 {
@@ -21,7 +23,10 @@ namespace Opal
     class LogBuilder
     {
     public:
-        LogBuilder() = default;
+        LogBuilder();
+
+        /** Selects the resolver used by subsequently added file sinks. */
+        LogBuilder& UseFileResolver(std::shared_ptr<ILogFileResolver> resolver);
 
         /**
          * @brief Adds a console sink to the builder.
@@ -34,11 +39,11 @@ namespace Opal
         /**
          * @brief Adds a file sink to the builder.
          *
-         * @param filepath The path to the log file.
+         * @param filename The name of the log file.
          * @param level The log level for this sink (default: trace).
          * @return LogBuilder& Reference to this builder for chaining.
          */
-        LogBuilder& UseFileSink(const std::string& filepath, spdlog::level::level_enum level = spdlog::level::trace);
+        LogBuilder& UseFileSink(const std::string& filename, spdlog::level::level_enum level = spdlog::level::trace);
 
         /**
          * @brief Adds a custom sink to the builder.
@@ -61,6 +66,7 @@ namespace Opal
 
     private:
         std::vector<spdlog::sink_ptr> m_Sinks;
+        std::shared_ptr<ILogFileResolver> m_FileResolver;
     };
 
     /**

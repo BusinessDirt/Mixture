@@ -4,9 +4,39 @@
 #include "Mixture/Core/LayerStack.hpp"
 #include "Mixture/Core/Application.hpp"
 #include "Opal/Log.hpp"
+#include <filesystem>
 #include <thread>
 
 namespace Mixture::Tests {
+
+    TEST(CoreTests, DefaultLogFileResolverPreservesLogsDirectory) {
+        auto resolver = Opal::ILogFileResolver::Create();
+        EXPECT_EQ(resolver->Resolve("latest.log"), std::filesystem::path("logs/latest.log"));
+    }
+
+    TEST(CoreTests, LogBuilderDelegatesFilePathResolutionToConfiguredResolver) {
+        class RecordingResolver final : public Opal::ILogFileResolver {
+        public:
+            explicit RecordingResolver(std::filesystem::path result) : Result(std::move(result)) {}
+            std::filesystem::path Resolve(const std::filesystem::path& filename) const override {
+                Requested = filename;
+                return Result;
+            }
+
+            std::filesystem::path Result;
+            mutable std::filesystem::path Requested;
+        };
+
+        const auto path = std::filesystem::temp_directory_path() / "MixtureStrategyTest.log";
+        auto resolver = std::make_shared<RecordingResolver>(path);
+        {
+            Opal::LogBuilder builder;
+            builder.UseFileResolver(resolver).UseFileSink("configured.log");
+        }
+        EXPECT_EQ(resolver->Requested, std::filesystem::path("configured.log"));
+        EXPECT_TRUE(std::filesystem::exists(path));
+        std::filesystem::remove(path);
+    }
 
     TEST(CoreTests, LoggerLookupUsesThreadLocalFastPath) {
         auto& registry = Opal::LogRegistry::Get();

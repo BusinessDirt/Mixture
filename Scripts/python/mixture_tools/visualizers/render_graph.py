@@ -2,14 +2,15 @@ import json
 import graphviz
 import os
 
-def visualize_render_graph(json_file_path):
+def visualize(repository_root, json_file_path):
+    path = repository_root / json_file_path
     # Check if file exists
-    if not os.path.exists(json_file_path):
-        print(f"Error: File '{json_file_path}' not found.")
+    if not os.path.exists(path):
+        print(f"Error: File '{path}' not found.")
         return
 
     try:
-        with open(json_file_path, 'r') as f:
+        with open(path, 'r') as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
@@ -108,7 +109,3 @@ def visualize_render_graph(json_file_path):
     except Exception as e:
         print("Error rendering graph.")
         print(f"Make sure Graphviz is installed and in your PATH.\nDetails: {e}")
-
-if __name__ == "__main__":
-    # Change this filename if you exported it differently in C++
-    visualize_render_graph("docs/visualizers/graph.json")

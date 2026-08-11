@@ -11,20 +11,6 @@
 
 namespace Mixture
 {
-    namespace
-    {
-        bool IsPathWithin(const std::filesystem::path& root, const std::filesystem::path& candidate)
-        {
-            auto rootIt = root.begin();
-            auto candidateIt = candidate.begin();
-            for (; rootIt != root.end(); ++rootIt, ++candidateIt)
-            {
-                if (candidateIt == candidate.end() || *candidateIt != *rootIt) return false;
-            }
-            return true;
-        }
-    }
-
     void AssetManager::Init()
     {
         std::lock_guard<std::mutex> lifecycleLock(m_LifecycleMutex);
@@ -152,6 +138,7 @@ namespace Mixture
 
         AssetRegistry::Get().Clear();
         m_RootDirectory.clear();
+        m_AssetFileResolver.reset();
         m_GraphicsAPI = RHI::GraphicsAPI::None;
         m_Initialized = false;
     }
@@ -215,6 +202,7 @@ namespace Mixture
             m_RootDirectory.clear();
             return;
         }
+        m_AssetFileResolver = IAssetFileResolver::Create(m_RootDirectory);
         OPAL_INFO("AssetManager", "Asset Directory set to: {}", m_RootDirectory.string());
 
         if (!std::filesystem::exists(m_RootDirectory))
@@ -233,6 +221,12 @@ namespace Mixture
             });
             m_FileWatcher->Start();
         }
+    }
+
+    void AssetManager::SetAssetFileResolver(Ref<IAssetFileResolver> resolver)
+    {
+        if (!resolver) throw std::invalid_argument("Asset file resolver must not be null");
+        m_AssetFileResolver = std::move(resolver);
     }
 
     void AssetManager::SetCacheSize(size_t sizeInBytes)
@@ -280,18 +274,8 @@ namespace Mixture
     std::optional<std::filesystem::path> AssetManager::ResolveFullPath(
         AssetType type, const std::filesystem::path& relativePath) const
     {
-        if (m_RootDirectory.empty() || relativePath.empty() || relativePath.is_absolute()
-            || type <= AssetType::None || type >= AssetType::Count)
-            return std::nullopt;
-
-        std::error_code error;
-        const std::filesystem::path typeRoot = std::filesystem::weakly_canonical(
-            m_RootDirectory / Utils::AssetTypeToString(type), error);
-        if (error) return std::nullopt;
-
-        const std::filesystem::path candidate = std::filesystem::weakly_canonical(typeRoot / relativePath, error);
-        if (error || !IsPathWithin(typeRoot, candidate)) return std::nullopt;
-        return candidate;
+        if (!m_AssetFileResolver) return std::nullopt;
+        return m_AssetFileResolver->Resolve(type, relativePath);
     }
 
     void AssetManager::OnAssetChange(const std::filesystem::path& path, FileAction action)
@@ -364,7 +348,6 @@ namespace Mixture
 
         AssetMetadata metadata = AssetRegistry::Get().FindByPath(type, resolvedPath);
 
-        const char* typeString = Utils::AssetTypeToString(type);
         const auto fullPath = ResolveFullPath(type, resolvedPath);
         if (!fullPath)
         {

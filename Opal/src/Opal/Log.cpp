@@ -1,7 +1,6 @@
 #include "Opal/Log.hpp"
 #include "Opal/LogFlags.hpp"
 
-#include <filesystem>
 #include <thread>
 
 #include <spdlog/sinks/ansicolor_sink.h>
@@ -25,6 +24,18 @@
 
 namespace Opal
 {
+    LogBuilder::LogBuilder()
+        : m_FileResolver(ILogFileResolver::Create())
+    {
+    }
+
+    LogBuilder& LogBuilder::UseFileResolver(std::shared_ptr<ILogFileResolver> resolver)
+    {
+        if (!resolver) throw std::invalid_argument("Log file resolver must not be null");
+        m_FileResolver = std::move(resolver);
+        return *this;
+    }
+
     void LogRegistry::Initialize(const std::vector<spdlog::sink_ptr>& sinks)
     {
         std::unique_lock lock(m_Mutex);
@@ -60,9 +71,9 @@ namespace Opal
         return *this;
     }
 
-    LogBuilder& LogBuilder::UseFileSink(const std::string& filepath, spdlog::level::level_enum level)
+    LogBuilder& LogBuilder::UseFileSink(const std::string& filename, spdlog::level::level_enum level)
     {
-        auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(filepath, 1024 * 1024 * 10, 10);
+        auto sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(m_FileResolver->Resolve(filename).string(), 1024 * 1024 * 10, 10);
         auto formatter = std::make_unique<spdlog::pattern_formatter>();
         formatter->add_flag<CleanMarkerFlag>('*')
                  .add_flag<ThreadNameFlag>('#')

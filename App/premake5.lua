@@ -26,6 +26,18 @@ project "App"
         linux_settings()
 
     filter "action:xcode4"
+        kind "WindowedApp"
         xcode_settings()
+        xcodebuildsettings {
+            ["INFOPLIST_FILE"] = "Info.plist",
+            ["PRODUCT_BUNDLE_IDENTIFIER"] = "com.mixture.app"
+        }
+
+    -- Only run this on macOS when building the App Bundle
+    filter { "system:macosx", "kind:WindowedApp" }
+        postbuildcommands {
+            "mkdir -p \"%{cfg.targetdir}/%{cfg.buildtarget.name}.app/Contents/Resources\"",
+            "cp -R \"%{wks.location}/Assets\" \"%{cfg.targetdir}/%{cfg.buildtarget.name}.app/Contents/Resources/\""
+        }
 
     filter {}
