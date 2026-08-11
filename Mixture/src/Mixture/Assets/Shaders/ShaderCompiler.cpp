@@ -158,7 +158,6 @@ namespace Mixture
 
         if (!result.Diagnostics.empty()) OPAL_WARN("AssetManager", "Shader compile diagnostics: {}", result.Diagnostics);
 
-        // Copy Bytecode to Result
         result.Bytecode.resize(codeBlob->getBufferSize());
         memcpy(result.Bytecode.data(), codeBlob->getBufferPointer(), codeBlob->getBufferSize());
 

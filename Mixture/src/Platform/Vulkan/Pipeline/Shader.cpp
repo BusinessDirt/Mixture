@@ -12,21 +12,37 @@ namespace Mixture::Vulkan
         RHI::ShaderIdentity identity)
         : m_Device(std::move(device)), m_Stage(stage), m_Identity(identity)
     {
-        if (!m_Device) throw std::invalid_argument("Shader requires an owning device");
+        if (!m_Device)
+        {
+            throw std::invalid_argument("Shader requires an owning device");
+        }
+
         if (!m_Identity || m_Identity.Stage != stage)
+        {
             throw std::invalid_argument("Shader requires a valid identity for the requested stage");
-        if (!data || size < sizeof(uint32_t) || size % sizeof(uint32_t) != 0
+        }
+
+        if (!data
+            || size < sizeof(uint32_t)
+            || size % sizeof(uint32_t) != 0
             || reinterpret_cast<uintptr_t>(data) % alignof(uint32_t) != 0)
+        {
             throw std::invalid_argument("SPIR-V bytecode must be nonempty, word-sized, and uint32-aligned");
+        }
 
         uint32_t magic = 0;
         std::memcpy(&magic, data, sizeof(magic));
         if (magic != 0x07230203u)
+        {
             throw std::invalid_argument("Shader bytecode does not contain a SPIR-V header");
+        }
 
         const auto reflector = IShaderReflector::Create(RHI::GraphicsAPI::Vulkan);
         if (!reflector)
+        {
             throw std::runtime_error("Vulkan shader reflection is unavailable");
+        }
+
         m_ReflectionData = reflector->Reflect(data, size);
 
         vk::ShaderModuleCreateInfo createInfo;

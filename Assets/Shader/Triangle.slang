@@ -1,4 +1,4 @@
-// Triangle.hlsl
+// Triangle.slang
 
 struct VS_Input
 {

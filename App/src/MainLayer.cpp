@@ -79,8 +79,8 @@ namespace Mixture
 
                 // Define Pipeline Requirements (Shaders + State)
                 RHI::PipelineDesc desc;
-                desc.VertexShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Vertex);
-                desc.FragmentShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Fragment);
+                desc.VertexShader = builder.LoadShader("Triangle.slang", RHI::ShaderStage::Vertex);
+                desc.FragmentShader = builder.LoadShader("Triangle.slang", RHI::ShaderStage::Fragment);
                 desc.Rasterizer.cullMode = RHI::CullMode::Front;
                 data.Pipeline = builder.CreatePipeline(desc);
             },
@@ -108,8 +108,8 @@ namespace Mixture
                 data.Output = builder.Write(info);
 
                 RHI::PipelineDesc desc;
-                desc.VertexShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Vertex);
-                desc.FragmentShader = builder.LoadShader("Triangle.hlsl", RHI::ShaderStage::Fragment);
+                desc.VertexShader = builder.LoadShader("Triangle.slang", RHI::ShaderStage::Vertex);
+                desc.FragmentShader = builder.LoadShader("Triangle.slang", RHI::ShaderStage::Fragment);
                 desc.Rasterizer.cullMode = RHI::CullMode::Front;
                 data.Pipeline = builder.CreatePipeline(desc);
             },
