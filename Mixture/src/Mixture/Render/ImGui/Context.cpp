@@ -48,6 +48,8 @@ namespace Mixture
             ImGuiIO& io = ImGui::GetIO();
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
             ImGui::StyleColorsDark();
 
             if (!ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(windowHandle), true))
