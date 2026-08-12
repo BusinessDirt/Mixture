@@ -290,7 +290,7 @@ namespace Mixture::Vulkan
             return;
         }
         m_CommandContext.graphicsCommandBuffer.pushConstants(
-            vulkanPipeline->GetLayout(), stages, range->offset, size, data);
+            vulkanPipeline->GetLayout(), range->stageFlags, range->offset, size, data);
     }
 
     void CommandList::SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer, uint32_t set)

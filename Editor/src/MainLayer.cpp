@@ -89,12 +89,24 @@ namespace Mixture
 
         m_VertexCount = sizeof(cubeVertices) / sizeof(Vertex);
 
+        auto& device = Application::Get().GetContext().GetDevice();
+
         RHI::BufferDesc desc;
         desc.Size = sizeof(cubeVertices);
         desc.Usage = RHI::BufferUsage::Vertex;
         desc.DebugName = "CubeVB";
 
-        m_VertexBuffer = Application::Get().GetContext().GetDevice().CreateBuffer(desc, std::as_bytes(std::span(cubeVertices)));
+        m_VertexBuffer = device.CreateBuffer(desc, std::as_bytes(std::span(cubeVertices)));
+
+        CameraData defaultCamData{};
+        defaultCamData.ViewProjection = glm::mat4(1.0f);
+
+        RHI::BufferDesc camDesc;
+        camDesc.Size = sizeof(CameraData);
+        camDesc.Usage = RHI::BufferUsage::Uniform;
+        camDesc.DebugName = "CameraUBO";
+
+        m_CameraBuffer = device.CreateBuffer(camDesc, std::as_bytes(std::span(&defaultCamData, 1)));
     }
 
     void MainLayer::OnDetach()
@@ -210,18 +222,12 @@ namespace Mixture
                         projectionMatrix = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 1000.0f);
                     }
 
-                    // Create/Update Camera UBO (Set 0, Binding 0)
-                    CameraData camData;
-                    camData.ViewProjection = projectionMatrix * viewMatrix;
+                    if (m_CameraBuffer)
+                    {
+                        cmd->SetUniformBuffer(0, m_CameraBuffer.get(), 0);
+                    }
 
                     auto& device = Application::Get().GetContext().GetDevice();
-                    RHI::BufferDesc camDesc;
-                    camDesc.Size = sizeof(CameraData);
-                    camDesc.Usage = RHI::BufferUsage::Uniform;
-                    camDesc.DebugName = "CameraUBO";
-                    m_CameraBuffer = device.CreateBuffer(camDesc, std::as_bytes(std::span(&camData, 1)));
-
-                    cmd->SetUniformBuffer(0, m_CameraBuffer.get(), 0);
 
                     // Render all active entities with MeshRendererComponent
                     m_Scene->Each([&](flecs::entity e, MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
