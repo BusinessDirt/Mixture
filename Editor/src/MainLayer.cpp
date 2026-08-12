@@ -126,6 +126,20 @@ namespace Mixture
             RHI::IPipeline* Pipeline;
         };
 
+        // Create transient Depth Buffer resource for 3D scene rendering
+        const auto& window = Application::Get().GetWindow();
+        uint32_t width = window.GetWidth() > 0 ? window.GetWidth() : 1280;
+        uint32_t height = window.GetHeight() > 0 ? window.GetHeight() : 720;
+
+        RHI::TextureDesc depthDesc;
+        depthDesc.Width = width;
+        depthDesc.Height = height;
+        depthDesc.PixelFormat = RHI::Format::D32_FLOAT;
+        depthDesc.Usage = RHI::TextureUsage::DepthStencilAttachment;
+        depthDesc.DebugName = "SceneDepthBuffer";
+
+        RGResourceHandle depthResource = graph.CreateResource("SceneDepth", depthDesc);
+
         graph.AddPass<ScenePassData>("GBufferPass",
             [&](RenderGraphBuilder& builder, ScenePassData& data)
             {
@@ -135,20 +149,31 @@ namespace Mixture
                 }
 
                 RGResourceHandle backbuffer = graph.GetResource("Backbuffer");
-                RGAttachmentInfo info;
-                info.Handle = backbuffer;
-                info.LoadOp = RHI::LoadOp::Clear;
-                info.ClearColor[0] = 0.05f;
-                info.ClearColor[1] = 0.05f;
-                info.ClearColor[2] = 0.05f;
-                info.ClearColor[3] = 1.0f;
+                RGAttachmentInfo colorInfo;
+                colorInfo.Handle = backbuffer;
+                colorInfo.LoadOp = RHI::LoadOp::Clear;
+                colorInfo.ClearColor[0] = 0.05f;
+                colorInfo.ClearColor[1] = 0.05f;
+                colorInfo.ClearColor[2] = 0.05f;
+                colorInfo.ClearColor[3] = 1.0f;
 
-                data.Output = builder.Write(info);
+                RGAttachmentInfo depthInfo;
+                depthInfo.Handle = depthResource;
+                depthInfo.LoadOp = RHI::LoadOp::Clear;
+                depthInfo.StoreOp = RHI::StoreOp::DontCare;
+                depthInfo.DepthClearValue = 1.0f;
+
+                data.Output = builder.Write(colorInfo);
+                builder.Write(depthInfo);
 
                 RHI::PipelineDesc desc;
                 desc.VertexShader = builder.LoadShader("Default.slang", RHI::ShaderStage::Vertex);
                 desc.FragmentShader = builder.LoadShader("Default.slang", RHI::ShaderStage::Fragment);
-                desc.Rasterizer.cullMode = RHI::CullMode::None;
+                desc.Rasterizer.cullMode = RHI::CullMode::Back;
+                desc.DepthStencil.depthTest = true;
+                desc.DepthStencil.depthWrite = true;
+                desc.DepthStencil.depthCompareOp = RHI::CompareOp::Less;
+                desc.DepthAttachmentFormat = RHI::Format::D32_FLOAT;
                 data.Pipeline = builder.CreatePipeline(desc);
             },
             [&](const RenderGraphRegistry& registry, const ScenePassData& data, RHI::ICommandList* cmd)
