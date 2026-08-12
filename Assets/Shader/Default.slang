@@ -28,7 +28,7 @@ VS_Output VS_Main(VS_Input input)
 
     float4 worldPos = mul(pushConstants.model, float4(input.position, 1.0f));
     output.position = mul(pushConstants.viewProjection, worldPos);
-    output.color = float4(1.0f, 1.0f, 1.0f, 1.0f); // White color
+    output.color = float4(input.color, 1.0f);
 
     return output;
 }
@@ -36,5 +36,5 @@ VS_Output VS_Main(VS_Input input)
 [shader("pixel")]
 float4 PS_Main(VS_Output input) : SV_TARGET
 {
-    return float4(1.0f, 1.0f, 1.0f, 1.0f); // Render white
+    return input.color;
 }

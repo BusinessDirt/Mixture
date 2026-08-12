@@ -100,9 +100,9 @@ namespace Mixture
         // Transform Component UI
         DrawComponentUI<TransformComponent>("Transform", entity, [](TransformComponent& transform) {
             DrawVec3Control("Position", transform.Position);
-            glm::vec3 rotationDeg = glm::degrees(transform.Rotation);
+            glm::vec3 rotationDeg = glm::degrees(transform.GetRotationEuler());
             DrawVec3Control("Rotation", rotationDeg);
-            transform.Rotation = glm::radians(rotationDeg);
+            transform.SetRotationEuler(glm::radians(rotationDeg));
             DrawVec3Control("Scale", transform.Scale, 1.0f);
         });
 

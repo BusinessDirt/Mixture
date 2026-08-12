@@ -51,22 +51,39 @@ namespace Mixture
     struct TransformComponent
     {
         glm::vec3 Position{ 0.0f, 0.0f, 0.0f };
-        glm::vec3 Rotation{ 0.0f, 0.0f, 0.0f }; // Euler angles in radians
+        glm::quat Rotation{ 1.0f, 0.0f, 0.0f, 0.0f }; // Identity quaternion
         glm::vec3 Scale{ 1.0f, 1.0f, 1.0f };
 
         TransformComponent() = default;
         TransformComponent(const TransformComponent&) = default;
         TransformComponent(const glm::vec3& position)
             : Position(position) {}
+        TransformComponent(const glm::vec3& position, const glm::quat& rotation, const glm::vec3& scale = glm::vec3(1.0f))
+            : Position(position), Rotation(rotation), Scale(scale) {}
+
+        /**
+         * @brief Sets rotation from Euler angles (in radians).
+         */
+        void SetRotationEuler(const glm::vec3& eulerRadians)
+        {
+            Rotation = glm::quat(eulerRadians);
+        }
+
+        /**
+         * @brief Gets rotation as Euler angles (in radians).
+         */
+        glm::vec3 GetRotationEuler() const
+        {
+            return glm::eulerAngles(Rotation);
+        }
 
         /**
          * @brief Calculates local TRS (Translation * Rotation * Scale) matrix.
          */
         glm::mat4 GetTransform() const
         {
-            glm::mat4 rotation = glm::toMat4(glm::quat(Rotation));
             return glm::translate(glm::mat4(1.0f), Position)
-                * rotation
+                * glm::toMat4(Rotation)
                 * glm::scale(glm::mat4(1.0f), Scale);
         }
     };
