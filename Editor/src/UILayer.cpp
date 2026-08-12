@@ -1,4 +1,10 @@
 #include "UILayer.hpp"
+#include "Panels/ViewportPanel.hpp"
+#include "Panels/SceneHierarchyPanel.hpp"
+#include "Panels/InspectorPanel.hpp"
+#include "Panels/ContentBrowserPanel.hpp"
+#include "Panels/ConsolePanel.hpp"
+#include "Panels/StatsPanel.hpp"
 
 #include <algorithm>
 
@@ -8,6 +14,16 @@ namespace Mixture
     {
         OPAL_INFO("Client", "UILayer::OnAttach()");
         m_IsAttached = true;
+
+        if (m_Panels.empty())
+        {
+            auto hierarchy = RegisterPanel<SceneHierarchyPanel>();
+            RegisterPanel<InspectorPanel>(hierarchy);
+            RegisterPanel<ViewportPanel>();
+            RegisterPanel<ContentBrowserPanel>();
+            RegisterPanel<ConsolePanel>();
+            RegisterPanel<StatsPanel>();
+        }
 
         for (auto& panel : m_Panels)
         {
