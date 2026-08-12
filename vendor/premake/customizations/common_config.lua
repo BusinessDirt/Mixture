@@ -83,7 +83,7 @@ function application_dist_settings()
 end
 
 function windows_settings()
-    links { "%{Library.vulkan}" }
+    links { "%{Library.vulkan}", "Psapi" }
     buildoptions { "/utf-8" }
 end
 

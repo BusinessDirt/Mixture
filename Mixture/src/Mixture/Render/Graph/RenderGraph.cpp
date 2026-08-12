@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/Graph/RenderGraph.hpp"
+#include "Mixture/Render/RenderStats.hpp"
 
 #include "Mixture/Core/Application.hpp"
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
@@ -331,6 +332,7 @@ namespace Mixture
         m_Passes.clear();
         m_Resources.clear();
         m_ResourceLookup.clear();
+        m_Aliases.clear();
         m_ResourcesEndingAtPass.clear();
         m_Registry.Clear();
         // Note: m_Cache is NOT cleared here, to support persistence across frames.
@@ -357,6 +359,7 @@ namespace Mixture
 
     void RenderGraph::Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context)
     {
+        RenderStats::Get().ResetFrameStats();
         m_Cache.BeginFrame(context->GetCurrentFrameIndex());
 
         // Realize Resources (Allocation Phase)
@@ -390,6 +393,7 @@ namespace Mixture
         for (size_t passIndex = 0; passIndex < m_Passes.size(); ++passIndex)
         {
             const auto& pass = m_Passes[passIndex];
+            RenderStats::Get().RecordRenderPass();
 
             // Execute Barriers
             for (const auto& barrier : pass.Barriers)
@@ -576,9 +580,27 @@ namespace Mixture
         return handle;
     }
 
+    void RenderGraph::AddAlias(std::string aliasName, std::string targetName)
+    {
+        m_Aliases[std::move(aliasName)] = std::move(targetName);
+    }
+
+    void RenderGraph::ClearAliases()
+    {
+        m_Aliases.clear();
+    }
+
     RGResourceHandle RenderGraph::GetResource(const std::string& name) const
     {
-        const auto resource = m_ResourceLookup.find(name);
+        std::string current = name;
+        auto aliasIt = m_Aliases.find(current);
+        while (aliasIt != m_Aliases.end())
+        {
+            current = aliasIt->second;
+            aliasIt = m_Aliases.find(current);
+        }
+
+        const auto resource = m_ResourceLookup.find(current);
         if (resource != m_ResourceLookup.end()) return resource->second;
 
         OPAL_ERROR("Core/RenderGraph", "Resource not found: %s", name.c_str());

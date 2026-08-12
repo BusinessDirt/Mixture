@@ -10,7 +10,21 @@ namespace Mixture
     {
         RGAttachmentInfo output;
         output.Handle = m_OutputHandle;
-        output.LoadOp = RHI::LoadOp::Load;
+
+        if (m_InputTextureHandle.IsValid())
+        {
+            builder.Read(m_InputTextureHandle);
+            output.LoadOp = RHI::LoadOp::Clear;
+            output.ClearColor[0] = 0.1f;
+            output.ClearColor[1] = 0.1f;
+            output.ClearColor[2] = 0.1f;
+            output.ClearColor[3] = 1.0f;
+        }
+        else
+        {
+            output.LoadOp = RHI::LoadOp::Load;
+        }
+
         output.StoreOp = RHI::StoreOp::Store;
         builder.Write(output);
     }

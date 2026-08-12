@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/ImGui/Context.hpp"
+#include "Mixture/Render/RenderStats.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 #include "Platform/Vulkan/Command/List.hpp"
@@ -9,6 +10,8 @@
 #include "Platform/Vulkan/PhysicalDevice.hpp"
 #include "Platform/Vulkan/Queue.hpp"
 #include "Platform/Vulkan/Swapchain.hpp"
+
+#include "Platform/Vulkan/Resources/Texture.hpp"
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
@@ -48,6 +51,8 @@ namespace Mixture
             ImGuiIO& io = ImGui::GetIO();
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
             ImGui::StyleColorsDark();
 
             if (!ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(windowHandle), true))
@@ -127,6 +132,43 @@ namespace Mixture
         auto* vulkanCommandList = dynamic_cast<Vulkan::CommandList*>(commandList);
         if (!vulkanCommandList)
             throw std::invalid_argument("ImGui Vulkan rendering requires a Vulkan command list");
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vulkanCommandList->GetGraphicsCommandBuffer());
+
+        ImDrawData* drawData = ImGui::GetDrawData();
+        if (drawData)
+        {
+            for (int n = 0; n < drawData->CmdListsCount; n++)
+            {
+                const ImDrawList* cmdList = drawData->CmdLists[n];
+                for (int cmdi = 0; cmdi < cmdList->CmdBuffer.Size; cmdi++)
+                {
+                    const ImDrawCmd* pcmd = &cmdList->CmdBuffer[cmdi];
+                    if (!pcmd->UserCallback)
+                    {
+                        RenderStats::Get().RecordDrawIndexed(pcmd->ElemCount, 1);
+                    }
+                }
+            }
+        }
+
+        ImGui_ImplVulkan_RenderDrawData(drawData, vulkanCommandList->GetGraphicsCommandBuffer());
+    }
+
+    void* ImGuiContext::GetTextureID(RHI::ITexture* texture) const
+    {
+        if (!texture) return nullptr;
+        auto* vkTex = dynamic_cast<Vulkan::Texture*>(texture);
+        if (!vkTex || !vkTex->GetImageView()) return nullptr;
+
+        VkDescriptorSet descSet = ImGui_ImplVulkan_AddTexture(
+            vkTex->GetImageView(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
+        return static_cast<void*>(descSet);
+    }
+
+    void ImGuiContext::RemoveTextureID(void* textureID) const
+    {
+        if (!textureID) return;
+        ImGui_ImplVulkan_RemoveTexture(static_cast<VkDescriptorSet>(textureID));
     }
 }

@@ -173,6 +173,19 @@ namespace Mixture
         RGResourceHandle GetResource(const std::string& name) const;
 
         /**
+         * @brief Maps a resource alias name to a target resource name.
+         *
+         * @param aliasName The alias name (e.g. "Backbuffer").
+         * @param targetName The target resource name (e.g. "ViewportTarget" or "SwapchainBackbuffer").
+         */
+        void AddAlias(std::string aliasName, std::string targetName);
+
+        /**
+         * @brief Clears all registered resource aliases.
+         */
+        void ClearAliases();
+
+        /**
          * @brief Retrieves the description of a texture resource by handle.
          *
          * @param handle The handle of the resource.
@@ -203,6 +216,7 @@ namespace Mixture
         Vector<RGPassNode> m_Passes;
         Vector<RGResourceNode> m_Resources;
         std::unordered_map<std::string, RGResourceHandle> m_ResourceLookup;
+        std::unordered_map<std::string, std::string> m_Aliases;
         Vector<Vector<RGResourceHandle>> m_ResourcesEndingAtPass;
 
         RenderGraphRegistry m_Registry;
