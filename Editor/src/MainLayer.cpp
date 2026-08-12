@@ -12,10 +12,19 @@ namespace Mixture
         glm::vec3 Color;
     };
 
+    struct ShaderMaterialData
+    {
+        glm::vec4 AlbedoColor{ 1.0f, 1.0f, 1.0f, 1.0f };
+        float Metallic = 0.0f;
+        float Roughness = 0.5f;
+        glm::vec2 Padding{ 0.0f, 0.0f };
+    };
+
     struct PushConstantData
     {
         glm::mat4 Model;
         glm::mat4 ViewProjection;
+        ShaderMaterialData Material;
     };
 
     void MainLayer::OnAttach()
@@ -219,6 +228,14 @@ namespace Mixture
                             PushConstantData pushData;
                             pushData.Model = transform.GetTransform();
                             pushData.ViewProjection = viewProjection;
+
+                            if (meshRenderer.MaterialAsset)
+                            {
+                                const auto& matData = meshRenderer.MaterialAsset->GetData();
+                                pushData.Material.AlbedoColor = matData.AlbedoColor;
+                                pushData.Material.Metallic = matData.Metallic;
+                                pushData.Material.Roughness = matData.Roughness;
+                            }
 
                             cmd->PushConstants(data.Pipeline, RHI::ShaderStage::Vertex, &pushData, sizeof(PushConstantData));
                             cmd->Draw(m_VertexCount, 1, 0, 0);

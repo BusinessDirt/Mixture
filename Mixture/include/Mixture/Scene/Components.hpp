@@ -15,6 +15,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
+#include "Mixture/Render/Material.hpp"
 #include <string>
 
 namespace Mixture
@@ -93,14 +94,17 @@ namespace Mixture
      */
     struct MeshRendererComponent
     {
-        glm::vec4 MaterialColor{ 1.0f, 1.0f, 1.0f, 1.0f };
-        float Roughness = 0.5f;
-        float Metallic = 0.0f;
+        Ref<Material> MaterialAsset;
         std::string MeshPath = "";
         bool Enabled = true;
 
-        MeshRendererComponent() = default;
+        MeshRendererComponent()
+        {
+            MaterialAsset = Material::Create("Default Material");
+        }
         MeshRendererComponent(const MeshRendererComponent&) = default;
+        MeshRendererComponent(Ref<Material> material)
+            : MaterialAsset(std::move(material)) {}
     };
 
     /**

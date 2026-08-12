@@ -108,10 +108,8 @@ namespace Mixture
 
         // Mesh Renderer Component UI
         DrawComponentUI<MeshRendererComponent>("Mesh Renderer", entity, [](MeshRendererComponent& meshRenderer) {
-            ImGui::ColorEdit4("Albedo Color", &meshRenderer.MaterialColor.x);
-            ImGui::SliderFloat("Roughness", &meshRenderer.Roughness, 0.0f, 1.0f);
-            ImGui::SliderFloat("Metallic", &meshRenderer.Metallic, 0.0f, 1.0f);
-            
+            ImGui::Checkbox("Enabled", &meshRenderer.Enabled);
+
             char pathBuf[256];
             memset(pathBuf, 0, sizeof(pathBuf));
             strncpy(pathBuf, meshRenderer.MeshPath.c_str(), sizeof(pathBuf) - 1);
@@ -119,7 +117,29 @@ namespace Mixture
             {
                 meshRenderer.MeshPath = std::string(pathBuf);
             }
-            ImGui::Checkbox("Enabled", &meshRenderer.Enabled);
+
+            if (!meshRenderer.MaterialAsset)
+            {
+                if (ImGui::Button("Create Material"))
+                {
+                    meshRenderer.MaterialAsset = Material::Create("New Material");
+                }
+            }
+            else
+            {
+                if (ImGui::TreeNodeEx("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
+                {
+                    auto& matData = meshRenderer.MaterialAsset->GetData();
+                    ImGui::ColorEdit4("Albedo Color", &matData.AlbedoColor.x);
+                    ImGui::SliderFloat("Roughness", &matData.Roughness, 0.0f, 1.0f);
+                    ImGui::SliderFloat("Metallic", &matData.Metallic, 0.0f, 1.0f);
+                    ImGui::ColorEdit3("Emission Color", &matData.EmissionColor.x);
+                    ImGui::DragFloat("Emission Intensity", &matData.EmissionIntensity, 0.1f, 0.0f, 100.0f);
+                    ImGui::DragFloat2("Tiling", &matData.Tiling.x, 0.1f);
+
+                    ImGui::TreePop();
+                }
+            }
         });
 
         // Light Component UI

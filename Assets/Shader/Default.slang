@@ -1,9 +1,18 @@
 // Default.slang
 
+struct MaterialData
+{
+    float4 albedoColor;
+    float metallic;
+    float roughness;
+    float2 padding;
+};
+
 struct PushConstants
 {
     float4x4 model;
     float4x4 viewProjection;
+    MaterialData material;
 };
 
 [[vk::push_constant]]
@@ -28,7 +37,7 @@ VS_Output VS_Main(VS_Input input)
 
     float4 worldPos = mul(pushConstants.model, float4(input.position, 1.0f));
     output.position = mul(pushConstants.viewProjection, worldPos);
-    output.color = float4(input.color, 1.0f);
+    output.color = pushConstants.material.albedoColor;
 
     return output;
 }
