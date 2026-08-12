@@ -67,6 +67,7 @@ group "Dependencies"
     include "vendor/premake/dependencies/imgui.lua"
     include "vendor/premake/dependencies/googletest.lua"
     include "vendor/premake/dependencies/spirv_reflect.lua"
+    include "vendor/premake/dependencies/flecs.lua"
 group ""
 
 group "Core"

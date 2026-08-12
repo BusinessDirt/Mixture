@@ -17,6 +17,7 @@ else
 end
 IncludeDir["glm"] = "%{wks.location}/vendor/glm"
 IncludeDir["stb_image"] = "%{wks.location}/vendor/stb"
+IncludeDir["flecs"] = "%{wks.location}/vendor/flecs/include"
 
 LibraryDir = {}
 if vulkanSDK then

@@ -27,3 +27,6 @@
 	path = vendor/spirv-reflect
 	url = https://github.com/KhronosGroup/SPIRV-Reflect.git
     ignore = dirty
+[submodule "vendor/flecs"]
+	path = vendor/flecs
+	url = https://github.com/SanderMertens/flecs.git

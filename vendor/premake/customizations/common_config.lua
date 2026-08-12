@@ -27,13 +27,15 @@ function application_externalincludedirs()
         "%{IncludeDir.vulkan}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.spirv_reflect}",
-        "%{IncludeDir.stb_image}"
+        "%{IncludeDir.stb_image}",
+        "%{IncludeDir.flecs}"
     }
 end
 
 function application_links()
     return {
         "Mixture",
+        "Flecs",
         "ImGui",
         "SPIRV-Reflect",
         "GLFW",
