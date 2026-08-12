@@ -6,6 +6,7 @@ namespace Mixture::RHI
 {
     class IGraphicsContext;
     class ICommandList;
+    class ITexture;
 }
 
 namespace Mixture
@@ -22,6 +23,12 @@ namespace Mixture
         void BeginFrame();
         void EndFrame();
         void Render(RHI::ICommandList* commandList) const;
+
+        /** Registers an RHI texture with ImGui's Vulkan backend and returns an ImTextureID handle. */
+        void* GetTextureID(RHI::ITexture* texture) const;
+
+        /** Removes a previously registered ImTextureID handle. */
+        void RemoveTextureID(void* textureID) const;
 
     private:
         struct Impl;

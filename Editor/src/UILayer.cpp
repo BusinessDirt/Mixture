@@ -107,9 +107,33 @@ namespace Mixture
         }
     }
 
+    void UILayer::OnPreRender(RenderGraph& graph)
+    {
+        auto viewportPanel = GetPanel<ViewportPanel>();
+        if (viewportPanel && viewportPanel->IsOpen())
+        {
+            if (auto* targetTex = viewportPanel->GetTargetTexture())
+            {
+                m_CurrentViewportTarget = graph.ImportResource("ViewportTarget", targetTex);
+                graph.AddAlias("Backbuffer", "ViewportTarget");
+                return;
+            }
+        }
+
+        m_CurrentViewportTarget = {};
+        graph.AddAlias("Backbuffer", "SwapchainBackbuffer");
+    }
+
     void UILayer::OnRender(RenderGraph& graph)
     {
-        graph.AddPass<ImGuiPass>("ImGuiPass", Application::Get().GetImGuiContext(), graph.GetResource("Backbuffer"));
+        if (m_CurrentViewportTarget.IsValid())
+        {
+            graph.AddPass<ImGuiPass>("ImGuiPass", Application::Get().GetImGuiContext(), graph.GetResource("SwapchainBackbuffer"), m_CurrentViewportTarget);
+        }
+        else
+        {
+            graph.AddPass<ImGuiPass>("ImGuiPass", Application::Get().GetImGuiContext(), graph.GetResource("SwapchainBackbuffer"));
+        }
     }
 
     void UILayer::SetupDefaultDockLayout(ImGuiID dockspaceId)

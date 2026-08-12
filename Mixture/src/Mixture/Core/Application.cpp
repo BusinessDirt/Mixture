@@ -180,7 +180,8 @@ namespace Mixture
 
             if (RHI::ITexture* backbufferTex = m_Context->BeginFrame())
             {
-                m_RenderGraph->ImportResource("Backbuffer", backbufferTex);
+                m_RenderGraph->ImportResource("SwapchainBackbuffer", backbufferTex);
+                m_RenderGraph->AddAlias("Backbuffer", "SwapchainBackbuffer");
 
                 if (m_ImGuiContext)
                 {
@@ -189,6 +190,7 @@ namespace Mixture
                     m_ImGuiContext->EndFrame();
                 }
 
+                for (const auto& layer : m_LayerStack) layer->OnPreRender(*m_RenderGraph);
                 for (const auto& layer : m_LayerStack) layer->OnRender(*m_RenderGraph);
 
                 m_RenderGraph->Compile();

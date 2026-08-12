@@ -54,6 +54,13 @@ namespace Mixture
         virtual void OnUpdate(float dt) {};
 
         /**
+         * @brief Called before OnRender to configure render targets and aliases.
+         * 
+         * @param graph The render graph.
+         */
+        virtual void OnPreRender(RenderGraph& graph) {};
+
+        /**
          * @brief Called every frame to populate the render graph.
          * 
          * @param graph The render graph builder.

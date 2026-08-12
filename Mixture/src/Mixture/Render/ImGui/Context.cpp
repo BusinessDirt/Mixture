@@ -11,6 +11,8 @@
 #include "Platform/Vulkan/Queue.hpp"
 #include "Platform/Vulkan/Swapchain.hpp"
 
+#include "Platform/Vulkan/Resources/Texture.hpp"
+
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
@@ -149,5 +151,24 @@ namespace Mixture
         }
 
         ImGui_ImplVulkan_RenderDrawData(drawData, vulkanCommandList->GetGraphicsCommandBuffer());
+    }
+
+    void* ImGuiContext::GetTextureID(RHI::ITexture* texture) const
+    {
+        if (!texture) return nullptr;
+        auto* vkTex = dynamic_cast<Vulkan::Texture*>(texture);
+        if (!vkTex || !vkTex->GetImageView()) return nullptr;
+
+        VkDescriptorSet descSet = ImGui_ImplVulkan_AddTexture(
+            vkTex->GetImageView(),
+            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        );
+        return static_cast<void*>(descSet);
+    }
+
+    void ImGuiContext::RemoveTextureID(void* textureID) const
+    {
+        if (!textureID) return;
+        ImGui_ImplVulkan_RemoveTexture(static_cast<VkDescriptorSet>(textureID));
     }
 }

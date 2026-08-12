@@ -20,6 +20,7 @@ namespace Mixture
         void OnEvent(Event& event) override;
 
         void OnUpdate(float dt) override;
+        void OnPreRender(RenderGraph& graph) override;
         void OnRender(RenderGraph& graph) override;
         void OnDrawImGui() override;
 
@@ -77,6 +78,7 @@ namespace Mixture
 
     private:
         Vector<Ref<IEditorPanel>> m_Panels;
+        RGResourceHandle m_CurrentViewportTarget;
         bool m_IsAttached = false;
         bool m_ResetLayoutRequested = false;
     };

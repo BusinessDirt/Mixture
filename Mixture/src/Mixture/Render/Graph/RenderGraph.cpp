@@ -332,6 +332,7 @@ namespace Mixture
         m_Passes.clear();
         m_Resources.clear();
         m_ResourceLookup.clear();
+        m_Aliases.clear();
         m_ResourcesEndingAtPass.clear();
         m_Registry.Clear();
         // Note: m_Cache is NOT cleared here, to support persistence across frames.
@@ -579,9 +580,27 @@ namespace Mixture
         return handle;
     }
 
+    void RenderGraph::AddAlias(std::string aliasName, std::string targetName)
+    {
+        m_Aliases[std::move(aliasName)] = std::move(targetName);
+    }
+
+    void RenderGraph::ClearAliases()
+    {
+        m_Aliases.clear();
+    }
+
     RGResourceHandle RenderGraph::GetResource(const std::string& name) const
     {
-        const auto resource = m_ResourceLookup.find(name);
+        std::string current = name;
+        auto aliasIt = m_Aliases.find(current);
+        while (aliasIt != m_Aliases.end())
+        {
+            current = aliasIt->second;
+            aliasIt = m_Aliases.find(current);
+        }
+
+        const auto resource = m_ResourceLookup.find(current);
         if (resource != m_ResourceLookup.end()) return resource->second;
 
         OPAL_ERROR("Core/RenderGraph", "Resource not found: %s", name.c_str());
