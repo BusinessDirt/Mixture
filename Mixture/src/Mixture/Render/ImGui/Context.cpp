@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/ImGui/Context.hpp"
+#include "Mixture/Render/RenderStats.hpp"
 
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
 #include "Platform/Vulkan/Command/List.hpp"
@@ -129,6 +130,24 @@ namespace Mixture
         auto* vulkanCommandList = dynamic_cast<Vulkan::CommandList*>(commandList);
         if (!vulkanCommandList)
             throw std::invalid_argument("ImGui Vulkan rendering requires a Vulkan command list");
-        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vulkanCommandList->GetGraphicsCommandBuffer());
+
+        ImDrawData* drawData = ImGui::GetDrawData();
+        if (drawData)
+        {
+            for (int n = 0; n < drawData->CmdListsCount; n++)
+            {
+                const ImDrawList* cmdList = drawData->CmdLists[n];
+                for (int cmdi = 0; cmdi < cmdList->CmdBuffer.Size; cmdi++)
+                {
+                    const ImDrawCmd* pcmd = &cmdList->CmdBuffer[cmdi];
+                    if (!pcmd->UserCallback)
+                    {
+                        RenderStats::Get().RecordDrawIndexed(pcmd->ElemCount, 1);
+                    }
+                }
+            }
+        }
+
+        ImGui_ImplVulkan_RenderDrawData(drawData, vulkanCommandList->GetGraphicsCommandBuffer());
     }
 }

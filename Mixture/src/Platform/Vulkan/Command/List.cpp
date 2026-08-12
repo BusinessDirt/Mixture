@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Platform/Vulkan/Command/List.hpp"
+#include "Mixture/Render/RenderStats.hpp"
 
 #include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/Resources/Texture.hpp"
@@ -314,6 +315,8 @@ namespace Mixture::Vulkan
     {
         if (!m_IsPipelineBound) return;
 
+        RenderStats::Get().RecordDraw(vertexCount, instanceCount);
+
         FlushDescriptors();
         m_CommandContext.graphicsCommandBuffer.draw(vertexCount, instanceCount, firstVertex, firstInstance);
     }
@@ -321,6 +324,8 @@ namespace Mixture::Vulkan
     void CommandList::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance)
     {
         if (!m_IsPipelineBound) return;
+
+        RenderStats::Get().RecordDrawIndexed(indexCount, instanceCount);
 
         FlushDescriptors();
         m_CommandContext.graphicsCommandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);

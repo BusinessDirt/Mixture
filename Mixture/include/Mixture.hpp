@@ -12,6 +12,7 @@
 #include "Mixture/Render/ImGui/ImGuiPass.hpp"
 #include "Mixture/Render/ImGui/Theme.hpp"
 #include "Mixture/Render/ImGui/ThemeManager.hpp"
+#include "Mixture/Render/RenderStats.hpp"
 
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Core/Application.hpp"

@@ -1,7 +1,6 @@
 #include "Panels/StatsPanel.hpp"
 
 #include <imgui.h>
-#include <numeric>
 
 namespace Mixture
 {
@@ -21,8 +20,10 @@ namespace Mixture
     {
         ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-        float framerate = ImGui::GetIO().Framerate;
-        float frameTime = 1000.0f / (framerate > 0.0f ? framerate : 60.0f);
+        const auto& stats = RenderStats::Get().GetStats();
+
+        float framerate = stats.FPS > 0.0f ? stats.FPS : ImGui::GetIO().Framerate;
+        float frameTime = stats.FrameTimeMs > 0.0f ? stats.FrameTimeMs : (1000.0f / (framerate > 0.0f ? framerate : 60.0f));
 
         ImGui::Text("Framerate: %.1f FPS", framerate);
         ImGui::Text("Frame Time: %.2f ms", frameTime);
@@ -33,22 +34,24 @@ namespace Mixture
 
         ImGui::Separator();
 
+#if defined(OPAL_DIST)
+        ImGui::TextDisabled("Performance metrics disabled in Distribution build.");
+#else
         if (ImGui::CollapsingHeader("Renderer Stats", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            // TODO: retrieve actual stats
-            ImGui::Text("Graphics API: Vulkan 1.3");
-            ImGui::Text("Draw Calls: 12");
-            ImGui::Text("Triangles: 14,520");
-            ImGui::Text("Vertices: 28,900");
-            ImGui::Text("Render Passes: 2 (GBuffer, ImGuiPass)");
+            ImGui::Text("Graphics API: %s", stats.GraphicsAPI.c_str());
+            ImGui::Text("Draw Calls: %u", stats.DrawCalls);
+            ImGui::Text("Triangles: %u", stats.TriangleCount);
+            ImGui::Text("Vertices: %u", stats.VertexCount);
+            ImGui::Text("Render Passes: %u", stats.RenderPassCount);
         }
 
         if (ImGui::CollapsingHeader("Memory", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            // TODO: retrieve actual stats
-            ImGui::Text("VRAM Usage: 142.5 MB");
-            ImGui::Text("System RAM: 38.2 MB");
+            ImGui::Text("VRAM Usage: %.1f MB", stats.VRAMUsageMB);
+            ImGui::Text("System RAM: %.1f MB", stats.SystemRAMUsageMB);
         }
+#endif
 
         ImGui::End();
     }

@@ -1,5 +1,6 @@
 #include "mxpch.hpp"
 #include "Mixture/Render/Graph/RenderGraph.hpp"
+#include "Mixture/Render/RenderStats.hpp"
 
 #include "Mixture/Core/Application.hpp"
 #include "Mixture/Render/RHI/IGraphicsContext.hpp"
@@ -357,6 +358,7 @@ namespace Mixture
 
     void RenderGraph::Execute(RHI::ICommandList* cmdList, RHI::IGraphicsContext* context)
     {
+        RenderStats::Get().ResetFrameStats();
         m_Cache.BeginFrame(context->GetCurrentFrameIndex());
 
         // Realize Resources (Allocation Phase)
@@ -390,6 +392,7 @@ namespace Mixture
         for (size_t passIndex = 0; passIndex < m_Passes.size(); ++passIndex)
         {
             const auto& pass = m_Passes[passIndex];
+            RenderStats::Get().RecordRenderPass();
 
             // Execute Barriers
             for (const auto& barrier : pass.Barriers)
