@@ -26,8 +26,7 @@ namespace Mixture
 
     void UILayer::OnRender(RenderGraph& graph)
     {
-        graph.AddPass<ImGuiPass>("ImGuiPass", Application::Get().GetImGuiContext(),
-            graph.GetResource("Backbuffer"));
+        graph.AddPass<ImGuiPass>("ImGuiPass", Application::Get().GetImGuiContext(), graph.GetResource("Backbuffer"));
     }
 
     void UILayer::OnDrawImGui()

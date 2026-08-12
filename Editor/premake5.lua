@@ -1,4 +1,4 @@
-project "App"
+project "Editor"
     staticruntime "off"
     common_language_spec()
     common_target()
@@ -30,7 +30,7 @@ project "App"
         xcode_settings()
         xcodebuildsettings {
             ["INFOPLIST_FILE"] = "Info.plist",
-            ["PRODUCT_BUNDLE_IDENTIFIER"] = "com.mixture.app"
+            ["PRODUCT_BUNDLE_IDENTIFIER"] = "com.mixture.editor"
         }
 
     -- Only run this on macOS when building the App Bundle
