@@ -1,83 +1,57 @@
 #pragma once
 
-#include "Panels/IEditorPanel.hpp"
-#include <glm/glm.hpp>
+/**
+ * @file SceneHierarchyPanel.hpp
+ * @brief Panel responsible for displaying scene hierarchy, entity tree, and selection state.
+ */
 
-#include <vector>
-#include <string>
+#include "Panels/IEditorPanel.hpp"
+#include "Mixture/Scene/Scene.hpp"
+#include "Mixture/Scene/Entity.hpp"
+#include "Mixture/Scene/Components.hpp"
+
 #include <memory>
-#include <optional>
+#include <string>
 
 namespace Mixture
 {
     /**
-     * @brief Data structure representing an entity node in the editor scene tree.
-     */
-    struct EditorEntity
-    {
-        uint32_t ID = 0;
-        std::string Name = "Entity";
-        bool Active = true;
-        uint32_t ParentID = 0;
-
-        // Transform
-        glm::vec3 Position{ 0.0f, 0.0f, 0.0f };
-        glm::vec3 Rotation{ 0.0f, 0.0f, 0.0f };
-        glm::vec3 Scale{ 1.0f, 1.0f, 1.0f };
-
-        // Material / Renderer properties
-        glm::vec4 MaterialColor{ 1.0f, 1.0f, 1.0f, 1.0f };
-        float Roughness = 0.5f;
-        float Metallic = 0.0f;
-        bool HasMeshRenderer = true;
-
-        // Light properties
-        bool HasLight = false;
-        glm::vec3 LightColor{ 1.0f, 1.0f, 1.0f };
-        float LightIntensity = 1.0f;
-
-        // Camera properties
-        bool HasCamera = false;
-        float Fov = 45.0f;
-        float NearClip = 0.1f;
-        float FarClip = 1000.0f;
-    };
-
-    /**
-     * @brief Panel responsible for displaying scene entities, hierarchy tree, and selection context.
+     * @brief Panel displaying entity tree and selection management in the Editor.
      */
     class SceneHierarchyPanel final : public IEditorPanel
     {
     public:
-        SceneHierarchyPanel();
+        explicit SceneHierarchyPanel(Ref<Scene> context = nullptr);
         ~SceneHierarchyPanel() override = default;
 
         void OnDrawImGui() override;
 
-        /** Gets the currently selected entity. */
-        OPAL_NODISCARD EditorEntity* GetSelectedEntity();
-        OPAL_NODISCARD const EditorEntity* GetSelectedEntity() const;
+        /** Sets the active scene context for the panel. */
+        void SetContext(const Ref<Scene>& context);
 
-        /** Sets the selected entity by ID. */
-        void SetSelectedEntity(uint32_t id);
+        /** Gets the active scene context. */
+        OPAL_NODISCARD Ref<Scene> GetContext() const { return m_Context; }
+
+        /** Gets the currently selected entity handle. */
+        OPAL_NODISCARD Entity GetSelectedEntity() const { return m_SelectedEntity; }
+
+        /** Sets the selected entity. */
+        void SetSelectedEntity(Entity entity);
+
+        /** Clears entity selection. */
         void ClearSelection();
 
-        /** Gets all entities in the scene. */
-        OPAL_NODISCARD std::vector<EditorEntity>& GetEntities() { return m_Entities; }
-        OPAL_NODISCARD const std::vector<EditorEntity>& GetEntities() const { return m_Entities; }
+        /** Creates a new entity in the active scene hierarchy. */
+        Entity CreateEntity(const std::string& name = "Empty Entity");
 
-        /** Creates a new entity in the scene hierarchy. */
-        EditorEntity& CreateEntity(const std::string& name = "Empty Entity");
-
-        /** Deletes an entity by ID. */
-        void DeleteEntity(uint32_t id);
+        /** Deletes an entity from the active scene. */
+        void DeleteEntity(Entity entity);
 
     private:
-        void DrawEntityNode(EditorEntity& entity);
+        void DrawEntityNode(Entity entity);
 
     private:
-        std::vector<EditorEntity> m_Entities;
-        std::optional<uint32_t> m_SelectedEntityID;
-        uint32_t m_NextEntityID = 1;
+        Ref<Scene> m_Context;
+        Entity m_SelectedEntity;
     };
 }

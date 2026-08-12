@@ -5,76 +5,88 @@
 
 namespace Mixture
 {
-    SceneHierarchyPanel::SceneHierarchyPanel()
+    SceneHierarchyPanel::SceneHierarchyPanel(Ref<Scene> context)
         : IEditorPanel("Scene Hierarchy", true)
     {
+        SetContext(context);
     }
 
-    EditorEntity& SceneHierarchyPanel::CreateEntity(const std::string& name)
+    void SceneHierarchyPanel::SetContext(const Ref<Scene>& context)
     {
-        EditorEntity entity;
-        entity.ID = m_NextEntityID++;
-        entity.Name = name;
-        m_Entities.push_back(entity);
-        return m_Entities.back();
-    }
+        m_Context = context;
+        ClearSelection();
 
-    void SceneHierarchyPanel::DeleteEntity(uint32_t id)
-    {
-        if (m_SelectedEntityID && *m_SelectedEntityID == id)
+        // If no context provided, initialize default scene with sample entities
+        if (!m_Context)
         {
-            m_SelectedEntityID.reset();
+            m_Context = Scene::Create("Main Scene");
+            
+            auto camera = m_Context->CreateEntity("Main Camera");
+            camera.AddComponent<CameraComponent>();
+            camera.GetComponent<TransformComponent>().Position = { 0.0f, 0.0f, 5.0f };
+
+            auto light = m_Context->CreateEntity("Point Light");
+            light.AddComponent<LightComponent>();
+            light.GetComponent<TransformComponent>().Position = { 2.0f, 4.0f, 2.0f };
+
+            auto cube = m_Context->CreateEntity("Cube");
+            cube.AddComponent<MeshRendererComponent>();
+        }
+    }
+
+    Entity SceneHierarchyPanel::CreateEntity(const std::string& name)
+    {
+        if (!m_Context)
+        {
+            SetContext(nullptr);
+        }
+        return m_Context->CreateEntity(name);
+    }
+
+    void SceneHierarchyPanel::DeleteEntity(Entity entity)
+    {
+        if (m_SelectedEntity == entity)
+        {
+            ClearSelection();
         }
 
-        std::erase_if(m_Entities, [id](const EditorEntity& entity) {
-            return entity.ID == id;
-        });
-    }
-
-    EditorEntity* SceneHierarchyPanel::GetSelectedEntity()
-    {
-        if (!m_SelectedEntityID) return nullptr;
-        for (auto& entity : m_Entities)
+        if (m_Context && entity.IsValid())
         {
-            if (entity.ID == *m_SelectedEntityID)
-                return &entity;
+            m_Context->DestroyEntity(entity);
         }
-        return nullptr;
     }
 
-    const EditorEntity* SceneHierarchyPanel::GetSelectedEntity() const
+    void SceneHierarchyPanel::SetSelectedEntity(Entity entity)
     {
-        if (!m_SelectedEntityID) return nullptr;
-        for (const auto& entity : m_Entities)
-        {
-            if (entity.ID == *m_SelectedEntityID)
-                return &entity;
-        }
-        return nullptr;
-    }
-
-    void SceneHierarchyPanel::SetSelectedEntity(uint32_t id)
-    {
-        m_SelectedEntityID = id;
+        m_SelectedEntity = entity;
     }
 
     void SceneHierarchyPanel::ClearSelection()
     {
-        m_SelectedEntityID.reset();
+        m_SelectedEntity = Entity{};
     }
 
     void SceneHierarchyPanel::OnDrawImGui()
     {
         ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-        for (auto& entity : m_Entities)
+        if (!m_Context)
+        {
+            ImGui::TextDisabled("No Active Scene Context");
+            ImGui::End();
+            return;
+        }
+
+        auto rootEntities = m_Context->GetRootEntities();
+        for (auto& entity : rootEntities)
         {
             DrawEntityNode(entity);
         }
 
+        // Clear selection when clicking blank space inside window
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
         {
-            m_SelectedEntityID.reset();
+            ClearSelection();
         }
 
         // Right-click context menu on blank space
@@ -82,20 +94,26 @@ namespace Mixture
         {
             if (ImGui::MenuItem("Create Empty Entity"))
             {
-                auto& newEntity = CreateEntity("Empty Entity");
-                m_SelectedEntityID = newEntity.ID;
+                auto newEntity = CreateEntity("Empty Entity");
+                SetSelectedEntity(newEntity);
             }
             if (ImGui::MenuItem("Create 3D Object (Cube)"))
             {
-                auto& cube = CreateEntity("Cube");
-                m_SelectedEntityID = cube.ID;
+                auto cube = CreateEntity("Cube");
+                cube.AddComponent<MeshRendererComponent>();
+                SetSelectedEntity(cube);
             }
             if (ImGui::MenuItem("Create Point Light"))
             {
-                auto& light = CreateEntity("Point Light");
-                light.HasLight = true;
-                light.HasMeshRenderer = false;
-                m_SelectedEntityID = light.ID;
+                auto light = CreateEntity("Point Light");
+                light.AddComponent<LightComponent>();
+                SetSelectedEntity(light);
+            }
+            if (ImGui::MenuItem("Create Camera"))
+            {
+                auto camera = CreateEntity("Main Camera");
+                camera.AddComponent<CameraComponent>();
+                SetSelectedEntity(camera);
             }
             ImGui::EndPopup();
         }
@@ -103,21 +121,47 @@ namespace Mixture
         ImGui::End();
     }
 
-    void SceneHierarchyPanel::DrawEntityNode(EditorEntity& entity)
+    void SceneHierarchyPanel::DrawEntityNode(Entity entity)
     {
-        ImGuiTreeNodeFlags flags = ((m_SelectedEntityID && *m_SelectedEntityID == entity.ID) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-        flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf;
+        if (!entity.IsValid()) return;
 
-        bool opened = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(entity.ID)), flags, "%s", entity.Name.c_str());
+        std::string name = "Entity";
+        if (entity.HasComponent<TagComponent>())
+        {
+            name = entity.GetComponent<TagComponent>().Name;
+        }
+
+        ImGuiTreeNodeFlags flags = (m_SelectedEntity == entity ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+        flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        auto children = entity.GetChildren();
+        if (children.empty())
+        {
+            flags |= ImGuiTreeNodeFlags_Leaf;
+        }
+
+        bool opened = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(entity.GetID())), flags, "%s", name.c_str());
 
         if (ImGui::IsItemClicked())
         {
-            m_SelectedEntityID = entity.ID;
+            SetSelectedEntity(entity);
         }
 
         bool entityDeleted = false;
         if (ImGui::BeginPopupContextItem())
         {
+            if (ImGui::MenuItem("Create Child Entity"))
+            {
+                auto child = CreateEntity("Child Entity");
+                child.SetParent(entity);
+                SetSelectedEntity(child);
+            }
+
+            if (entity.HasParent() && ImGui::MenuItem("Unparent"))
+            {
+                entity.RemoveParent();
+            }
+
             if (ImGui::MenuItem("Delete Entity"))
             {
                 entityDeleted = true;
@@ -127,12 +171,16 @@ namespace Mixture
 
         if (opened)
         {
+            for (auto& child : children)
+            {
+                DrawEntityNode(child);
+            }
             ImGui::TreePop();
         }
 
         if (entityDeleted)
         {
-            DeleteEntity(entity.ID);
+            DeleteEntity(entity);
         }
     }
 }

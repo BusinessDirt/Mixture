@@ -19,4 +19,8 @@
 #include "Mixture/Core/Layer.hpp"
 #include "Mixture/Core/LayerStack.hpp"
 
+#include "Mixture/Scene/Components.hpp"
+#include "Mixture/Scene/Entity.hpp"
+#include "Mixture/Scene/Scene.hpp"
+
 #include <imgui.h>
