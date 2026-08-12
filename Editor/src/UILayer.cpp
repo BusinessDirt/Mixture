@@ -213,6 +213,26 @@ namespace Mixture
                     m_ResetLayoutRequested = true;
                 }
 
+                if (ImGui::BeginMenu("Theme"))
+                {
+                    const auto& themes = ThemeManager::Get().GetThemes();
+                    auto activeTheme = ThemeManager::Get().GetActiveTheme();
+                    std::string activeName = activeTheme ? activeTheme->GetName() : "";
+
+                    for (const auto& theme : themes)
+                    {
+                        if (theme)
+                        {
+                            bool isSelected = (theme->GetName() == activeName);
+                            if (ImGui::MenuItem(theme->GetName().c_str(), nullptr, isSelected))
+                            {
+                                ThemeManager::Get().SetTheme(theme);
+                            }
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+
                 if (!m_Panels.empty())
                 {
                     ImGui::Separator();

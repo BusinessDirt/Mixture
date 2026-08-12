@@ -10,6 +10,8 @@
 #include "Mixture/Render/Graph/RenderGraph.hpp"
 #include "Mixture/Render/RHI/RHI.hpp"
 #include "Mixture/Render/ImGui/ImGuiPass.hpp"
+#include "Mixture/Render/ImGui/Theme.hpp"
+#include "Mixture/Render/ImGui/ThemeManager.hpp"
 
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Core/Application.hpp"
