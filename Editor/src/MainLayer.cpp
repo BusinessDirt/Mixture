@@ -37,50 +37,55 @@ namespace Mixture
         auto cube = m_Scene->CreateEntity("Cube");
         cube.AddComponent<MeshRendererComponent>();
 
-        // Create 3D Cube primitive vertex buffer (36 vertices)
+        // Create 3D Cube primitive vertex buffer (36 vertices - 6 faces)
         Vertex cubeVertices[] = {
-            // Front face
+            // Front face (Z = +0.5)
             { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
             { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
             { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
             { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
             { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            // Back face
+            { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+
+            // Right face (X = +0.5)
+            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+
+            // Back face (Z = -0.5)
+            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
             { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
             { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            // Top face
             { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
             { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            // Bottom face
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
             { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            // Right face
-            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            // Left face
+
+            // Left face (X = -0.5)
             { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
             { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
             { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
             { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } }
+            { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+
+            // Top face (Y = +0.5)
+            { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+
+            // Bottom face (Y = -0.5)
+            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } }
         };
 
         m_VertexCount = sizeof(cubeVertices) / sizeof(Vertex);
@@ -156,6 +161,9 @@ namespace Mixture
 
                 if (m_Scene)
                 {
+                    const auto& window = Application::Get().GetWindow();
+                    float aspect = (window.GetHeight() > 0) ? (static_cast<float>(window.GetWidth()) / static_cast<float>(window.GetHeight())) : 1.778f;
+
                     // Compute ViewProjection matrix from active camera in scene
                     glm::mat4 viewMatrix(1.0f);
                     glm::mat4 projectionMatrix(1.0f);
@@ -165,8 +173,8 @@ namespace Mixture
                         if (camera.Primary && !foundCamera)
                         {
                             viewMatrix = glm::inverse(transform.GetTransform());
-                            float aspect = camera.FixedAspectRatio ? camera.AspectRatio : (1280.0f / 720.0f);
-                            projectionMatrix = glm::perspective(glm::radians(camera.Fov), aspect, camera.NearClip, camera.FarClip);
+                            float camAspect = camera.FixedAspectRatio ? camera.AspectRatio : aspect;
+                            projectionMatrix = glm::perspective(glm::radians(camera.Fov), camAspect, camera.NearClip, camera.FarClip);
                             foundCamera = true;
                         }
                     });
@@ -174,7 +182,7 @@ namespace Mixture
                     if (!foundCamera)
                     {
                         viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-                        projectionMatrix = glm::perspective(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
+                        projectionMatrix = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 1000.0f);
                     }
 
                     glm::mat4 viewProjection = projectionMatrix * viewMatrix;
