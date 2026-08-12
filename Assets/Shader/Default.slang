@@ -1,5 +1,14 @@
 // Default.slang
 
+struct PushConstants
+{
+    float4x4 model;
+    float4x4 viewProjection;
+};
+
+[[vk::push_constant]]
+PushConstants pushConstants;
+
 struct VS_Input
 {
     [[vk::location(0)]] float3 position : POSITION;
@@ -17,7 +26,8 @@ VS_Output VS_Main(VS_Input input)
 {
     VS_Output output;
 
-    output.position = float4(input.position, 1.0f);
+    float4 worldPos = mul(pushConstants.model, float4(input.position, 1.0f));
+    output.position = mul(pushConstants.viewProjection, worldPos);
     output.color = float4(1.0f, 1.0f, 1.0f, 1.0f); // White color
 
     return output;
@@ -26,5 +36,5 @@ VS_Output VS_Main(VS_Input input)
 [shader("pixel")]
 float4 PS_Main(VS_Output input) : SV_TARGET
 {
-    return float4(1.0f, 1.0f, 1.0f, 1.0f); // White color output
+    return float4(1.0f, 1.0f, 1.0f, 1.0f); // Render white
 }

@@ -12,6 +12,12 @@ namespace Mixture
         glm::vec3 Color;
     };
 
+    struct PushConstantData
+    {
+        glm::mat4 Model;
+        glm::mat4 ViewProjection;
+    };
+
     void MainLayer::OnAttach()
     {
         OPAL_INFO("Client", "MainLayer::OnAttach()");
@@ -150,19 +156,41 @@ namespace Mixture
 
                 if (m_Scene)
                 {
-                    // Render all active entities with MeshRendererComponent
-                    uint32_t meshCount = 0;
-                    m_Scene->Each([&](flecs::entity e, const MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
-                        if (meshRenderer.Enabled)
+                    // Compute ViewProjection matrix from active camera in scene
+                    glm::mat4 viewMatrix(1.0f);
+                    glm::mat4 projectionMatrix(1.0f);
+                    bool foundCamera = false;
+
+                    m_Scene->Each([&](flecs::entity e, const CameraComponent& camera, const TransformComponent& transform) {
+                        if (camera.Primary && !foundCamera)
                         {
-                            meshCount++;
+                            viewMatrix = glm::inverse(transform.GetTransform());
+                            float aspect = camera.FixedAspectRatio ? camera.AspectRatio : (1280.0f / 720.0f);
+                            projectionMatrix = glm::perspective(glm::radians(camera.Fov), aspect, camera.NearClip, camera.FarClip);
+                            foundCamera = true;
                         }
                     });
 
-                    if (meshCount > 0)
+                    if (!foundCamera)
                     {
-                        cmd->Draw(m_VertexCount, meshCount, 0, 0);
+                        viewMatrix = glm::lookAt(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+                        projectionMatrix = glm::perspective(glm::radians(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f);
                     }
+
+                    glm::mat4 viewProjection = projectionMatrix * viewMatrix;
+
+                    // Render all active entities with MeshRendererComponent
+                    m_Scene->Each([&](flecs::entity e, const MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
+                        if (meshRenderer.Enabled)
+                        {
+                            PushConstantData pushData;
+                            pushData.Model = transform.GetTransform();
+                            pushData.ViewProjection = viewProjection;
+
+                            cmd->PushConstants(data.Pipeline, RHI::ShaderStage::Vertex, &pushData, sizeof(PushConstantData));
+                            cmd->Draw(m_VertexCount, 1, 0, 0);
+                        }
+                    });
                 }
             }
         );
