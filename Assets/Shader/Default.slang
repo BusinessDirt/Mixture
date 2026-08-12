@@ -1,4 +1,4 @@
-// Triangle.slang
+// Default.slang
 
 struct VS_Input
 {
@@ -18,7 +18,7 @@ VS_Output VS_Main(VS_Input input)
     VS_Output output;
 
     output.position = float4(input.position, 1.0f);
-    output.color = float4(input.color, 1.0f);
+    output.color = float4(1.0f, 1.0f, 1.0f, 1.0f); // White color
 
     return output;
 }
@@ -26,5 +26,5 @@ VS_Output VS_Main(VS_Input input)
 [shader("pixel")]
 float4 PS_Main(VS_Output input) : SV_TARGET
 {
-    return input.color;
+    return float4(1.0f, 1.0f, 1.0f, 1.0f); // White color output
 }

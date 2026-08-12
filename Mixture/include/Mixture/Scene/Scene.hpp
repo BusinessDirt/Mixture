@@ -68,12 +68,12 @@ namespace Mixture
         void SetName(const std::string& name) { m_Name = name; }
 
         /**
-         * @brief Iterates over all entities matching specified component types.
+         * @brief Iterates over entities matching lambda argument components.
          */
-        template<typename... Components, typename Func>
+        template<typename Func>
         void Each(Func&& func)
         {
-            m_World.each<Components...>(std::forward<Func>(func));
+            m_World.each(std::forward<Func>(func));
         }
 
     private:

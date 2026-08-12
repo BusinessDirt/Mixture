@@ -150,6 +150,10 @@ namespace Mixture
             return m_LayerStack.PushOverlay<LayerT>(std::forward<Args>(args)...);
         }
 
+        /** Gets the application layer stack. */
+        OPAL_NODISCARD LayerStack& GetLayerStack() { return m_LayerStack; }
+        OPAL_NODISCARD const LayerStack& GetLayerStack() const { return m_LayerStack; }
+
     private:
         void Run() const;
         bool OnWindowClose(WindowCloseEvent& e);
