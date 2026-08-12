@@ -35,6 +35,7 @@ namespace Mixture
 
         if (ImGui::CollapsingHeader("Renderer Stats", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            // TODO: retrieve actual stats
             ImGui::Text("Graphics API: Vulkan 1.3");
             ImGui::Text("Draw Calls: 12");
             ImGui::Text("Triangles: 14,520");
@@ -44,6 +45,7 @@ namespace Mixture
 
         if (ImGui::CollapsingHeader("Memory", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            // TODO: retrieve actual stats
             ImGui::Text("VRAM Usage: 142.5 MB");
             ImGui::Text("System RAM: 38.2 MB");
         }

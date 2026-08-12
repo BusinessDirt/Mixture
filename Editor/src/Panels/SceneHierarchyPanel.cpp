@@ -8,28 +8,6 @@ namespace Mixture
     SceneHierarchyPanel::SceneHierarchyPanel()
         : IEditorPanel("Scene Hierarchy", true)
     {
-        // Populate default sample scene hierarchy
-        auto& camera = CreateEntity("Main Camera");
-        camera.HasCamera = true;
-        camera.HasMeshRenderer = false;
-        camera.Position = { 0.0f, 2.0f, 5.0f };
-
-        auto& light = CreateEntity("Directional Light");
-        light.HasLight = true;
-        light.HasMeshRenderer = false;
-        light.Position = { 5.0f, 10.0f, 5.0f };
-        light.LightIntensity = 2.5f;
-
-        auto& player = CreateEntity("Player");
-        player.Position = { 0.0f, 0.0f, 0.0f };
-        player.MaterialColor = { 0.2f, 0.7f, 0.9f, 1.0f };
-
-        auto& ground = CreateEntity("Ground Plane");
-        ground.Position = { 0.0f, -1.0f, 0.0f };
-        ground.Scale = { 10.0f, 0.1f, 10.0f };
-        ground.MaterialColor = { 0.3f, 0.3f, 0.3f, 1.0f };
-
-        m_SelectedEntityID = player.ID;
     }
 
     EditorEntity& SceneHierarchyPanel::CreateEntity(const std::string& name)

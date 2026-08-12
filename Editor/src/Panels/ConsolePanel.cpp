@@ -12,13 +12,9 @@ namespace Mixture
 
     ConsolePanel::ConsolePanel()
         : IEditorPanel("Console", true)
-    {
-        AddLog(LogLevel::Info, "Engine initialized successfully.");
-        AddLog(LogLevel::Info, "Vulkan Graphics Device: Apple M-Series (MoltenVK).");
-        AddLog(LogLevel::Warning, "Shader compiler: reflection metadata loaded with 0 warnings.");
-        AddLog(LogLevel::Info, "RenderGraph backbuffer attached.");
-    }
+    {}
 
+    // TODO: integrate with spdlog
     void ConsolePanel::AddLog(LogLevel level, const std::string& message)
     {
         std::lock_guard<std::mutex> lock(s_LogMutex);

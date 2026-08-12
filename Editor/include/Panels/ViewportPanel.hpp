@@ -27,21 +27,11 @@ namespace Mixture
         /** Returns whether the cursor is hovering over the viewport. */
         OPAL_NODISCARD bool IsHovered() const { return m_IsHovered; }
 
-        /** Returns the gizmo operation mode (0: Translate, 1: Rotate, 2: Scale). */
-        OPAL_NODISCARD int GetGizmoType() const { return m_GizmoType; }
-
-    private:
-        void DrawToolbar();
-
     private:
         glm::vec2 m_ViewportSize{ 0.0f, 0.0f };
         glm::vec2 m_ViewportBounds[2]{ { 0.0f, 0.0f }, { 0.0f, 0.0f } };
 
         bool m_IsFocused = false;
         bool m_IsHovered = false;
-
-        int m_GizmoType = 0; // 0: Translate, 1: Rotate, 2: Scale
-        bool m_IsPlaying = false;
-        bool m_IsPaused = false;
     };
 }

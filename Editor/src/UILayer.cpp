@@ -6,6 +6,7 @@
 #include "Panels/ConsolePanel.hpp"
 #include "Panels/StatsPanel.hpp"
 
+#include <imgui_internal.h>
 #include <algorithm>
 
 namespace Mixture
@@ -111,6 +112,27 @@ namespace Mixture
         graph.AddPass<ImGuiPass>("ImGuiPass", Application::Get().GetImGuiContext(), graph.GetResource("Backbuffer"));
     }
 
+    void UILayer::SetupDefaultDockLayout(ImGuiID dockspaceId)
+    {
+        ImGui::DockBuilderRemoveNode(dockspaceId);
+        ImGui::DockBuilderAddNode(dockspaceId, ImGuiDockNodeFlags_DockSpace);
+        ImGui::DockBuilderSetNodeSize(dockspaceId, ImGui::GetMainViewport()->WorkSize);
+
+        ImGuiID dockMainId = dockspaceId;
+        ImGuiID dockLeftId = ImGui::DockBuilderSplitNode(dockMainId, ImGuiDir_Left, 0.20f, nullptr, &dockMainId);
+        ImGuiID dockRightId = ImGui::DockBuilderSplitNode(dockMainId, ImGuiDir_Right, 0.25f, nullptr, &dockMainId);
+        ImGuiID dockBottomId = ImGui::DockBuilderSplitNode(dockMainId, ImGuiDir_Down, 0.30f, nullptr, &dockMainId);
+
+        ImGui::DockBuilderDockWindow("Viewport", dockMainId);
+        ImGui::DockBuilderDockWindow("Scene Hierarchy", dockLeftId);
+        ImGui::DockBuilderDockWindow("Inspector", dockRightId);
+        ImGui::DockBuilderDockWindow("Content Browser", dockBottomId);
+        ImGui::DockBuilderDockWindow("Console", dockBottomId);
+        ImGui::DockBuilderDockWindow("Performance Stats", dockBottomId);
+
+        ImGui::DockBuilderFinish(dockspaceId);
+    }
+
     void UILayer::OnDrawImGui()
     {
         static constexpr bool opt_fullscreen = true;
@@ -161,6 +183,14 @@ namespace Mixture
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
         {
             const ImGuiID dockspace_id = ImGui::GetID("EditorDockSpace");
+
+            // Build default layout if uninitialized or reset requested
+            if (!ImGui::DockBuilderGetNode(dockspace_id) || m_ResetLayoutRequested)
+            {
+                m_ResetLayoutRequested = false;
+                SetupDefaultDockLayout(dockspace_id);
+            }
+
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
         }
 
@@ -176,10 +206,16 @@ namespace Mixture
                 ImGui::EndMenu();
             }
 
-            if (!m_Panels.empty())
+            if (ImGui::BeginMenu("Window"))
             {
-                if (ImGui::BeginMenu("Panels"))
+                if (ImGui::MenuItem("Reset Layout"))
                 {
+                    m_ResetLayoutRequested = true;
+                }
+
+                if (!m_Panels.empty())
+                {
+                    ImGui::Separator();
                     for (auto& panel : m_Panels)
                     {
                         if (panel)
@@ -191,8 +227,9 @@ namespace Mixture
                             }
                         }
                     }
-                    ImGui::EndMenu();
                 }
+
+                ImGui::EndMenu();
             }
 
             ImGui::EndMenuBar();

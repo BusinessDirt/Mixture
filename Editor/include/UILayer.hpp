@@ -24,6 +24,11 @@ namespace Mixture
         void OnDrawImGui() override;
 
         /**
+         * @brief Reset dockspace to the default window layout.
+         */
+        void ResetLayout() { m_ResetLayoutRequested = true; }
+
+        /**
          * @brief Register a panel by constructing it directly.
          */
         template<typename T, typename... Args>
@@ -68,7 +73,11 @@ namespace Mixture
         OPAL_NODISCARD const Vector<Ref<IEditorPanel>>& GetPanels() const { return m_Panels; }
 
     private:
+        void SetupDefaultDockLayout(unsigned int dockspaceId);
+
+    private:
         Vector<Ref<IEditorPanel>> m_Panels;
         bool m_IsAttached = false;
+        bool m_ResetLayoutRequested = false;
     };
 }
