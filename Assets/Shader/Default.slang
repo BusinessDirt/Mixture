@@ -1,5 +1,10 @@
 // Default.slang
 
+struct CameraData
+{
+    float4x4 viewProjection;
+};
+
 struct MaterialData
 {
     float4 albedoColor;
@@ -11,9 +16,10 @@ struct MaterialData
 struct PushConstants
 {
     float4x4 model;
-    float4x4 viewProjection;
-    MaterialData material;
 };
+
+[[vk::binding(0, 0)]] ConstantBuffer<CameraData> u_Camera;
+[[vk::binding(0, 1)]] ConstantBuffer<MaterialData> u_Material;
 
 [[vk::push_constant]]
 PushConstants pushConstants;
@@ -36,8 +42,8 @@ VS_Output VS_Main(VS_Input input)
     VS_Output output;
 
     float4 worldPos = mul(pushConstants.model, float4(input.position, 1.0f));
-    output.position = mul(pushConstants.viewProjection, worldPos);
-    output.color = pushConstants.material.albedoColor;
+    output.position = mul(u_Camera.viewProjection, worldPos);
+    output.color = u_Material.albedoColor;
 
     return output;
 }

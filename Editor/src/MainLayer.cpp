@@ -12,19 +12,9 @@ namespace Mixture
         glm::vec3 Color;
     };
 
-    struct ShaderMaterialData
+    struct alignas(16) CameraData
     {
-        glm::vec4 AlbedoColor{ 1.0f, 1.0f, 1.0f, 1.0f };
-        float Metallic = 0.0f;
-        float Roughness = 0.5f;
-        glm::vec2 Padding{ 0.0f, 0.0f };
-    };
-
-    struct PushConstantData
-    {
-        glm::mat4 Model;
         glm::mat4 ViewProjection;
-        ShaderMaterialData Material;
     };
 
     void MainLayer::OnAttach()
@@ -110,6 +100,7 @@ namespace Mixture
     void MainLayer::OnDetach()
     {
         OPAL_INFO("Client", "MainLayer::OnDetach()");
+        m_CameraBuffer.reset();
         m_VertexBuffer.reset();
         m_Scene.reset();
     }
@@ -219,25 +210,34 @@ namespace Mixture
                         projectionMatrix = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 1000.0f);
                     }
 
-                    glm::mat4 viewProjection = projectionMatrix * viewMatrix;
+                    // Create/Update Camera UBO (Set 0, Binding 0)
+                    CameraData camData;
+                    camData.ViewProjection = projectionMatrix * viewMatrix;
+
+                    auto& device = Application::Get().GetContext().GetDevice();
+                    RHI::BufferDesc camDesc;
+                    camDesc.Size = sizeof(CameraData);
+                    camDesc.Usage = RHI::BufferUsage::Uniform;
+                    camDesc.DebugName = "CameraUBO";
+                    m_CameraBuffer = device.CreateBuffer(camDesc, std::as_bytes(std::span(&camData, 1)));
+
+                    cmd->SetUniformBuffer(0, m_CameraBuffer.get(), 0);
 
                     // Render all active entities with MeshRendererComponent
-                    m_Scene->Each([&](flecs::entity e, const MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
+                    m_Scene->Each([&](flecs::entity e, MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
                         if (meshRenderer.Enabled)
                         {
-                            PushConstantData pushData;
-                            pushData.Model = transform.GetTransform();
-                            pushData.ViewProjection = viewProjection;
-
                             if (meshRenderer.MaterialAsset)
                             {
-                                const auto& matData = meshRenderer.MaterialAsset->GetData();
-                                pushData.Material.AlbedoColor = matData.AlbedoColor;
-                                pushData.Material.Metallic = matData.Metallic;
-                                pushData.Material.Roughness = matData.Roughness;
+                                RHI::IBuffer* matUBO = meshRenderer.MaterialAsset->GetUniformBuffer(device);
+                                if (matUBO)
+                                {
+                                    cmd->SetUniformBuffer(0, matUBO, 1);
+                                }
                             }
 
-                            cmd->PushConstants(data.Pipeline, RHI::ShaderStage::Vertex, &pushData, sizeof(PushConstantData));
+                            glm::mat4 modelMatrix = transform.GetTransform();
+                            cmd->PushConstants(data.Pipeline, RHI::ShaderStage::Vertex, &modelMatrix, sizeof(glm::mat4));
                             cmd->Draw(m_VertexCount, 1, 0, 0);
                         }
                     });

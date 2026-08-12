@@ -34,6 +34,7 @@ namespace Mixture
     private:
         Ref<Scene> m_Scene;
         Ref<RHI::IBuffer> m_VertexBuffer;
+        Ref<RHI::IBuffer> m_CameraBuffer;
         uint32_t m_VertexCount = 0;
     };
 }
