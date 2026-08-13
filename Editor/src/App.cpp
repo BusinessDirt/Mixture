@@ -24,8 +24,8 @@ namespace Mixture
         desc.Width = 1280;
         desc.Height = 720;
         desc.Version = "1.0.0";
-        desc.API = RHI::GraphicsAPI::Vulkan;
-        desc.EnableImGui = true;
+        desc.API = RHI::GraphicsAPI::Metal;
+        desc.EnableImGui = false;
         desc.Args = args;
 
         const auto app = new ExampleApp(desc);

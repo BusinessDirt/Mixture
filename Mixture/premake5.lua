@@ -41,6 +41,13 @@ project "Mixture"
     filter "system:macosx"
         buildoptions { "-fms-extensions" }
         externalincludedirs { "%{IncludeDir.metal}" }
+        links {
+            "Metal.framework",
+            "QuartzCore.framework",
+            "Foundation.framework",
+            "Cocoa.framework",
+            "AppKit.framework"
+        }
 
     filter "configurations:Debug"
         defines { "OPAL_DEBUG" }

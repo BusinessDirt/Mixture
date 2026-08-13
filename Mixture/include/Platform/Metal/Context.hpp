@@ -8,6 +8,9 @@
 
 #include "Mixture/Render/RHI/RHI.hpp"
 #include "Platform/Metal/Definitions.hpp"
+#include "Platform/Metal/Device.hpp"
+#include "Platform/Metal/Swapchain.hpp"
+#include "Platform/Metal/Command/CommandList.hpp"
 
 #include <vector>
 #include <optional>
@@ -19,11 +22,10 @@ namespace Mixture::Metal
     class Context : public RHI::IGraphicsContext
     {
     public:
-
         Context(const ApplicationDescription& appDescription, void* windowHandle);
         ~Context();
 
-        RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
+        RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Metal; }
 
         /**
          * @brief Gets the Metal Device implementation.
@@ -81,7 +83,10 @@ namespace Mixture::Metal
          * @return Context& Reference to the context.
          */
         static Context& Get();
+
     private:
+        Ref<Device> m_Device;
+        Scope<Swapchain> m_Swapchain;
         uint32_t m_CurrentFrame = 0;
     };
 }

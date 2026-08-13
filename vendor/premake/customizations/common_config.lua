@@ -100,6 +100,7 @@ function xcode_settings()
 
     links {
         "vulkan.framework",
+        "Metal.framework",
         "Cocoa.framework",
         "Foundation.framework",
         "IOKit.framework",

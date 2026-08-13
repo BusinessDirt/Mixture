@@ -6,8 +6,17 @@
  * @brief Common definitions and structures for Metal.
  */
 
- #include <Metal/Metal.hpp>
+#include <Foundation/Foundation.hpp>
+#include <Metal/Metal.hpp>
+#include <QuartzCore/QuartzCore.hpp>
+#include <QuartzCore/CAMetalLayer.hpp>
 
- #include "Mixture/Core/Base.hpp"
+#if defined(__OBJC__)
+#import <Foundation/Foundation.h>
+#import <Metal/Metal.h>
+#import <QuartzCore/CAMetalLayer.h>
+#endif
+
+#include "Mixture/Core/Base.hpp"
 
 #endif
