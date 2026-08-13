@@ -49,14 +49,36 @@ namespace Mixture
         // Create default scene entities if empty
         auto camera = m_Scene->CreateEntity("Main Camera");
         camera.AddComponent<CameraComponent>();
-        camera.GetComponent<TransformComponent>().Position = { 0.0f, 0.0f, 5.0f };
+        auto& cameraTransform = camera.GetComponent<TransformComponent>();
+        cameraTransform.Position = { 3.6f, 2.4f, 6.2f };
+        cameraTransform.Rotation = glm::quatLookAt(
+            glm::normalize(-cameraTransform.Position), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        auto light = m_Scene->CreateEntity("Point Light");
-        light.AddComponent<LightComponent>();
-        light.GetComponent<TransformComponent>().Position = { 2.0f, 4.0f, 2.0f };
+        auto keyLight = m_Scene->CreateEntity("Key Light");
+        keyLight.AddComponent<LightComponent>();
+        auto& keyLightData = keyLight.GetComponent<LightComponent>();
+        keyLightData.Color = { 1.0f, 0.78f, 0.55f };
+        keyLightData.Intensity = 2.5f;
+        keyLightData.Range = 12.0f;
+        keyLight.GetComponent<TransformComponent>().Position = { 2.5f, 4.0f, 3.0f };
+
+        auto fillLight = m_Scene->CreateEntity("Fill Light");
+        fillLight.AddComponent<LightComponent>();
+        auto& fillLightData = fillLight.GetComponent<LightComponent>();
+        fillLightData.Color = { 0.35f, 0.55f, 1.0f };
+        fillLightData.Intensity = 0.8f;
+        fillLightData.Range = 10.0f;
+        fillLight.GetComponent<TransformComponent>().Position = { -3.0f, 1.5f, 1.0f };
 
         auto cube = m_Scene->CreateEntity("Cube");
         cube.AddComponent<MeshRendererComponent>();
+        auto& cubeTransform = cube.GetComponent<TransformComponent>();
+        cubeTransform.Rotation = glm::quat(glm::radians(glm::vec3(10.0f, 65.0f, 0.0f)));
+        cubeTransform.Scale = { 1.5f, 1.5f, 1.5f };
+        auto& cubeMaterial = cube.GetComponent<MeshRendererComponent>().MaterialAsset;
+        cubeMaterial->SetAlbedoColor({ 0.18f, 0.48f, 0.92f, 1.0f });
+        cubeMaterial->SetMetallic(0.2f);
+        cubeMaterial->SetRoughness(0.32f);
 
         // Create 3D Cube primitive vertex buffer (36 vertices - 6 faces)
         Vertex cubeVertices[] = {
