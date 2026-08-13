@@ -5,6 +5,10 @@
 
 #include "Platform/Vulkan/Context.hpp"
 
+#if defined(OPAL_PLATFORM_DARWIN)
+    #include "Platform/Metal/Context.hpp"
+#endif
+
 namespace Mixture::RHI
 {
     Scope<IGraphicsContext> IGraphicsContext::Create(const ApplicationDescription& appDescription, void* windowHandle)
@@ -17,7 +21,7 @@ namespace Mixture::RHI
             case GraphicsAPI::Vulkan:
                 return CreateScope<Vulkan::Context>(appDescription, windowHandle);
 
-#ifdef OPAL_PLATFORM_WINDOWS
+#if defined(OPAL_PLATFORM_WINDOWS)
             case GraphicsAPI::D3D12:
                 OPAL_ERROR("Core", "D3D12 is not supported yet!");
                 return nullptr;
@@ -27,10 +31,9 @@ namespace Mixture::RHI
                 return nullptr;
 #endif
 
-#ifdef OPAL_PLATFORM_DARWIN
+#if defined(OPAL_PLATFORM_DARWIN)
             case GraphicsAPI::Metal:
-                OPAL_ERROR("Core", "Metal is not supported yet!");
-                return nullptr;
+                return CreateScope<Metal::Context>(appDescription, windowHandle);
 #else
             case GraphicsAPI::Metal:
                 OPAL_ERROR("Core", "Metal is not supported on this platform!");

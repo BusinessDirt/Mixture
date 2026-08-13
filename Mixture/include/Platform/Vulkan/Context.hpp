@@ -5,7 +5,6 @@
  * @brief Vulkan implementation of the Graphics Context.
  */
 
-#include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/RHI.hpp"
 #include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/FrameSubmission.hpp"
@@ -53,17 +52,17 @@ namespace Mixture::Vulkan
         ~Context();
 
         RHI::GraphicsAPI GetAPI() const override { return RHI::GraphicsAPI::Vulkan; }
-        
+
         /**
          * @brief Gets the Vulkan Device implementation.
-         * 
+         *
          * @return RHI::IGraphicsDevice& The device.
          */
         RHI::IGraphicsDevice& GetDevice() const override;
 
         /**
          * @brief Handles window resize events.
-         * 
+         *
          * @param width New width.
          * @param height New height.
          */
@@ -71,7 +70,7 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Begins the frame and acquires the next image.
-         * 
+         *
          * @return RHI::ITexture* The backbuffer texture.
          */
         RHI::ITexture* BeginFrame() override;
@@ -83,21 +82,21 @@ namespace Mixture::Vulkan
 
         /**
          * @brief Gets a command buffer for the current frame.
-         * 
+         *
          * @return Scope<RHI::ICommandList> The command buffer.
          */
         Scope<RHI::ICommandList> GetCommandBuffer() override;
 
         /**
          * @brief Gets the swapchain width.
-         * 
+         *
          * @return uint32_t The width.
          */
         uint32_t GetSwapchainWidth() const override;
 
         /**
          * @brief Gets the swapchain height.
-         * 
+         *
          * @return uint32_t The height.
          */
         uint32_t GetSwapchainHeight() const override;
