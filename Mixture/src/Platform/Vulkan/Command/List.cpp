@@ -54,6 +54,7 @@ namespace Mixture::Vulkan
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit; // Reset every frame
         m_CommandContext.transferCommandBuffer.begin(beginInfo);
+        Context::Get().BeginTransferUploads(m_CommandContext.transferCommandBuffer);
         m_CommandContext.computeCommandBuffer.begin(beginInfo);
         m_CommandContext.graphicsCommandBuffer.begin(beginInfo);
 
@@ -80,6 +81,7 @@ namespace Mixture::Vulkan
             vk::AccessFlags() // Presentation reads implicitly
         );
 
+        Context::Get().EndTransferUploads();
         m_CommandContext.transferCommandBuffer.end();
         m_CommandContext.computeCommandBuffer.end();
         m_CommandContext.graphicsCommandBuffer.end();
@@ -290,7 +292,7 @@ namespace Mixture::Vulkan
             return;
         }
         m_CommandContext.graphicsCommandBuffer.pushConstants(
-            vulkanPipeline->GetLayout(), stages, range->offset, size, data);
+            vulkanPipeline->GetLayout(), range->stageFlags, range->offset, size, data);
     }
 
     void CommandList::SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer, uint32_t set)

@@ -13,7 +13,6 @@
 #include "Platform/Vulkan/Command/Buffers.hpp"
 #include "Platform/Vulkan/Command/List.hpp"
 #include "Platform/Vulkan/Command/Pool.hpp"
-#include "Platform/Vulkan/SingleTimeCommand.hpp"
 
 #include "Platform/Vulkan/Sync/Fences.hpp"
 #include "Platform/Vulkan/Sync/Semaphores.hpp"
@@ -51,7 +50,6 @@ namespace Mixture::Vulkan
             m_PresentQueue = CreateScope<Queue>(*m_Device, indices.Present, 0, "Present Queue");
             m_ComputeQueue = CreateScope<Queue>(*m_Device, indices.Compute, MAX_FRAMES_IN_FLIGHT, "Compute Queue", indices.Graphics);
             m_TransferQueue = CreateScope<Queue>(*m_Device, indices.Transfer, MAX_FRAMES_IN_FLIGHT, "Transfer Queue", indices.Graphics);
-            m_Device->SetTransferQueue(*m_GraphicsQueue);
 
             const uint32_t imageCount = m_Swapchain->GetImageCount();
             m_ImageAvailableSemaphores = CreateScope<Semaphores>(*m_Device, MAX_FRAMES_IN_FLIGHT);
@@ -73,14 +71,45 @@ namespace Mixture::Vulkan
 
     Context::~Context()
     {
-        SingleTimeCommand::Shutdown(*m_GraphicsQueue);
         m_Device->WaitForIdle();
-        m_Device->ClearTransferQueue();
+        for (auto& cleanup : m_TransferCleanups)
+            for (auto& action : cleanup) action();
+        for (auto& upload : m_PendingTransferUploads)
+            if (upload.Cleanup) upload.Cleanup();
         s_Instance = nullptr;
     }
 
     DescriptorAllocator* Context::GetCurrentDescriptorAllocator() const { return m_DescriptorAllocators->Get(m_CurrentFrame); }
     DescriptorLayoutCache* Context::GetDescriptorLayoutCache() const { return m_DescriptorLayoutCache.get(); }
+
+    void Context::EnqueueTransferUpload(std::function<void(vk::CommandBuffer)> record, std::function<void()> cleanup)
+    {
+        if (m_ActiveTransferCommandBuffer)
+        {
+            record(m_ActiveTransferCommandBuffer);
+            m_TransferCleanups[m_CurrentFrame].push_back(std::move(cleanup));
+            m_QueueActivity[m_CurrentFrame].Transfer = true;
+            return;
+        }
+        m_PendingTransferUploads.push_back({ std::move(record), std::move(cleanup) });
+    }
+
+    void Context::BeginTransferUploads(vk::CommandBuffer commandBuffer)
+    {
+        m_ActiveTransferCommandBuffer = commandBuffer;
+        for (auto& upload : m_PendingTransferUploads)
+        {
+            upload.Record(commandBuffer);
+            m_TransferCleanups[m_CurrentFrame].push_back(std::move(upload.Cleanup));
+            m_QueueActivity[m_CurrentFrame].Transfer = true;
+        }
+        m_PendingTransferUploads.clear();
+    }
+
+    void Context::EndTransferUploads()
+    {
+        m_ActiveTransferCommandBuffer = nullptr;
+    }
 
     uint32_t Context::GetSwapchainWidth() const { return m_Swapchain->GetExtent().width; }
     uint32_t Context::GetSwapchainHeight() const { return m_Swapchain->GetExtent().height; }
@@ -119,15 +148,14 @@ namespace Mixture::Vulkan
             return nullptr;
         }
 
-        // Ensure pending upload batches are submitted before this frame is queued.
-        SingleTimeCommand::Flush(*m_GraphicsQueue);
-
         // Wait for the PREVIOUS frame (using this index) to finish
         if (m_InFlightFences->Wait(m_CurrentFrame) != vk::Result::eSuccess)
         {
             OPAL_ERROR("Core/Vulkan", "Wait for fences failed!");
             return nullptr;
         }
+        for (auto& cleanup : m_TransferCleanups[m_CurrentFrame]) cleanup();
+        m_TransferCleanups[m_CurrentFrame].clear();
 
         m_DescriptorAllocators->Get(m_CurrentFrame)->ResetPools();
 
@@ -175,7 +203,7 @@ namespace Mixture::Vulkan
         if (plan.WaitForTransfer)
         {
             waitSemaphores.push_back(m_TransferFinishedSemaphores->Get(m_CurrentFrame));
-            waitStages.push_back(vk::PipelineStageFlagBits::eVertexInput);
+            waitStages.push_back(vk::PipelineStageFlagBits::eAllCommands);
         }
         if (plan.WaitForCompute)
         {

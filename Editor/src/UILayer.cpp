@@ -1,4 +1,5 @@
 #include "UILayer.hpp"
+#include "MainLayer.hpp"
 #include "Panels/ViewportPanel.hpp"
 #include "Panels/SceneHierarchyPanel.hpp"
 #include "Panels/InspectorPanel.hpp"
@@ -24,6 +25,18 @@ namespace Mixture
             RegisterPanel<ContentBrowserPanel>();
             RegisterPanel<ConsolePanel>();
             RegisterPanel<StatsPanel>();
+
+            for (auto& layer : Application::Get().GetLayerStack())
+            {
+                if (auto mainLayer = dynamic_cast<MainLayer*>(layer.get()))
+                {
+                    if (mainLayer->GetScene())
+                    {
+                        hierarchy->SetContext(mainLayer->GetScene());
+                    }
+                    break;
+                }
+            }
         }
 
         for (auto& panel : m_Panels)
