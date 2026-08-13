@@ -15,7 +15,7 @@ namespace Mixture
 
     RHI::IBuffer* Material::GetUniformBuffer(RHI::IGraphicsDevice& device)
     {
-        if (!m_UniformBuffer)
+        if (!m_UniformBuffer || m_IsDirty)
         {
             m_DebugName = m_Name + "_UBO";
 

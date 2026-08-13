@@ -98,21 +98,13 @@ namespace Mixture
 
         m_VertexBuffer = device.CreateBuffer(desc, std::as_bytes(std::span(cubeVertices)));
 
-        CameraData defaultCamData{};
-        defaultCamData.ViewProjection = glm::mat4(1.0f);
-
-        RHI::BufferDesc camDesc;
-        camDesc.Size = sizeof(CameraData);
-        camDesc.Usage = RHI::BufferUsage::Uniform;
-        camDesc.DebugName = "CameraUBO";
-
-        m_CameraBuffer = device.CreateBuffer(camDesc, std::as_bytes(std::span(&defaultCamData, 1)));
+        m_CameraBuffers.resize(3);
     }
 
     void MainLayer::OnDetach()
     {
         OPAL_INFO("Client", "MainLayer::OnDetach()");
-        m_CameraBuffer.reset();
+        m_CameraBuffers.clear();
         m_VertexBuffer.reset();
         m_Scene.reset();
     }
@@ -222,12 +214,25 @@ namespace Mixture
                         projectionMatrix = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 1000.0f);
                     }
 
-                    if (m_CameraBuffer)
-                    {
-                        cmd->SetUniformBuffer(0, m_CameraBuffer.get(), 0);
-                    }
+                    // Rotate ring of camera UBOs across frame slots
+                    CameraData camData;
+                    camData.ViewProjection = projectionMatrix * viewMatrix;
+
+                    static uint32_t s_FrameIndex = 0;
+                    uint32_t camIndex = (s_FrameIndex++) % 3;
 
                     auto& device = Application::Get().GetContext().GetDevice();
+
+                    RHI::BufferDesc camDesc;
+                    camDesc.Size = sizeof(CameraData);
+                    camDesc.Usage = RHI::BufferUsage::Uniform;
+                    camDesc.DebugName = "CameraUBO";
+
+                    m_CameraBuffers[camIndex] = device.CreateBuffer(camDesc, std::as_bytes(std::span(&camData, 1)));
+                    if (m_CameraBuffers[camIndex])
+                    {
+                        cmd->SetUniformBuffer(0, m_CameraBuffers[camIndex].get(), 0);
+                    }
 
                     // Render all active entities with MeshRendererComponent
                     m_Scene->Each([&](flecs::entity e, MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
