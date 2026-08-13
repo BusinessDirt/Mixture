@@ -115,15 +115,8 @@ namespace Mixture::Vulkan
         m_Device.destroy();
 	}
 
-    Queue& Device::GetTransferQueue() const
-    {
-        if (!m_TransferQueue) throw std::logic_error("Transfer queue has not been assigned to the device");
-        return *m_TransferQueue;
-    }
-
     void Device::Submit(vk::Queue queue, const vk::SubmitInfo& submitInfo, vk::Fence fence)
     {
-        std::lock_guard<std::mutex> lock(m_QueueSubmitMutex);
         queue.submit(submitInfo, fence);
     }
 

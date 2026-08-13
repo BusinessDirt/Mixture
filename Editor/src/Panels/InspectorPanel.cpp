@@ -129,13 +129,20 @@ namespace Mixture
             {
                 if (ImGui::TreeNodeEx("Material Properties", ImGuiTreeNodeFlags_DefaultOpen))
                 {
-                    auto& matData = meshRenderer.MaterialAsset->GetData();
-                    ImGui::ColorEdit4("Albedo Color", &matData.AlbedoColor.x);
-                    ImGui::SliderFloat("Roughness", &matData.Roughness, 0.0f, 1.0f);
-                    ImGui::SliderFloat("Metallic", &matData.Metallic, 0.0f, 1.0f);
-                    ImGui::ColorEdit3("Emission Color", &matData.EmissionColor.x);
-                    ImGui::DragFloat("Emission Intensity", &matData.EmissionIntensity, 0.1f, 0.0f, 100.0f);
-                    ImGui::DragFloat2("Tiling", &matData.Tiling.x, 0.1f);
+                    const auto& matData = static_cast<const Material&>(*meshRenderer.MaterialAsset).GetData();
+                    glm::vec4 albedoColor = matData.AlbedoColor;
+                    float roughness = matData.Roughness;
+                    float metallic = matData.Metallic;
+                    glm::vec3 emissionColor = matData.EmissionColor;
+                    float emissionIntensity = matData.EmissionIntensity;
+                    glm::vec2 tiling = matData.Tiling;
+
+                    if (ImGui::ColorEdit4("Albedo Color", &albedoColor.x)) meshRenderer.MaterialAsset->SetAlbedoColor(albedoColor);
+                    if (ImGui::SliderFloat("Roughness", &roughness, 0.0f, 1.0f)) meshRenderer.MaterialAsset->SetRoughness(roughness);
+                    if (ImGui::SliderFloat("Metallic", &metallic, 0.0f, 1.0f)) meshRenderer.MaterialAsset->SetMetallic(metallic);
+                    if (ImGui::ColorEdit3("Emission Color", &emissionColor.x)) meshRenderer.MaterialAsset->SetEmissionColor(emissionColor);
+                    if (ImGui::DragFloat("Emission Intensity", &emissionIntensity, 0.1f, 0.0f, 100.0f)) meshRenderer.MaterialAsset->SetEmissionIntensity(emissionIntensity);
+                    if (ImGui::DragFloat2("Tiling", &tiling.x, 0.1f)) meshRenderer.MaterialAsset->SetTiling(tiling);
 
                     ImGui::TreePop();
                 }

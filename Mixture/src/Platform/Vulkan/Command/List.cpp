@@ -54,6 +54,7 @@ namespace Mixture::Vulkan
         vk::CommandBufferBeginInfo beginInfo;
         beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit; // Reset every frame
         m_CommandContext.transferCommandBuffer.begin(beginInfo);
+        Context::Get().BeginTransferUploads(m_CommandContext.transferCommandBuffer);
         m_CommandContext.computeCommandBuffer.begin(beginInfo);
         m_CommandContext.graphicsCommandBuffer.begin(beginInfo);
 
@@ -80,6 +81,7 @@ namespace Mixture::Vulkan
             vk::AccessFlags() // Presentation reads implicitly
         );
 
+        Context::Get().EndTransferUploads();
         m_CommandContext.transferCommandBuffer.end();
         m_CommandContext.computeCommandBuffer.end();
         m_CommandContext.graphicsCommandBuffer.end();

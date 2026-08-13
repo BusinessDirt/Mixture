@@ -3,8 +3,7 @@
 #include "Platform/Vulkan/Resources/AllocationPolicy.hpp"
 
 #include "Platform/Vulkan/Device.hpp"
-#include "Platform/Vulkan/Queue.hpp"
-#include "Platform/Vulkan/SingleTimeCommand.hpp"
+#include "Platform/Vulkan/Context.hpp"
 #include "Platform/Vulkan/ResourcePolicy.hpp"
 
 #include <stdexcept>
@@ -64,10 +63,8 @@ namespace Mixture::Vulkan
                 else finalState = RHI::ResourceState::ShaderResource;
             }
             const ResourceStateMapping finalMapping = MapResourceState(finalState);
-            try
-            {
-                m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
-                    [stagingBuffer, destinationImage, width = m_Width, height = m_Height, aspect, finalMapping](vk::CommandBuffer cmd)
+            Context::Get().EnqueueTransferUpload(
+                [stagingBuffer, destinationImage, width = m_Width, height = m_Height, aspect, finalMapping](vk::CommandBuffer cmd)
                 {
                     vk::ImageMemoryBarrier barrier{};
                     barrier.oldLayout = vk::ImageLayout::eUndefined;
@@ -100,17 +97,8 @@ namespace Mixture::Vulkan
                     barrier.dstAccessMask = finalMapping.Access;
                     cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, finalMapping.Stages,
                         vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
-                }, [allocator, stagingBuffer, stagingAllocation]()
-                {
-                    vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
-                });
-            }
-            catch (...)
-            {
-                vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation);
-                Release();
-                throw;
-            }
+                },
+                [allocator, stagingBuffer, stagingAllocation]() { vmaDestroyBuffer(allocator, stagingBuffer, stagingAllocation); });
         }
     }
 
@@ -131,11 +119,6 @@ namespace Mixture::Vulkan
 
     void Texture::Release()
     {
-        if (m_UploadCompletion.valid())
-        {
-            m_UploadCompletion.wait();
-            m_UploadCompletion = {};
-        }
         if (m_OwnsImage)
         {
             auto device = m_Device->GetHandle();

@@ -4,7 +4,7 @@
 
 #include "Platform/Vulkan/Device.hpp"
 #include "Platform/Vulkan/Queue.hpp"
-#include "Platform/Vulkan/SingleTimeCommand.hpp"
+#include "Platform/Vulkan/Context.hpp"
 
 #include <stdexcept>
 
@@ -69,33 +69,19 @@ namespace Mixture::Vulkan
             vmaUnmapMemory(allocator, stagingAlloc);
 
             const vk::Buffer destination = m_Buffer;
-            try
-            {
-                m_UploadCompletion = SingleTimeCommand::Submit(m_Device->GetTransferQueue(),
-                    [stagingBuffer, destination, size = desc.Size](vk::CommandBuffer cmd)
+            Context::Get().EnqueueTransferUpload(
+                [stagingBuffer, destination, size = desc.Size](vk::CommandBuffer cmd)
                 {
                     vk::BufferCopy copyRegion;
                     copyRegion.size = size;
                     cmd.copyBuffer(stagingBuffer, destination, 1, &copyRegion);
-                }, [allocator, stagingBuffer, stagingAlloc]()
-                {
-                    vmaDestroyBuffer(allocator, stagingBuffer, stagingAlloc);
-                });
-            }
-            catch (...)
-            {
-                vmaDestroyBuffer(allocator, stagingBuffer, stagingAlloc);
-                vmaDestroyBuffer(allocator, m_Buffer, m_Allocation);
-                m_Buffer = nullptr;
-                m_Allocation = nullptr;
-                throw;
-            }
+                },
+                [allocator, stagingBuffer, stagingAlloc]() { vmaDestroyBuffer(allocator, stagingBuffer, stagingAlloc); });
         }
     }
 
     Buffer::~Buffer()
     {
-        if (m_UploadCompletion.valid()) m_UploadCompletion.wait();
         if (m_Buffer)
         {
             vmaDestroyBuffer(m_Device->GetAllocator(), m_Buffer, m_Allocation);

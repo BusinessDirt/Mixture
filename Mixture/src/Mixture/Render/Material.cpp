@@ -13,21 +13,31 @@ namespace Mixture
         return CreateRef<Material>(name, id);
     }
 
-    RHI::IBuffer* Material::GetUniformBuffer(RHI::IGraphicsDevice& device)
+    RHI::IBuffer* Material::GetUniformBuffer(RHI::IGraphicsDevice& device, uint32_t frameIndex)
     {
-        if (!m_UniformBuffer || m_IsDirty)
+        const uint32_t bufferIndex = frameIndex % FramesInFlight;
+        Ref<RHI::IBuffer>& uniformBuffer = m_UniformBuffers[bufferIndex];
+        if (uniformBuffer && m_BufferVersions[bufferIndex] == m_DataVersion)
         {
-            m_DebugName = m_Name + "_UBO";
-
-            RHI::BufferDesc desc;
-            desc.Size = sizeof(MaterialData);
-            desc.Usage = RHI::BufferUsage::Uniform;
-            desc.DebugName = m_DebugName.c_str();
-
-            m_UniformBuffer = device.CreateBuffer(desc, std::as_bytes(std::span(&m_Data, 1)));
-            m_IsDirty = false;
+            return uniformBuffer.get();
         }
 
-        return m_UniformBuffer.get();
+        m_DebugName = m_Name + "_UBO";
+
+        RHI::BufferDesc desc;
+        desc.Size = sizeof(MaterialData);
+        desc.Usage = RHI::BufferUsage::Uniform;
+        desc.DebugName = m_DebugName.c_str();
+
+        Ref<RHI::IBuffer> uploadedBuffer = device.CreateBuffer(desc, std::as_bytes(std::span(&m_Data, 1)));
+        if (uploadedBuffer)
+        {
+            // The current frame slot is idle before command recording begins, so replacing
+            // its buffer cannot invalidate descriptors from an in-flight frame.
+            uniformBuffer = std::move(uploadedBuffer);
+            m_BufferVersions[bufferIndex] = m_DataVersion;
+        }
+
+        return uniformBuffer.get();
     }
 }

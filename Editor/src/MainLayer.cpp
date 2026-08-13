@@ -4,12 +4,13 @@
 #include "Mixture/Scene/Components.hpp"
 #include "Mixture/Scene/Entity.hpp"
 
+#include <cstring>
+
 namespace Mixture
 {
     struct Vertex
     {
         glm::vec3 Position;
-        glm::vec3 Color;
     };
 
     struct alignas(16) CameraData
@@ -39,52 +40,52 @@ namespace Mixture
         // Create 3D Cube primitive vertex buffer (36 vertices - 6 faces)
         Vertex cubeVertices[] = {
             // Front face (Z = +0.5)
-            { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { { -0.5f, -0.5f,  0.5f } },
+            { {  0.5f, -0.5f,  0.5f } },
+            { {  0.5f,  0.5f,  0.5f } },
+            { {  0.5f,  0.5f,  0.5f } },
+            { { -0.5f,  0.5f,  0.5f } },
+            { { -0.5f, -0.5f,  0.5f } },
 
             // Right face (X = +0.5)
-            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f, -0.5f,  0.5f } },
+            { {  0.5f, -0.5f, -0.5f } },
+            { {  0.5f,  0.5f, -0.5f } },
+            { {  0.5f,  0.5f, -0.5f } },
+            { {  0.5f,  0.5f,  0.5f } },
+            { {  0.5f, -0.5f,  0.5f } },
 
             // Back face (Z = -0.5)
-            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { {  0.5f, -0.5f, -0.5f } },
+            { { -0.5f, -0.5f, -0.5f } },
+            { { -0.5f,  0.5f, -0.5f } },
+            { { -0.5f,  0.5f, -0.5f } },
+            { {  0.5f,  0.5f, -0.5f } },
+            { {  0.5f, -0.5f, -0.5f } },
 
             // Left face (X = -0.5)
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { { -0.5f, -0.5f, -0.5f } },
+            { { -0.5f, -0.5f,  0.5f } },
+            { { -0.5f,  0.5f,  0.5f } },
+            { { -0.5f,  0.5f,  0.5f } },
+            { { -0.5f,  0.5f, -0.5f } },
+            { { -0.5f, -0.5f, -0.5f } },
 
             // Top face (Y = +0.5)
-            { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
+            { { -0.5f,  0.5f,  0.5f } },
+            { {  0.5f,  0.5f,  0.5f } },
+            { {  0.5f,  0.5f, -0.5f } },
+            { {  0.5f,  0.5f, -0.5f } },
+            { { -0.5f,  0.5f, -0.5f } },
+            { { -0.5f,  0.5f,  0.5f } },
 
             // Bottom face (Y = -0.5)
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f } },
-            { { -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f } }
+            { { -0.5f, -0.5f, -0.5f } },
+            { {  0.5f, -0.5f, -0.5f } },
+            { {  0.5f, -0.5f,  0.5f } },
+            { {  0.5f, -0.5f,  0.5f } },
+            { { -0.5f, -0.5f,  0.5f } },
+            { { -0.5f, -0.5f, -0.5f } }
         };
 
         m_VertexCount = sizeof(cubeVertices) / sizeof(Vertex);
@@ -105,6 +106,8 @@ namespace Mixture
     {
         OPAL_INFO("Client", "MainLayer::OnDetach()");
         m_CameraBuffers.clear();
+        m_CameraBufferCursor = 0;
+        m_HasCameraData = false;
         m_VertexBuffer.reset();
         m_Scene.reset();
     }
@@ -147,11 +150,6 @@ namespace Mixture
         graph.AddPass<ScenePassData>("GBufferPass",
             [&](RenderGraphBuilder& builder, ScenePassData& data)
             {
-                if (m_VertexBuffer)
-                {
-                    graph.ImportResource("SceneVB", m_VertexBuffer.get());
-                }
-
                 RGResourceHandle backbuffer = graph.GetResource("Backbuffer");
                 RGAttachmentInfo colorInfo;
                 colorInfo.Handle = backbuffer;
@@ -180,13 +178,15 @@ namespace Mixture
                 desc.DepthAttachmentFormat = RHI::Format::D32_FLOAT;
                 data.Pipeline = builder.CreatePipeline(desc);
             },
-            [&](const RenderGraphRegistry& registry, const ScenePassData& data, RHI::ICommandList* cmd)
+            [&](const RenderGraphRegistry&, const ScenePassData& data, RHI::ICommandList* cmd)
             {
-                cmd->BindPipeline(data.Pipeline);
-                if (m_VertexBuffer)
+                if (!data.Pipeline || !m_VertexBuffer || m_VertexCount == 0)
                 {
-                    cmd->BindVertexBuffer(m_VertexBuffer.get(), 0);
+                    return;
                 }
+
+                cmd->BindPipeline(data.Pipeline);
+                cmd->BindVertexBuffer(m_VertexBuffer.get(), 0);
 
                 if (m_Scene)
                 {
@@ -214,43 +214,52 @@ namespace Mixture
                         projectionMatrix = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 1000.0f);
                     }
 
-                    // Rotate ring of camera UBOs across frame slots
                     CameraData camData;
                     camData.ViewProjection = projectionMatrix * viewMatrix;
 
-                    static uint32_t s_FrameIndex = 0;
-                    uint32_t camIndex = (s_FrameIndex++) % 3;
-
+                    if (m_CameraBuffers.empty()) return;
                     auto& device = Application::Get().GetContext().GetDevice();
-
-                    RHI::BufferDesc camDesc;
-                    camDesc.Size = sizeof(CameraData);
-                    camDesc.Usage = RHI::BufferUsage::Uniform;
-                    camDesc.DebugName = "CameraUBO";
-
-                    m_CameraBuffers[camIndex] = device.CreateBuffer(camDesc, std::as_bytes(std::span(&camData, 1)));
-                    if (m_CameraBuffers[camIndex])
+                    const bool cameraChanged = !m_HasCameraData
+                        || std::memcmp(&m_LastCameraViewProjection, &camData.ViewProjection, sizeof(camData.ViewProjection)) != 0;
+                    if (cameraChanged)
                     {
-                        cmd->SetUniformBuffer(0, m_CameraBuffers[camIndex].get(), 0);
+                        const uint32_t camIndex = m_CameraBufferCursor % static_cast<uint32_t>(m_CameraBuffers.size());
+
+                        RHI::BufferDesc camDesc;
+                        camDesc.Size = sizeof(CameraData);
+                        camDesc.Usage = RHI::BufferUsage::Uniform;
+                        camDesc.DebugName = "CameraUBO";
+
+                        Ref<RHI::IBuffer> cameraBuffer = device.CreateBuffer(camDesc, std::as_bytes(std::span(&camData, 1)));
+                        if (cameraBuffer)
+                        {
+                            m_CameraBuffers[camIndex] = std::move(cameraBuffer);
+                            m_CameraBufferCursor = (camIndex + 1) % static_cast<uint32_t>(m_CameraBuffers.size());
+                            m_LastCameraViewProjection = camData.ViewProjection;
+                            m_HasCameraData = true;
+                        }
                     }
 
-                    // Render all active entities with MeshRendererComponent
-                    m_Scene->Each([&](flecs::entity e, MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
-                        if (meshRenderer.Enabled)
-                        {
-                            if (meshRenderer.MaterialAsset)
-                            {
-                                RHI::IBuffer* matUBO = meshRenderer.MaterialAsset->GetUniformBuffer(device);
-                                if (matUBO)
-                                {
-                                    cmd->SetUniformBuffer(0, matUBO, 1);
-                                }
-                            }
+                    const uint32_t activeCameraIndex = (m_CameraBufferCursor + m_CameraBuffers.size() - 1) % m_CameraBuffers.size();
+                    RHI::IBuffer* cameraBuffer = m_CameraBuffers[activeCameraIndex].get();
+                    if (!cameraBuffer) return;
+                    cmd->SetUniformBuffer(0, cameraBuffer, 0);
 
-                            glm::mat4 modelMatrix = transform.GetTransform();
-                            cmd->PushConstants(data.Pipeline, RHI::ShaderStage::Vertex, &modelMatrix, sizeof(glm::mat4));
-                            cmd->Draw(m_VertexCount, 1, 0, 0);
+                    // Render all active entities with MeshRendererComponent
+                    m_Scene->Each([&](flecs::entity, MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
+                        if (!meshRenderer.Enabled || !meshRenderer.MaterialAsset)
+                        {
+                            return;
                         }
+
+                        const uint32_t frameIndex = Application::Get().GetContext().GetCurrentFrameIndex();
+                        RHI::IBuffer* materialBuffer = meshRenderer.MaterialAsset->GetUniformBuffer(device, frameIndex);
+                        if (!materialBuffer) return;
+
+                        cmd->SetUniformBuffer(0, materialBuffer, 1);
+                        glm::mat4 modelMatrix = transform.GetTransform();
+                        cmd->PushConstants(data.Pipeline, RHI::ShaderStage::Vertex, &modelMatrix, sizeof(modelMatrix));
+                        cmd->Draw(m_VertexCount, 1, 0, 0);
                     });
                 }
             }

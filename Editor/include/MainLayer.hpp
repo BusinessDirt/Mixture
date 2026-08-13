@@ -36,5 +36,8 @@ namespace Mixture
         Ref<RHI::IBuffer> m_VertexBuffer;
         Vector<Ref<RHI::IBuffer>> m_CameraBuffers;
         uint32_t m_VertexCount = 0;
+        uint32_t m_CameraBufferCursor = 0;
+        glm::mat4 m_LastCameraViewProjection{ 1.0f };
+        bool m_HasCameraData = false;
     };
 }

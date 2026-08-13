@@ -7,11 +7,13 @@
 
 #include "Mixture/Core/Base.hpp"
 #include "Mixture/Render/RHI/RHI.hpp"
+#include "Platform/Vulkan/Definitions.hpp"
 #include "Platform/Vulkan/FrameSubmission.hpp"
 
 #include <vector>
 #include <optional>
 #include <array>
+#include <functional>
 
 namespace Mixture::Vulkan
 {
@@ -168,6 +170,11 @@ namespace Mixture::Vulkan
         DescriptorAllocator* GetCurrentDescriptorAllocator() const;
         DescriptorLayoutCache* GetDescriptorLayoutCache() const;
 
+        /** Queues a transfer copy for the active frame, or the next frame if none is recording. */
+        void EnqueueTransferUpload(std::function<void(vk::CommandBuffer)> record, std::function<void()> cleanup);
+        void BeginTransferUploads(vk::CommandBuffer commandBuffer);
+        void EndTransferUploads();
+
         /**
          * @brief Gets the singleton context instance.
          *
@@ -202,5 +209,13 @@ namespace Mixture::Vulkan
         uint32_t m_ImageIndex = 0;
         bool m_IsFrameStarted = false;
         std::array<FrameQueueActivity, 2> m_QueueActivity{};
+        struct PendingTransferUpload
+        {
+            std::function<void(vk::CommandBuffer)> Record;
+            std::function<void()> Cleanup;
+        };
+        Vector<PendingTransferUpload> m_PendingTransferUploads;
+        std::array<Vector<std::function<void()>>, 2> m_TransferCleanups;
+        vk::CommandBuffer m_ActiveTransferCommandBuffer;
     };
 }

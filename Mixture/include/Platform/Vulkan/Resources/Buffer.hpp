@@ -10,7 +10,6 @@
 #include "Mixture/Render/RHI/IBuffer.hpp"
 #include <vulkan/vulkan.hpp>
 #include <vma/vk_mem_alloc.h>
-#include <future>
 
 namespace Mixture::Vulkan
 {
@@ -50,6 +49,5 @@ namespace Mixture::Vulkan
         RHI::BufferDesc m_Desc;
         vk::Buffer m_Buffer = nullptr;
         VmaAllocation m_Allocation = nullptr;
-        std::shared_future<void> m_UploadCompletion;
     };
 }

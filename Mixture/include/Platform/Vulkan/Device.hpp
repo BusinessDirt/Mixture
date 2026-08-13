@@ -12,12 +12,9 @@
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 
 #include <vma/vk_mem_alloc.h>
-#include <mutex>
 
 namespace Mixture::Vulkan
 {
-    class Queue;
-
     /**
      * @brief Wrapper around a Vulkan logical device.
      */
@@ -50,16 +47,7 @@ namespace Mixture::Vulkan
         /** @brief Gets the physical device retained by this logical device. */
         PhysicalDevice& GetPhysicalDevice() const { return *m_PhysicalDevice; }
 
-        /** @brief Assigns the queue used for immediate resource uploads. */
-        void SetTransferQueue(Queue& transferQueue) { m_TransferQueue = &transferQueue; }
-
-        /** @brief Clears the non-owning upload queue before its context is destroyed. */
-        void ClearTransferQueue() { m_TransferQueue = nullptr; }
-
-        /** @brief Gets the queue used for immediate resource uploads. */
-        Queue& GetTransferQueue() const;
-
-        /** @brief Serializes submissions that target Vulkan queues owned by this device. */
+        /** Submits recorded work on the render thread. */
         void Submit(vk::Queue queue, const vk::SubmitInfo& submitInfo, vk::Fence fence = {});
 
         /**
@@ -107,10 +95,8 @@ namespace Mixture::Vulkan
 	private:
 		Ref<Instance> m_Instance;
 		Ref<PhysicalDevice> m_PhysicalDevice;
-		Queue* m_TransferQueue = nullptr;
-		vk::Device m_Device = nullptr;
+        vk::Device m_Device = nullptr;
 
         VmaAllocator m_Allocator = nullptr;
-        std::mutex m_QueueSubmitMutex;
 	};
 }

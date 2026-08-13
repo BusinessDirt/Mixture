@@ -5,6 +5,8 @@
 #include "Mixture/Render/RHI/IBuffer.hpp"
 #include "Mixture/Render/RHI/IGraphicsDevice.hpp"
 #include <glm/glm.hpp>
+#include <array>
+#include <cstdint>
 #include <string>
 
 namespace Mixture
@@ -42,26 +44,26 @@ namespace Mixture
         void SetName(const std::string& name) { m_Name = name; }
 
         // Material Data Getters & Setters
-        MaterialData& GetData() { m_IsDirty = true; return m_Data; }
+        MaterialData& GetData() { MarkDirty(); return m_Data; }
         const MaterialData& GetData() const { return m_Data; }
 
         const glm::vec4& GetAlbedoColor() const { return m_Data.AlbedoColor; }
-        void SetAlbedoColor(const glm::vec4& color) { m_Data.AlbedoColor = color; m_IsDirty = true; }
+        void SetAlbedoColor(const glm::vec4& color) { m_Data.AlbedoColor = color; MarkDirty(); }
 
         float GetMetallic() const { return m_Data.Metallic; }
-        void SetMetallic(float metallic) { m_Data.Metallic = metallic; m_IsDirty = true; }
+        void SetMetallic(float metallic) { m_Data.Metallic = metallic; MarkDirty(); }
 
         float GetRoughness() const { return m_Data.Roughness; }
-        void SetRoughness(float roughness) { m_Data.Roughness = roughness; m_IsDirty = true; }
+        void SetRoughness(float roughness) { m_Data.Roughness = roughness; MarkDirty(); }
 
         const glm::vec3& GetEmissionColor() const { return m_Data.EmissionColor; }
-        void SetEmissionColor(const glm::vec3& color) { m_Data.EmissionColor = color; m_IsDirty = true; }
+        void SetEmissionColor(const glm::vec3& color) { m_Data.EmissionColor = color; MarkDirty(); }
 
         float GetEmissionIntensity() const { return m_Data.EmissionIntensity; }
-        void SetEmissionIntensity(float intensity) { m_Data.EmissionIntensity = intensity; m_IsDirty = true; }
+        void SetEmissionIntensity(float intensity) { m_Data.EmissionIntensity = intensity; MarkDirty(); }
 
         const glm::vec2& GetTiling() const { return m_Data.Tiling; }
-        void SetTiling(const glm::vec2& tiling) { m_Data.Tiling = tiling; m_IsDirty = true; }
+        void SetTiling(const glm::vec2& tiling) { m_Data.Tiling = tiling; MarkDirty(); }
 
         // Texture Map Paths
         const std::string& GetAlbedoMapPath() const { return m_AlbedoMapPath; }
@@ -76,16 +78,19 @@ namespace Mixture
         /**
          * @brief Returns or creates the GPU Uniform Buffer for this material.
          */
-        RHI::IBuffer* GetUniformBuffer(RHI::IGraphicsDevice& device);
+        RHI::IBuffer* GetUniformBuffer(RHI::IGraphicsDevice& device, uint32_t frameIndex);
 
     private:
+        static constexpr uint32_t FramesInFlight = 2;
+        void MarkDirty() { ++m_DataVersion; }
+
         UUID m_ID;
         std::string m_Name;
         std::string m_DebugName;
         MaterialData m_Data;
-        bool m_IsDirty = true;
-
-        Ref<RHI::IBuffer> m_UniformBuffer;
+        uint64_t m_DataVersion = 1;
+        std::array<Ref<RHI::IBuffer>, FramesInFlight> m_UniformBuffers;
+        std::array<uint64_t, FramesInFlight> m_BufferVersions{};
 
         std::string m_AlbedoMapPath;
         std::string m_NormalMapPath;
