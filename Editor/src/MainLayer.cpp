@@ -11,12 +11,33 @@ namespace Mixture
     struct Vertex
     {
         glm::vec3 Position;
+        glm::vec3 Normal;
     };
 
     struct alignas(16) CameraData
     {
         glm::mat4 ViewProjection;
+        glm::vec3 Position{ 0.0f };
+        float Padding = 0.0f;
     };
+
+    constexpr uint32_t MaxSceneLights = 16;
+
+    struct alignas(16) SceneLightData
+    {
+        glm::vec4 PositionRange;
+        glm::vec4 DirectionType;
+        glm::vec4 ColorIntensity;
+        glm::vec4 SpotAngles;
+    };
+
+    struct alignas(16) SceneLightingData
+    {
+        glm::uvec4 Header{ 0u };
+        std::array<SceneLightData, MaxSceneLights> Lights{};
+    };
+
+    static_assert(offsetof(SceneLightingData, Lights) == 16);
 
     void MainLayer::OnAttach()
     {
@@ -40,52 +61,28 @@ namespace Mixture
         // Create 3D Cube primitive vertex buffer (36 vertices - 6 faces)
         Vertex cubeVertices[] = {
             // Front face (Z = +0.5)
-            { { -0.5f, -0.5f,  0.5f } },
-            { {  0.5f, -0.5f,  0.5f } },
-            { {  0.5f,  0.5f,  0.5f } },
-            { {  0.5f,  0.5f,  0.5f } },
-            { { -0.5f,  0.5f,  0.5f } },
-            { { -0.5f, -0.5f,  0.5f } },
+            { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }, { {  0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }, { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } },
+            { {  0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }, { { -0.5f,  0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } }, { { -0.5f, -0.5f,  0.5f }, { 0.0f, 0.0f, 1.0f } },
 
             // Right face (X = +0.5)
-            { {  0.5f, -0.5f,  0.5f } },
-            { {  0.5f, -0.5f, -0.5f } },
-            { {  0.5f,  0.5f, -0.5f } },
-            { {  0.5f,  0.5f, -0.5f } },
-            { {  0.5f,  0.5f,  0.5f } },
-            { {  0.5f, -0.5f,  0.5f } },
+            { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 0.0f } }, { {  0.5f, -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } }, { {  0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
+            { {  0.5f,  0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f } }, { {  0.5f,  0.5f,  0.5f }, { 1.0f, 0.0f, 0.0f } }, { {  0.5f, -0.5f,  0.5f }, { 1.0f, 0.0f, 0.0f } },
 
             // Back face (Z = -0.5)
-            { {  0.5f, -0.5f, -0.5f } },
-            { { -0.5f, -0.5f, -0.5f } },
-            { { -0.5f,  0.5f, -0.5f } },
-            { { -0.5f,  0.5f, -0.5f } },
-            { {  0.5f,  0.5f, -0.5f } },
-            { {  0.5f, -0.5f, -0.5f } },
+            { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f } }, { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f } }, { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f } },
+            { { -0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f } }, { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f } }, { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f } },
 
             // Left face (X = -0.5)
-            { { -0.5f, -0.5f, -0.5f } },
-            { { -0.5f, -0.5f,  0.5f } },
-            { { -0.5f,  0.5f,  0.5f } },
-            { { -0.5f,  0.5f,  0.5f } },
-            { { -0.5f,  0.5f, -0.5f } },
-            { { -0.5f, -0.5f, -0.5f } },
+            { { -0.5f, -0.5f, -0.5f }, { -1.0f, 0.0f, 0.0f } }, { { -0.5f, -0.5f,  0.5f }, { -1.0f, 0.0f, 0.0f } }, { { -0.5f,  0.5f,  0.5f }, { -1.0f, 0.0f, 0.0f } },
+            { { -0.5f,  0.5f,  0.5f }, { -1.0f, 0.0f, 0.0f } }, { { -0.5f,  0.5f, -0.5f }, { -1.0f, 0.0f, 0.0f } }, { { -0.5f, -0.5f, -0.5f }, { -1.0f, 0.0f, 0.0f } },
 
             // Top face (Y = +0.5)
-            { { -0.5f,  0.5f,  0.5f } },
-            { {  0.5f,  0.5f,  0.5f } },
-            { {  0.5f,  0.5f, -0.5f } },
-            { {  0.5f,  0.5f, -0.5f } },
-            { { -0.5f,  0.5f, -0.5f } },
-            { { -0.5f,  0.5f,  0.5f } },
+            { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } }, { {  0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } }, { {  0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } },
+            { {  0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } }, { { -0.5f,  0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f } }, { { -0.5f,  0.5f,  0.5f }, { 0.0f, 1.0f, 0.0f } },
 
             // Bottom face (Y = -0.5)
-            { { -0.5f, -0.5f, -0.5f } },
-            { {  0.5f, -0.5f, -0.5f } },
-            { {  0.5f, -0.5f,  0.5f } },
-            { {  0.5f, -0.5f,  0.5f } },
-            { { -0.5f, -0.5f,  0.5f } },
-            { { -0.5f, -0.5f, -0.5f } }
+            { { -0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f, 0.0f } }, { {  0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f, 0.0f } }, { {  0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f, 0.0f } },
+            { {  0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f, 0.0f } }, { { -0.5f, -0.5f,  0.5f }, { 0.0f, -1.0f, 0.0f } }, { { -0.5f, -0.5f, -0.5f }, { 0.0f, -1.0f, 0.0f } }
         };
 
         m_VertexCount = sizeof(cubeVertices) / sizeof(Vertex);
@@ -100,12 +97,14 @@ namespace Mixture
         m_VertexBuffer = device.CreateBuffer(desc, std::as_bytes(std::span(cubeVertices)));
 
         m_CameraBuffers.resize(3);
+        m_LightBuffers.resize(2);
     }
 
     void MainLayer::OnDetach()
     {
         OPAL_INFO("Client", "MainLayer::OnDetach()");
         m_CameraBuffers.clear();
+        m_LightBuffers.clear();
         m_CameraBufferCursor = 0;
         m_HasCameraData = false;
         m_VertexBuffer.reset();
@@ -196,12 +195,14 @@ namespace Mixture
                     // Compute ViewProjection matrix from active camera in scene
                     glm::mat4 viewMatrix(1.0f);
                     glm::mat4 projectionMatrix(1.0f);
+                    glm::vec3 cameraPosition(0.0f, 0.0f, 5.0f);
                     bool foundCamera = false;
 
                     m_Scene->Each([&](flecs::entity e, const CameraComponent& camera, const TransformComponent& transform) {
                         if (camera.Primary && !foundCamera)
                         {
                             viewMatrix = glm::inverse(transform.GetTransform());
+                            cameraPosition = transform.Position;
                             float camAspect = camera.FixedAspectRatio ? camera.AspectRatio : aspect;
                             projectionMatrix = glm::perspective(glm::radians(camera.Fov), camAspect, camera.NearClip, camera.FarClip);
                             foundCamera = true;
@@ -216,6 +217,7 @@ namespace Mixture
 
                     CameraData camData;
                     camData.ViewProjection = projectionMatrix * viewMatrix;
+                    camData.Position = cameraPosition;
 
                     if (m_CameraBuffers.empty()) return;
                     auto& device = Application::Get().GetContext().GetDevice();
@@ -245,6 +247,28 @@ namespace Mixture
                     if (!cameraBuffer) return;
                     cmd->SetUniformBuffer(0, cameraBuffer, 0);
 
+                    SceneLightingData lightingData;
+                    m_Scene->Each([&](flecs::entity, const LightComponent& light, const TransformComponent& transform) {
+                        if (!light.Enabled || lightingData.Header.x >= MaxSceneLights) return;
+
+                        SceneLightData& gpuLight = lightingData.Lights[lightingData.Header.x++];
+                        const glm::vec3 direction = transform.Rotation * glm::vec3(0.0f, 0.0f, -1.0f);
+                        gpuLight.PositionRange = glm::vec4(transform.Position, light.Range);
+                        gpuLight.DirectionType = glm::vec4(direction, static_cast<float>(light.Type));
+                        gpuLight.ColorIntensity = glm::vec4(light.Color, light.Intensity);
+                        gpuLight.SpotAngles = glm::vec4(glm::cos(glm::radians(light.SpotAngle)), 0.0f, 0.0f, 0.0f);
+                    });
+
+                    const uint32_t frameIndex = Application::Get().GetContext().GetCurrentFrameIndex();
+                    RHI::BufferDesc lightDesc;
+                    lightDesc.Size = sizeof(SceneLightingData);
+                    lightDesc.Usage = RHI::BufferUsage::Uniform;
+                    lightDesc.DebugName = "SceneLightingUBO";
+                    Ref<RHI::IBuffer> lightBuffer = device.CreateBuffer(lightDesc, std::as_bytes(std::span(&lightingData, 1)));
+                    if (!lightBuffer) return;
+                    m_LightBuffers[frameIndex % m_LightBuffers.size()] = std::move(lightBuffer);
+                    cmd->SetUniformBuffer(0, m_LightBuffers[frameIndex % m_LightBuffers.size()].get(), 2);
+
                     // Render all active entities with MeshRendererComponent
                     m_Scene->Each([&](flecs::entity, MeshRendererComponent& meshRenderer, const TransformComponent& transform) {
                         if (!meshRenderer.Enabled || !meshRenderer.MaterialAsset)
@@ -252,7 +276,6 @@ namespace Mixture
                             return;
                         }
 
-                        const uint32_t frameIndex = Application::Get().GetContext().GetCurrentFrameIndex();
                         RHI::IBuffer* materialBuffer = meshRenderer.MaterialAsset->GetUniformBuffer(device, frameIndex);
                         if (!materialBuffer) return;
 

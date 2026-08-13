@@ -16,7 +16,7 @@ namespace Mixture
         if (m_ViewportTextureID && Application::IsCreated())
         {
             Application::Get().GetContext().GetDevice().WaitForIdle();
-            Application::Get().GetImGuiContext().RemoveTextureID(m_ViewportTextureID);
+            Application::Get().GetImGuiContext()->RemoveTextureID(m_ViewportTextureID);
             m_ViewportTextureID = nullptr;
         }
     }
@@ -40,7 +40,7 @@ namespace Mixture
 
             if (m_ViewportTextureID && Application::IsCreated())
             {
-                Application::Get().GetImGuiContext().RemoveTextureID(m_ViewportTextureID);
+                Application::Get().GetImGuiContext()->RemoveTextureID(m_ViewportTextureID);
                 m_ViewportTextureID = nullptr;
             }
 
@@ -57,7 +57,7 @@ namespace Mixture
             m_ViewportTexture = device.CreateTexture(desc);
             if (m_ViewportTexture && Application::IsCreated())
             {
-                m_ViewportTextureID = Application::Get().GetImGuiContext().GetTextureID(m_ViewportTexture.get());
+                m_ViewportTextureID = Application::Get().GetImGuiContext()->GetTextureID(m_ViewportTexture.get());
             }
         }
     }
