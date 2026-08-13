@@ -30,3 +30,6 @@
 [submodule "vendor/flecs"]
 	path = vendor/flecs
 	url = https://github.com/SanderMertens/flecs.git
+[submodule "vendor/metal-cpp"]
+	path = vendor/metal-cpp
+	url = https://github.com/apple/metal-cpp.git
