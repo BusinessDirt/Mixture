@@ -8,6 +8,8 @@ namespace Mixture
 {
     void ImGuiPass::Setup(RenderGraphBuilder& builder)
     {
+        if (!m_Context) return;
+
         RGAttachmentInfo output;
         output.Handle = m_OutputHandle;
 
@@ -31,6 +33,8 @@ namespace Mixture
 
     void ImGuiPass::Execute(const RenderGraphRegistry&, RHI::ICommandList* commandList) const
     {
+        if (!m_Context) return;
+
         m_Context->Render(commandList);
     }
 }

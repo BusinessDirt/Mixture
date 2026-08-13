@@ -134,9 +134,9 @@ namespace Mixture
         };
 
         // Create transient Depth Buffer resource for 3D scene rendering
-        const auto& window = Application::Get().GetWindow();
-        uint32_t width = window.GetWidth() > 0 ? window.GetWidth() : 1280;
-        uint32_t height = window.GetHeight() > 0 ? window.GetHeight() : 720;
+        int width, height;
+        Application::Get().GetWindow().GetFramebufferSize(&width, &height);
+
 
         RHI::TextureDesc depthDesc;
         depthDesc.Width = width;

@@ -15,6 +15,7 @@
 #include "Mixture/Events/ApplicationEvent.hpp"
 
 #include <stdexcept>
+#include <optional>
 
 
 int Entrypoint(int argc, char** argv);
@@ -118,7 +119,7 @@ namespace Mixture
         OPAL_NODISCARD const RHI::IGraphicsContext& GetContext() const { return *m_Context; }
 
         /** Returns the optional application-owned ImGui integration. */
-        OPAL_NODISCARD ImGuiContext& GetImGuiContext() const;
+        OPAL_NODISCARD ImGuiContext* GetImGuiContext() const { return m_ImGuiContext.get(); }
 
         /**
          * @brief Pushes a layer onto the layer stack.

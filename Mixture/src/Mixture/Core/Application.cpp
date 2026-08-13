@@ -112,12 +112,6 @@ namespace Mixture
         m_Running = false;
     }
 
-    ImGuiContext& Application::GetImGuiContext() const
-    {
-        if (!m_ImGuiContext) throw std::logic_error("ImGui is not enabled for this application");
-        return *m_ImGuiContext;
-    }
-
     void Application::Run() const
     {
         Timer frameTimer{};

@@ -13,7 +13,7 @@ namespace Mixture
             : Application(appDescription)
         {
             PushLayer<MainLayer>();
-            PushOverlay<UILayer>();
+            if (appDescription.EnableImGui) PushOverlay<UILayer>();
         }
     };
 
