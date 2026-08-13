@@ -74,9 +74,9 @@ namespace Mixture
 
         switch (graphicsAPI)
         {
-            case RHI::GraphicsAPI::Vulkan: targetDesc.format = SLANG_SPIRV;     break;
-            case RHI::GraphicsAPI::Metal:  targetDesc.format = SLANG_METAL_LIB; break;
-            case RHI::GraphicsAPI::D3D12:  targetDesc.format = SLANG_DXIL;      break;
+            case RHI::GraphicsAPI::Vulkan: targetDesc.format = SLANG_SPIRV; break;
+            case RHI::GraphicsAPI::Metal:  targetDesc.format = SLANG_METAL; break;
+            case RHI::GraphicsAPI::D3D12:  targetDesc.format = SLANG_DXIL;  break;
 
             case RHI::GraphicsAPI::None:
             default:
