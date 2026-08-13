@@ -40,6 +40,7 @@ project "Mixture"
 
     filter "system:macosx"
         buildoptions { "-fms-extensions" }
+        externalincludedirs { "%{IncludeDir.metal}" }
 
     filter "configurations:Debug"
         defines { "OPAL_DEBUG" }
