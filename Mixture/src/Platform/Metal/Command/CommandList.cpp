@@ -64,6 +64,7 @@ namespace Mixture::Metal
         }
 
         m_Encoder = m_CommandBuffer->renderCommandEncoder(passDesc);
+        m_BoundPipeline = nullptr;
     }
 
     void CommandList::EndRendering()
@@ -72,6 +73,7 @@ namespace Mixture::Metal
         {
             m_Encoder->endEncoding();
             m_Encoder = nullptr;
+            m_BoundPipeline = nullptr;
         }
     }
 
@@ -97,11 +99,13 @@ namespace Mixture::Metal
     {
         if (m_Encoder && pipeline)
         {
-            auto* mtlPipeline = static_cast<Pipeline*>(pipeline);
-            m_Encoder->setRenderPipelineState(mtlPipeline->GetPipelineState());
-            if (mtlPipeline->GetDepthStencilState())
+            m_BoundPipeline = static_cast<Pipeline*>(pipeline);
+            m_Encoder->setRenderPipelineState(m_BoundPipeline->GetPipelineState());
+            m_Encoder->setCullMode(m_BoundPipeline->GetCullMode());
+            m_Encoder->setFrontFacingWinding(m_BoundPipeline->GetWinding());
+            if (m_BoundPipeline->GetDepthStencilState())
             {
-                m_Encoder->setDepthStencilState(mtlPipeline->GetDepthStencilState());
+                m_Encoder->setDepthStencilState(m_BoundPipeline->GetDepthStencilState());
             }
         }
     }
@@ -111,7 +115,8 @@ namespace Mixture::Metal
         if (m_Encoder && buffer)
         {
             auto* mtlBuf = static_cast<Buffer*>(buffer);
-            m_Encoder->setVertexBuffer(mtlBuf->GetHandle(), 0, binding);
+            const uint32_t vertexSlot = 20 + binding;
+            m_Encoder->setVertexBuffer(mtlBuf->GetHandle(), 0, vertexSlot);
         }
     }
 
@@ -126,32 +131,50 @@ namespace Mixture::Metal
 
     void CommandList::PushConstants(RHI::IPipeline* pipeline, RHI::ShaderStage stage, const void* data, uint32_t size)
     {
-        if (m_Encoder && data && size > 0)
-        {
-            if (stage == RHI::ShaderStage::Vertex)
-                m_Encoder->setVertexBytes(data, size, 30);
-            else if (stage == RHI::ShaderStage::Fragment)
-                m_Encoder->setFragmentBytes(data, size, 30);
-        }
+        if (!pipeline || !m_Encoder || !data || size == 0) return;
+
+        auto* mtlPipeline = static_cast<Pipeline*>(pipeline);
+        const auto* pc = mtlPipeline->FindPushConstant(stage, size);
+        uint32_t binding = pc ? pc->Binding : 30;
+
+        if (stage == RHI::ShaderStage::Vertex)
+            m_Encoder->setVertexBytes(data, size, binding);
+        else if (stage == RHI::ShaderStage::Fragment)
+            m_Encoder->setFragmentBytes(data, size, binding);
     }
 
     void CommandList::SetUniformBuffer(uint32_t binding, RHI::IBuffer* buffer, uint32_t set)
     {
-        if (m_Encoder && buffer)
+        if (!m_Encoder || !buffer) return;
+
+        auto* mtlBuf = static_cast<Buffer*>(buffer);
+        uint32_t actualSlot = (set > 0) ? set : binding;
+
+        if (m_BoundPipeline)
         {
-            auto* mtlBuf = static_cast<Buffer*>(buffer);
-            m_Encoder->setVertexBuffer(mtlBuf->GetHandle(), 0, binding);
-            m_Encoder->setFragmentBuffer(mtlBuf->GetHandle(), 0, binding);
+            if (const auto* res = m_BoundPipeline->FindUniformBuffer(binding, set))
+                actualSlot = res->Binding;
         }
+
+        m_Encoder->setVertexBuffer(mtlBuf->GetHandle(), 0, actualSlot);
+        m_Encoder->setFragmentBuffer(mtlBuf->GetHandle(), 0, actualSlot);
     }
 
     void CommandList::SetTexture(uint32_t binding, RHI::ITexture* texture, uint32_t set)
     {
-        if (m_Encoder && texture)
+        if (!m_Encoder || !texture) return;
+
+        auto* mtlTex = static_cast<Texture*>(texture);
+        uint32_t actualSlot = (set > 0) ? set : binding;
+
+        if (m_BoundPipeline)
         {
-            auto* mtlTex = static_cast<Texture*>(texture);
-            m_Encoder->setFragmentTexture(mtlTex->GetHandle(), binding);
+            if (const auto* res = m_BoundPipeline->FindTexture(binding, set))
+                actualSlot = res->Binding;
         }
+
+        m_Encoder->setFragmentTexture(mtlTex->GetHandle(), actualSlot);
+        m_Encoder->setVertexTexture(mtlTex->GetHandle(), actualSlot);
     }
 
     void CommandList::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)

@@ -85,7 +85,8 @@ namespace Mixture
         {
             const RHI::ShaderIdentity identity{ static_cast<uint64_t>(handle.ID), version, stage };
             auto shader = device->CreateShader(
-                shaderAsset->GetBufferPointer(), shaderAsset->GetBufferSize(), stage, identity);
+                shaderAsset->GetBufferPointer(), shaderAsset->GetBufferSize(), stage, identity,
+                shaderAsset->GetReflectionData());
 
             RHI::IShader* result = nullptr;
             bool versionChanged = false;

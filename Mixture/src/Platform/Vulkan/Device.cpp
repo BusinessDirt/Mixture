@@ -121,9 +121,9 @@ namespace Mixture::Vulkan
     }
 
     Ref<RHI::IShader> Device::CreateShader(const void* data, size_t size, RHI::ShaderStage stage,
-        RHI::ShaderIdentity identity)
+        RHI::ShaderIdentity identity, const ShaderReflectionData& reflection)
     {
-        return CreateRef<Shader>(shared_from_this(), data, size, stage, identity);
+        return CreateRef<Shader>(shared_from_this(), data, size, stage, identity, reflection);
     }
 
     Ref<RHI::IBuffer> Device::CreateBuffer(const RHI::BufferDesc& desc, std::span<const std::byte> initialData)

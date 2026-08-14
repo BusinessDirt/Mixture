@@ -6,10 +6,16 @@
  */
 
 #include "Mixture/Core/Base.hpp"
-#include "Mixture/Render/RHI/RHI.hpp"
+#include "Mixture/Render/RHI/RenderFormats.hpp"
+#include "Mixture/Render/RHI/ShaderDefinitions.hpp"
+
+#include <slang/slang.h>
 
 namespace Mixture
 {
+
+    
+
     /** @brief Reflection data extracted from compiled shader bytecode. */
     struct ShaderReflectionData
     {
@@ -40,6 +46,7 @@ namespace Mixture
             uint32_t Offset;
             uint32_t Size;
             uint32_t ShaderStage;
+            uint32_t Binding;
         };
 
         struct VertexAttribute
@@ -61,18 +68,26 @@ namespace Mixture
         Vector<VertexAttribute> InputAttributes;
     };
 
-    /** @brief Reflects the bytecode format used by one graphics API. */
-    class IShaderReflector
+    class SlangShaderReflector
     {
     public:
-        virtual ~IShaderReflector() = default;
+        SlangShaderReflector() = default;
+        ~SlangShaderReflector() = default;
 
-        virtual ShaderReflectionData Reflect(const void* binaryData, size_t binarySize) const = 0;
+        ShaderReflectionData Reflect(slang::ProgramLayout* layout) const;
 
-        /**
-         * @brief Creates a reflector for bytecode produced for @p graphicsAPI.
-         * @return A reflector, or nullptr when that API has no reflection backend.
-         */
-        static Scope<IShaderReflector> Create(RHI::GraphicsAPI graphicsAPI);
+    private:
+        static void ReflectEntryPoints(slang::ProgramLayout& layout, ShaderReflectionData& data);
+        static void ReflectResources(slang::ProgramLayout& layout, ShaderReflectionData& data);
+        static void ReflectVertexInputs(slang::ProgramLayout& layout, ShaderReflectionData& data);
+
+        static void AddResource(slang::VariableLayoutReflection& variable, ShaderReflectionData& data);
+        static void AddPushConstant(slang::ProgramLayout& layout,
+            slang::VariableLayoutReflection& variable, ShaderReflectionData& data);
+        static void AddVertexInput(slang::VariableLayoutReflection& input, ShaderReflectionData& data);
+
+        static RHI::ShaderStage ToShaderStage(SlangStage stage);
+        static RHI::Format ToVertexFormat(slang::TypeReflection& type);
+        static uint32_t GetPushConstantStages(slang::ProgramLayout& layout);
     };
 }

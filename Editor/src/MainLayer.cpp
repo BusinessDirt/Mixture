@@ -8,36 +8,6 @@
 
 namespace Mixture
 {
-    struct Vertex
-    {
-        glm::vec3 Position;
-        glm::vec3 Normal;
-    };
-
-    struct alignas(16) CameraData
-    {
-        glm::mat4 ViewProjection;
-        glm::vec3 Position{ 0.0f };
-        float Padding = 0.0f;
-    };
-
-    constexpr uint32_t MaxSceneLights = 16;
-
-    struct alignas(16) SceneLightData
-    {
-        glm::vec4 PositionRange;
-        glm::vec4 DirectionType;
-        glm::vec4 ColorIntensity;
-        glm::vec4 SpotAngles;
-    };
-
-    struct alignas(16) SceneLightingData
-    {
-        glm::uvec4 Header{ 0u };
-        std::array<SceneLightData, MaxSceneLights> Lights{};
-    };
-
-    static_assert(offsetof(SceneLightingData, Lights) == 16);
 
     void MainLayer::OnAttach()
     {
@@ -128,7 +98,9 @@ namespace Mixture
         m_CameraBuffers.clear();
         m_LightBuffers.clear();
         m_CameraBufferCursor = 0;
+        m_LightBufferCursor = 0;
         m_HasCameraData = false;
+        m_HasLightingData = false;
         m_VertexBuffer.reset();
         m_Scene.reset();
     }
@@ -239,10 +211,11 @@ namespace Mixture
 
                     CameraData camData;
                     camData.ViewProjection = projectionMatrix * viewMatrix;
-                    camData.Position = cameraPosition;
+                    camData.Position = glm::vec4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 0.0f);
 
                     if (m_CameraBuffers.empty()) return;
                     auto& device = Application::Get().GetContext().GetDevice();
+                    const uint32_t frameIndex = Application::Get().GetContext().GetCurrentFrameIndex();
                     const bool cameraChanged = !m_HasCameraData
                         || std::memcmp(&m_LastCameraViewProjection, &camData.ViewProjection, sizeof(camData.ViewProjection)) != 0;
                     if (cameraChanged)
@@ -281,15 +254,32 @@ namespace Mixture
                         gpuLight.SpotAngles = glm::vec4(glm::cos(glm::radians(light.SpotAngle)), 0.0f, 0.0f, 0.0f);
                     });
 
-                    const uint32_t frameIndex = Application::Get().GetContext().GetCurrentFrameIndex();
-                    RHI::BufferDesc lightDesc;
-                    lightDesc.Size = sizeof(SceneLightingData);
-                    lightDesc.Usage = RHI::BufferUsage::Uniform;
-                    lightDesc.DebugName = "SceneLightingUBO";
-                    Ref<RHI::IBuffer> lightBuffer = device.CreateBuffer(lightDesc, std::as_bytes(std::span(&lightingData, 1)));
-                    if (!lightBuffer) return;
-                    m_LightBuffers[frameIndex % m_LightBuffers.size()] = std::move(lightBuffer);
-                    cmd->SetUniformBuffer(0, m_LightBuffers[frameIndex % m_LightBuffers.size()].get(), 2);
+                    if (m_LightBuffers.empty()) return;
+                    const bool lightingChanged = !m_HasLightingData
+                        || std::memcmp(&m_LastLightingData, &lightingData, sizeof(SceneLightingData)) != 0;
+                    if (lightingChanged)
+                    {
+                        const uint32_t lightIndex = m_LightBufferCursor % static_cast<uint32_t>(m_LightBuffers.size());
+
+                        RHI::BufferDesc lightDesc;
+                        lightDesc.Size = sizeof(SceneLightingData);
+                        lightDesc.Usage = RHI::BufferUsage::Uniform;
+                        lightDesc.DebugName = "SceneLightingUBO";
+
+                        Ref<RHI::IBuffer> lightBuffer = device.CreateBuffer(lightDesc, std::as_bytes(std::span(&lightingData, 1)));
+                        if (lightBuffer)
+                        {
+                            m_LightBuffers[lightIndex] = std::move(lightBuffer);
+                            m_LightBufferCursor = (lightIndex + 1) % static_cast<uint32_t>(m_LightBuffers.size());
+                            m_LastLightingData = lightingData;
+                            m_HasLightingData = true;
+                        }
+                    }
+
+                    const uint32_t activeLightIndex = (m_LightBufferCursor + m_LightBuffers.size() - 1) % m_LightBuffers.size();
+                    RHI::IBuffer* activeLightBuffer = m_LightBuffers[activeLightIndex].get();
+                    if (!activeLightBuffer) return;
+                    cmd->SetUniformBuffer(0, activeLightBuffer, 2);
 
                     // Render all active entities with MeshRendererComponent
                     m_Scene->Each([&](flecs::entity, MeshRendererComponent& meshRenderer, const TransformComponent& transform) {

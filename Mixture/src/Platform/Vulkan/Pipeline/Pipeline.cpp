@@ -101,11 +101,13 @@ namespace Mixture::Vulkan
         shaderStages.push_back(vertexShader->CreateInfo());
         if (fragmentShader) shaderStages.push_back(fragmentShader->CreateInfo());
 
+        m_ReflectionData = &vertexShader->GetReflectionData();
+
         vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
         Vector<vk::VertexInputBindingDescription> bindingDescriptions;
         Vector<vk::VertexInputAttributeDescription> attributeDescriptions;
 
-        const auto& vertexShaderReflection = vertexShader->GetReflectionData();
+        const auto& vertexShaderReflection = *m_ReflectionData;
         if (!vertexShaderReflection.InputAttributes.empty())
         {
             uint32_t stride = 0;

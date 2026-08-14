@@ -12,6 +12,7 @@
 namespace Mixture::Metal
 {
     class Device;
+    class Pipeline;
 
     /**
      * @brief Metal implementation of a command list.
@@ -51,6 +52,7 @@ namespace Mixture::Metal
         MTL::CommandBuffer* m_CommandBuffer = nullptr;
         MTL::RenderCommandEncoder* m_Encoder = nullptr;
         MTL::Buffer* m_IndexBuffer = nullptr;
+        Pipeline* m_BoundPipeline = nullptr;
     };
 }
 

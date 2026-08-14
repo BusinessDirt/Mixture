@@ -8,6 +8,7 @@
 
 #include "Platform/Metal/Definitions.hpp"
 #include "Mixture/Render/RHI/IPipeline.hpp"
+#include "Mixture/Assets/Shaders/SlangShaderReflector.hpp"
 
 namespace Mixture::Metal
 {
@@ -19,11 +20,14 @@ namespace Mixture::Metal
     class Shader : public RHI::IShader
     {
     public:
-        Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage, RHI::ShaderIdentity identity);
+        Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage,
+               RHI::ShaderIdentity identity, const ShaderReflectionData& reflection);
         ~Shader();
 
         RHI::ShaderStage GetStage() const override { return m_Stage; }
         RHI::ShaderIdentity GetIdentity() const override { return m_Identity; }
+
+        const ShaderReflectionData* GetReflectionData() const { return m_ReflectionData; }
         bool IsValid() const { return m_Function != nullptr; }
 
         MTL::Function* GetFunction() const { return m_Function; }
@@ -32,9 +36,11 @@ namespace Mixture::Metal
     private:
         Ref<Device> m_Device;
         RHI::ShaderStage m_Stage;
+        const ShaderReflectionData* m_ReflectionData;
         RHI::ShaderIdentity m_Identity;
         MTL::Library* m_Library = nullptr;
         MTL::Function* m_Function = nullptr;
+
     };
 }
 

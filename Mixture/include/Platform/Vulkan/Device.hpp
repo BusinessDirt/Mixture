@@ -60,7 +60,7 @@ namespace Mixture::Vulkan
          * @return Ref<RHI::IShader> The created shader.
          */
         Ref<RHI::IShader> CreateShader(const void* data, size_t size, RHI::ShaderStage stage,
-            RHI::ShaderIdentity identity) override;
+            RHI::ShaderIdentity identity, const ShaderReflectionData& reflection) override;
 
         /**
          * @brief Creates a Vulkan buffer.

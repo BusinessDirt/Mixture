@@ -14,6 +14,7 @@ namespace Mixture
     struct ShaderCompileResult
     {
         Vector<uint8_t> Bytecode;
+        ShaderReflectionData Reflection;
         std::string Diagnostics;
 
         bool Succeeded() const { return !Bytecode.empty(); }

@@ -8,6 +8,7 @@
 #include "Mixture/Core/Base.hpp"
 
 #include "Mixture/Assets/IAsset.hpp"
+#include "Mixture/Assets/Shaders/SlangShaderReflector.hpp"
 
 namespace Mixture
 {
@@ -24,8 +25,9 @@ namespace Mixture
          * @param name The asset name.
          * @param byteCode The compiled shader bytecode (SPIR-V, DXIL, etc.).
          */
-        ShaderAsset(UUID id, const std::string& name, std::vector<uint8_t> byteCode)
-            : m_ID(id), m_Name(name), m_ByteCode(std::move(byteCode))
+        ShaderAsset(UUID id, const std::string& name, std::vector<uint8_t> byteCode,
+            ShaderReflectionData reflection)
+            : m_ID(id), m_Name(name), m_ByteCode(std::move(byteCode)), m_Reflection(std::move(reflection))
         {}
 
         virtual ~ShaderAsset() = default;
@@ -58,10 +60,12 @@ namespace Mixture
          * @return true If valid.
          */
         bool IsValid() const { return !m_ByteCode.empty(); }
+        const ShaderReflectionData& GetReflectionData() const { return m_Reflection; }
 
     private:
         UUID m_ID;
         std::string m_Name;
         std::vector<uint8_t> m_ByteCode;
+        ShaderReflectionData m_Reflection;
     };
 }

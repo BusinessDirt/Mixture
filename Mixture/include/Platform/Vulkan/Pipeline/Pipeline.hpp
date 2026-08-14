@@ -8,7 +8,7 @@
 #include "Platform/Vulkan/Definitions.hpp"
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
-#include "Mixture/Assets/Shaders/IShaderReflector.hpp"
+#include "Mixture/Assets/Shaders/SlangShaderReflector.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -40,6 +40,8 @@ namespace Mixture::Vulkan
 
         bool IsValid() const override { return static_cast<bool>(m_Handle) && static_cast<bool>(m_Layout); }
 
+        const ShaderReflectionData* GetShaderReflectionData() const override { return m_ReflectionData; }
+
         /**
          * @brief Gets the Vulkan Pipeline handle.
          * 
@@ -65,5 +67,6 @@ namespace Mixture::Vulkan
         vk::PipelineLayout m_Layout = nullptr;
         Vector<vk::DescriptorSetLayout> m_DescriptorSetLayouts;
         Vector<vk::PushConstantRange> m_PushConstantRanges;
+        const ShaderReflectionData* m_ReflectionData = nullptr;
     };
 }

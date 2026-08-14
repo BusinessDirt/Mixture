@@ -12,6 +12,7 @@ namespace Mixture
 
         size_t fileSize = data.size();
 
+        ShaderCompileResult compilation;
         std::vector<uint8_t> compiledBlob;
         std::string ext = metadata.FilePath.extension().string();
 
@@ -21,7 +22,8 @@ namespace Mixture
             // Construct string from data (careful if not null terminated)
             std::string sourceCode(data.begin(), data.end());
 
-            compiledBlob = ShaderCompiler::Compile(sourceCode);
+            compilation = ShaderCompiler::CompileDetailed(sourceCode);
+            compiledBlob = std::move(compilation.Bytecode);
 
             if (compiledBlob.empty())
             {
@@ -31,13 +33,11 @@ namespace Mixture
         }
         else
         {
-            // --- PATH: LOAD BINARY ---
-            // File is already .cso / .spv (pre-compiled)
             compiledBlob.resize(fileSize);
             memcpy(compiledBlob.data(), data.data(), fileSize);
         }
 
-        // Create the Asset
-        return CreateRef<ShaderAsset>(metadata.ID, metadata.FilePath.filename().string(), std::move(compiledBlob));
+        return CreateRef<ShaderAsset>(metadata.ID, metadata.FilePath.filename().string(),
+            std::move(compiledBlob), std::move(compilation.Reflection));
     }
 }

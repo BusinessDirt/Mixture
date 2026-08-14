@@ -3,8 +3,7 @@
 struct CameraData
 {
     float4x4 viewProjection;
-    float3 position;
-    float padding;
+    float4 position;
 };
 
 struct MaterialData
@@ -75,7 +74,7 @@ VS_Output VS_Main(VS_Input input)
 float4 PS_Main(VS_Output input) : SV_TARGET
 {
     float3 normal = normalize(input.worldNormal);
-    const float3 viewDirection = normalize(u_Camera.position - input.worldPosition);
+    const float3 viewDirection = normalize(u_Camera.position.xyz - input.worldPosition);
     const float roughness = clamp(u_Material.roughness, 0.04f, 1.0f);
     const float metallic = saturate(u_Material.metallic);
 

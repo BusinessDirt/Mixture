@@ -20,9 +20,19 @@ namespace Mixture
         float Metallic = 0.0f;
         float Roughness = 0.5f;
         glm::vec2 Tiling{ 1.0f, 1.0f };
-        glm::vec3 EmissionColor{ 0.0f, 0.0f, 0.0f };
+        alignas(16) glm::vec3 EmissionColor{ 0.0f, 0.0f, 0.0f };
+        float _Pad0 = 0.0f;
         float EmissionIntensity = 1.0f;
+        float _Pad1[3] = { 0.0f, 0.0f, 0.0f };
     };
+
+    static_assert(sizeof(MaterialData) == 64, "MaterialData must be 64 bytes to match GPU uniform buffer layout");
+    static_assert(offsetof(MaterialData, AlbedoColor) == 0);
+    static_assert(offsetof(MaterialData, Metallic) == 16);
+    static_assert(offsetof(MaterialData, Roughness) == 20);
+    static_assert(offsetof(MaterialData, Tiling) == 24);
+    static_assert(offsetof(MaterialData, EmissionColor) == 32);
+    static_assert(offsetof(MaterialData, EmissionIntensity) == 48);
 
     /**
      * @brief Material asset encapsulating shading parameters, uniform buffer, and texture maps.

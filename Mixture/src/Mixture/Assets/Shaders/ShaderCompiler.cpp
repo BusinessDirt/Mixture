@@ -1,6 +1,6 @@
 #include "mxpch.hpp"
 #include "Mixture/Assets/Shaders/ShaderCompiler.hpp"
-#include "Mixture/Assets/Shaders/IShaderReflector.hpp"
+#include "Mixture/Assets/Shaders/SlangShaderReflector.hpp"
 
 #include "Mixture/Assets/AssetManager.hpp"
 
@@ -28,6 +28,12 @@ namespace Mixture
         {
             static CompilerState state;
             return state;
+        }
+
+        SlangShaderReflector* GetReflector()
+        {
+            static Scope<SlangShaderReflector> reflector = CreateScope<SlangShaderReflector>();
+            return reflector.get();
         }
     }
 
@@ -124,11 +130,31 @@ namespace Mixture
             return result;
         }
 
+        std::vector<slang::IComponentType*> components;
+        components.push_back(module);
+
+
+        SlangInt definedEpCount = module->getDefinedEntryPointCount();
+        std::vector<Slang::ComPtr<slang::IEntryPoint>> entryPoints(definedEpCount);
+
+        for (SlangInt32 i = 0; i < definedEpCount; i++)
+        {
+            module->getDefinedEntryPoint(i, entryPoints[i].writeRef());
+            components.push_back(entryPoints[i].get());
+        }
+
+        Slang::ComPtr<slang::IComponentType> linkedProgram;
+        session->createCompositeComponentType(
+            components.data(),
+            components.size(),
+            linkedProgram.writeRef()
+        );
+
         // Generate Target Code
         Slang::ComPtr<slang::IBlob> codeBlob;
         Slang::ComPtr<slang::IBlob> targetDiagnosticsBlob;
 
-        const SlangResult targetResult = module->getTargetCode(
+        const SlangResult targetResult = linkedProgram->getTargetCode(
             0,
             codeBlob.writeRef(),
             targetDiagnosticsBlob.writeRef()
@@ -160,6 +186,15 @@ namespace Mixture
 
         result.Bytecode.resize(codeBlob->getBufferSize());
         memcpy(result.Bytecode.data(), codeBlob->getBufferPointer(), codeBlob->getBufferSize());
+
+        if (const auto reflector = GetReflector())
+        {
+            result.Reflection = reflector->Reflect(linkedProgram->getLayout());
+        }
+        else
+        {
+            result.Diagnostics += result.Diagnostics.empty() ? "Shader reflection is unavailable" : "\nShader reflection is unavailable";
+        }
 
         return result;
     }

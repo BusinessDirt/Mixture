@@ -109,6 +109,7 @@ namespace Mixture::Tests
 
             ~MockPipeline() override { ++m_DestructionCount; }
             bool IsValid() const override { return m_Valid; }
+            const ShaderReflectionData* GetShaderReflectionData() const override { return nullptr; }
 
         private:
             size_t& m_DestructionCount;
@@ -119,7 +120,7 @@ namespace Mixture::Tests
         {
         public:
             Ref<RHI::IShader> CreateShader(const void*, size_t, RHI::ShaderStage,
-                RHI::ShaderIdentity identity) override
+                RHI::ShaderIdentity identity, const ShaderReflectionData&) override
             {
                 return CreateRef<MockShader>(identity);
             }

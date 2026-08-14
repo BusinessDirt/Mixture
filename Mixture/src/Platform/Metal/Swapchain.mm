@@ -71,6 +71,8 @@ namespace Mixture::Metal
     {
         if (m_CurrentDrawable)
         {
+            id<CAMetalDrawable> drawable = (__bridge id<CAMetalDrawable>)m_CurrentDrawable;
+            [drawable present];
             m_CurrentDrawable = nullptr;
         }
     }

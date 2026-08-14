@@ -10,6 +10,7 @@
 #include "Mixture/Render/RHI/IBuffer.hpp"
 #include "Mixture/Render/RHI/IPipeline.hpp"
 #include "Mixture/Render/RHI/ITexture.hpp"
+#include "Mixture/Assets/Shaders/SlangShaderReflector.hpp"
 
 #include <string>
 #include <span>
@@ -21,11 +22,18 @@ namespace Mixture::RHI
     inline std::optional<size_t> GetTextureUploadSize(const TextureDesc& desc)
     {
         const size_t stride = GetFormatStride(desc.PixelFormat);
-        if (desc.Width == 0 || desc.Height == 0 || stride == 0) return std::nullopt;
+
+        if (desc.Width == 0 || desc.Height == 0 || stride == 0)
+            return std::nullopt;
+
         if (static_cast<size_t>(desc.Width) > std::numeric_limits<size_t>::max() / static_cast<size_t>(desc.Height))
             return std::nullopt;
+
         const size_t pixels = static_cast<size_t>(desc.Width) * static_cast<size_t>(desc.Height);
-        if (pixels > std::numeric_limits<size_t>::max() / stride) return std::nullopt;
+
+        if (pixels > std::numeric_limits<size_t>::max() / stride)
+            return std::nullopt;
+
         return pixels * stride;
     }
 
@@ -66,7 +74,7 @@ namespace Mixture::RHI
          * @return A reference to the created shader.
          */
         virtual Ref<IShader> CreateShader(const void* data, size_t size, ShaderStage stage,
-            ShaderIdentity identity) = 0;
+            ShaderIdentity identity, const ShaderReflectionData& reflection) = 0;
 
         /**
          * Creates a buffer (Vertex, Index, Uniform).

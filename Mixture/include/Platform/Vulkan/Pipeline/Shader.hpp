@@ -8,7 +8,7 @@
 #include "Platform/Vulkan/Definitions.hpp"
 
 #include "Mixture/Render/RHI/IPipeline.hpp"
-#include "Mixture/Assets/Shaders/IShaderReflector.hpp"
+#include "Mixture/Assets/Shaders/SlangShaderReflector.hpp"
 
 namespace Mixture::Vulkan
 {
@@ -30,7 +30,7 @@ namespace Mixture::Vulkan
          * @param identity Stable logical identity and code version.
          */
         Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage,
-            RHI::ShaderIdentity identity);
+            RHI::ShaderIdentity identity, const ShaderReflectionData& reflection);
         ~Shader();
 
         RHI::ShaderStage GetStage() const override { return m_Stage; }

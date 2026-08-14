@@ -9,49 +9,15 @@
 
 #include "Mixture/Render/RHI/RenderStates.hpp"
 #include "Mixture/Render/RHI/RenderFormats.hpp"
+#include "Mixture/Render/RHI/ShaderDefinitions.hpp"
+
+#include "Mixture/Assets/Shaders/SlangShaderReflector.hpp"
 
 #include <vector>
 #include <string>
 
 namespace Mixture::RHI
 {
-
-    /**
-     * @brief Defines the programmable stage of the rendering pipeline that a shader belongs to.
-     */
-    enum class ShaderStage : uint8_t
-    {
-        /**
-         * @brief The vertex shader stage, processing individual vertices.
-         */
-        Vertex = 0,
-
-        /**
-         * @brief The fragment shader stage, processing fragments (pixels).
-         */
-        Fragment,
-
-        /**
-         * @brief The compute shader stage, for general-purpose computing.
-         */
-        Compute
-    };
-
-    /**
-     * @brief Stable identity used to cache objects derived from shader code.
-     *
-     * StableID identifies the logical shader asset, while Version changes each
-     * time that asset is reloaded. Stage distinguishes entry points within it.
-     */
-    struct ShaderIdentity
-    {
-        uint64_t StableID = 0;
-        uint64_t Version = 0;
-        ShaderStage Stage = ShaderStage::Vertex;
-
-        bool operator==(const ShaderIdentity&) const = default;
-        explicit operator bool() const { return StableID != 0 && Version != 0; }
-    };
 
     /**
      * @brief Interface representing a compiled shader module.
@@ -153,7 +119,7 @@ namespace Mixture::RHI
         /** @brief Returns whether backend pipeline construction completed successfully. */
         virtual bool IsValid() const = 0;
 
-        // Later add methods here to get the "Layout"
-        // (i.e., what descriptors does this pipeline need?)
+
+        virtual const ShaderReflectionData* GetShaderReflectionData() const = 0;
     };
 }

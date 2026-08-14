@@ -9,8 +9,8 @@
 namespace Mixture::Vulkan
 {
     Shader::Shader(Ref<Device> device, const void* data, size_t size, RHI::ShaderStage stage,
-        RHI::ShaderIdentity identity)
-        : m_Device(std::move(device)), m_Stage(stage), m_Identity(identity)
+        RHI::ShaderIdentity identity, const ShaderReflectionData& reflection)
+        : m_Device(std::move(device)), m_Stage(stage), m_Identity(identity), m_ReflectionData(reflection)
     {
         if (!m_Device)
         {
@@ -36,14 +36,6 @@ namespace Mixture::Vulkan
         {
             throw std::invalid_argument("Shader bytecode does not contain a SPIR-V header");
         }
-
-        const auto reflector = IShaderReflector::Create(RHI::GraphicsAPI::Vulkan);
-        if (!reflector)
-        {
-            throw std::runtime_error("Vulkan shader reflection is unavailable");
-        }
-
-        m_ReflectionData = reflector->Reflect(data, size);
 
         vk::ShaderModuleCreateInfo createInfo;
         createInfo.setCodeSize(size);
